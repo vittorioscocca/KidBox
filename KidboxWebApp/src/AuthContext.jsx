@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { setInternalTraffic } from "./services/analytics";
 import {
   onAuthStateChanged,
   signInWithPopup,
@@ -42,6 +43,7 @@ export function AuthProvider({ children }) {
           signOut(auth);
           return;
         }
+        setInternalTraffic(u);
         setUser(u);
       }),
     []

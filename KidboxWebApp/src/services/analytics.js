@@ -59,13 +59,61 @@ async function analytics() {
       try {
         const mod = await import("firebase/analytics");
         if (!(await mod.isSupported())) return null;
-        return { instance: mod.getAnalytics(app), logEvent: mod.logEvent };
+        const instance = mod.getAnalytics(app);
+        // Se il login è arrivato prima che Analytics fosse caricato (consenso
+        // dato dopo), il parametro va messo adesso.
+        if (internalUser) mod.setDefaultEventParameters({ traffic_type: "internal" });
+        return { instance, logEvent: mod.logEvent, setDefaultEventParameters: mod.setDefaultEventParameters };
       } catch {
         return null;
       }
     })();
   }
   return analyticsPromise;
+}
+
+/* ── Traffico interno ─────────────────────────────────────────────────────── */
+
+/**
+ * Account di test dello sviluppatore: gli eventi partono con
+ * `traffic_type = internal`, che il filtro «Traffico interno» di GA4 tiene
+ * fuori dai report. Stesso elenco di hash SHA-256 di `InternalTraffic.swift`
+ * e `InternalTraffic.kt`; mai l'email in chiaro nel bundle. Lo stesso elenco,
+ * come uid, sta in `config/internalUsers` su Firestore per rollup e report.
+ */
+const INTERNAL_EMAIL_HASHES = new Set([
+  "2932b8f0e073118c0ca7484c73ae1e33ba8b9e3011e4b78ae17da4dfb7c74f21",
+  "ef18139763e351755d752d5ea05e5efc6aaf7a7dd666a9c559cda03236f540d3",
+  "0b45a4dc93984656b8eec293859533018cc6d5dc3bac24d5c554d92bc8fb0486",
+  "09ea5430711b0dc611c7eadf90e20a2072af2fc5224f0318ad82501e59d069d9",
+  "e4876522f848d46ce31670b18e6e90486e6c90b41107670a199f98d46cff8aa3",
+]);
+
+let internalUser = false;
+
+async function sha256Hex(text) {
+  const data = new TextEncoder().encode(text.trim().toLowerCase());
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Da chiamare a ogni cambio di stato di autenticazione (`user` o `null`). */
+export async function setInternalTraffic(user) {
+  let internal = false;
+  if (user) {
+    const emails = [...(user.providerData || []).map((p) => p.email), user.email].filter(Boolean);
+    for (const e of emails) {
+      // `crypto.subtle` manca solo su origini non sicure: lì non si marca nulla.
+      if (!globalThis.crypto?.subtle) break;
+      if (INTERNAL_EMAIL_HASHES.has(await sha256Hex(e))) { internal = true; break; }
+    }
+  }
+  internalUser = internal;
+  analytics()
+    .then((a) => {
+      if (a) a.setDefaultEventParameters(internal ? { traffic_type: "internal" } : {});
+    })
+    .catch(() => {});
 }
 
 /** Non restituisce una Promise di proposito: nessun call site deve attenderla. */

@@ -131,6 +131,11 @@ async function main() {
   const tok = token();
   const out = { yesterday, tz: TZ, notes: [] };
 
+  // 0. Account di test dello sviluppatore: fuori da tutto (config/internalUsers).
+  const internalDoc = (await getDoc(tok, "config/internalUsers")) || {};
+  const internalUids = new Set(Array.isArray(internalDoc.uids) ? internalDoc.uids : []);
+  out.internalExcluded = internalUids.size;
+
   // 1. Base utenti da Auth: registrazioni e «app viva» (login o rinnovo token).
   const users = [];
   let pageToken;
@@ -139,6 +144,8 @@ async function main() {
     users.push(...(r.users || []));
     pageToken = r.nextPageToken;
   } while (pageToken);
+  const allUsers = users.length;
+  for (let i = users.length - 1; i >= 0; i--) if (internalUids.has(users[i].localId)) users.splice(i, 1);
   const yStart = Date.parse(romeMidnight(yesterday));
   const yEnd = Date.parse(romeMidnight(shiftDay(yesterday, 1)));
   const lastActive = (u) =>
@@ -153,6 +160,7 @@ async function main() {
   }
   out.auth = {
     total: users.length,
+    totalWithInternal: allUsers,
     unverifiedEmail: users.filter((u) => u.email && !u.emailVerified).length,
     disabled: users.filter((u) => u.disabled).length,
     signups: { yesterday: users.filter((u) => created(u) >= yStart && created(u) < yEnd).length, d7: inWindow(created, 7), d28: inWindow(created, 28) },
@@ -266,7 +274,7 @@ function print(o) {
 
   const a = o.auth;
   L.push("## Base utenti (Firebase Auth)");
-  L.push(`Account: ${a.total} (email non verificata: ${a.unverifiedEmail}, disabilitati: ${a.disabled}); documenti users: ${o.families.usersDocs}`);
+  L.push(`Account: ${a.total} (email non verificata: ${a.unverifiedEmail}, disabilitati: ${a.disabled}; esclusi ${o.internalExcluded} account di test); documenti users: ${o.families.usersDocs}`);
   L.push(`Registrati: ieri ${a.signups.yesterday} · 7gg ${a.signups.d7} · 28gg ${a.signups.d28}`);
   L.push(`«App viva» (login o rinnovo token, include il background): 24h ${a.alive.d1} · 7gg ${a.alive.d7} · 14gg ${a.alive.d14} · 28gg ${a.alive.d28}`);
   L.push("Provider: " + Object.entries(a.providers).sort((x, y) => y[1] - x[1]).map(([k, v]) => `${k}=${v}`).join(", "));

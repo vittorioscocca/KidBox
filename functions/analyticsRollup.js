@@ -98,6 +98,31 @@ function addDays(dateStr, days) {
 }
 
 /**
+ * Uid degli account di test dello sviluppatore (`config/internalUsers.uids`),
+ * esclusi da ogni conteggio: con qualche decina di utenti attivi al giorno,
+ * un pomeriggio di prove vale una settimana di utenti veri. Lo stesso elenco
+ * lo usano `scripts/console-daily-report.js` (Auth) e, via hash delle email,
+ * i client per marcare `traffic_type=internal` su GA4.
+ * Documento assente o illeggibile = nessuna esclusione, il rollup non si ferma.
+ * @return {Promise<Set<string>>}
+ */
+async function internalUids() {
+  try {
+    const snap = await admin.firestore()
+        .collection("config").doc("internalUsers").get();
+    const uids = (snap.exists && snap.data().uids) || [];
+    const clean = Array.isArray(uids) ?
+      uids.filter((u) => typeof u === "string") : [];
+    return new Set(clean);
+  } catch (e) {
+    logger.warn("analyticsRollup: config/internalUsers non leggibile", {
+      error: e.message,
+    });
+    return new Set();
+  }
+}
+
+/**
  * Aggrega gli eventi di un giorno.
  * @param {string} dateStr giorno locale "YYYY-MM-DD"
  * @return {Promise<Object>} rollup del giorno
@@ -107,10 +132,13 @@ async function buildDaily(dateStr) {
   const start = localMidnight(dateStr);
   const end = localMidnight(addDays(dateStr, 1));
 
-  const snap = await db.collection(EVENTS_COLLECTION)
-      .where("ts", ">=", admin.firestore.Timestamp.fromDate(start))
-      .where("ts", "<", admin.firestore.Timestamp.fromDate(end))
-      .get();
+  const [snap, internal] = await Promise.all([
+    db.collection(EVENTS_COLLECTION)
+        .where("ts", ">=", admin.firestore.Timestamp.fromDate(start))
+        .where("ts", "<", admin.firestore.Timestamp.fromDate(end))
+        .get(),
+    internalUids(),
+  ]);
 
   const activeUids = new Set();
   const activeFamilies = new Set();
@@ -131,9 +159,15 @@ async function buildDaily(dateStr) {
   let membersJoined = 0;
   const grownFamilies = new Set();
 
+  let internalSkipped = 0;
   for (const doc of snap.docs) {
     const e = doc.data();
     const props = e.props || {};
+
+    if (e.uid && internal.has(e.uid)) {
+      internalSkipped += 1;
+      continue;
+    }
 
     if (e.name === "session_start") {
       if (e.uid) openedUids.add(e.uid);
@@ -212,6 +246,8 @@ async function buildDaily(dateStr) {
     crossMemberReadRate: retrievedTotal ?
       +(retrievedCrossMember / retrievedTotal).toFixed(3) : 0,
     eventsScanned: snap.size,
+    // Eventi degli account di test, tolti dai conteggi qui sopra.
+    internalSkipped,
     // Servono a unire le finestre rolling senza riscansionare i grezzi — che a
     // 90gg scadono. Sono la ragione per cui WAU/MAU restano calcolabili.
     uids: Array.from(activeUids),
