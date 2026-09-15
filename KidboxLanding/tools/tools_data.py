@@ -663,7 +663,7 @@ TOOLS = [
             "faq": [
                 ("Posso far parte di due famiglie?", "Sì, per esempio famiglia allargata e nonni: si passa dall'una all'altra dalle Impostazioni."),
                 ("Cosa succede se perdo il telefono?", "Accedi da un altro dispositivo: la chiave di famiglia si recupera dall'account e i dati tornano leggibili."),
-                ("Quante persone possono entrare?", "Dipende dal piano; il Free copre una famiglia di due genitori."),
+                ("Quante persone possono entrare?", "Non c'è un limite: genitori, figli, nonni, tate e chiunque aiuti in famiglia, anche nel piano Free. I piani cambiano solo per spazio di archiviazione e messaggi AI."),
             ],
         },
         "en": {
@@ -678,7 +678,7 @@ TOOLS = [
             "faq": [
                 ("Can I be in two families?", "Yes, say a blended family and the grandparents: switch between them from Settings."),
                 ("What if I lose my phone?", "Sign in from another device: the family key is recovered from the account and data becomes readable again."),
-                ("How many people can join?", "It depends on the plan; Free covers a family of two parents."),
+                ("How many people can join?", "There is no limit: parents, kids, grandparents, sitters and anyone who helps out, even on the Free plan. Plans only differ in storage space and AI messages."),
             ],
         },
     },

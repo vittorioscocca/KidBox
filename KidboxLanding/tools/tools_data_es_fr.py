@@ -274,7 +274,7 @@ ES = {
         "faq": [
             ("¿Puedo estar en dos familias?", "Sí, por ejemplo una familia reconstituida y los abuelos: cambias de una a otra desde Ajustes."),
             ("¿Y si pierdo el móvil?", "Inicia sesión desde otro dispositivo: la clave de la familia se recupera desde la cuenta y los datos vuelven a leerse."),
-            ("¿Cuántas personas pueden entrar?", "Depende del plan; el Free cubre una familia de dos padres."),
+            ("¿Cuántas personas pueden entrar?", "No hay límite: padres, hijos, abuelos, canguros y cualquiera que ayude en la familia, también en el plan Free. Los planes solo cambian el espacio de almacenamiento y los mensajes de IA."),
         ],
     },
 }
@@ -547,7 +547,7 @@ FR = {
         "faq": [
             ("Puis-je faire partie de deux familles ?", "Oui, par exemple une famille recomposée et les grands-parents : vous passez de l'une à l'autre dans les Réglages."),
             ("Et si je perds mon téléphone ?", "Connectez-vous depuis un autre appareil : la clé de la famille est récupérée depuis le compte et les données redeviennent lisibles."),
-            ("Combien de personnes peuvent rejoindre la famille ?", "Cela dépend de l'offre ; Free couvre une famille de deux parents."),
+            ("Combien de personnes peuvent rejoindre la famille ?", "Il n'y a pas de limite : parents, enfants, grands-parents, nounous et toute personne qui aide la famille, même avec l'offre Free. Les offres ne diffèrent que par l'espace de stockage et les messages IA."),
         ],
     },
 }
