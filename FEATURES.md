@@ -78,7 +78,7 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 | Lista della spesa | Condivisa in tempo reale, con «aggiunto da … e quando»; dettabile ad Alexa | F |
 | Note | Note condivise, cifrate | F |
 | Spese | Voci per categoria, più quelle che nascono da sole dalle altre schede | F |
-| Wallet | Biglietti (PDF con lettura AI dei campi), carte fedeltà con codice a barre, documenti d'identità | F |
+| Wallet | Biglietti e documenti d'identità con lettura AI dei campi, carte fedeltà con codice a barre | F (la lettura AI consuma i messaggi del piano: sul Free i 5 una tantum) |
 | Documenti | Cartelle e categorie, file cifrati, allegati di tutte le altre schede | F |
 | Password | Credenziali di famiglia o personali, cifrate, con AutoFill e audit di sicurezza | F |
 | Foto e video | Album condivisi, cifrati | F |
