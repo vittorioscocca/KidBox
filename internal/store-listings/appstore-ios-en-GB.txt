@@ -1,0 +1,56 @@
+KidBox is the app for families with children that manages everything in one place.
+
+CHILDREN'S HEALTH
+Keep track of medical appointments, check-ups, vaccinations, and treatments. Receive automatic reminders for upcoming deadlines and keep your complete health history right at your fingertips.
+
+SCHEDULER AND CALENDAR
+A shared calendar with your partner, smart to-do lists, and daily routines. AI helps you find free time and ensures nothing gets forgotten.
+
+AI ASSISTANT
+Ask it anything: "When is Marco's next check-up?", "What's missing from the shopping list?", "Remind me to call the pediatrician tomorrow." It answers in your language, knows your family—and now truly remembers them.
+Every morning at 8:00 AM, receive a briefing on the day's commitments and medication dosages. Each month, it analyzes your children's health history to spot patterns a parent might miss: seasonal trends, missed check-ups, or frequent antibiotic use.
+The more you use it, the better it gets to know you.
+
+SHOPPING LIST
+A shared list updated in real-time. When one person checks an item off, the other sees it instantly.
+
+FAMILY EXPENSES
+Track expenses by category and attach receipts or photos. Always know where your money is going.
+
+DOCUMENTS AND PHOTOS
+Store medical reports, prescriptions, certificates, and photos in a secure, always-accessible archive.
+
+DOCUMENT INTELLIGENCE
+Import an invoice, prescription, medical report, or any other document, and KidBox reads it for you. The AI ​​analyzes the content and automatically suggests the right actions: adding an expense, creating a calendar event, logging a medical visit, setting a vaccination reminder, or tracking a vehicle-related deadline. You choose what to confirm—all with a single tap. FAMILY PASSWORD MANAGER
+Store credentials and access codes, and generate OTP keys in a single, encrypted location. Autofill integration for Safari and other apps. Securely share passwords with your partner without leaving KidBox.
+
+REAL-TIME LOCATION
+See the whereabouts of your children and partner at a glance.
+
+PETS
+Detailed profiles for each pet, including basic info and health records: vaccinations, vet visits, medications, and grooming. Track deadlines with automatic reminders.
+
+HOME & GARAGE
+Keep a log of appliances, systems, and contracts, including warranty and maintenance deadlines. Vehicle profiles track critical dates (insurance, inspections, road tax, servicing) and maintenance history, complete with urgency indicators and advance notifications.
+
+SELECTIVE VISIBILITY
+Choose who sees specific content: the whole family, select members, or just you. Available for Notes, Lists, Calendar, Documents, and Wallet.
+
+CAMERA SHORTCUT
+Launch the KidBox camera directly from Control Center or via the Control Extension—no need to open the app.
+
+FAMILY TRIPS
+Define your travel style and let AI suggest the perfect destination, or plan it yourself using the guided wizard: locations, dates, transport, travelers, budget, and accommodation type. AI creates a day-by-day itinerary—morning, afternoon, and evening—featuring hotels, restaurants, and interactive stops linked to photos, reviews, and maps. From the trip details view, access photos, notes, to-dos, and expenses with a single tap.
+
+MULTIPLE FAMILIES, ONE APP
+Create multiple family groups and switch between them at any time—your extended family, your immediate family, or any other group. Each family has its own children, health data, trips, and settings, all completely separate and independent.
+
+— — —
+PLANS
+- Free: every feature, 200 MB, 5 trial AI messages
+- Pro (€4.99/month): 5 GB, 30 AI messages per day, meal and fitness plans, AI travel
+- Max (€9.99/month): 20 GB, 100 AI messages per day
+One subscription for the whole family, with no member limit. It renews automatically; manage or cancel it in your Apple ID settings.
+
+Privacy: https://kidboxapp.com/privacy.html
+Terms: https://kidboxapp.com/terms.html
