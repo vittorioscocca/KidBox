@@ -66,6 +66,13 @@ final class AppCoordinator: ObservableObject {
     /// wizard è ancora aperto quando l'app va in background (onboarding_abandoned).
     @Published var lastOnboardingStepSeen: String?
 
+    /// Step per cui `onboarding_abandoned` è già partito. Senza questo l'evento
+    /// scattava a OGNI background finché il wizard era aperto — telefonata,
+    /// mail di verifica, condivisione del link d'invito dall'ultima pagina —
+    /// e GA4 ne contava 8 per utente iOS: 147 eventi da 19 persone in 28 giorni,
+    /// letti come «80% di abbandono». Al massimo uno per step.
+    var onboardingAbandonReportedStep: String?
+
     /// Timestamp d'apertura del wizard, per calcolare la durata di onboarding_completed.
     var onboardingStartedAt: Date?
 
@@ -246,6 +253,7 @@ final class AppCoordinator: ObservableObject {
         let duration = onboardingStartedAt.map { Int(Date().timeIntervalSince($0)) } ?? 0
         AppAnalytics.onboardingCompleted(totalDurationSeconds: duration)
         lastOnboardingStepSeen = nil
+        onboardingAbandonReportedStep = nil
         onboardingStartedAt = nil
     }
     
@@ -371,6 +379,9 @@ final class AppCoordinator: ObservableObject {
         authHandle = Auth.auth().addStateDidChangeListener { _, user in
             Task { @MainActor in
                 self.isCheckingAuth = false
+                // Prima di tutto, così anche gli eventi del login stesso sono
+                // già marcati; al logout (`user == nil`) il parametro si toglie.
+                InternalTraffic.apply(user: user)
                 if let user {
                     let isEmailProvider = user.providerData.contains { $0.providerID == "password" }
                     if isEmailProvider && !user.isEmailVerified {

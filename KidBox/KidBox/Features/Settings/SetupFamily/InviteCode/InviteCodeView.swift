@@ -94,9 +94,15 @@ private struct InviteCodeViewBody: View {
                             ) {
                                 Label("Invia link d'invito", systemImage: "square.and.arrow.up")
                             }
+                            // `ShareLink` non dice quando viene toccato: il gesto
+                            // in parallelo è l'unico modo di contarlo.
+                            .simultaneousGesture(TapGesture().onEnded {
+                                AppAnalytics.inviteShared(channel: "share_sheet")
+                            })
 
                             Button {
                                 vm.copyToClipboard()
+                                AppAnalytics.inviteShared(channel: "copy")
                             } label: {
                                 Label("Copia link", systemImage: "doc.on.doc")
                             }

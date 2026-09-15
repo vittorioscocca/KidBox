@@ -82,7 +82,8 @@ enum ClinicalRecordAISynthesizer {
                 throw ClinicalRecordAIError.quotaWouldExceed(
                     needed: estimate.messageUnits,
                     remaining: remaining,
-                    dailyLimit: current.dailyLimit
+                    dailyLimit: current.dailyLimit,
+                    period: current.period
                 )
             }
         }
@@ -112,6 +113,7 @@ enum ClinicalRecordAISynthesizer {
             messageUnitsConsumed: response.messageUnitsConsumed,
             usageToday: response.usageToday,
             dailyLimit: response.dailyLimit,
+            period: response.period,
             isLargeContext: response.isLargeContext,
             totalPayloadChars: response.totalPayloadChars ?? estimate.totalChars
         )

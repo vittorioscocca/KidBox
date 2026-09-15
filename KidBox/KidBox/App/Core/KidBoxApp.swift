@@ -612,7 +612,11 @@ struct KidBoxApp: App {
                 // Le letture sono bufferizzate in memoria: qui è l'unico punto
                 // in cui partono. Se si perde qualcosa è un costo accettabile.
                 Task { await KBAnalytics.shared.flush() }
-                if let lastStep = coordinator.lastOnboardingStepSeen {
+                // Uno per step, non uno per background: il perché in
+                // `AppCoordinator.onboardingAbandonReportedStep`.
+                if let lastStep = coordinator.lastOnboardingStepSeen,
+                   coordinator.onboardingAbandonReportedStep != lastStep {
+                    coordinator.onboardingAbandonReportedStep = lastStep
                     AppAnalytics.onboardingAbandoned(lastStepSeen: lastStep)
                 }
                 SyncCenter.shared.stopAutoFlush()

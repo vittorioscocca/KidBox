@@ -117,6 +117,12 @@ final class FamilyCreationService {
                 }
             )
             KBLog.sync.kbInfo("Remote family create completed familyId=\(familyId)")
+            // Qui e non nei chiamanti: è l'unico punto attraversato da tutte le
+            // strade (wizard di onboarding, Impostazioni), come su Android in
+            // FamilyFirestoreCreationRepository. Quando stava solo in
+            // SetupFamilyView, GA4 ha contato 0 famiglie create su iOS in 28
+            // giorni contro 20 onboarding completati.
+            AppAnalytics.familyCreated()
         } catch {
             KBLog.sync.kbError("Remote family create failed: \(error.localizedDescription)")
             // La scrittura remota è stata rifiutata (tipicamente: limite di 2

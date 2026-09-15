@@ -12,7 +12,7 @@ import UIKit
 import FoundationModels
 #endif
 
-/// Analisi on-device dei log tramite Apple Intelligence (iOS 18.1+) e upload opzionale su Firestore.
+/// Analisi on-device dei log tramite Apple Intelligence (Foundation Models, iOS 26+) e upload opzionale su Firestore.
 enum CrashAnalyzer {
 
     // MARK: - Models
@@ -46,6 +46,7 @@ enum CrashAnalyzer {
     /// (~4k token): oltre questa soglia l'analisi fallisce o produce output
     /// inaffidabili. Teniamo il prompt log ben sotto il limite.
     private static let maxPromptLogBytes = 6 * 1024
+    private static let promptShrinkSteps = 2
     private static let throttleInterval: TimeInterval = 6 * 60 * 60
 
     // MARK: - Public preferences
@@ -118,17 +119,11 @@ enum CrashAnalyzer {
             return
         }
 
-        if #available(iOS 18.1, *) {
-            await analyzeWithFoundationModels(rawLogs: rawLogs, allowCrashFallback: false)
-        } else {
-            KBLog.app.kbWarning("CrashAnalyzer: skip upload (iOS < 18.1, Foundation Models non disponibile)")
-            markAnalysisRun()
-        }
+        await analyzeWithFoundationModels(rawLogs: rawLogs, allowCrashFallback: false)
     }
 
     // MARK: - Foundation Models
 
-    @available(iOS 18.1, *)
     private static func analyzeWithFoundationModels(rawLogs: String, allowCrashFallback: Bool) async {
         #if canImport(FoundationModels)
         // Analizza SOLO se ci sono righe realmente significative (ERROR/CRASH/…).
@@ -140,10 +135,16 @@ enum CrashAnalyzer {
             markAnalysisRun()
             return
         }
+        // Apple Intelligence spento, modello non scaricato o device non idoneo:
+        // non è un errore dell'app, si salta in silenzio.
+        guard case .available = SystemLanguageModel.default.availability else {
+            KBLog.app.kbInfo("CrashAnalyzer: Foundation Models non disponibile (\(SystemLanguageModel.default.availability)) → skip")
+            markAnalysisRun()
+            return
+        }
         do {
-            let session = LanguageModelSession()
-            let response = try await session.respond(to: buildPrompt(significantLogs: significantLogs))
-            let parsed = try parseAnalysisResponse(response.content)
+            let response = try await respondShrinkingOnOverflow(significantLogs: significantLogs)
+            let parsed = try parseAnalysisResponse(response)
             if parsed.hasIssues {
                 await requestPermissionAndUpload(issues: parsed.issues, rawLogs: rawLogs)
                 return
@@ -171,10 +172,29 @@ enum CrashAnalyzer {
         #endif
     }
 
-    @available(iOS 18.1, *)
-    private static func buildPrompt(significantLogs: String) -> String {
-        // significantLogs contiene già solo righe WARNING/ERROR/CRASH.
-        let tail = truncateLogs(significantLogs, maxBytes: maxPromptLogBytes)
+    /// Il budget in byte è una stima: il tokenizer del modello on-device può
+    /// sforare anche sotto la soglia (log densi, caratteri non ASCII). Se il
+    /// modello risponde `exceededContextWindowSize` si riprova dimezzando il log
+    /// fino a `promptShrinkSteps` volte; oltre, l'errore viene propagato.
+    private static func respondShrinkingOnOverflow(significantLogs: String) async throws -> String {
+        var budget = maxPromptLogBytes
+        var attempt = 0
+        while true {
+            do {
+                let session = LanguageModelSession()
+                let response = try await session.respond(to: buildPrompt(significantLogs: significantLogs, maxBytes: budget))
+                return response.content
+            } catch LanguageModelSession.GenerationError.exceededContextWindowSize where attempt < promptShrinkSteps {
+                attempt += 1
+                budget /= 2
+                KBLog.app.kbInfo("CrashAnalyzer: context window superata, riprovo con \(budget) B (tentativo \(attempt))")
+            }
+        }
+    }
+
+    private static func buildPrompt(significantLogs: String, maxBytes: Int) -> String {
+        // significantLogs contiene già solo righe ERROR/CRASH/FATAL.
+        let tail = truncateLogs(significantLogs, maxBytes: maxBytes)
         return """
         Sei un analizzatore di log per l'app KidBox.
         Regole IMPORTANTI prima di analizzare:
@@ -207,9 +227,16 @@ enum CrashAnalyzer {
     private static func filterSignificantLines(_ logs: String) -> String {
         let lines = logs.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
         let significant = lines.filter { line in
-            line.contains("[ERROR]") || line.contains("[CRASH]") ||
-            line.contains("[FATAL]") || line.contains("[WARNING]") ||
-            line.contains("Fatal error") || line.contains("SIGABRT")
+            // Le righe scritte da questo file (es. "analisi on-device non riuscita")
+            // non vanno mai date in pasto al modello: restano nel log finché un
+            // upload non lo svuota e il modello le rileggeva come issue critical,
+            // producendo un report a ogni ciclo di analisi.
+            guard !line.contains("[CrashAnalyzer.swift:") else { return false }
+            // Niente [WARNING]: il prompt stesso dice al modello che non sono
+            // problemi, quindi consumano solo context window e inducono falsi positivi.
+            return line.contains("[ERROR]") || line.contains("[CRASH]") ||
+                line.contains("[FATAL]") ||
+                line.contains("Fatal error") || line.contains("SIGABRT")
         }
         // Niente fallback all'intero file: se non ci sono righe significative
         // non c'è nulla da analizzare (evita false positive e saturazione del

@@ -79,6 +79,10 @@ struct RootHostView: View {
 
     /// Esito dell'invito da link, mostrato in un alert.
     @State private var inviteLinkMessage: String?
+
+    /// Foglio d'invito contestuale, dopo il primo contenuto creato in una
+    /// famiglia con un solo membro. Vedi `FirstContentInvitePrompt`.
+    @State private var firstContentInvite: FirstContentInvite?
     /// Evita che due inneschi ravvicinati (onAppear + didBecomeActive) applichino
     /// lo stesso invito due volte.
     @State private var isConsumingInvite = false
@@ -185,6 +189,26 @@ struct RootHostView: View {
         // primo piano, quindi il solo `didBecomeActive` lo mancherebbe.
         .onReceive(NotificationCenter.default.publisher(for: .kbPendingFamilyInviteStored)) { _ in
             Task { await consumePendingInviteIfNeeded() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: FirstContentInvitePrompt.notification)) { note in
+            guard let type = note.userInfo?[FirstContentInvitePrompt.contentTypeKey] as? String else { return }
+            // Il salvataggio avviene quasi sempre dentro un foglio che si sta
+            // chiudendo: presentarne un altro nello stesso istante fallirebbe
+            // in silenzio. Un secondo e mezzo lascia finire l'animazione.
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(1.5))
+                guard FirstContentInvitePrompt.shouldPresent(
+                    modelContext: modelContext, familyId: resolvedActiveFamilyId
+                ) else { return }
+                firstContentInvite = FirstContentInvite(contentType: type)
+            }
+        }
+        .sheet(item: $firstContentInvite) { invite in
+            QuickInviteSheet(
+                modelContext: modelContext,
+                coordinator: coordinator,
+                firstContent: invite.contentType
+            )
         }
         .alert(
             "Invito famiglia",

@@ -100,6 +100,28 @@ enum AppAnalytics {
         // Stesso punto di passaggio di tutti i salvataggi: evita di ripetere
         // la chiamata in ogni schermata.
         ReviewPrompter.note(.contentCreated)
+        FirstContentInvitePrompt.noteContentCreated(type: type)
+    }
+
+    // MARK: - Foglio d'invito contestuale (FirstContentInvitePrompt)
+
+    /// `trigger` dice quale occasione l'ha aperto (oggi solo `first_content`).
+    static func invitePromptShown(trigger: String, contentType: String) {
+        Analytics.logEvent("invite_prompt_shown", parameters: [
+            "trigger": trigger, "content_type": contentType,
+        ])
+    }
+
+    static func invitePromptAccepted(trigger: String, contentType: String) {
+        Analytics.logEvent("invite_prompt_accepted", parameters: [
+            "trigger": trigger, "content_type": contentType,
+        ])
+    }
+
+    static func invitePromptDismissed(trigger: String, contentType: String) {
+        Analytics.logEvent("invite_prompt_dismissed", parameters: [
+            "trigger": trigger, "content_type": contentType,
+        ])
     }
 
     static func contentSharedRead(type: String) {

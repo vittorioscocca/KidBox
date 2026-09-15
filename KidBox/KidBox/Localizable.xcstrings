@@ -49,6 +49,402 @@
         }
       }
     },
+    "Invita l'altro genitore o chi vuoi: chi entra con il link vede %@ e tutto quello che aggiungerete, in tempo reale." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invite the other parent or anyone you like: whoever joins with the link sees %@ and everything you add from now on, in real time."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invita al otro progenitor o a quien quieras: quien entre con el enlace verá %@ y todo lo que añadáis, en tiempo real."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitez l'autre parent ou qui vous voulez : la personne qui rejoint avec le lien voit %@ et tout ce que vous ajouterez, en temps réel."
+          }
+        }
+      }
+    },
+    "Per ora lo vedi solo tu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only you can see this for now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por ahora solo lo ves tú"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour l'instant, vous seul le voyez"
+          }
+        }
+      }
+    },
+    "questa carta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this card"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta tarjeta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cette carte"
+          }
+        }
+      }
+    },
+    "questa cosa da fare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this to-do"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta tarea"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cette tâche"
+          }
+        }
+      }
+    },
+    "questa foto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this photo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta foto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cette photo"
+          }
+        }
+      }
+    },
+    "questa lista della spesa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this shopping list"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta lista de la compra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cette liste de courses"
+          }
+        }
+      }
+    },
+    "questa nota" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this note"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta nota"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cette note"
+          }
+        }
+      }
+    },
+    "questa password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this password"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta contraseña"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ce mot de passe"
+          }
+        }
+      }
+    },
+    "questa spesa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this expense"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este gasto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cette dépense"
+          }
+        }
+      }
+    },
+    "questo animale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this pet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta mascota"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cet animal"
+          }
+        }
+      }
+    },
+    "questo biglietto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this ticket"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta entrada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ce billet"
+          }
+        }
+      }
+    },
+    "questo contenuto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this item"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este contenido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ce contenu"
+          }
+        }
+      }
+    },
+    "questo dato di salute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this health record"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este dato de salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cette donnée de santé"
+          }
+        }
+      }
+    },
+    "questo documento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this document"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este documento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ce document"
+          }
+        }
+      }
+    },
+    "questo evento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this event"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este evento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cet événement"
+          }
+        }
+      }
+    },
+    "questo luogo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this place"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este lugar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ce lieu"
+          }
+        }
+      }
+    },
+    "questo veicolo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this vehicle"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este vehículo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ce véhicule"
+          }
+        }
+      }
+    },
+    "questo viaggio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this trip"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este viaje"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ce voyage"
+          }
+        }
+      }
+    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -884,6 +1280,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ · %2$d min"
+          }
+        }
+      }
+    },
+    "%1$d messaggi AI · %2$d/%3$d del bonus gratuito" : {
+      "comment" : "Clinical record AI usage summary on the Free lifetime bonus",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d AI messages · %2$d/%3$d of the free bonus"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d mensajes de IA · %2$d/%3$d del bono gratuito"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d messages IA · %2$d/%3$d du bonus gratuit"
           }
         }
       }
@@ -15250,6 +15669,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Contexte de santé étendu"
+          }
+        }
+      }
+    },
+    "Contesto sanitario ampio: questa sintesi ha conteggiato %1$d messaggi AI." : {
+      "comment" : "Clinical record large-context notice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Large health context: this summary counted as %1$d AI messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexto de salud amplio: este resumen ha contado %1$d mensajes de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexte de santé étendu : cette synthèse a compté %1$d messages IA."
           }
         }
       }
@@ -53009,6 +53451,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La génération du plan nécessite %1$d messages IA, mais il n’en reste que %2$d sur %3$d aujourd’hui. Réessayez demain."
+          }
+        }
+      }
+    },
+    "Servono %1$d messaggi AI per questo aggiornamento ma del bonus gratuito ne restano %2$d su %3$d. Riduci i referti allegati o passa a Pro." : {
+      "comment" : "Clinical record quota error on the Free lifetime bonus",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This update needs %1$d AI messages but only %2$d of the %3$d free bonus messages are left. Reduce the attached reports or upgrade to Pro."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta actualización requiere %1$d mensajes de IA, pero del bono gratuito solo quedan %2$d de %3$d. Reduce los informes adjuntos o pasa a Pro."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette mise à jour nécessite %1$d messages IA, mais il ne reste que %2$d des %3$d messages du bonus gratuit. Réduisez les comptes rendus joints ou passez à Pro."
+          }
+        }
+      }
+    },
+    "Servono %1$d messaggi AI per questo aggiornamento ma ne restano %2$d su %3$d oggi. Riprova domani o riduci i referti allegati." : {
+      "comment" : "Clinical record quota error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This update needs %1$d AI messages but only %2$d of %3$d are left today. Try again tomorrow or reduce the attached reports."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta actualización requiere %1$d mensajes de IA, pero solo quedan %2$d de %3$d hoy. Inténtalo mañana o reduce los informes adjuntos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette mise à jour nécessite %1$d messages IA, mais il n’en reste que %2$d sur %3$d aujourd’hui. Réessayez demain ou réduisez les comptes rendus joints."
           }
         }
       }
