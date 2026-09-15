@@ -471,8 +471,10 @@
     log.innerHTML = "";
     var hello = bubble("assistant", render(T.hello));
     if (!state.messages.length) chipsFor(hello);
+    var lastQuestion = null;
     state.messages.forEach(function (m) {
-      bubble(m.role, m.role === "user" ? m.content : render(m.content));
+      var el = bubble(m.role, m.role === "user" ? m.content : render(m.content));
+      if (m.role === "user") lastQuestion = el;
     });
     if (busy) {
       bubble("assistant", escapeHtml(T.thinking), "kbc-pending");
@@ -487,8 +489,16 @@
       more.appendChild(label);
       if (chipsFor(more)) log.appendChild(more);
     }
-    // In fondo solo se c'è una conversazione: da vuota si legge il saluto.
-    log.scrollTop = state.messages.length || busy ? log.scrollHeight : 0;
+    // Da vuota si legge il saluto; in attesa si va in fondo, dove c'è «Sto
+    // scrivendo…». Con la risposta arrivata, invece, si porta in cima l'ultima
+    // domanda: la risposta si legge dall'inizio e i chip restano sotto, da
+    // scoprire scorrendo, invece di spingerla fuori dalla vista.
+    if (!state.messages.length) log.scrollTop = 0;
+    else if (busy || !lastQuestion) log.scrollTop = log.scrollHeight;
+    else {
+      log.scrollTop = log.scrollHeight;
+      log.scrollTop += lastQuestion.getBoundingClientRect().top - log.getBoundingClientRect().top - 12;
+    }
   }
 
   function push(role, content) {
