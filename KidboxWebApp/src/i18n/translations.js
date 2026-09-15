@@ -623,6 +623,7 @@ export const translations = {
       remindersOnPhone:
         "I promemoria sono notifiche del telefono: qui si imposta la preferenza, la notifica la arma l'app.",
       aiUsage: (units, today, limit) => `${units} messaggi AI · ${today}/${limit} oggi`,
+      aiUsageLifetime: (units, used, limit) => `${units} messaggi AI · ${used}/${limit} del bonus gratuito`,
       chat: {
         askHealth: "Chiedi all'AI · Salute",
         askVisits: "Chiedi all'AI · Visite",
@@ -634,6 +635,7 @@ export const translations = {
         clear: "Nuova conversazione",
         confirmClear: "Svuotare la conversazione? I messaggi vengono persi anche sul telefono.",
         usage: (today, limit) => `${today}/${limit} messaggi AI oggi`,
+        usageLifetime: (used, limit) => `${used}/${limit} messaggi AI gratuiti usati`,
         disclaimer:
           "L'assistente è informativo e non sostituisce il medico. Legge solo i dati sanitari di questo soggetto.",
       },
@@ -2060,6 +2062,7 @@ export const translations = {
       remindersOnPhone:
         "Reminders are phone notifications: here you set the preference, the app schedules the notification.",
       aiUsage: (units, today, limit) => `${units} AI messages · ${today}/${limit} today`,
+      aiUsageLifetime: (units, used, limit) => `${units} AI messages · ${used}/${limit} of the free bonus`,
       chat: {
         askHealth: "Ask AI · Health",
         askVisits: "Ask AI · Visits",
@@ -2071,6 +2074,7 @@ export const translations = {
         clear: "New conversation",
         confirmClear: "Clear the conversation? The messages are lost on the phone too.",
         usage: (today, limit) => `${today}/${limit} AI messages today`,
+        usageLifetime: (used, limit) => `${used}/${limit} free AI messages used`,
         disclaimer:
           "The assistant is informational and does not replace your doctor. It only reads this subject's health data.",
       },
@@ -3446,6 +3450,7 @@ export const translations = {
       loading: "Chargement…",
       remindersOnPhone: "Les rappels sont des notifications du téléphone : ici on règle la préférence, la notification est armée par l'app.",
       aiUsage: (units, today, limit) => `${units} messages IA · ${today}/${limit} aujourd'hui`,
+      aiUsageLifetime: (units, used, limit) => `${units} messages IA · ${used}/${limit} du bonus gratuit`,
       chat: {
         askHealth: "Demander à l'IA · Santé",
         askVisits: "Demander à l'IA · Consultations",
@@ -3457,6 +3462,7 @@ export const translations = {
         clear: "Nouvelle conversation",
         confirmClear: "Vider la conversation ? Les messages sont perdus aussi sur le téléphone.",
         usage: (today, limit) => `${today}/${limit} messages IA aujourd'hui`,
+        usageLifetime: (used, limit) => `${used}/${limit} messages IA gratuits utilisés`,
         disclaimer: "L'assistant est informatif et ne remplace pas le médecin. Il ne lit que les données de santé de cette personne.",
       },
       upgradeNeeded: (plan) => `Votre forfait actuel est ${(plan || "free").toUpperCase()} : cette fonction est incluse dans les forfaits Pro et Max.`,
@@ -4827,6 +4833,7 @@ export const translations = {
       loading: "Cargando…",
       remindersOnPhone: "Los recordatorios son notificaciones del teléfono: aquí se configura la preferencia, la notificación la programa la app.",
       aiUsage: (units, today, limit) => `${units} mensajes de IA · ${today}/${limit} hoy`,
+      aiUsageLifetime: (units, used, limit) => `${units} mensajes de IA · ${used}/${limit} del bono gratuito`,
       chat: {
         askHealth: "Pregunta a la IA · Salud",
         askVisits: "Pregunta a la IA · Consultas",
@@ -4838,6 +4845,7 @@ export const translations = {
         clear: "Nueva conversación",
         confirmClear: "¿Vaciar la conversación? Los mensajes se pierden también en el teléfono.",
         usage: (today, limit) => `${today}/${limit} mensajes de IA hoy`,
+        usageLifetime: (used, limit) => `${used}/${limit} mensajes de IA gratuitos usados`,
         disclaimer: "El asistente es informativo y no sustituye al médico. Solo lee los datos de salud de esta persona.",
       },
       upgradeNeeded: (plan) => `Tu plan actual es ${(plan || "free").toUpperCase()}: esta función está incluida en los planes Pro y Max.`,

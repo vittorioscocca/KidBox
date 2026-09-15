@@ -94,7 +94,7 @@ export default function HealthAIChat({
         { id: newId(), role: "assistant", content: reply.reply, createdAt: Date.now() },
       ];
       setMessages(complete);
-      setUsage({ usageToday: reply.usageToday, dailyLimit: reply.dailyLimit });
+      setUsage({ usageToday: reply.usageToday, dailyLimit: reply.dailyLimit, period: reply.period });
       await saveHealthConversation({
         uid,
         kind,
@@ -146,7 +146,12 @@ export default function HealthAIChat({
         </div>
 
         {usage && usage.dailyLimit > 0 && (
-          <p className="sa-item-meta">{c.usage(usage.usageToday, usage.dailyLimit)}</p>
+          <p className="sa-item-meta">
+            {/* Sul Free il contatore è a vita, non giornaliero: «oggi» sarebbe falso. */}
+            {usage.period === "lifetime"
+              ? c.usageLifetime(usage.usageToday, usage.dailyLimit)
+              : c.usage(usage.usageToday, usage.dailyLimit)}
+          </p>
         )}
 
         <div className="sa-chat-input">

@@ -371,6 +371,7 @@ export async function enhanceWithAI({
       messageUnitsConsumed: Number(data.messageUnitsConsumed) || 0,
       usageToday: Number(data.usageToday) || 0,
       dailyLimit: Number(data.dailyLimit) || 0,
+      period: data.period || "daily",
     },
   };
 }

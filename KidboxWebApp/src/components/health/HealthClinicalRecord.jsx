@@ -122,7 +122,9 @@ export default function HealthClinicalRecord({
 
       {usage && (
         <p className="sa-notice">
-          {h.aiUsage(usage.messageUnitsConsumed, usage.usageToday, usage.dailyLimit)}
+          {usage.period === "lifetime"
+            ? h.aiUsageLifetime(usage.messageUnitsConsumed, usage.usageToday, usage.dailyLimit)
+            : h.aiUsage(usage.messageUnitsConsumed, usage.usageToday, usage.dailyLimit)}
         </p>
       )}
 
