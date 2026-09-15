@@ -2731,12 +2731,14 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         <div class="card-lbl">Quote, prezzi e testi dei piani</div>
         <p class="card-sub" style="margin-bottom:16px;line-height:1.6">
           Questo è il listino che <strong>il backend applica davvero</strong> (quota AI e storage)
-          e che iOS e Android leggono per mostrare i piani: salvando qui cambi le quote
+          e che iOS, Android e la landing leggono per mostrare i piani: salvando qui cambi le quote
           <strong>senza deploy e senza aggiornare le app</strong>.
           <br>Il prezzo che l'utente paga resta quello di <strong>App Store / Google Play</strong>:
           qui si cambia solo l'etichetta mostrata quando lo store non risponde.
-          <br><strong>La landing non si aggiorna da sola</strong>: dopo il salvataggio scarica
-          <code>plans.json</code>, mettilo in <code>functions/</code> e rideploya landing e functions.
+          <br><strong>Il repo non si aggiorna da solo</strong>: con calma
+          <code>node scripts/sync-plans-from-remote.js</code> riallinea <code>functions/plans.json</code>
+          (la rete di sicurezza) e l'HTML statico della landing, poi deploy di functions e landing.
+          Il pulsante <code>plans.json</code> resta per chi non ha il repo sotto mano.
         </p>
         <div id="plans-source" style="font-size:11px;font-family:var(--mono);color:var(--color-dim);margin-bottom:12px"></div>
         <div id="plans-editor"></div>
