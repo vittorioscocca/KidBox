@@ -85,3 +85,6 @@ Facebook.local.xcconfig
 !KidboxLanding/.claude/
 KidboxLanding/.claude/*
 !KidboxLanding/.claude/launch.json
+
+# Cruscotto generato da scripts/build-dashboard.js (pubblicato come artefatto)
+dashboard/
