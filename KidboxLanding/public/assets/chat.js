@@ -625,7 +625,10 @@
     ".kbc-fab:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(180,90,20,.42)}" +
     ".kbc-fab svg{width:22px;height:22px;flex:none}" +
     "body:has(.kb-consent:not([hidden])) .kbc-fab{display:none}" +
-    ".kbc-panel{position:fixed;right:20px;bottom:20px;z-index:9001;width:min(400px,calc(100vw - 32px));height:min(620px,calc(100dvh - 40px));display:flex;flex-direction:column;border:1px solid var(--border,var(--c-border,rgba(180,120,60,.14)));border-radius:22px;background:var(--surface,var(--c-surface,#fff));color:var(--text,var(--c-text,#1c1008));box-shadow:0 24px 70px rgba(0,0,0,.25);overflow:hidden;font-family:inherit}" +
+    // `padding:0` esplicito: il pannello è una <section>, e la landing dà a
+    // ogni section 80px sopra e sotto (56 sul telefono): la chat nasceva con
+    // una fascia bianca vuota sopra la testata e sotto il campo di testo.
+    ".kbc-panel{position:fixed;right:20px;bottom:20px;z-index:9001;width:min(400px,calc(100vw - 32px));height:min(620px,calc(100dvh - 40px));padding:0;display:flex;flex-direction:column;border:1px solid var(--border,var(--c-border,rgba(180,120,60,.14)));border-radius:22px;background:var(--surface,var(--c-surface,#fff));color:var(--text,var(--c-text,#1c1008));box-shadow:0 24px 70px rgba(0,0,0,.25);overflow:hidden;font-family:inherit}" +
     ".kbc-panel[hidden]{display:none}" +
     ".kbc-head{display:flex;align-items:center;gap:10px;padding:14px 14px 12px 16px;border-bottom:1px solid var(--border,var(--c-border,rgba(180,120,60,.14)))}" +
     ".kbc-head img{width:34px;height:34px;border-radius:9px;flex:none}" +
