@@ -31,6 +31,7 @@ const SOURCES = {
   appstore: "appstore-daily-report.js",
   anthropic: "anthropic-daily-report.js",
   gcloud: "gcloud-billing-daily-report.js",
+  search: "search-console-daily-report.js",
 };
 
 // ------------------------------------------------------------------ raccolta
@@ -176,6 +177,7 @@ function build({ note, outFile }) {
   const A = results.appstore.data;
   const N = results.anthropic.data;
   const B = results.gcloud.data;
+  const S = results.search.data;
   const yesterday = C?.yesterday || G?.yesterday || shiftDay(romeDate(), -1);
   const days14 = [...Array(14)].map((_, i) => shiftDay(yesterday, i - 13));
   const days7 = days14.slice(7);
@@ -304,8 +306,14 @@ function build({ note, outFile }) {
     ["App Store", results.appstore, A ? (asDownloads?.available ? `istanze fino al ${asDownloads.latest}` : "istanze App Analytics non ancora generate") : ""],
     ["Anthropic", results.anthropic, N ? `ieri ${itDate(N.yesterday)}` : ""],
     ["Google Cloud", results.gcloud, B ? (B.totals.daysWithData ? `export al ${(B.lastExport || "").slice(0, 16).replace("T", " ")}` : "tabella non ancora creata") : ""],
+    ["Search Console", results.search, S ? (S.lastDay ? `dati fino al ${itDate(S.lastDay)} (${S.lagDays} gg di ritardo)` : "property senza dati") : ""],
   ];
-  const notes = [...(G?.notes || []), ...(C?.notes || []), ...(M?.notes || []), ...(P?.notes || []), ...(A?.notes || []), ...(N?.notes || []), ...(B?.notes || [])];
+  const notes = [...(G?.notes || []), ...(C?.notes || []), ...(M?.notes || []), ...(P?.notes || []), ...(A?.notes || []), ...(N?.notes || []), ...(B?.notes || []), ...(S?.notes || [])];
+  // ---- Search Console: serie 28 gg e primi giorni della property
+  const scSeries = S?.series || [];
+  const scDays = scSeries.map((r) => r.date);
+  const scHasData = S && !S.empty && S.last28.impressions > 0;
+  const scDelta = (a, b) => (b ? ` (${a >= b ? "+" : ""}${Math.round(((a - b) / b) * 100)}%)` : "");
 
   // ---- Commento del giorno
   const noteHtml = note
@@ -436,7 +444,7 @@ footer { font-size: 12.5px; color: var(--ink-3); display: grid; gap: 4px; }
 <div class="wrap">
   <header>
     <div>
-      <div class="eyebrow">Report del mattino · sette fonti</div>
+      <div class="eyebrow">Report del mattino · otto fonti</div>
       <div class="wordmark"><span class="mark" aria-hidden="true"></span><h1>Cruscotto KidBox</h1></div>
     </div>
     <div class="date">ieri, ${itDate(yesterday)}</div>
@@ -527,6 +535,25 @@ footer { font-size: 12.5px; color: var(--ink-3); display: grid; gap: 4px; }
         <tr><td>Costo</td><td class="n">${usd(chatTot("costUsd"))}</td><td class="muted">tetto 1 $ al giorno</td></tr>
         </table></div>
         ${(C.landingChatQuestions || []).slice(0, 5).map((q) => `<div class="review"><span class="pill">${fmt(q.n)}×</span> <q>${esc(q.q)}</q> <span class="muted">${esc(q.sources || "")}</span></div>`).join("") || `<p class="muted">nessuna domanda scritta negli ultimi 7 giorni</p>`}` : ""}
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Google Search</h2><span class="hint">Search Console · property di dominio kidboxapp.com · ${S?.lastDay ? `dati fino al ${itDate(S.lastDay)}` : "in attesa dei primi dati"}</span></div>
+    <div class="grid2">
+      <div class="card"><h3>Click e impressioni da Google <small>28 gg · Search Console pubblica con 2-3 gg di ritardo</small></h3>
+        ${S && scDays.length ? lineChart({ labels: scDays, series: [{ name: "impressioni", values: scSeries.map((r) => r.impressions) }, { name: "click", values: scSeries.map((r) => r.clicks) }] }) : `<p class="muted">${esc(results.search.error || "non disponibile")}</p>`}
+        ${S && !S.empty ? `<p class="muted">Ultimi 7 gg: ${fmt(S.last7.clicks)} click${scDelta(S.last7.clicks, S.prev7.clicks)} su ${fmt(S.last7.impressions)} impressioni${scDelta(S.last7.impressions, S.prev7.impressions)} · CTR ${pct(S.last7.ctr)} · posizione media ${S.last7.position ? S.last7.position.toFixed(1) : "—"} · 28 gg: ${fmt(S.last28.clicks)} click, di cui brand («kidbox») ${fmt(S.brand28.clicks)}</p>` : ""}
+        ${S && !scHasData ? `<p class="muted">La property è stata aggiunta a Search Console il 12/09/2026: i dati partono da lì e i primi giorni valgono zero. Non è un calo.</p>` : ""}
+      </div>
+      <div class="card"><h3>Query e pagine <small>28 gg · click / impressioni / posizione</small></h3>
+        ${scHasData ? `<div class="tablewrap"><table>
+        ${S.topQueries.slice(0, 6).map((q) => `<tr><td>${esc(q.query)}</td><td class="n">${fmt(q.clicks)}</td><td class="n muted">${fmt(q.impressions)}</td><td class="n muted">${q.position.toFixed(1)}</td></tr>`).join("")}
+        ${S.topPages.slice(0, 5).map((q) => `<tr><td class="muted">${esc(q.page)}</td><td class="n">${fmt(q.clicks)}</td><td class="n muted">${fmt(q.impressions)}</td><td class="n muted">${q.position.toFixed(1)}</td></tr>`).join("")}
+        </table></div>
+        ${S.impressionsNoClicks.length ? `<p class="muted">Compare ma nessuno clicca: ${S.impressionsNoClicks.slice(0, 3).map((q) => `«${esc(q.query)}» (${fmt(q.impressions)}, pos. ${q.position.toFixed(0)})`).join(" · ")}</p>` : ""}` : `<p class="muted">${S ? "ancora nessuna query registrata" : ""}</p>`}
+        ${S?.sitemaps?.length ? `<p class="muted">Sitemap: ${S.sitemaps.map((m) => `${esc(m.path)} ${fmt(m.submitted)} URL, letta il ${m.lastDownloaded ? itDate(m.lastDownloaded) : "—"}${m.errors ? `, ${m.errors} errori` : ""}`).join(" · ")}</p>` : ""}
       </div>
     </div>
   </section>
