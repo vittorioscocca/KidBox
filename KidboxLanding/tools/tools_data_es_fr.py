@@ -108,7 +108,7 @@ ES = {
         ],
         "faq": [
             ("¿Cuánto espacio tengo?", "Depende del plan de la familia; el espacio se ve en Ajustes y lo comparten todos los miembros."),
-            ("¿Puedo importar un documento y que lo lea la IA?", "Sí, con el plan Pro: a partir de una factura o un informe la IA propone el gasto, el evento o el vencimiento que crear."),
+            ("¿Puedo importar un documento y que lo lea la IA?", "Sí: a partir de una factura o un informe la IA propone el gasto, el evento o el vencimiento que crear. Usa los mensajes de IA del plan: sin límites con Pro o Max, en el Free mientras duren los 5 de prueba."),
             ("¿Quién puede ver mis documentos?", "Solo los miembros de la familia. Los archivos se cifran con la clave de la familia, que los servidores no tienen."),
         ],
     },
@@ -169,7 +169,7 @@ ES = {
         "faq": [
             ("¿Los datos de salud están cifrados?", "Sí: los informes y adjuntos se cifran con la clave de la familia, y las fichas clínicas solo las pueden leer los miembros."),
             ("¿Qué llega de Apple Health / Health Connect?", "Pasos, frecuencia cardíaca, tensión arterial, SpO₂, calorías activas, entrenamientos y distancia, solo si das permiso."),
-            ("¿Qué añade el plan Pro?", "Planes de alimentación y de ejercicio generados por IA a medida del perfil, y un análisis mensual del historial de salud."),
+            ("¿Qué añade el plan Pro?", "Planes de alimentación y de ejercicio generados por IA a medida del perfil, reservados a Pro y Max, y mensajes de IA cada día para el resumen del historial de salud, que en el Free solo se puede probar con los 5 mensajes únicos."),
         ],
     },
     "casa": {
@@ -259,7 +259,7 @@ ES = {
         "faq": [
             ("¿Qué datos ve la IA?", "Solo los que eliges compartir, petición a petición; para el contexto de Salud puedes elegir un resumen o que te pregunte cada vez."),
             ("¿Está incluido en el plan Free?", "El plan Free tiene 5 mensajes de prueba, una sola vez; el uso continuado requiere Pro o Max."),
-            ("¿Qué es la «mente proactiva»?", "Con Pro, el asistente prepara por su cuenta un resumen por la mañana, un repaso semanal y un análisis mensual."),
+            ("¿Qué es la «mente proactiva»?", "Con Pro o Max, el asistente prepara por su cuenta un resumen por la mañana, un repaso semanal y un análisis mensual. En el Free agotarían los 5 mensajes de prueba en pocos días."),
         ],
     },
     "famiglia": {
@@ -381,7 +381,7 @@ FR = {
         ],
         "faq": [
             ("Combien d'espace ai-je ?", "Cela dépend de l'offre de la famille ; l'espace s'affiche dans Réglages et il est partagé par tous les membres."),
-            ("Puis-je importer un document et le faire lire par l'IA ?", "Oui, avec l'offre Pro : à partir d'une facture ou d'un compte rendu, l'IA propose la dépense, l'événement ou l'échéance à créer."),
+            ("Puis-je importer un document et le faire lire par l'IA ?", "Oui : à partir d'une facture ou d'un compte rendu, l'IA propose la dépense, l'événement ou l'échéance à créer. Elle utilise les messages IA de l'offre : sans limite avec Pro ou Max, avec Free tant que durent les 5 messages d'essai."),
             ("Qui peut voir mes documents ?", "Uniquement les membres de la famille. Les fichiers sont chiffrés avec la clé de la famille, que les serveurs n'ont pas."),
         ],
     },
@@ -442,7 +442,7 @@ FR = {
         "faq": [
             ("Les données de santé sont-elles chiffrées ?", "Oui : comptes rendus et pièces jointes sont chiffrés avec la clé de la famille, et les fiches cliniques ne sont lisibles que par les membres."),
             ("Qu'est-ce qui arrive d'Apple Health / Health Connect ?", "Pas, fréquence cardiaque, tension artérielle, SpO₂, calories actives, entraînements et distance, seulement si vous l'autorisez."),
-            ("Qu'apporte l'offre Pro ?", "Des plans alimentaires et d'entraînement générés par l'IA selon le profil, et une analyse mensuelle de l'historique de santé."),
+            ("Qu'apporte l'offre Pro ?", "Des plans alimentaires et d'entraînement générés par l'IA selon le profil, réservés à Pro et Max, et des messages IA chaque jour pour la synthèse de l'historique de santé, que Free ne peut qu'essayer avec ses 5 messages uniques."),
         ],
     },
     "casa": {
@@ -532,7 +532,7 @@ FR = {
         "faq": [
             ("Quelles données l'IA voit-elle ?", "Uniquement celles que vous choisissez de partager, demande par demande ; pour le contexte Santé, vous pouvez choisir un résumé ou être interrogé à chaque fois."),
             ("Est-il inclus dans l'offre Free ?", "L'offre Free comprend 5 messages d'essai, une seule fois ; une utilisation continue nécessite Pro ou Max."),
-            ("Qu'est-ce que l'« esprit proactif » ?", "Avec Pro, l'assistant prépare de lui-même un briefing le matin, un bilan hebdomadaire et une analyse mensuelle."),
+            ("Qu'est-ce que l'« esprit proactif » ?", "Avec Pro ou Max, l'assistant prépare de lui-même un briefing le matin, un bilan hebdomadaire et une analyse mensuelle. Avec Free, ils épuiseraient les 5 messages d'essai en quelques jours."),
         ],
     },
     "famiglia": {

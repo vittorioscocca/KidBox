@@ -242,7 +242,7 @@ TOOLS = [
             ],
             "faq": [
                 ("Quanto spazio ho?", "Dipende dal piano della famiglia; lo spazio si vede in Impostazioni e lo condividono tutti i membri."),
-                ("Posso importare un documento e farlo leggere all'AI?", "Sì, con il piano Pro: da una fattura o un referto l'AI propone spesa, evento o scadenza da creare."),
+                ("Posso importare un documento e farlo leggere all'AI?", "Sì: da una fattura o un referto l'AI propone spesa, evento o scadenza da creare. Usa i messaggi AI del piano: senza limiti con Pro o Max, sul Free finché durano i 5 di prova."),
                 ("Chi può vedere i miei documenti?", "Solo i membri della famiglia. I file sono cifrati con la chiave di famiglia, che i server non hanno."),
             ],
         },
@@ -257,7 +257,7 @@ TOOLS = [
             ],
             "faq": [
                 ("How much storage do I have?", "It depends on the family plan; storage shows in Settings and is shared by all members."),
-                ("Can I import a document and have the AI read it?", "Yes, on the Pro plan: from an invoice or a report the AI suggests the expense, event or deadline to create."),
+                ("Can I import a document and have the AI read it?", "Yes: from an invoice or a report the AI suggests the expense, event or deadline to create. It uses your plan's AI messages: unlimited on Pro or Max, on Free as long as the 5 trial messages last."),
                 ("Who can see my documents?", "Family members only. Files are encrypted with the family key, which the servers don't hold."),
             ],
         },
@@ -383,7 +383,7 @@ TOOLS = [
             "faq": [
                 ("I dati di salute sono cifrati?", "Sì: referti e allegati sono cifrati con la chiave di famiglia, e le schede cliniche sono leggibili solo dai membri."),
                 ("Cosa arriva da Apple Health / Health Connect?", "Passi, battito, pressione, SpO₂, calorie attive, allenamenti e distanza, solo se dai il permesso."),
-                ("Cosa aggiunge il piano Pro?", "Piano alimentare e piano fitness generati dall'AI su misura del profilo, e un'analisi mensile della storia sanitaria."),
+                ("Cosa aggiunge il piano Pro?", "Piano alimentare e piano fitness generati dall'AI su misura del profilo, riservati a Pro e Max, e messaggi AI ogni giorno per la sintesi della storia sanitaria, che sul Free si può solo provare con i 5 messaggi una tantum."),
             ],
         },
         "en": {
@@ -398,7 +398,7 @@ TOOLS = [
             "faq": [
                 ("Is health data encrypted?", "Yes: reports and attachments are encrypted with the family key, and clinical entries are readable by members only."),
                 ("What comes from Apple Health / Health Connect?", "Steps, heart rate, blood pressure, SpO₂, active calories, workouts and distance, only if you grant permission."),
-                ("What does the Pro plan add?", "AI-generated meal and fitness plans tailored to the profile, and a monthly analysis of the health history."),
+                ("What does the Pro plan add?", "AI-generated meal and fitness plans tailored to the profile, available only on Pro and Max, plus daily AI messages for the health-history summary, which Free can only try with its 5 one-off messages."),
             ],
         },
     },
@@ -593,7 +593,7 @@ TOOLS = [
             "faq": [
                 ("Quali dati vede l'AI?", "Solo quelli che scegli di condividere, richiesta per richiesta; per il contesto Salute puoi scegliere un riassunto o chiedere ogni volta."),
                 ("È incluso nel piano Free?", "Il Free ha 5 messaggi di prova una tantum; l'uso continuativo richiede Pro o Max."),
-                ("Cos'è la «mente proattiva»?", "Con Pro, l'assistente prepara da solo un briefing al mattino, un recap settimanale e un'analisi mensile."),
+                ("Cos'è la «mente proattiva»?", "Con Pro o Max, l'assistente prepara da solo un briefing al mattino, un recap settimanale e un'analisi mensile. Sul Free consumerebbero i 5 messaggi di prova in pochi giorni."),
             ],
         },
         "en": {
@@ -608,7 +608,7 @@ TOOLS = [
             "faq": [
                 ("Which data does the AI see?", "Only what you choose to share, request by request; for Health context you can pick a summary or be asked every time."),
                 ("Is it in the Free plan?", "Free has 5 one-off trial messages; continued use requires Pro or Max."),
-                ("What is the “proactive mind”?", "With Pro, the assistant prepares a morning briefing, a weekly recap and a monthly analysis on its own."),
+                ("What is the “proactive mind”?", "With Pro or Max, the assistant prepares a morning briefing, a weekly recap and a monthly analysis on its own. On Free they would use up the 5 trial messages within days."),
             ],
         },
     },
