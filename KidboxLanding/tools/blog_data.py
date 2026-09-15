@@ -1779,7 +1779,7 @@ Una volta all'anno, un'ora insieme sull'elenco dei contratti e sul riepilogo del
 
 I contratti di casa sono un'area che richiede continuità: conviene un **titolare**, che segue scadenze, confronti e disdette. L'altro vede tutto e può intervenire se serve. Ne parliamo in [faccende tra adulti](/blog/faccende-tra-adulti).
 
-Con il piano Pro, una bolletta si può anche importare e far leggere all'AI, che propone la spesa e il promemoria del pagamento: ne parliamo in [dalla bolletta alla scadenza in un tocco](/blog/fatture-e-referti-letti-dall-ai).
+Con i messaggi AI del piano (sul Free i 5 di prova), una bolletta si può anche importare e far leggere all'AI, che propone la spesa e il promemoria del pagamento: ne parliamo in [dalla bolletta alla scadenza in un tocco](/blog/fatture-e-referti-letti-dall-ai).
 
 ## In sintesi
 
@@ -1840,7 +1840,7 @@ It's the best-paid hour of the year.
 
 Household contracts need continuity: an **owner** helps, handling deadlines, comparisons and cancellations. The other sees everything and can step in if needed. More in [chores between adults](/en/blog/faccende-tra-adulti).
 
-With the Pro plan, you can also import a bill for the AI to read, and it suggests the expense and a payment reminder: more in [from bill to deadline in one tap](/en/blog/fatture-e-referti-letti-dall-ai).
+With your plan's AI messages (the 5 trial ones on Free), you can also import a bill for the AI to read, and it suggests the expense and a payment reminder: more in [from bill to deadline in one tap](/en/blog/fatture-e-referti-letti-dall-ai).
 
 ## In short
 

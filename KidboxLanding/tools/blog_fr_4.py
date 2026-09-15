@@ -464,7 +464,7 @@ Ce n'est pas une question pour le premier jour, mais elle mérite d'être posée
 
 ## Où se situe KidBox
 
-KidBox est né comme organiseur familial, et un couple est une famille : un [calendrier](/fr/tools/calendario) avec vues mois, semaine et jour, des [tâches](/fr/tools/to-do) attribuables avec rappels, des [dépenses](/fr/tools/spese) avec qui a payé, des [mots de passe](/fr/tools/password) et des documents chiffrés avec une clé qui n'existe que sur vos appareils. Il fonctionne sur iPhone, Android et navigateur, et l'offre gratuite couvre une famille de deux. Le détail des offres est sur la [page des tarifs](/index-fr#prezzi).
+KidBox est né comme organiseur familial, et un couple est une famille : un [calendrier](/fr/tools/calendario) avec vues mois, semaine et jour, des [tâches](/fr/tools/to-do) attribuables avec rappels, des [dépenses](/fr/tools/spese) avec qui a payé, des [mots de passe](/fr/tools/password) et des documents chiffrés avec une clé qui n'existe que sur vos appareils. Il fonctionne sur iPhone, Android et navigateur, et l'offre gratuite n'a pas de limite de membres. Le détail des offres est sur la [page des tarifs](/index-fr#prezzi).
 
 ## En bref
 

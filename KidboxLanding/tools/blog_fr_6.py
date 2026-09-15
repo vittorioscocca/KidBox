@@ -410,7 +410,7 @@ Comme pour les tâches ménagères, le travail le plus lourd est l'invisible : 
 
 ## 2. Un calendrier pour l'aide
 
-Rendez-vous, tours de présence, livraisons de courses : tout dans un [calendrier](/fr/tools/calendario) partagé entre frères et sœurs, avec des rappels. Dans KidBox, vous pouvez créer une famille dédiée à l'aide et en faire partie en plus de la vôtre, en passant de l'une à l'autre depuis les Réglages : ainsi les tours pour votre parent ne se mélangent pas aux activités de vos enfants. L'offre gratuite couvre deux personnes : si vous êtes plus nombreux, le détail est dans la [rubrique des offres](/index-fr#prezzi).
+Rendez-vous, tours de présence, livraisons de courses : tout dans un [calendrier](/fr/tools/calendario) partagé entre frères et sœurs, avec des rappels. Dans KidBox, vous pouvez créer une famille dédiée à l'aide et en faire partie en plus de la vôtre, en passant de l'une à l'autre depuis les Réglages : ainsi les tours pour votre parent ne se mélangent pas aux activités de vos enfants. L'offre gratuite n'a pas de limite de membres, tous les frères et sœurs peuvent donc entrer ; les offres ne diffèrent que par l'espace et les messages IA ([rubrique des offres](/index-fr#prezzi)).
 
 Celui qui habite loin voit tout et comprend quand on a besoin de lui, au lieu de l'apprendre lors d'un appel fatigué.
 

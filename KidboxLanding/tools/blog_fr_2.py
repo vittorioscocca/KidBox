@@ -123,7 +123,7 @@ Pas besoin de tout migrer. La méthode qui marche :
 3. **Puis les papiers des enfants**, une fois, en un après-midi.
 4. **Tout le reste** (santé, dépenses, mots de passe, maison) au besoin, une rubrique à la fois.
 
-[L'offre Free de KidBox](/index-fr#prezzi) couvre une famille de deux parents sans carte bancaire : essayer coûte un après-midi.
+[L'offre Free de KidBox](/index-fr#prezzi) couvre toute la famille — parents, enfants, grands-parents — sans limite de membres et sans carte bancaire : essayer coûte un après-midi.
 """,
     },
     "app-di-famiglia-gratis-cosa-guardare": {
@@ -160,10 +160,10 @@ La limite invisible : l'appli est gratuite parce que les données sont le produ
 
 Nous préférons le dire nous-mêmes :
 
-- **Qui** : une famille avec **deux parents** et leurs enfants, sans carte bancaire. Les profils des enfants ne comptent pas comme membres.
+- **Qui** : toute la famille — parents, enfants, grands-parents, nounous — **sans limite de membres** et sans carte bancaire. Les profils des enfants ne comptent pas comme membres.
 - **Quoi** : calendrier, tâches, liste de courses, notes, dépenses, wallet, documents, mots de passe, photos, chat, santé, maison, véhicules, animaux et localisation. Autrement dit, [toutes les rubriques de base](/fr/tools/).
 - **Combien** : un espace de stockage inclus pour les documents et les photos ; les offres Pro et Max l'étendent.
-- **IA** : l'[assistant familial](/fr/tools/assistente-ai) et les fonctions générées par l'IA (plan alimentaire, plan fitness, voyages, analyse mensuelle) font partie des offres payantes, parce que chaque demande a un coût réel. Sur Free, il y a quelques messages d'essai, une seule fois, pour voir ce qu'il fait.
+- **IA** : l'[assistant familial](/fr/tools/assistente-ai) et les fonctions générées par l'IA (plan alimentaire, plan fitness, voyages) font partie des offres payantes, parce que chaque demande a un coût réel. Sur Free, il y a quelques messages d'essai, une seule fois, pour voir ce qu'il fait.
 - **Données** : documents, notes, mots de passe, wallet, chat et photos sont chiffrés avec la clé de la famille. Nous ne les lisons pas et nous ne pouvons pas les lire.
 
 Le détail et les tarifs en vigueur sont dans la [rubrique des offres](/index-fr#prezzi) : nous les écrivons là, une seule fois, parce que nous ne voulons pas d'un chiffre périmé dans un article.

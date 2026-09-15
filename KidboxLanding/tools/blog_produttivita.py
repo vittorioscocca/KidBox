@@ -808,7 +808,7 @@ Affitto, mutuo, assicurazioni, bollo, abbonamenti annuali: le spese fisse sono p
 
 Una volta al mese, insieme, dieci minuti sul riepilogo: il totale per categoria, il confronto con i mesi precedenti, eventuali spese inattese. Non per giudicare chi ha speso cosa, ma per decidere insieme se cambiare qualcosa. Il riepilogo di KidBox si può anche esportare in un file per il foglio di calcolo, se volete fare analisi più approfondite.
 
-Con il piano Pro, una fattura o uno scontrino si possono importare e l'[assistente](/strumenti/assistente-ai) propone da solo la spesa da registrare.
+Con i messaggi AI del piano (sul Free i 5 di prova), una fattura o uno scontrino si possono importare e l'[assistente](/strumenti/assistente-ai) propone da solo la spesa da registrare.
 
 ## In sintesi
 
@@ -857,7 +857,7 @@ Rent, mortgage, insurance, road tax, annual subscriptions: fixed costs are predi
 
 Once a month, together, ten minutes on the summary: totals by category, comparison with previous months, any unexpected costs. Not to judge who spent what, but to decide together whether to change anything. KidBox's expenses can also be exported to a spreadsheet file, if you want to dig deeper.
 
-With the Pro plan, you can import a bill or receipt and the [assistant](/en/tools/assistente-ai) suggests the expense to record.
+With your plan's AI messages (the 5 trial ones on Free), you can import a bill or receipt and the [assistant](/en/tools/assistente-ai) suggests the expense to record.
 
 ## In short
 

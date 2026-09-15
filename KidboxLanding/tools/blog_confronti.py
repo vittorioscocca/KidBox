@@ -203,7 +203,7 @@ Non serve migrare tutto. Il modo che funziona:
 3. **Poi i documenti dei figli**, una volta, in un pomeriggio.
 4. **Tutto il resto** — salute, spese, password, casa — quando serve, una scheda alla volta.
 
-Il [piano Free di KidBox](/index.html#prezzi) copre una famiglia di due genitori senza carta di credito, quindi il costo di provare è un pomeriggio.
+Il [piano Free di KidBox](/index.html#prezzi) copre tutta la famiglia — genitori, figli, nonni — senza limite di membri e senza carta di credito, quindi il costo di provare è un pomeriggio.
 """,
         },
         "en": {
@@ -261,7 +261,7 @@ No need to migrate everything. The way that works:
 3. **Then the kids' documents**, once, in an afternoon.
 4. **Everything else** — health, expenses, passwords, home — when needed, one section at a time.
 
-[KidBox's Free plan](/index-en.html#prezzi) covers a family of two parents with no credit card, so the cost of trying is an afternoon.
+[KidBox's Free plan](/index-en.html#prezzi) covers the whole family — parents, kids, grandparents — with no member limit and no credit card, so the cost of trying is an afternoon.
 """,
         },
     },
@@ -303,10 +303,10 @@ Il limite invisibile: l'app è gratis perché i dati sono il prodotto. Per un'ap
 
 Preferiamo dirlo noi:
 
-- **Chi**: una famiglia con **due genitori** e i loro figli, senza carta di credito. I profili dei figli non contano come membri.
+- **Chi**: tutta la famiglia — genitori, figli, nonni, tate — **senza limite di membri** e senza carta di credito. I profili dei figli non contano come membri.
 - **Cosa**: calendario, to-do, lista della spesa, note, spese, wallet, documenti, password, foto, chat, salute, casa, veicoli, animali, posizione, Alexa. Cioè [tutte le schede](/strumenti/) di base.
 - **Quanto**: uno spazio incluso per documenti e foto; i piani Pro e Max lo ampliano.
-- **AI**: l'[assistente di famiglia](/strumenti/assistente-ai) e le funzioni generate dall'AI (piano alimentare, piano fitness, viaggi, analisi mensile) sono nei piani a pagamento — perché ogni richiesta ha un costo reale. Sul Free c'è un piccolo numero di messaggi di prova, una volta sola, per capire cosa fa.
+- **AI**: l'[assistente di famiglia](/strumenti/assistente-ai) e le funzioni generate dall'AI (piano alimentare, piano fitness, viaggi) sono nei piani a pagamento — perché ogni richiesta ha un costo reale. Sul Free c'è un piccolo numero di messaggi di prova, una volta sola, per capire cosa fa.
 - **Dati**: documenti, note, password, wallet, chat e foto sono cifrati con la chiave di famiglia. Non li leggiamo e non li possiamo leggere.
 
 I dettagli e i prezzi aggiornati sono nella [sezione piani](/index.html#prezzi): li scriviamo lì una volta sola perché non vogliamo una cifra vecchia in un articolo.
@@ -358,10 +358,10 @@ The invisible limit: the app is free because the data is the product. For an app
 
 We'd rather say it ourselves:
 
-- **Who**: a family with **two parents** and their children, no credit card. Children's profiles don't count as members.
+- **Who**: the whole family — parents, kids, grandparents, sitters — **with no member limit** and no credit card. Children's profiles don't count as members.
 - **What**: calendar, to-dos, grocery list, notes, expenses, wallet, documents, passwords, photos, chat, health, home, vehicles, pets, location, Alexa. That is, [all the basic sections](/en/tools/).
 - **How much**: an included storage allowance for documents and photos; the Pro and Max plans extend it.
-- **AI**: the [family assistant](/en/tools/assistente-ai) and the AI-generated features (meal plan, fitness plan, trips, monthly analysis) are in the paid plans — because every request has a real cost. On Free there's a small number of trial messages, once, to see what it does.
+- **AI**: the [family assistant](/en/tools/assistente-ai) and the AI-generated features (meal plan, fitness plan, trips) are in the paid plans — because every request has a real cost. On Free there's a small number of trial messages, once, to see what it does.
 - **Data**: documents, notes, passwords, wallet, chat and photos are encrypted with the family key. We don't read them and we can't.
 
 Details and current prices are in the [plans section](/index-en.html#prezzi): we write them there once because we don't want a stale figure in an article.
@@ -433,7 +433,7 @@ Non è una domanda da fare subito, ma conviene porsela: se tra due anni arriva u
 
 ## Dove si colloca KidBox
 
-KidBox nasce come organizer di famiglia, e una coppia è una famiglia: [calendario](/strumenti/calendario) con viste mese, settimana e giorno, [cose da fare](/strumenti/to-do) assegnabili con promemoria, [spese](/strumenti/spese) con chi ha pagato, [password](/strumenti/password) e documenti cifrati con una chiave che esiste solo sui vostri dispositivi. Funziona su iPhone, Android e browser, e il piano gratuito copre una famiglia di due persone. Per i dettagli sui piani c'è la [pagina dei prezzi](/index.html#prezzi).
+KidBox nasce come organizer di famiglia, e una coppia è una famiglia: [calendario](/strumenti/calendario) con viste mese, settimana e giorno, [cose da fare](/strumenti/to-do) assegnabili con promemoria, [spese](/strumenti/spese) con chi ha pagato, [password](/strumenti/password) e documenti cifrati con una chiave che esiste solo sui vostri dispositivi. Funziona su iPhone, Android e browser, e il piano gratuito non ha limiti di membri. Per i dettagli sui piani c'è la [pagina dei prezzi](/index.html#prezzi).
 
 ## In sintesi
 
@@ -488,7 +488,7 @@ Not a question for day one, but worth asking: if a baby arrives in two years, wi
 
 ## Where KidBox fits
 
-KidBox was built as a family organiser, and a couple is a family: a [calendar](/en/tools/calendario) with month, week and day views, assignable [to-dos](/en/tools/to-do) with reminders, [expenses](/en/tools/spese) with who paid, [passwords](/en/tools/password) and documents encrypted with a key that exists only on your devices. It works on iPhone, Android and the browser, and the free plan covers a family of two. Plan details are on the [pricing page](/index-en.html#prezzi).
+KidBox was built as a family organiser, and a couple is a family: a [calendar](/en/tools/calendario) with month, week and day views, assignable [to-dos](/en/tools/to-do) with reminders, [expenses](/en/tools/spese) with who paid, [passwords](/en/tools/password) and documents encrypted with a key that exists only on your devices. It works on iPhone, Android and the browser, and the free plan has no member limit. Plan details are on the [pricing page](/index-en.html#prezzi).
 
 ## In short
 

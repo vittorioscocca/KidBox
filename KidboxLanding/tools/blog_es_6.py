@@ -410,7 +410,7 @@ Como con las tareas de casa, el trabajo más pesado es el invisible: darse cuent
 
 ## 2. Un calendario para el cuidado
 
-Citas, turnos de presencia, entregas de la compra: todo en un [calendario](/es/tools/calendario) compartido entre hermanos, con recordatorios. En KidBox puedes crear una familia dedicada al cuidado y pertenecer a ella además de a la tuya, cambiando de una a otra desde Ajustes: así los turnos para tu padre no se mezclan con los compromisos de tus hijos. El plan gratuito cubre a dos personas: si sois más hermanos, los detalles están en la [sección de planes](/index-es#prezzi).
+Citas, turnos de presencia, entregas de la compra: todo en un [calendario](/es/tools/calendario) compartido entre hermanos, con recordatorios. En KidBox puedes crear una familia dedicada al cuidado y pertenecer a ella además de a la tuya, cambiando de una a otra desde Ajustes: así los turnos para tu padre no se mezclan con los compromisos de tus hijos. El plan gratuito no tiene límite de miembros, así que pueden entrar todos los hermanos; los planes solo cambian el espacio y los mensajes de IA ([sección de planes](/index-es#prezzi)).
 
 Quien vive lejos lo ve todo y entiende cuándo se le necesita, en lugar de enterarse por una llamada cansada.
 

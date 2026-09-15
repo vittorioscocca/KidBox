@@ -104,7 +104,7 @@ Alquiler, hipoteca, seguros, impuesto de circulación, suscripciones anuales: lo
 
 Una vez al mes, juntos, diez minutos con el resumen: totales por categoría, comparación con los meses anteriores, gastos imprevistos. No para juzgar quién ha gastado qué, sino para decidir juntos si hay que cambiar algo. Los gastos de KidBox también se pueden exportar a un archivo de hoja de cálculo, si queréis profundizar.
 
-Con el plan Pro, puedes importar una factura o un ticket y el [asistente](/es/tools/assistente-ai) te propone el gasto que registrar.
+Con los mensajes de IA del plan (en el Free, los 5 de prueba), puedes importar una factura o un ticket y el [asistente](/es/tools/assistente-ai) te propone el gasto que registrar.
 
 ## En resumen
 

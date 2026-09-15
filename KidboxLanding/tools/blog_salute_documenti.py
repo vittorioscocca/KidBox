@@ -146,7 +146,7 @@ I dati sanitari sono tra i più delicati che una famiglia possiede. Chiedetevi c
 
 La cartella clinica si mantiene aggiornata solo se ogni referto entra quando arriva. Tornando dalla visita, cinque minuti: data, medico, esito, foto del referto. A fine anno sarebbero cinque ore e metà dei fogli spariti.
 
-Con il piano Pro si può importare il referto e l'[assistente](/strumenti/assistente-ai) ne legge i dati e propone la visita o l'esame da registrare, da confermare prima di salvare.
+Con i messaggi AI del piano (sul Free i 5 di prova) si può importare il referto e l'[assistente](/strumenti/assistente-ai) ne legge i dati e propone la visita o l'esame da registrare, da confermare prima di salvare.
 
 ## 6. Per i figli, fino alla maggiore età
 
@@ -197,7 +197,7 @@ Health data is among the most sensitive a family holds. Ask who should be able t
 
 A health record only stays up to date if each report goes in when it arrives. Back from the visit, five minutes: date, doctor, outcome, photo of the report. At year end it would be five hours and half the papers gone.
 
-With the Pro plan you can import the report and the [assistant](/en/tools/assistente-ai) reads it and suggests the visit or test to record, for you to confirm before saving.
+With your plan's AI messages (the 5 trial ones on Free) you can import the report and the [assistant](/en/tools/assistente-ai) reads it and suggests the visit or test to record, for you to confirm before saving.
 
 ## 6. For children, until adulthood
 
@@ -928,7 +928,7 @@ Nelle [spese di famiglia](/strumenti/spese) di KidBox ogni voce ha importo, cate
 
 Scontrini della farmacia con il codice fiscale, fatture del dentista, ricevute delle visite private, fattura degli occhiali: fotografati o in PDF, vanno nei [documenti](/strumenti/documenti) di famiglia, in una cartella per anno. Gli scontrini termici sbiadiscono in pochi mesi: la foto fatta subito è spesso l'unica copia leggibile a maggio.
 
-Con il piano Pro si può importare una fattura e l'[assistente](/strumenti/assistente-ai) legge i dati e propone la spesa da registrare, da confermare prima di salvare.
+Con i messaggi AI del piano (sul Free i 5 di prova) si può importare una fattura e l'[assistente](/strumenti/assistente-ai) legge i dati e propone la spesa da registrare, da confermare prima di salvare.
 
 ## 3. Per chi, e come si è pagato
 
@@ -976,7 +976,7 @@ In KidBox's [family expenses](/en/tools/spese) every entry has amount, category,
 
 Pharmacy receipts, dentist invoices, private visit receipts, the glasses invoice: photographed or as PDFs, they go in the family [documents](/en/tools/documenti), in a folder per year. Thermal receipts fade within months: the photo taken straight away is often the only readable copy by spring.
 
-With the Pro plan you can import an invoice and the [assistant](/en/tools/assistente-ai) reads it and suggests the expense to record, for you to confirm before saving.
+With your plan's AI messages (the 5 trial ones on Free) you can import an invoice and the [assistant](/en/tools/assistente-ai) reads it and suggests the expense to record, for you to confirm before saving.
 
 ## 3. Who it was for, and how it was paid
 

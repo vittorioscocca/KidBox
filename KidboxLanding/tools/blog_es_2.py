@@ -123,7 +123,7 @@ No hace falta migrarlo todo. La forma que funciona:
 3. **Después los documentos de los hijos**, una vez, en una tarde.
 4. **Todo lo demás** (salud, gastos, contraseñas, hogar), cuando haga falta, una sección cada vez.
 
-[El plan Free de KidBox](/index-es#prezzi) cubre una familia de dos padres sin tarjeta, así que probarlo cuesta una tarde.
+[El plan Free de KidBox](/index-es#prezzi) cubre a toda la familia — padres, hijos, abuelos — sin límite de miembros y sin tarjeta, así que probarlo cuesta una tarde.
 """,
     },
     "app-di-famiglia-gratis-cosa-guardare": {
@@ -160,10 +160,10 @@ El límite invisible: la app es gratis porque los datos son el producto. Para un
 
 Preferimos decirlo nosotros:
 
-- **Quién**: una familia con **dos padres** y sus hijos, sin tarjeta. Los perfiles de los hijos no cuentan como miembros.
+- **Quién**: toda la familia — padres, hijos, abuelos, canguros — **sin límite de miembros** y sin tarjeta. Los perfiles de los hijos no cuentan como miembros.
 - **Qué**: calendario, tareas, lista de la compra, notas, gastos, wallet, documentos, contraseñas, fotos, chat, salud, hogar, vehículos, mascotas y ubicación. Es decir, [todas las secciones básicas](/es/tools/).
 - **Cuánto**: un espacio incluido para documentos y fotos; los planes Pro y Max lo amplían.
-- **IA**: el [asistente familiar](/es/tools/assistente-ai) y las funciones generadas por IA (plan de alimentación, plan fitness, viajes, análisis mensual) están en los planes de pago, porque cada petición tiene un coste real. En el Free hay unos pocos mensajes de prueba, una sola vez, para ver qué hace.
+- **IA**: el [asistente familiar](/es/tools/assistente-ai) y las funciones generadas por IA (plan de alimentación, plan fitness, viajes) están en los planes de pago, porque cada petición tiene un coste real. En el Free hay unos pocos mensajes de prueba, una sola vez, para ver qué hace.
 - **Datos**: documentos, notas, contraseñas, wallet, chat y fotos se cifran con la clave de la familia. No los leemos y no podemos leerlos.
 
 Los detalles y los precios actuales están en la [sección de planes](/index-es#prezzi): los escribimos allí una sola vez porque no queremos una cifra desactualizada en un artículo.

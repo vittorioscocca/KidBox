@@ -464,7 +464,7 @@ No es una pregunta para el primer día, pero conviene hacérsela: si dentro de d
 
 ## Dónde encaja KidBox
 
-KidBox nació como organizador familiar, y una pareja es una familia: un [calendario](/es/tools/calendario) con vista de mes, semana y día, [tareas](/es/tools/to-do) asignables con recordatorios, [gastos](/es/tools/spese) con quién pagó, [contraseñas](/es/tools/password) y documentos cifrados con una clave que solo existe en vuestros dispositivos. Funciona en iPhone, Android y navegador, y el plan gratuito cubre una familia de dos. Los detalles de los planes están en la [página de precios](/index-es#prezzi).
+KidBox nació como organizador familiar, y una pareja es una familia: un [calendario](/es/tools/calendario) con vista de mes, semana y día, [tareas](/es/tools/to-do) asignables con recordatorios, [gastos](/es/tools/spese) con quién pagó, [contraseñas](/es/tools/password) y documentos cifrados con una clave que solo existe en vuestros dispositivos. Funciona en iPhone, Android y navegador, y el plan gratuito no tiene límite de miembros. Los detalles de los planes están en la [página de precios](/index-es#prezzi).
 
 ## En resumen
 

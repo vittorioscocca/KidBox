@@ -104,7 +104,7 @@ Loyer, crédit, assurances, abonnements annuels : les charges fixes sont prévi
 
 Une fois par mois, ensemble, dix minutes sur le récapitulatif : totaux par catégorie, comparaison avec les mois précédents, dépenses imprévues. Pas pour juger qui a dépensé quoi, mais pour décider ensemble s'il faut changer quelque chose. Les dépenses de KidBox peuvent aussi être exportées dans un fichier de tableur, si vous voulez creuser.
 
-Avec l'offre Pro, vous pouvez importer une facture ou un ticket et l'[assistant](/fr/tools/assistente-ai) vous propose la dépense à enregistrer.
+Avec les messages IA de l'offre (les 5 d'essai sur Free), vous pouvez importer une facture ou un ticket et l'[assistant](/fr/tools/assistente-ai) vous propose la dépense à enregistrer.
 
 ## En bref
 

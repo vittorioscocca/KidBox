@@ -627,7 +627,7 @@ Come per le faccende di casa, il lavoro più pesante è quello invisibile: accor
 
 ## 2. Un calendario per l'assistenza
 
-Visite, turni di presenza, consegne della spesa: tutto in un [calendario](/strumenti/calendario) condiviso tra i fratelli, con promemoria. In KidBox si può creare una famiglia apposita per l'assistenza e farne parte insieme alla propria, passando dall'una all'altra dalle Impostazioni: così i turni per il genitore non si mescolano con gli impegni dei vostri figli. Il piano gratuito copre due persone: se i fratelli sono di più, i dettagli sono nella [sezione piani](/index.html#prezzi).
+Visite, turni di presenza, consegne della spesa: tutto in un [calendario](/strumenti/calendario) condiviso tra i fratelli, con promemoria. In KidBox si può creare una famiglia apposita per l'assistenza e farne parte insieme alla propria, passando dall'una all'altra dalle Impostazioni: così i turni per il genitore non si mescolano con gli impegni dei vostri figli. Il piano gratuito non ha un limite di membri, quindi i fratelli possono entrare tutti; i piani cambiano solo per spazio e messaggi AI ([sezione piani](/index.html#prezzi)).
 
 Chi abita lontano vede tutto e capisce quando serve la sua presenza, invece di scoprirlo da una telefonata stanca.
 
@@ -679,7 +679,7 @@ As with household chores, the heaviest work is the invisible kind: noticing, rem
 
 ## 2. A calendar for care
 
-Appointments, turns being present, grocery deliveries: all in a [calendar](/en/tools/calendario) shared between siblings, with reminders. In KidBox you can create a family specifically for the care and belong to it alongside your own, switching between them from Settings: so the turns for your parent don't mix with your children's commitments. The free plan covers two people: if there are more siblings, details are in the [plans section](/index-en.html#prezzi).
+Appointments, turns being present, grocery deliveries: all in a [calendar](/en/tools/calendario) shared between siblings, with reminders. In KidBox you can create a family specifically for the care and belong to it alongside your own, switching between them from Settings: so the turns for your parent don't mix with your children's commitments. The free plan has no member limit, so every sibling can join; plans only differ in storage and AI messages ([plans section](/index-en.html#prezzi)).
 
 Whoever lives far away sees everything and understands when they're needed, instead of finding out from a tired phone call.
 
