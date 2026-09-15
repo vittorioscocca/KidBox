@@ -68,6 +68,8 @@ const KEY_EVENTS = [
   "store_click",
   "invite_landing_shown",
   "invite_store_click",
+  "landing_chat_open",
+  "landing_chat_question",
 ];
 
 // Parametri evento che vale la pena spaccare. Funzionano solo se registrati
@@ -83,6 +85,7 @@ const BREAKDOWNS = [
   ["feature_first_use", "feature"],
   ["paywall_shown", "trigger_feature"],
   ["ai_message_sent", "agent_type"],
+  ["landing_chat_question", "source"],
   ["onboarding_step_shown", "step_name"],
   ["onboarding_step_completed", "step_name"],
   ["onboarding_abandoned", "last_step_seen"],
