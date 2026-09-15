@@ -24,6 +24,11 @@
 
   var ENDPOINT = "/api/chat";
   var MAX_CHARS = 300;
+  // Domande suggerite visibili per volta: le prime della lista non ancora
+  // fatte, così ogni chip toccato lascia il posto al successivo e ne restano
+  // sempre cinque finché la lista non si esaurisce. L'ordine della lista è
+  // quindi una priorità: prima le domande che si fanno più spesso.
+  var CHIPS_SHOWN = 5;
   var STORE_KEY = "kidbox:landingChat";
   var lang = (document.documentElement.lang || "it").slice(0, 2);
   if (["it", "en", "es", "fr"].indexOf(lang) < 0) lang = "en";
@@ -39,6 +44,8 @@
    * Testi e risposte scritte. `triggers`: frammenti (minuscoli, senza accenti)
    * che, in una domanda breve, bastano a dire di cosa si parla. `ask: true`:
    * la risposta la dà il server (dati vivi), il chip manda il testo come domanda.
+   * Le risposte seguono `functions/landingChat/knowledge.md`: se cambia quello,
+   * si rileggono anche queste.
    */
   var I18N = {
     it: {
@@ -71,6 +78,24 @@
           a: "Sì, è uno dei casi per cui KidBox è nata: calendario dei figli, **visite e documenti sanitari**, spese e cose da fare condivisi in un posto neutro, senza passare dalle chat. Con la **visibilità selettiva** scegli per note, liste, calendario, documenti e wallet chi vede cosa. Ne parliamo anche nel [blog](/blog/genitori-separati)." },
         { id: "support", q: "Ho già l'app e ho un problema", triggers: ["non riesco", "errore", "bug", "non funziona", "non mi fa", "accedere", "login", "rimborso"],
           a: "Mi dispiace! Nell'app c'è un **supporto con un assistente AI dedicato**, gratuito anche sul piano Free: vai in **Impostazioni → Supporto**, descrivi il problema e allega fino a 5 screenshot; se serve apre un ticket al team. Se non riesci proprio a entrare nell'app, scrivi a **passboxcontact@gmail.com**." },
+        { id: "health", q: "Cosa registro per la salute dei figli?", triggers: ["salute", "vaccin", "visite", "pediatra", "farmac", "refert"],
+          a: "Per ogni figlio (e per gli adulti) registri **visite, esami, vaccini e farmaci in corso**, con referti allegati in PDF o foto, e ricevi promemoria per le scadenze e le dosi. L'AI genera una **cartella clinica** riepilogativa da mostrare al medico e spiega esami e referti in linguaggio semplice (informativa: non sostituisce il pediatra). Su iPhone legge anche Apple Salute, su Android Health Connect." },
+        { id: "ai_what", q: "Cosa fa l'assistente AI?", triggers: ["cosa fa l ai", "cosa fa l assistente", "come funziona l ai", "come funziona l assistente", "cosa sa fare", "cosa puo fare"],
+          a: "È una chat che conosce i dati della tua famiglia — calendario, to-do, spesa, spese, salute, viaggi, casa, auto, animali — e risponde a domande come «quando è la prossima visita di Marco?» o «quanto abbiamo speso a maggio?». Può anche **agire**: creare eventi, to-do, articoli della spesa e spese. Ogni mattina prepara un **briefing** con gli impegni del giorno e le dosi da somministrare." },
+        { id: "docintel", q: "Posso importare fatture e referti?", triggers: ["fattur", "scontrin", "importa", "scansion", "fotografare"],
+          a: "Sì: importi una fattura, una ricetta, un referto o qualsiasi documento (PDF o foto) e l'AI lo legge e **propone le azioni giuste** — aggiungere la spesa, creare l'evento in calendario, registrare la visita, impostare il promemoria del vaccino. Tu scegli cosa confermare. Il documento finisce nell'archivio cifrato, con cartelle e categorie." },
+        { id: "location", q: "Posso vedere dove sono i miei familiari?", triggers: ["posizion", "dove sono", "dove si trova", "localizz", "gps", "geofenc"],
+          a: "Sì, se loro scelgono di condividerla: la **posizione in tempo reale** si attiva solo per chi lo decide, mai di nascosto. Puoi creare **zone** (casa, scuola, palestra) con avvisi di arrivo e uscita, e condivisioni temporanee che scadono da sole." },
+        { id: "offline", q: "Funziona senza connessione?", triggers: ["offline", "senza connessione", "senza internet", "senza rete"],
+          a: "Le app per iPhone, iPad, Mac e Android conservano i dati anche sul dispositivo: quello che è già stato sincronizzato si consulta anche **offline**. Per ricevere e inviare aggiornamenti alla famiglia serve la rete. La web app, invece, funziona solo con la connessione." },
+        { id: "cancel", q: "Posso disdire quando voglio?", triggers: ["disdi", "annull", "disattiv", "rinnov", "vincol"],
+          a: "Sì. L'abbonamento si acquista dall'app (App Store o Google Play), si rinnova ogni mese e si **annulla in qualunque momento** dalle impostazioni del tuo account Apple o Google Play: resta attivo fino alla fine del mese già pagato. È **per famiglia**: un solo abbonamento copre tutti i membri. Il piano Free, invece, non scade mai." },
+        { id: "multi_family", q: "Posso far parte di più famiglie?", triggers: ["piu famiglie", "due famiglie", "seconda famiglia", "famiglia di origine", "cambiare famiglia"],
+          a: "Sì. Un account può appartenere a **più famiglie** — per esempio la famiglia di origine e il tuo nucleo attuale — e passare dall'una all'altra. Ogni famiglia ha i propri bambini, dati, viaggi e impostazioni, completamente separati." },
+        { id: "alexa", q: "Funziona con Alexa?", triggers: ["alexa", "echo", "a voce", "dettare", "siri", "google assistant"],
+          a: "Sì, in italiano: con la skill Alexa detti la lista della spesa e i to-do agli Echo — «Alexa, chiedi a mio box di aggiungere il latte» — e compaiono subito nell'app di tutta la famiglia. Siri e Google Assistant non sono supportati." },
+        { id: "kids_use", q: "La usano anche i bambini?", triggers: ["la usano i bambini", "per i bambini", "per i figli", "eta minima", "profilo del figlio"],
+          a: "No: KidBox la usano i **genitori e gli adulti** della famiglia (anche nonni o baby-sitter, se li inviti). I figli hanno un **profilo** con salute, documenti, calendario e tutto quello che li riguarda, ma non un accesso. Non è un'app di controllo parentale." },
       ],
     },
     en: {
@@ -103,6 +128,22 @@
           a: "Yes, it's one of the reasons KidBox exists: the kids' calendar, **medical visits and documents**, expenses and to-dos shared in a neutral place, away from chat threads. With **selective visibility** you choose who sees each note, list, event, document or wallet item." },
         { id: "support", q: "I already have the app and something's wrong", triggers: ["can t log", "cannot log", "error", "bug", "not working", "doesn t work", "login", "sign in", "refund"],
           a: "Sorry about that! The app has a **support chat with a dedicated AI assistant**, free on every plan: go to **Settings → Help & Support**, describe the problem and attach up to 5 screenshots; if needed it opens a ticket with the team. If you can't get into the app at all, write to **passboxcontact@gmail.com**." },
+        { id: "health", q: "What can I track about my kids' health?", triggers: ["health", "vaccin", "doctor", "pediatric", "medic", "prescription"],
+          a: "For each child (and each adult) you record **visits, tests, vaccinations and ongoing medications**, with reports attached as PDF or photo, and get reminders for due dates and doses. The AI builds a summary **medical record** to show your doctor and explains tests and reports in plain language (informational: it doesn't replace your pediatrician). On iPhone it also reads Apple Health, on Android Health Connect." },
+        { id: "ai_what", q: "What does the AI assistant do?", triggers: ["what does the ai", "what does the assistant", "how does the ai", "how does the assistant", "what can the ai", "what can the assistant"],
+          a: "It's a chat that knows your family's data — calendar, to-dos, shopping list, expenses, health, trips, home, cars, pets — and answers questions like \"when is Mark's next appointment?\" or \"how much did we spend in May?\". It can also **act**: create events, to-dos, shopping items and expenses. Every morning it prepares a **briefing** with the day's commitments and the doses to give." },
+        { id: "docintel", q: "Can I import invoices and medical reports?", triggers: ["invoice", "receipt", "import", "scan", "photograph"],
+          a: "Yes: import an invoice, a prescription, a medical report or any document (PDF or photo) and the AI reads it and **suggests the right actions** — add the expense, create the calendar event, log the visit, set the vaccine reminder. You choose what to confirm. The document lands in the encrypted archive, with folders and categories." },
+        { id: "location", q: "Can I see where my family members are?", triggers: ["location", "where is", "where are", "track", "gps", "geofenc"],
+          a: "Yes, if they choose to share it: **real-time location** is only on for those who opt in, never hidden. You can create **zones** (home, school, gym) with arrival and departure alerts, and temporary shares that expire on their own." },
+        { id: "offline", q: "Does it work offline?", triggers: ["offline", "no connection", "without internet", "no internet", "no signal"],
+          a: "The iPhone, iPad, Mac and Android apps keep the data on the device too: whatever has already synced can be read **offline**. Sending and receiving updates from the family needs a connection. The web app only works online." },
+        { id: "cancel", q: "Can I cancel anytime?", triggers: ["cancel", "unsubscribe", "renew", "commitment", "contract"],
+          a: "Yes. The subscription is bought in the app (App Store or Google Play), renews monthly and can be **cancelled at any time** from your Apple or Google Play account settings: it stays active until the end of the month you've already paid. It's **per family**: one subscription covers every member. The Free plan never expires." },
+        { id: "multi_family", q: "Can I belong to more than one family?", triggers: ["more than one family", "two families", "second family", "multiple families", "switch famil"],
+          a: "Yes. One account can belong to **several families** — say, the family you grew up in and your current household — and switch between them. Each family has its own children, data, trips and settings, completely separate." },
+        { id: "kids_use", q: "Do the kids use it too?", triggers: ["kids use", "children use", "for kids", "for children", "minimum age", "child profile"],
+          a: "No: KidBox is used by the **parents and adults** of the family (grandparents or babysitters too, if you invite them). Children have a **profile** with their health, documents, calendar and everything about them, but no login. It's not a parental-control app." },
       ],
     },
     es: {
@@ -135,6 +176,22 @@
           a: "Sí, es uno de los motivos por los que existe KidBox: el calendario de los hijos, **visitas y documentos médicos**, gastos y tareas compartidos en un lugar neutral, fuera de los chats. Con la **visibilidad selectiva** eliges quién ve cada nota, lista, evento, documento o elemento del wallet." },
         { id: "support", q: "Ya tengo la app y tengo un problema", triggers: ["no puedo", "error", "bug", "no funciona", "iniciar sesion", "acceder", "reembolso"],
           a: "¡Lo siento! La app tiene un **soporte con un asistente de IA dedicado**, gratis en todos los planes: ve a **Ajustes → Ayuda y soporte**, describe el problema y adjunta hasta 5 capturas; si hace falta abre un ticket al equipo. Si no consigues entrar en la app, escribe a **passboxcontact@gmail.com**." },
+        { id: "health", q: "¿Qué puedo registrar sobre la salud de mis hijos?", triggers: ["salud", "vacun", "pediatra", "medic", "receta", "informe"],
+          a: "Para cada hijo (y cada adulto) registras **visitas, pruebas, vacunas y medicamentos en curso**, con informes adjuntos en PDF o foto, y recibes recordatorios de citas y dosis. La IA genera un **historial clínico** resumido para enseñar al médico y explica pruebas e informes en lenguaje sencillo (informativo: no sustituye al pediatra). En iPhone lee también Apple Salud, en Android Health Connect." },
+        { id: "ai_what", q: "¿Qué hace el asistente de IA?", triggers: ["que hace la ia", "que hace el asistente", "como funciona la ia", "como funciona el asistente", "que puede hacer", "que sabe hacer"],
+          a: "Es un chat que conoce los datos de tu familia — calendario, tareas, compra, gastos, salud, viajes, casa, coches, mascotas — y responde a preguntas como «¿cuándo es la próxima cita de Marcos?» o «¿cuánto gastamos en mayo?». También puede **actuar**: crear eventos, tareas, artículos de la compra y gastos. Cada mañana prepara un **resumen** con los compromisos del día y las dosis que hay que dar." },
+        { id: "docintel", q: "¿Puedo importar facturas e informes médicos?", triggers: ["factur", "ticket", "importar", "escanear", "fotografiar"],
+          a: "Sí: importas una factura, una receta, un informe médico o cualquier documento (PDF o foto) y la IA lo lee y **propone las acciones adecuadas** — añadir el gasto, crear el evento en el calendario, registrar la visita, poner el recordatorio de la vacuna. Tú eliges qué confirmar. El documento queda en el archivo cifrado, con carpetas y categorías." },
+        { id: "location", q: "¿Puedo ver dónde están mis familiares?", triggers: ["ubicacion", "donde esta", "donde estan", "localiz", "gps", "geofenc"],
+          a: "Sí, si ellos deciden compartirla: la **ubicación en tiempo real** solo se activa para quien lo elige, nunca a escondidas. Puedes crear **zonas** (casa, colegio, gimnasio) con avisos de llegada y salida, y compartir de forma temporal, con caducidad automática." },
+        { id: "offline", q: "¿Funciona sin conexión?", triggers: ["offline", "sin conexion", "sin internet", "sin red", "sin cobertura"],
+          a: "Las apps para iPhone, iPad, Mac y Android guardan los datos también en el dispositivo: lo que ya se ha sincronizado se consulta **sin conexión**. Para enviar y recibir actualizaciones de la familia hace falta red. La web app solo funciona con conexión." },
+        { id: "cancel", q: "¿Puedo cancelar cuando quiera?", triggers: ["cancel", "darme de baja", "baja", "renov", "permanencia"],
+          a: "Sí. La suscripción se compra desde la app (App Store o Google Play), se renueva cada mes y se **cancela en cualquier momento** desde los ajustes de tu cuenta de Apple o de Google Play: sigue activa hasta el final del mes ya pagado. Es **por familia**: una sola suscripción cubre a todos los miembros. El plan gratuito, en cambio, no caduca nunca." },
+        { id: "multi_family", q: "¿Puedo pertenecer a más de una familia?", triggers: ["mas de una familia", "dos familias", "segunda familia", "varias familias", "cambiar de familia"],
+          a: "Sí. Una cuenta puede pertenecer a **varias familias** — por ejemplo, tu familia de origen y tu hogar actual — y cambiar de una a otra. Cada familia tiene sus propios hijos, datos, viajes y ajustes, completamente separados." },
+        { id: "kids_use", q: "¿La usan también los niños?", triggers: ["la usan los ninos", "para los ninos", "para los hijos", "edad minima", "perfil del hijo"],
+          a: "No: KidBox la usan los **padres y los adultos** de la familia (también abuelos o canguros, si los invitas). Los hijos tienen un **perfil** con su salud, documentos, calendario y todo lo que les concierne, pero no un acceso. No es una app de control parental." },
       ],
     },
     fr: {
@@ -167,6 +224,22 @@
           a: "Oui, c'est l'une des raisons d'être de KidBox : le calendrier des enfants, **les rendez-vous et documents médicaux**, les dépenses et les tâches partagés dans un espace neutre, loin des fils de discussion. Avec la **visibilité sélective**, vous choisissez qui voit chaque note, liste, événement, document ou élément du wallet." },
         { id: "support", q: "J'ai déjà l'app et j'ai un problème", triggers: ["je n arrive pas", "erreur", "bug", "ne marche pas", "ne fonctionne pas", "connexion", "se connecter", "rembours"],
           a: "Désolé ! L'app propose une **assistance avec un assistant IA dédié**, gratuite sur toutes les offres : allez dans **Réglages → Aide et assistance**, décrivez le problème et joignez jusqu'à 5 captures d'écran ; si besoin, il ouvre un ticket auprès de l'équipe. Si vous n'arrivez pas du tout à entrer dans l'app, écrivez à **passboxcontact@gmail.com**." },
+        { id: "health", q: "Que puis-je enregistrer sur la santé des enfants ?", triggers: ["sante", "vaccin", "pediatre", "medic", "ordonnance", "compte rendu"],
+          a: "Pour chaque enfant (et chaque adulte), vous enregistrez **rendez-vous, examens, vaccins et traitements en cours**, avec les comptes rendus joints en PDF ou en photo, et recevez des rappels pour les échéances et les doses. L'IA génère un **dossier médical** récapitulatif à montrer au médecin et explique examens et résultats en langage simple (informatif : il ne remplace pas le pédiatre). Sur iPhone, elle lit aussi Apple Santé ; sur Android, Health Connect." },
+        { id: "ai_what", q: "Que fait l'assistant IA ?", triggers: ["que fait l ia", "que fait l assistant", "comment marche l ia", "comment marche l assistant", "comment fonctionne l ia", "que peut faire"],
+          a: "C'est un chat qui connaît les données de votre famille — calendrier, tâches, courses, dépenses, santé, voyages, maison, voitures, animaux — et répond à des questions comme « quand est le prochain rendez-vous de Marc ? » ou « combien avons-nous dépensé en mai ? ». Il peut aussi **agir** : créer des événements, des tâches, des articles de courses et des dépenses. Chaque matin, il prépare un **briefing** avec les engagements du jour et les doses à donner." },
+        { id: "docintel", q: "Puis-je importer des factures et des comptes rendus ?", triggers: ["factur", "ticket de caisse", "importer", "scanner", "photographier"],
+          a: "Oui : importez une facture, une ordonnance, un compte rendu ou n'importe quel document (PDF ou photo), l'IA le lit et **propose les bonnes actions** — ajouter la dépense, créer l'événement dans le calendrier, enregistrer le rendez-vous, programmer le rappel du vaccin. Vous choisissez ce que vous confirmez. Le document rejoint l'archive chiffrée, avec dossiers et catégories." },
+        { id: "location", q: "Puis-je voir où sont les membres de ma famille ?", triggers: ["localisation", "position", "ou est", "ou sont", "gps", "geofenc"],
+          a: "Oui, s'ils choisissent de la partager : la **localisation en temps réel** ne s'active que pour ceux qui le décident, jamais en cachette. Vous pouvez créer des **zones** (maison, école, salle de sport) avec des alertes d'arrivée et de départ, et des partages temporaires qui expirent tout seuls." },
+        { id: "offline", q: "Ça marche sans connexion ?", triggers: ["hors ligne", "sans connexion", "sans internet", "sans reseau"],
+          a: "Les apps iPhone, iPad, Mac et Android conservent aussi les données sur l'appareil : ce qui a déjà été synchronisé se consulte **hors ligne**. Pour envoyer et recevoir les mises à jour de la famille, il faut le réseau. La web app, elle, ne fonctionne qu'en ligne." },
+        { id: "cancel", q: "Puis-je résilier quand je veux ?", triggers: ["resili", "annul", "desabonn", "renouvel", "engagement"],
+          a: "Oui. L'abonnement s'achète dans l'app (App Store ou Google Play), se renouvelle chaque mois et se **résilie à tout moment** depuis les réglages de votre compte Apple ou Google Play : il reste actif jusqu'à la fin du mois déjà payé. Il est **par famille** : un seul abonnement couvre tous les membres. L'offre gratuite, elle, n'expire jamais." },
+        { id: "multi_family", q: "Puis-je faire partie de plusieurs familles ?", triggers: ["plusieurs familles", "deux familles", "seconde famille", "deuxieme famille", "changer de famille"],
+          a: "Oui. Un compte peut appartenir à **plusieurs familles** — par exemple votre famille d'origine et votre foyer actuel — et passer de l'une à l'autre. Chaque famille a ses propres enfants, données, voyages et réglages, complètement séparés." },
+        { id: "kids_use", q: "Les enfants l'utilisent aussi ?", triggers: ["les enfants l utilisent", "pour les enfants", "age minimum", "profil de l enfant"],
+          a: "Non : KidBox est utilisée par les **parents et les adultes** de la famille (grands-parents ou baby-sitters aussi, si vous les invitez). Les enfants ont un **profil** avec leur santé, leurs documents, leur calendrier et tout ce qui les concerne, mais pas d'accès. Ce n'est pas une app de contrôle parental." },
       ],
     },
   };
@@ -447,11 +520,11 @@
     return el;
   }
 
-  /** Domande suggerite non ancora fatte in questa conversazione. */
+  /** Le prime CHIPS_SHOWN domande suggerite non ancora fatte in questa conversazione. */
   function chipsFor(container) {
     var asked = {};
     state.messages.forEach(function (m) { if (m.role === "user") asked[m.content] = true; });
-    var left = T.faq.filter(function (f) { return !asked[f.q]; });
+    var left = T.faq.filter(function (f) { return !asked[f.q]; }).slice(0, CHIPS_SHOWN);
     if (!left.length) return null;
     var chips = document.createElement("div");
     chips.className = "kbc-chips";
