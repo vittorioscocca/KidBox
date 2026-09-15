@@ -43,6 +43,7 @@
   var I18N = {
     it: {
       fab: "Chiedi a KidBox",
+      more: "Altre domande",
       title: "Chiedi a KidBox",
       subtitle: "Risposte automatiche sul prodotto · possono sbagliare",
       hello: "Ciao! Chiedimi qualunque cosa su KidBox: cosa fa, quanto costa, come funziona con l'altro genitore. Oppure parti da qui:",
@@ -74,6 +75,7 @@
     },
     en: {
       fab: "Ask KidBox",
+      more: "More questions",
       title: "Ask KidBox",
       subtitle: "Automatic answers about the app · they can be wrong",
       hello: "Hi! Ask me anything about KidBox: what it does, what it costs, how it works with the other parent. Or start here:",
@@ -105,6 +107,7 @@
     },
     es: {
       fab: "Pregunta a KidBox",
+      more: "Otras preguntas",
       title: "Pregunta a KidBox",
       subtitle: "Respuestas automáticas sobre la app · pueden equivocarse",
       hello: "¡Hola! Pregúntame lo que quieras sobre KidBox: qué hace, cuánto cuesta, cómo funciona con el otro progenitor. O empieza por aquí:",
@@ -136,6 +139,7 @@
     },
     fr: {
       fab: "Demander à KidBox",
+      more: "Autres questions",
       title: "Demander à KidBox",
       subtitle: "Réponses automatiques sur l'app · elles peuvent se tromper",
       hello: "Bonjour ! Posez-moi vos questions sur KidBox : ce qu'elle fait, combien elle coûte, comment elle marche avec l'autre parent. Ou commencez ici :",
@@ -320,6 +324,8 @@
     ".kbc-bot{align-self:flex-start;background:var(--bg2,var(--c-bg2,#f5ebe0));border-bottom-left-radius:6px}" +
     ".kbc-user{align-self:flex-end;background:var(--accent,var(--c-accent,#e8833a));color:#fff;border-bottom-right-radius:6px}" +
     ".kbc-pending{color:var(--muted,var(--c-muted,rgba(28,16,8,.52)));font-style:italic}" +
+    ".kbc-more{align-self:flex-start;max-width:92%;display:flex;flex-direction:column;gap:4px;margin-top:2px}" +
+    ".kbc-more>span{font-size:.72rem;font-weight:600;color:var(--muted,var(--c-muted,rgba(28,16,8,.52)));padding-left:2px}" +
     ".kbc-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}" +
     ".kbc-chip{border:1px solid var(--border,var(--c-border,rgba(180,120,60,.2)));background:var(--surface,var(--c-surface,#fff));color:var(--text,var(--c-text,#1c1008));border-radius:999px;padding:6px 11px;font:inherit;font-size:.8rem;cursor:pointer;text-align:left}" +
     ".kbc-chip:hover{border-color:var(--accent,var(--c-accent,#e8833a));color:var(--accent2,var(--c-accent2,#c96a20))}" +
@@ -441,27 +447,46 @@
     return el;
   }
 
+  /** Domande suggerite non ancora fatte in questa conversazione. */
+  function chipsFor(container) {
+    var asked = {};
+    state.messages.forEach(function (m) { if (m.role === "user") asked[m.content] = true; });
+    var left = T.faq.filter(function (f) { return !asked[f.q]; });
+    if (!left.length) return null;
+    var chips = document.createElement("div");
+    chips.className = "kbc-chips";
+    left.forEach(function (f) {
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "kbc-chip";
+      chip.textContent = f.q;
+      chip.onclick = function () { askFaq(f, null); };
+      chips.appendChild(chip);
+    });
+    container.appendChild(chips);
+    return chips;
+  }
+
   function renderLog() {
     log.innerHTML = "";
     var hello = bubble("assistant", render(T.hello));
-    // Le domande suggerite restano visibili finché non si scrive nulla.
-    if (!state.messages.length) {
-      var chips = document.createElement("div");
-      chips.className = "kbc-chips";
-      T.faq.forEach(function (f) {
-        var chip = document.createElement("button");
-        chip.type = "button";
-        chip.className = "kbc-chip";
-        chip.textContent = f.q;
-        chip.onclick = function () { askFaq(f, null); };
-        chips.appendChild(chip);
-      });
-      hello.appendChild(chips);
-    }
+    if (!state.messages.length) chipsFor(hello);
     state.messages.forEach(function (m) {
       bubble(m.role, m.role === "user" ? m.content : render(m.content));
     });
-    if (busy) bubble("assistant", escapeHtml(T.thinking), "kbc-pending");
+    if (busy) {
+      bubble("assistant", escapeHtml(T.thinking), "kbc-pending");
+    } else if (state.messages.length && state.messages[state.messages.length - 1].role === "assistant") {
+      // Dopo ogni risposta si ripropongono le domande suggerite rimaste: senza,
+      // la sola strada visibile è scrivere, cioè il modello, che costa. Chi
+      // tocca un chip riceve una risposta scritta, a zero token.
+      var more = document.createElement("div");
+      more.className = "kbc-more";
+      var label = document.createElement("span");
+      label.textContent = T.more;
+      more.appendChild(label);
+      if (chipsFor(more)) log.appendChild(more);
+    }
     // In fondo solo se c'è una conversazione: da vuota si legge il saluto.
     log.scrollTop = state.messages.length || busy ? log.scrollHeight : 0;
   }
