@@ -38,7 +38,7 @@ L = {
     "it": {
         "src": "index.html", "tools": "strumenti", "blog": "blog",
         "notes": [
-            "Alcune funzioni — l'assistente AI, il Piano Alimentare e il Piano Fitness, i viaggi con itinerario AI e la lettura dei documenti con l'AI — richiedono il piano Pro o Max. Il piano Free include 5 messaggi di prova con l'assistente.",
+            "Piano Alimentare, Piano Fitness e itinerari di viaggio con l'AI richiedono il piano Pro o Max. L'assistente AI e le altre funzioni AI (lettura di documenti e biglietti, agenti proattivi) usano i messaggi del piano: il Free ne include 5 di prova, una tantum.",
             "La skill Alexa è disponibile solo in italiano. Le funzioni possono cambiare e alcune potrebbero non essere disponibili su tutte le piattaforme.",
             "App Store è un marchio di Apple Inc. Google Play è un marchio di Google LLC. Alexa è un marchio di Amazon.com, Inc. o delle sue affiliate.",
         ],
@@ -68,7 +68,7 @@ L = {
     "en": {
         "src": "index-en.html", "tools": "en/tools", "blog": "en/blog",
         "notes": [
-            "Some features — the AI assistant, the Meal Plan and Fitness Plan, AI trip itineraries and AI document reading — require a Pro or Max plan. The Free plan includes 5 trial messages with the assistant.",
+            "The Meal Plan, the Fitness Plan and AI trip itineraries require a Pro or Max plan. The AI assistant and the other AI features (document and ticket reading, proactive agents) use your plan's messages: Free includes 5 one-off trial messages.",
             "Features may change, and some may not be available on every platform.",
             "App Store is a trademark of Apple Inc. Google Play is a trademark of Google LLC.",
         ],
@@ -97,7 +97,7 @@ L = {
     "es": {
         "src": "index-es.html", "tools": "es/tools", "blog": "es/blog",
         "notes": [
-            "Algunas funciones — el asistente de IA, el Plan de Alimentación y el Plan Fitness, los viajes con itinerario de IA y la lectura de documentos con IA — requieren el plan Pro o Max. El plan Free incluye 5 mensajes de prueba con el asistente.",
+            "El Plan de Alimentación, el Plan Fitness y los itinerarios de viaje con IA requieren el plan Pro o Max. El asistente de IA y las demás funciones de IA (lectura de documentos y billetes, agentes proactivos) usan los mensajes del plan: el Free incluye 5 de prueba, únicos.",
             "Las funciones pueden cambiar y algunas podrían no estar disponibles en todas las plataformas.",
             "App Store es una marca de Apple Inc. Google Play es una marca de Google LLC.",
         ],
@@ -124,7 +124,7 @@ L = {
     "fr": {
         "src": "index-fr.html", "tools": "fr/tools", "blog": "fr/blog",
         "notes": [
-            "Certaines fonctionnalités — l'assistant IA, le Plan alimentaire et le Plan fitness, les voyages avec itinéraire IA et la lecture des documents par l'IA — nécessitent l'abonnement Pro ou Max. L'offre Free comprend 5 messages d'essai avec l'assistant.",
+            "Le Plan alimentaire, le Plan fitness et les itinéraires de voyage par l'IA nécessitent l'abonnement Pro ou Max. L'assistant IA et les autres fonctions IA (lecture de documents et de billets, agents proactifs) utilisent les messages de l'offre : Free en comprend 5 d'essai, uniques.",
             "Les fonctionnalités peuvent évoluer et certaines peuvent ne pas être disponibles sur toutes les plateformes.",
             "App Store est une marque d'Apple Inc. Google Play est une marque de Google LLC.",
         ],
