@@ -26,6 +26,20 @@
 const { execFileSync } = require("node:child_process");
 
 const SITE = "sc-domain:kidboxapp.com";
+
+/**
+ * Obiettivi concordati il 16/09/2026, partendo da 11 impressioni/giorno, 0
+ * click, «kidbox» in posizione 11 e ~195 pagine indicizzate su 458. Sono
+ * stime, non promesse: un dominio nuovo può stare fermo due mesi e poi
+ * partire. Il report stampa lo stato contro la scadenza più vicina non
+ * ancora passata. `storeFromGoogle` lo misura il contatore landing (report
+ * console), non Search Console: qui resta solo come promemoria.
+ */
+const GOALS = [
+  { by: "2026-10-15", brandPosition: 3, impressionsPerDay: 40, clicksPerDay: 1, pagesWithImpressions: 40, nonBrandShare: null, storeFromGoogle: null },
+  { by: "2026-11-15", brandPosition: 1, impressionsPerDay: 100, clicksPerDay: 5, pagesWithImpressions: 80, nonBrandShare: 0.7, storeFromGoogle: 1 },
+  { by: "2026-12-31", brandPosition: 1, impressionsPerDay: 300, clicksPerDay: 15, pagesWithImpressions: 150, nonBrandShare: 0.8, storeFromGoogle: 3 },
+];
 const API = `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(SITE)}`;
 const SERVICE_ACCOUNT = "ga4-reader@kidbox-42cd7.iam.gserviceaccount.com";
 const TZ = "Europe/Rome";
@@ -162,6 +176,24 @@ async function main() {
   // Query «brand» (kidbox): quanto del traffico è gente che ci cerca per nome.
   const brand = (await query(tok, d28s, last, ["query"])).filter((r) => /kid\s?box/i.test(r.keys[0]));
   out.brand28 = totals(brand);
+  // La query brand pura: la sua posizione è l'indicatore della canonica.
+  const brandQuery = brand.find((r) => r.keys[0].toLowerCase() === "kidbox");
+  out.brandKidbox = brandQuery ? { impressions: brandQuery.impressions, clicks: brandQuery.clicks, position: brandQuery.position } : null;
+  out.pagesWithImpressions28 = (await query(tok, d28s, last, ["page"], { rowLimit: 1000 })).filter((r) => r.impressions > 0).length;
+
+  // Stato contro gli obiettivi: la prima scadenza non passata (o l'ultima).
+  const goal = GOALS.find((g) => g.by >= last) || GOALS[GOALS.length - 1];
+  out.goals = {
+    by: goal.by,
+    items: [
+      { label: "posizione «kidbox»", target: goal.brandPosition, value: out.brandKidbox?.position ?? null, lowerIsBetter: true },
+      { label: "impressioni/giorno (7 gg)", target: goal.impressionsPerDay, value: out.last7.impressions / 7 },
+      { label: "click/giorno (7 gg)", target: goal.clicksPerDay, value: out.last7.clicks / 7 },
+      { label: "pagine con impressioni (28 gg)", target: goal.pagesWithImpressions, value: out.pagesWithImpressions28 },
+      ...(goal.nonBrandShare != null ? [{ label: "quota non-brand sui click (28 gg)", target: goal.nonBrandShare, value: out.last28.clicks ? 1 - out.brand28.clicks / out.last28.clicks : null, pct: true }] : []),
+    ],
+    storeFromGoogle: goal.storeFromGoogle,
+  };
 
   // Sitemap.
   try {
@@ -210,6 +242,16 @@ function print(o) {
   L.push(`Brand (query con «kidbox») 28 gg: ${o.brand28.clicks} click su ${o.last28.clicks} (${o.last28.clicks ? Math.round((o.brand28.clicks / o.last28.clicks) * 100) : 0}%), ${o.brand28.impressions} impressioni. Il resto è gente che non ci conosceva.`);
   L.push("");
 
+  L.push(`## Obiettivi — scadenza ${o.goals.by}`);
+  for (const g of o.goals.items) {
+    const v = g.value == null ? null : g.pct ? `${Math.round(g.value * 100)}%` : g.lowerIsBetter ? g.value.toFixed(1) : g.value.toFixed(1).replace(/\.0$/, "");
+    const t = g.pct ? `${Math.round(g.target * 100)}%` : String(g.target);
+    const done = g.value == null ? false : g.lowerIsBetter ? g.value <= g.target : g.value >= g.target;
+    const progress = g.value == null || g.lowerIsBetter ? "" : ` (${Math.min(100, Math.round((g.value / g.target) * 100))}%)`;
+    L.push(`${done ? "✓" : "·"} ${pad(g.label, 36)}${pad(v ?? "n/d", 8)}→ ${t}${progress}`);
+  }
+  if (o.goals.storeFromGoogle) L.push(`· ${pad("tap store da Google al giorno", 36)}${pad("(contatore landing, report console)", 8)}→ ${o.goals.storeFromGoogle}`);
+  L.push("");
   L.push("## Serie 28 gg (click / impressioni / posizione)");
   for (const s of o.series) L.push(`${pad(s.date, 12)}${pad(s.clicks, 6)}${pad(s.impressions, 8)}${pos(s.position)}`);
   L.push("");
