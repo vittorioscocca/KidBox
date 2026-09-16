@@ -4,20 +4,66 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pagina non trovata · KidBox</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="/icon.png?v=2">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <!-- Stessi colori e stesso tono della home (index.html), tema dal sistema. -->
   <style>
-    body { font-family: 'DM Sans', sans-serif; background: #0a0a0f; color: #f0f0f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 24px; }
-    h1 { font-size: 5rem; font-weight: 700; color: #6c63ff; margin-bottom: 8px; }
-    p  { color: rgba(240,240,245,0.5); margin-bottom: 32px; }
-    a  { display: inline-block; padding: 12px 28px; background: #6c63ff; color: #fff; border-radius: 50px; text-decoration: none; font-weight: 600; }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --bg:#fdf7f0; --surface:#ffffff; --border:rgba(180,120,60,0.14);
+      --text:#1c1008; --muted:rgba(28,16,8,0.52);
+      --accent:#e8833a; --accent2:#c96a20;
+      --shadow:0 2px 24px rgba(180,100,30,0.09);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg:#140e08; --surface:#241a10; --border:rgba(255,180,100,0.11);
+        --text:#f6efe6; --muted:rgba(246,239,230,0.55);
+        --accent:#f4995a; --accent2:#e8833a;
+        --shadow:0 2px 24px rgba(0,0,0,0.35);
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg:#140e08; --surface:#241a10; --border:rgba(255,180,100,0.11);
+      --text:#f6efe6; --muted:rgba(246,239,230,0.55);
+      --accent:#f4995a; --accent2:#e8833a;
+      --shadow:0 2px 24px rgba(0,0,0,0.35);
+    }
+    body { font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; -webkit-font-smoothing:antialiased; }
+    nav { display:flex; align-items:center; padding:14px 28px; border-bottom:1px solid var(--border); }
+    .logo { display:flex; align-items:center; gap:11px; font-weight:800; font-size:1.4rem; letter-spacing:-0.03em; color:var(--text); text-decoration:none; }
+    .logo img { width:36px; height:36px; border-radius:10px; }
+    .logo .ac { color:var(--accent); }
+    main { flex:1; display:flex; align-items:center; justify-content:center; text-align:center; padding:48px 24px; }
+    .code { font-size:clamp(4rem,14vw,7rem); font-weight:800; line-height:1; letter-spacing:-0.05em; background:linear-gradient(120deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    h1 { font-size:clamp(1.4rem,3.4vw,2rem); font-weight:800; letter-spacing:-0.03em; margin:14px 0 10px; text-wrap:balance; }
+    p { color:var(--muted); max-width:36ch; margin:0 auto 28px; line-height:1.55; }
+    .actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .btn { display:inline-flex; align-items:center; padding:12px 22px; border-radius:50px; font-weight:700; font-size:0.95rem; text-decoration:none; transition:transform .15s; }
+    .btn:hover { transform:translateY(-1px); }
+    .btn-p { background:var(--accent); color:#fff; }
+    .btn-s { background:var(--surface); color:var(--text); border:1px solid var(--border); box-shadow:var(--shadow); }
+    footer { padding:18px 24px; text-align:center; font-size:0.8rem; color:var(--muted); }
+    footer a { color:inherit; }
   </style>
 </head>
 <body>
-  <div>
-    <h1>404</h1>
-    <p>Questa pagina non esiste — ma la tua famiglia sì.</p>
-    <a href="/">Torna a KidBox →</a>
-  </div>
+  <nav><a class="logo" href="/"><img src="/icon.png" alt="" width="36" height="36">Kid<span class="ac">Box</span></a></nav>
+  <main>
+    <div>
+      <div class="code">404</div>
+      <h1>Questa pagina non esiste — ma la tua famiglia sì.</h1>
+      <p>Il link potrebbe essere vecchio o scritto male. Da qui puoi tornare alla home o dare un'occhiata al blog.</p>
+      <div class="actions">
+        <a class="btn btn-p" href="/">Torna a KidBox</a>
+        <a class="btn btn-s" href="/blog/">Vai al blog</a>
+      </div>
+    </div>
+  </main>
+  <footer>Cercavi aiuto? <a href="/support">Assistenza</a></footer>
 </body>
 </html>
