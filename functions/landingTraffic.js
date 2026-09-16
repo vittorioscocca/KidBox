@@ -83,7 +83,9 @@ exports.landingPing = onRequest(
       region: "europe-west1",
       cors: ALLOWED_ORIGINS,
       maxInstances: 2,
-      memory: "128MiB",
+      // Non scendere a 128MiB: il processo carica tutto index.js e a freddo
+      // pesa ~135 MiB: l'istanza moriva in OOM prima del readiness (16/09).
+      memory: "256MiB",
     },
     async (req, res) => {
       if (req.method !== "POST") {
