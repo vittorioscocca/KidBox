@@ -22,6 +22,13 @@
  * Eventi: page_view automatico, `store_click` sui link ad App Store, Google
  * Play e web app (store: ios | android | web).
  *
+ * In fondo c'è anche il **contatore nostro** (functions/landingTraffic.js),
+ * che non dipende dal consenso perché non usa cookie né identificativi: manda
+ * tre ping — apertura pagina, pagina visibile per 10 secondi, tap sullo store —
+ * con sorgente, pagina e piattaforma ridotte a un vocabolario chiuso. Serve a
+ * sapere quanti dei click pagati arrivano davvero e quanti vanno allo store,
+ * cosa che GA4 qui non può dire (vede solo chi accetta il banner).
+ *
  * Uso: <script src="/assets/consent.js" defer></script>
  *   data-no-banner  → niente banner (pagine che reindirizzano subito, come
  *                     /scarica): parte solo ciò a cui si è già detto sì.
@@ -237,6 +244,88 @@
     if (!noBanner && (read(A_KEY) === null || read(M_KEY) === null)) open();
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-  else init();
+  // ---- Contatore nostro (senza consenso: niente cookie, niente identificativi)
+
+  var PING = "https://europe-west1-kidbox-42cd7.cloudfunctions.net/landingPing";
+  var SRC_KEY = "kidbox:src"; // sessionStorage: la sorgente della prima pagina vale per tutta la visita
+
+  // Sorgente in cinque valori. Meta aggiunge `fbclid` a ogni click sulle sue
+  // inserzioni e nei suoi feed: basta quello, gli UTM sono un di più.
+  function sourceOf() {
+    var q = location.search;
+    var utm = (/[?&]utm_source=([^&]*)/.exec(q) || [])[1] || "";
+    utm = decodeURIComponent(utm).toLowerCase();
+    if (/fbclid=/.test(q) || /instagram|facebook|meta|^fb$|^ig$/.test(utm)) return "meta";
+    var ref = "";
+    try { ref = new URL(document.referrer).hostname; } catch (e) {}
+    if (/gclid=/.test(q) || /google/.test(utm) || /(^|\.)google\./.test(ref)) return "google";
+    if (/instagram\.com|facebook\.com|^l\.|fb\.com|messenger/.test(ref)) return "meta";
+    if (utm) return "other";
+    if (!ref) return "direct";
+    if (/kidboxapp\.com|kidbox-landing/.test(ref)) return "direct"; // navigazione interna senza sessionStorage
+    return "referral";
+  }
+  function firstSource() {
+    var s = null;
+    try { s = sessionStorage.getItem(SRC_KEY); } catch (e) {}
+    if (s) return s;
+    s = sourceOf();
+    try { sessionStorage.setItem(SRC_KEY, s); } catch (e) {}
+    return s;
+  }
+  function pageOf() {
+    var p = location.pathname;
+    if (/^\/(index(-[a-z]{2})?\.html)?$/.test(p) || /^\/(en|es|fr)\/?(index\.html)?$/.test(p)) return "home";
+    if (/^\/blog(\/|$)/.test(p) || /^\/(en|es|fr)\/blog(\/|$)/.test(p)) return "blog";
+    if (/^\/strumenti(\/|$)/.test(p) || /^\/(en|es|fr)\/(tools|herramientas|outils)(\/|$)/.test(p)) return "strumenti";
+    if (/^\/scarica/.test(p)) return "scarica";
+    return "other";
+  }
+  function platformOf() {
+    var ua = navigator.userAgent || "";
+    if (/iPhone|iPad|iPod/.test(ua)) return "ios";
+    if (/Android/.test(ua)) return "android";
+    return "other";
+  }
+  function ping(body) {
+    var json = JSON.stringify(body);
+    try {
+      if (navigator.sendBeacon && navigator.sendBeacon(PING, json)) return;
+    } catch (e) {}
+    try { fetch(PING, { method: "POST", body: json, keepalive: true }); } catch (e) {}
+  }
+  function counter() {
+    // /join ha il suo contatore (inviteLandingPing): non si conta due volte.
+    if (/^\/join/.test(location.pathname)) return;
+    var src = firstSource();
+    var page = pageOf();
+    // Per /scarica, che reindirizza allo store da sola senza un tap.
+    window.kbLandingStorePing = function (store) { ping({ event: "store", src: src, page: page, store: store }); };
+    ping({ event: "view", src: src, page: page, platform: platformOf() });
+    // «Restato»: dieci secondi con la pagina visibile, sommati se si cambia
+    // scheda. È la riga che separa una visita da un tap accidentale.
+    var seen = 0, since = document.visibilityState === "visible" ? Date.now() : null, sent = false, timer = null;
+    function arm() {
+      if (sent || since === null) return;
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        sent = true;
+        ping({ event: "engaged", src: src, page: page });
+      }, Math.max(0, 10000 - seen));
+    }
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") { since = Date.now(); arm(); }
+      else { if (since !== null) seen += Date.now() - since; since = null; clearTimeout(timer); }
+    });
+    arm();
+    document.addEventListener("click", function (e) {
+      if (!e.target.closest) return;
+      var link = e.target.closest("a[href]");
+      var store = link && storeOf(link.href);
+      if (store) ping({ event: "store", src: src, page: page, store: store });
+    });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { init(); counter(); });
+  else { init(); counter(); }
 })();

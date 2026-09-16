@@ -297,6 +297,16 @@ function build({ note, outFile }) {
     ["Letto da un altro membro", "content_shared_read"],
   ].map(([label, ev]) => ({ label, value: G ? funnelUsers(ev) : 0 }));
 
+  // ---- Landing: contatore nostro (7 gg) e confronto con Meta
+  const LT_SRC_LABEL = { meta: "Meta (Instagram/Facebook)", google: "Google", direct: "diretto", referral: "altri siti", other: "altro" };
+  const lt7 = (C?.landingTraffic || []).filter((r) => r.date >= days7[0]).reduce((a, r) => {
+    a.views += r.views; a.engaged += r.engaged; a.store += r.store;
+    for (const [k, v] of Object.entries(r.bySrc || {})) { a.src[k] = a.src[k] || { views: 0, engaged: 0, store: 0 }; a.src[k].views += v.views; a.src[k].engaged += v.engaged; a.src[k].store += v.store; }
+    return a;
+  }, { views: 0, engaged: 0, store: 0, src: {} });
+  const metaLanding7 = sum(days7.map((d) => metaByDate[d]?.actions?.landing_page_view || 0));
+  const gaLandingUsers = sum((G?.web?.pages || []).filter((r) => r.hostName === "kidboxapp.com" && r.pagePath === "/").map((r) => r.activeUsers || 0));
+
   // ---- Sorgenti e freschezza
   const sourceRows = [
     ["GA4", results.ga4, G ? `ieri ${itDate(G.yesterday)}` : ""],
@@ -465,6 +475,13 @@ footer { font-size: 12.5px; color: var(--ink-3); display: grid; gap: 4px; }
   <section>
     <div class="section-head"><h2>Funnel a 28 giorni, per utenti unici</h2><span class="hint">${G ? `${itDate(G.funnelUsers.d28.start)} → ${itDate(G.funnelUsers.d28.end)} · GA4` : "GA4 non disponibile"}${C ? ` · pagina /join negli ultimi 7 gg: ${fmt(joinShown7)} viste → ${fmt(joinStore7)} tap store` : ""}</span></div>
     <div class="card">${funnelChart(funnelSteps)}</div>
+    <div class="card"><h3>Landing: chi arriva e cosa fa <small>contatore nostro senza cookie, ultimi 7 gg · dal 16/09/2026</small></h3>
+      ${C ? (lt7.views ? `<div class="tablewrap"><table><tr><th>sorgente</th><th class="n">aperture</th><th class="n">restati 10 s</th><th class="n">tap store</th><th class="n">store ÷ aperture</th></tr>
+      ${Object.entries(lt7.src).filter(([, v]) => v.views || v.store).sort((a, b) => b[1].views - a[1].views).map(([k, v]) => `<tr><td>${esc(LT_SRC_LABEL[k] || k)}</td><td class="n">${fmt(v.views)}</td><td class="n">${fmt(v.engaged)} <span class="muted">${v.views ? pct(v.engaged / v.views) : ""}</span></td><td class="n">${fmt(v.store)}</td><td class="n">${v.views ? pct(v.store / v.views) : "—"}</td></tr>`).join("")}
+      <tr><td><strong>totale</strong></td><td class="n"><strong>${fmt(lt7.views)}</strong></td><td class="n"><strong>${fmt(lt7.engaged)}</strong> <span class="muted">${pct(lt7.engaged / lt7.views)}</span></td><td class="n"><strong>${fmt(lt7.store)}</strong></td><td class="n"><strong>${pct(lt7.store / lt7.views)}</strong></td></tr>
+      </table></div>
+      <p class="muted">Meta nello stesso periodo: ${fmt(metaLanding7)} «landing viste» dichiarate contro ${fmt(lt7.src.meta?.views || 0)} aperture da Meta contate qui${metaLanding7 ? ` (${pct((lt7.src.meta?.views || 0) / metaLanding7)} arrivano a caricare la pagina)` : ""}. «Restati» = pagina visibile per 10 secondi: separa una visita da un tap accidentale.</p>` : `<p class="muted">Contatore attivo dal 16/09/2026: i primi numeri arrivano domani. Intanto, Meta dichiara ${fmt(metaLanding7)} «landing viste» negli ultimi 7 gg e GA4 (solo chi accetta i cookie) vede ${fmt(gaLandingUsers)} utenti sulla landing ieri.</p>`) : ""}
+    </div>
   </section>
 
   <section>

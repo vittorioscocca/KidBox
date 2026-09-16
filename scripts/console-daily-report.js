@@ -240,6 +240,28 @@ async function main() {
     return { date, shown, shownIos: r.shown_ios || 0, shownAndroid: r.shown_android || 0, shownOther: r.shown_other || 0, storeIos: r.store_ios || 0, storeAndroid: r.store_android || 0, web: r.web || 0 };
   });
 
+  // 3-bis-2. Traffico della landing (functions/landingTraffic.js): aperture,
+  // «restati» 10 secondi e tap store, per sorgente — anche questo senza
+  // consenso. Serve a misurare cosa portano davvero i click pagati.
+  const traffic = await Promise.all(days.map((d) => getDoc(tok, `landingTraffic/${d}`)));
+  const SRC = ["meta", "google", "direct", "referral", "other"];
+  out.landingTraffic = days.map((date, i) => {
+    const r = traffic[i] || {};
+    const n = (k) => Number(r[k] || 0);
+    return {
+      date,
+      views: n("view"),
+      engaged: n("engaged"),
+      store: n("store_ios") + n("store_android"),
+      storeIos: n("store_ios"),
+      storeAndroid: n("store_android"),
+      web: n("store_web"),
+      bySrc: Object.fromEntries(SRC.map((s) => [s, { views: n(`view_src_${s}`), engaged: n(`engaged_src_${s}`), store: n(`store_src_${s}`) }])),
+      byPage: { home: n("view_page_home"), blog: n("view_page_blog"), strumenti: n("view_page_strumenti"), scarica: n("view_page_scarica"), other: n("view_page_other") },
+      byPlatform: { ios: n("view_plat_ios"), android: n("view_plat_android"), other: n("view_plat_other") },
+    };
+  });
+
   // 3-ter. Chat «Chiedi a KidBox» della landing (functions/landingChat): contatori
   // del giorno e testo delle domande libere, che scade dopo 30 giorni. Anche
   // qui un contatore nostro: GA4 sulla landing vede solo chi ha acconsentito.
@@ -373,6 +395,23 @@ function print(o) {
   }
   const lt = o.inviteLanding.slice(7).reduce((a, r) => ({ shown: a.shown + r.shown, store: a.store + r.storeIos + r.storeAndroid, web: a.web + r.web }), { shown: 0, store: 0, web: 0 });
   L.push(`Ultimi 7 gg: ${lt.shown} viste → ${lt.store} tap store (${pct(lt.shown ? lt.store / lt.shown : null)}) → ${lt.web} web app. Chi ha già l'app non passa di qui: il link si apre direttamente in KidBox.`);
+  L.push("");
+
+  L.push("## Traffico landing (contatore nostro, dal 16/09/2026) — 14 gg: aperture → restati 10 s → tap store");
+  L.push(pad("giorno", 12) + pad("aperture", 10) + pad("restati", 9) + pad("store", 7) + pad("web", 5) + "per sorgente (aperture/restati/store)");
+  for (const r of o.landingTraffic) {
+    if (!r.views && !r.store) continue;
+    const srcs = Object.entries(r.bySrc).filter(([, v]) => v.views || v.store).map(([k, v]) => `${k} ${v.views}/${v.engaged}/${v.store}`).join(" · ");
+    L.push(pad(r.date, 12) + pad(r.views, 10) + pad(r.engaged, 9) + pad(r.store, 7) + pad(r.web, 5) + srcs);
+  }
+  const t7 = o.landingTraffic.slice(7).reduce((a, r) => {
+    a.views += r.views; a.engaged += r.engaged; a.store += r.store;
+    for (const [k, v] of Object.entries(r.bySrc)) { a.src[k] = a.src[k] || { views: 0, engaged: 0, store: 0 }; a.src[k].views += v.views; a.src[k].engaged += v.engaged; a.src[k].store += v.store; }
+    return a;
+  }, { views: 0, engaged: 0, store: 0, src: {} });
+  L.push(`Ultimi 7 gg: ${t7.views} aperture → ${t7.engaged} restati (${pct(t7.views ? t7.engaged / t7.views : null)}) → ${t7.store} tap store (${pct(t7.views ? t7.store / t7.views : null)} delle aperture).`);
+  const meta7 = t7.src.meta;
+  if (meta7 && meta7.views) L.push(`Da Meta (fbclid/utm): ${meta7.views} aperture → ${meta7.engaged} restati (${pct(meta7.engaged / meta7.views)}) → ${meta7.store} tap store (${pct(meta7.store / meta7.views)}). Confronta le aperture con le «landing viste» di Meta dello stesso periodo: se Meta ne conta molte di più, la differenza sono tap che chiudono prima che la pagina carichi.`);
   L.push("");
 
   L.push("## Chat «Chiedi a KidBox» sulla landing (contatore nostro) — 7 gg");

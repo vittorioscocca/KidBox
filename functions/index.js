@@ -7124,3 +7124,7 @@ exports.alexaSkill = alexa.alexaSkill;
 exports.createAlexaPairingCode = alexa.createAlexaPairingCode;
 exports.getAlexaLinkStatus = alexa.getAlexaLinkStatus;
 exports.unlinkAlexa = alexa.unlinkAlexa;
+
+// Contatore del traffico della landing, indipendente dal consenso GA4. Il
+// perché in `landingTraffic.js`.
+exports.landingPing = require("./landingTraffic").landingPing;

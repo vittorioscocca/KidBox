@@ -64,6 +64,10 @@
       // Facebook lo consente, quindi lì lasciamo il flusso automatico.
       var isInAppBrowser = /Instagram/.test(ua);
 
+      // Contatore nostro (assets/consent.js): il redirect vale come tap sullo store.
+      function storePing(store) {
+        try { if (window.kbLandingStorePing) window.kbLandingStorePing(store); } catch (e) {}
+      }
       function showFallback(title, subtitle, hint) {
         document.getElementById('spin').style.display = 'none';
         document.getElementById('fallback').style.display = 'flex';
@@ -95,9 +99,9 @@
         if (isIOS) playEl.style.display = 'none';
         else if (isAndroid) appleEl.style.display = 'none';
       } else if (isIOS) {
-        setTimeout(function(){ window.location.replace(appleUrl); }, 300);
+        setTimeout(function(){ storePing('ios'); window.location.replace(appleUrl); }, 300);
       } else if (isAndroid) {
-        setTimeout(function(){ window.location.replace(playUrl); }, 300);
+        setTimeout(function(){ storePing('android'); window.location.replace(playUrl); }, 300);
       } else {
         showFallback('Scegli il tuo store', 'Apri KidBox dal tuo telefono per scaricare l\'app.');
       }
