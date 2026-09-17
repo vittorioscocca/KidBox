@@ -12,6 +12,25 @@ export function visibilityChipLabel(t, scope) {
 }
 
 /**
+ * Chip che apre il picker: dentro un <form> deve essere type="button".
+ */
+export function VisibilityChip({ scope, locked, lockedHint, onOpen, onLocked }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <button
+        type="button"
+        className="modal-chip modal-chip-inline"
+        onClick={() => (locked ? onLocked?.() : onOpen())}
+      >
+        {visibilityChipLabel(t, scope)}
+      </button>
+      {locked && lockedHint && <span className="modal-hint">{lockedHint}</span>}
+    </>
+  );
+}
+
+/**
  * Selettore di visibilità a sé stante, come VisibilityPickerSheet su iOS:
  * tre opzioni e, per «Membri selezionati», l'elenco dei membri escluso chi
  * sta scegliendo (che vede sempre il proprio contenuto). Conferma con
@@ -56,10 +75,10 @@ export default function VisibilityPickerModal({
   return (
     <Modal onClose={onClose}>
       <div className="modal-header">
-        <button className="modal-text-btn" onClick={onClose}>
+        <button type="button" className="modal-text-btn" onClick={onClose}>
           {t.visibility.cancel}
         </button>
-        <button className="modal-save-btn" onClick={confirm}>
+        <button type="button" className="modal-save-btn" onClick={confirm}>
           {t.visibility.confirm}
         </button>
       </div>
@@ -69,6 +88,7 @@ export default function VisibilityPickerModal({
         {options.map((opt) => (
           <button
             key={opt.scope}
+            type="button"
             className="modal-option"
             onClick={() => {
               setScope(opt.scope);
@@ -86,7 +106,12 @@ export default function VisibilityPickerModal({
           <div className="modal-label">{t.visibility.selectMembers}</div>
           <div className="modal-section">
             {selectable.map((m) => (
-              <button key={m.id} className="modal-option" onClick={() => toggle(m.id)}>
+              <button
+                key={m.id}
+                type="button"
+                className="modal-option"
+                onClick={() => toggle(m.id)}
+              >
                 <span>{m.displayName || t.visibility.member}</span>
                 <span>{memberIds.has(m.id) ? "●" : "○"}</span>
               </button>

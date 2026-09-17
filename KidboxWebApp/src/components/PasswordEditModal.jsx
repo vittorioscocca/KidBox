@@ -1,14 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Modal from "./Modal";
+import VisibilityPickerModal, { VisibilityChip } from "./VisibilityPickerModal";
 import { useTranslation } from "../i18n/LocaleContext";
 import { evaluate, LEVEL_COLOR } from "../passwordStrength";
 import { DEFAULT_OPTIONS, generate } from "../passwordGenerator";
 import { emojiForIcon } from "../services/passwords";
-import {
-  VISIBILITY_FAMILY,
-  VISIBILITY_MEMBERS,
-  VISIBILITY_PRIVATE,
-} from "../services/passwordCrypto";
+import { VISIBILITY_FAMILY, VISIBILITY_MEMBERS } from "../services/passwordCrypto";
 
 const toDateInput = (millis) =>
   millis ? new Date(millis).toISOString().slice(0, 10) : "";
@@ -46,6 +43,7 @@ export default function PasswordEditModal({
   const [options, setOptions] = useState(DEFAULT_OPTIONS);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [showVisibility, setShowVisibility] = useState(false);
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
 
@@ -94,13 +92,6 @@ export default function PasswordEditModal({
       setSaving(false);
     }
   };
-
-  const toggleMember = (uid) =>
-    set({
-      visibilityMemberIds: form.visibilityMemberIds.includes(uid)
-        ? form.visibilityMemberIds.filter((m) => m !== uid)
-        : [...form.visibilityMemberIds, uid],
-    });
 
   return (
     <Modal onClose={onClose}>
@@ -224,31 +215,13 @@ export default function PasswordEditModal({
 
         <label>
           {p.fieldVisibility}
-          <select
-            value={form.visibility}
-            disabled={!canChangeVisibility}
-            onChange={(e) => set({ visibility: e.target.value })}
-          >
-            <option value={VISIBILITY_FAMILY}>{p.visibilityFamily}</option>
-            <option value={VISIBILITY_MEMBERS}>{p.visibilityMembers}</option>
-            <option value={VISIBILITY_PRIVATE}>{p.visibilityPrivate}</option>
-          </select>
+          <VisibilityChip
+            scope={form.visibility}
+            locked={!canChangeVisibility}
+            lockedHint={p.visibilityLocked}
+            onOpen={() => setShowVisibility(true)}
+          />
         </label>
-
-        {form.visibility === VISIBILITY_MEMBERS && (
-          <div className="pw-members">
-            {members.map((m) => (
-              <label key={m.id} className="pw-check">
-                <input
-                  type="checkbox"
-                  checked={form.visibilityMemberIds.includes(m.id)}
-                  onChange={() => toggleMember(m.id)}
-                />
-                {m.displayName || m.name || m.email || m.id}
-              </label>
-            ))}
-          </div>
-        )}
 
         <label>
           {p.fieldExpires}
@@ -289,6 +262,19 @@ export default function PasswordEditModal({
           </button>
         </div>
       </form>
+      {showVisibility && (
+        <VisibilityPickerModal
+          scope={form.visibility}
+          memberIds={form.visibilityMemberIds}
+          members={members}
+          whoCanSee={p.whoCanSee}
+          onConfirm={(scope, ids) => {
+            set({ visibility: scope, visibilityMemberIds: ids });
+            setShowVisibility(false);
+          }}
+          onClose={() => setShowVisibility(false)}
+        />
+      )}
     </Modal>
   );
 }

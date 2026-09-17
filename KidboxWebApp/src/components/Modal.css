@@ -112,6 +112,12 @@ textarea.modal-field {
   margin: 4px 0 8px;
 }
 
+/* Chip dentro un campo di form (wallet, password): niente margine sotto, si allinea a sinistra. */
+.modal-chip-inline {
+  margin-bottom: 0;
+  align-self: flex-start;
+}
+
 /* Nota sotto il chip visibilità quando non si può cambiare (non si è il creatore). */
 .modal-hint {
   font-size: 0.8rem;

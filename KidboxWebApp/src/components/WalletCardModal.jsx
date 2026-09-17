@@ -1,7 +1,8 @@
 import { useState } from "react";
 import Modal from "./Modal";
+import VisibilityPickerModal, { VisibilityChip } from "./VisibilityPickerModal";
 import { useTranslation } from "../i18n/LocaleContext";
-import { WALLET_FAMILY, WALLET_MEMBERS, WALLET_PRIVATE } from "../services/wallet";
+import { WALLET_PRIVATE } from "../services/wallet";
 
 const PALETTE = [
   ["#3A3A3C", "#1C1C1E"],
@@ -35,6 +36,7 @@ export default function WalletCardModal({ card, members, onSave, onUploadPhoto, 
   }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [showVisibility, setShowVisibility] = useState(false);
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
 
@@ -140,36 +142,13 @@ export default function WalletCardModal({ card, members, onSave, onUploadPhoto, 
 
         <label>
           {w.visibility}
-          <select
-            value={form.visibilityScope}
-            onChange={(e) => set({ visibilityScope: e.target.value })}
-          >
-            <option value={WALLET_PRIVATE}>{w.visibilityPrivate}</option>
-            <option value={WALLET_MEMBERS}>{w.visibilityMembers}</option>
-            <option value={WALLET_FAMILY}>{w.visibilityFamily}</option>
-          </select>
+          <VisibilityChip
+            scope={form.visibilityScope}
+            locked={false}
+            lockedHint={w.visibilityLocked}
+            onOpen={() => setShowVisibility(true)}
+          />
         </label>
-
-        {form.visibilityScope === WALLET_MEMBERS && (
-          <div className="pw-members">
-            {members.map((m) => (
-              <label key={m.id} className="pw-check">
-                <input
-                  type="checkbox"
-                  checked={form.visibilityMemberIds.includes(m.id)}
-                  onChange={() =>
-                    set({
-                      visibilityMemberIds: form.visibilityMemberIds.includes(m.id)
-                        ? form.visibilityMemberIds.filter((x) => x !== m.id)
-                        : [...form.visibilityMemberIds, m.id],
-                    })
-                  }
-                />
-                {m.displayName || m.name || m.email || m.id}
-              </label>
-            ))}
-          </div>
-        )}
 
         <label>
           {w.notes}
@@ -187,6 +166,19 @@ export default function WalletCardModal({ card, members, onSave, onUploadPhoto, 
           </button>
         </div>
       </form>
+      {showVisibility && (
+        <VisibilityPickerModal
+          scope={form.visibilityScope}
+          memberIds={form.visibilityMemberIds}
+          members={members}
+          whoCanSee={w.whoCanSeeCard}
+          onConfirm={(scope, ids) => {
+            set({ visibilityScope: scope, visibilityMemberIds: ids });
+            setShowVisibility(false);
+          }}
+          onClose={() => setShowVisibility(false)}
+        />
+      )}
     </Modal>
   );
 }

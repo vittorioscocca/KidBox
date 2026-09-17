@@ -1,12 +1,9 @@
 import { useState } from "react";
 import Modal from "./Modal";
+import VisibilityPickerModal, { VisibilityChip } from "./VisibilityPickerModal";
 import { useTranslation } from "../i18n/LocaleContext";
-import {
-  TICKET_KINDS,
-  WALLET_FAMILY,
-  WALLET_MEMBERS,
-  WALLET_PRIVATE,
-} from "../services/wallet";
+import { useAuth } from "../AuthContext";
+import { TICKET_KINDS, WALLET_PRIVATE } from "../services/wallet";
 
 const toLocalInput = (millis) => {
   if (!millis) return "";
@@ -20,8 +17,13 @@ const REMINDERS = [null, 1, 2, 3, 6, 12, 24, 48];
 /** Creazione e modifica di un biglietto: stessi campi di `AddWalletTicketSheet`. */
 export default function WalletTicketModal({ ticket, members, locale, onSave, onClose }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const w = t.wallet;
   const isNew = !ticket?.id;
+  // Come `canEditVisibility(for:)` in WalletTicketDetailView: la cambia solo
+  // chi ha creato il biglietto (o chiunque, se il documento è senza createdBy).
+  const canEditVisibility =
+    isNew || !(ticket?.createdBy || "").trim() || ticket.createdBy === user?.uid;
 
   const [form, setForm] = useState(() => ({
     title: ticket?.title || "",
@@ -43,6 +45,7 @@ export default function WalletTicketModal({ ticket, members, locale, onSave, onC
   }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [showVisibility, setShowVisibility] = useState(false);
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
 
@@ -189,36 +192,13 @@ export default function WalletTicketModal({ ticket, members, locale, onSave, onC
 
         <label>
           {w.visibility}
-          <select
-            value={form.visibilityScope}
-            onChange={(e) => set({ visibilityScope: e.target.value })}
-          >
-            <option value={WALLET_PRIVATE}>{w.visibilityPrivate}</option>
-            <option value={WALLET_MEMBERS}>{w.visibilityMembers}</option>
-            <option value={WALLET_FAMILY}>{w.visibilityFamily}</option>
-          </select>
+          <VisibilityChip
+            scope={form.visibilityScope}
+            locked={!canEditVisibility}
+            lockedHint={w.visibilityLocked}
+            onOpen={() => setShowVisibility(true)}
+          />
         </label>
-
-        {form.visibilityScope === WALLET_MEMBERS && (
-          <div className="pw-members">
-            {members.map((m) => (
-              <label key={m.id} className="pw-check">
-                <input
-                  type="checkbox"
-                  checked={form.visibilityMemberIds.includes(m.id)}
-                  onChange={() =>
-                    set({
-                      visibilityMemberIds: form.visibilityMemberIds.includes(m.id)
-                        ? form.visibilityMemberIds.filter((x) => x !== m.id)
-                        : [...form.visibilityMemberIds, m.id],
-                    })
-                  }
-                />
-                {m.displayName || m.name || m.email || m.id}
-              </label>
-            ))}
-          </div>
-        )}
 
         <label>
           {w.notes}
@@ -236,6 +216,19 @@ export default function WalletTicketModal({ ticket, members, locale, onSave, onC
           </button>
         </div>
       </form>
+      {showVisibility && (
+        <VisibilityPickerModal
+          scope={form.visibilityScope}
+          memberIds={form.visibilityMemberIds}
+          members={members}
+          whoCanSee={w.whoCanSeeTicket}
+          onConfirm={(scope, ids) => {
+            set({ visibilityScope: scope, visibilityMemberIds: ids });
+            setShowVisibility(false);
+          }}
+          onClose={() => setShowVisibility(false)}
+        />
+      )}
     </Modal>
   );
 }
