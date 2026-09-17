@@ -4,7 +4,9 @@ import { todosCol } from "../hooks/useTodos";
 import { useAuth } from "../AuthContext";
 import { useFamilyMembers } from "../hooks/useFamilyMembers";
 import { useTranslation } from "../i18n/LocaleContext";
+import { VISIBILITY_MEMBERS, normalizedVisibilityScope } from "../visibility";
 import Modal from "./Modal";
+import VisibilityPickerModal, { visibilityChipLabel } from "./VisibilityPickerModal";
 
 function toLocalInputValue(date) {
   const pad = (n) => String(n).padStart(2, "0");
@@ -17,13 +19,10 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
   const { t } = useTranslation();
   const members = useFamilyMembers(familyId);
 
-  const VISIBILITY_OPTIONS = [
-    { scope: "family", label: t.todo.family },
-    { scope: "members", label: t.todo.members },
-    { scope: "private", label: t.todo.onlyMe },
-  ];
-  const chipLabel = (scope) =>
-    VISIBILITY_OPTIONS.find((o) => o.scope === scope)?.label || VISIBILITY_OPTIONS[0].label;
+  // Come `canEditVisibility` in TodoEditView: la cambia solo chi ha creato il
+  // to-do (o chiunque, se il documento è legacy senza createdBy).
+  const canEditVisibility =
+    !isEdit || !(todo?.createdBy || "").trim() || todo.createdBy === user.uid;
 
   const [title, setTitle] = useState(todo?.title ?? "");
   const [notes, setNotes] = useState(todo?.notes ?? "");
@@ -33,11 +32,15 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
   );
   const [isUrgent, setIsUrgent] = useState((todo?.priority ?? 0) === 1);
   const [assignedTo, setAssignedTo] = useState(todo?.assignedTo ?? null);
-  const [visibilityScope, setVisibilityScope] = useState(todo?.visibilityScope ?? "family");
+  const [visibilityScope, setVisibilityScope] = useState(
+    normalizedVisibilityScope(todo?.visibilityScope)
+  );
+  // Già ripuliti dal picker: senza il proprio uid e ordinati, come su iOS.
   const [visibilityMemberIds, setVisibilityMemberIds] = useState(
-    new Set(todo?.visibilityMemberIds ?? [])
+    todo?.visibilityMemberIds ?? []
   );
   const [view, setView] = useState("main"); // main | assignee | visibility
+  const [visibilityLocked, setVisibilityLocked] = useState(false);
   const [error, setError] = useState(null);
 
   const assigneeLabel = () => {
@@ -46,23 +49,11 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
     return members.find((m) => m.id === assignedTo)?.displayName || t.todo.none;
   };
 
-  const toggleVisibilityMember = (uid) => {
-    setVisibilityMemberIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(uid)) next.delete(uid);
-      else next.add(uid);
-      return next;
-    });
-  };
-
   const save = async () => {
     const trimmed = title.trim();
     if (!trimmed) return;
     const id = isEdit ? todo.id : crypto.randomUUID();
-    const finalMemberIds =
-      visibilityScope === "members"
-        ? [...visibilityMemberIds].filter((uid) => uid !== user.uid)
-        : [];
+    const finalMemberIds = visibilityScope === VISIBILITY_MEMBERS ? visibilityMemberIds : [];
     try {
       const payload = {
         childId: isEdit ? todo.childId : childId,
@@ -143,51 +134,18 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
 
   if (view === "visibility") {
     return (
-      <Modal onClose={() => setView("main")}>
-        <div className="modal-header">
-          <button className="modal-text-btn" onClick={() => setView("main")}>
-            {t.todo.cancel}
-          </button>
-          <button className="modal-save-btn" onClick={() => setView("main")}>
-            {t.todo.confirm}
-          </button>
-        </div>
-        <div className="modal-title">{t.todo.visibility}</div>
-        <div className="modal-label">{t.todo.whoCanSee}</div>
-        <div className="modal-section">
-          {VISIBILITY_OPTIONS.map((opt) => (
-            <button
-              key={opt.scope}
-              className="modal-option"
-              onClick={() => {
-                setVisibilityScope(opt.scope);
-                if (opt.scope !== "members") setVisibilityMemberIds(new Set());
-              }}
-            >
-              <span>{opt.label}</span>
-              <span>{visibilityScope === opt.scope ? "●" : "○"}</span>
-            </button>
-          ))}
-        </div>
-
-        {visibilityScope === "members" && (
-          <>
-            <div className="modal-label">{t.todo.selectMembers}</div>
-            <div className="modal-section">
-              {members.map((m) => (
-                <button
-                  key={m.id}
-                  className="modal-option"
-                  onClick={() => toggleVisibilityMember(m.id)}
-                >
-                  <span>{m.id === user.uid ? t.todo.me : m.displayName || t.todo.none}</span>
-                  <span>{visibilityMemberIds.has(m.id) ? "●" : "○"}</span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </Modal>
+      <VisibilityPickerModal
+        scope={visibilityScope}
+        memberIds={visibilityMemberIds}
+        members={members}
+        whoCanSee={t.todo.whoCanSee}
+        onConfirm={(scope, ids) => {
+          setVisibilityScope(scope);
+          setVisibilityMemberIds(ids);
+          setView("main");
+        }}
+        onClose={() => setView("main")}
+      />
     );
   }
 
@@ -206,9 +164,16 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
       </div>
       {error && <p className="error">{error}</p>}
 
-      <button className="modal-chip" onClick={() => setView("visibility")}>
-        {chipLabel(visibilityScope)}
+      <button
+        className="modal-chip"
+        onClick={() => {
+          if (canEditVisibility) setView("visibility");
+          else setVisibilityLocked(true);
+        }}
+      >
+        {visibilityChipLabel(t, visibilityScope)}
       </button>
+      {visibilityLocked && <p className="modal-hint">{t.todo.visibilityLocked}</p>}
 
       <input
         className="modal-field"
