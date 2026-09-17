@@ -30,7 +30,7 @@ export default function TodoPage() {
 
   const children = useChildren(currentFamilyId);
   const childId = children[0]?.id ?? "";
-  const { todos, error } = useTodos(currentFamilyId);
+  const { todos, error } = useTodos(currentFamilyId, user?.uid);
   const lists = useTodoLists(currentFamilyId);
   const members = useFamilyMembers(currentFamilyId);
 

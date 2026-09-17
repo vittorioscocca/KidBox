@@ -10,6 +10,7 @@ import { readField } from "../services/noteCrypto";
 import { noteHtmlToText } from "../services/noteHtml";
 import { categoryFromId, formatAmount } from "../expenseCategories";
 import { categoryInfo } from "../calendarUtils";
+import { isVisibleTo } from "../visibility";
 import { listenSharedLocations } from "../services/location";
 import {
   allSessions,
@@ -102,18 +103,22 @@ export default function Home() {
 
   /* ── Dati dei widget ──────────────────────────────────────────────── */
 
+  // Eventi e to-do «Solo io» o «Membri selezionati» di altri restano fuori
+  // anche dai widget della home, come su iOS (HomeSummaryGrid).
   const upcoming = useMemo(() => {
     const now = Date.now();
     return events
+      .filter((e) => isVisibleTo(e, user?.uid))
       .filter((e) => (e.endDate?.toMillis?.() ?? e.startDate?.toMillis?.() ?? 0) >= now)
       .sort((a, b) => (a.startDate?.toMillis?.() ?? 0) - (b.startDate?.toMillis?.() ?? 0))
       .slice(0, 4);
-  }, [events]);
+  }, [events, user?.uid]);
 
   const openTodos = useMemo(
     () =>
       todos
         // I todo sono di famiglia: nessun filtro per childId (vedi useTodos).
+        .filter((x) => isVisibleTo(x, user?.uid))
         .filter((x) => !x.isDone)
         .sort((a, b) => {
           // Prima chi ha una scadenza, poi per data: in home conta cosa scade prima.
@@ -121,7 +126,7 @@ export default function Home() {
           const db2 = b.dueAt?.toMillis?.() ?? Infinity;
           return da - db2;
         }),
-    [todos]
+    [todos, user?.uid]
   );
 
   const toBuy = useMemo(() => groceries.filter((g) => !g.isPurchased), [groceries]);
@@ -160,7 +165,8 @@ export default function Home() {
       setNotePreviews([]);
       return undefined;
     }
-    const latest = [...rawNotes]
+    const latest = rawNotes
+      .filter((n) => isVisibleTo(n, user.uid))
       .sort((a, b) => (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0))
       .slice(0, 3);
 

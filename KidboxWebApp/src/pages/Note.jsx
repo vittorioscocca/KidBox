@@ -16,6 +16,7 @@ import { useTranslation } from "../i18n/LocaleContext";
 import { MissingFamilyKeyError, loadFamilyKey } from "../services/familyKey";
 import { encryptString, readField } from "../services/noteCrypto";
 import { noteHtmlToText } from "../services/noteHtml";
+import { isVisibleTo } from "../visibility";
 import RichTextEditor from "../components/RichTextEditor";
 import "./Note.css";
 
@@ -87,19 +88,27 @@ export default function Note() {
     };
   }, [currentFamilyId, user]);
 
-  // 2. Note in realtime (ancora cifrate).
+  // 2. Note in realtime (ancora cifrate). Le note «Solo io» o «Membri
+  //    selezionati» di un altro membro si scartano qui, come su iOS
+  //    (KBNote.isVisible(to:)), prima ancora di decifrarle.
   useEffect(() => {
     if (!currentFamilyId) return undefined;
+    const uid = user?.uid;
     const q = query(
       collection(db, "families", currentFamilyId, "notes"),
       where("isDeleted", "==", false)
     );
     return onSnapshot(
       q,
-      (snap) => setRawNotes(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      (snap) =>
+        setRawNotes(
+          snap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .filter((n) => isVisibleTo(n, uid))
+        ),
       (err) => setError(err.message)
     );
-  }, [currentFamilyId]);
+  }, [currentFamilyId, user?.uid]);
 
   // 3. Decifratura: fuori dal render, perché è asincrona.
   useEffect(() => {

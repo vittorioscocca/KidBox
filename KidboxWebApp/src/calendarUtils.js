@@ -237,28 +237,13 @@ export function weekdayName(date, locale, style = "long") {
   return s;
 }
 
-/* ── Visibilità (come KBVisibilityScope su iOS) ─────────────────────────── */
+/* ── Visibilità ─────────────────────────────────────────────────────────── */
 
-export const VISIBILITY_FAMILY = "family";
-export const VISIBILITY_MEMBERS = "members";
-/** Valore salvato per «Solo io». */
-export const VISIBILITY_PRIVATE = "private";
-
-/** `KBVisibilityScope.normalized`: vuoto o ignoto → tutta la famiglia. */
-export function normalizedVisibilityScope(raw) {
-  if (raw === VISIBILITY_MEMBERS || raw === VISIBILITY_PRIVATE) return raw;
-  return VISIBILITY_FAMILY;
-}
-
-/** `KBCalendarEvent.isVisible(to:)`: chi ha creato l'evento lo vede sempre. */
-export function isEventVisibleTo({ visibilityScope, visibilityMemberIds, createdBy }, uid) {
-  if (!uid) return false;
-  switch (normalizedVisibilityScope(visibilityScope)) {
-    case VISIBILITY_FAMILY:
-      return true;
-    case VISIBILITY_MEMBERS:
-      return createdBy === uid || (visibilityMemberIds || []).includes(uid);
-    default:
-      return createdBy === uid;
-  }
-}
+export {
+  VISIBILITY_FAMILY,
+  VISIBILITY_MEMBERS,
+  VISIBILITY_PRIVATE,
+  normalizedVisibilityScope,
+} from "./visibility";
+/** `KBCalendarEvent.isVisible(to:)`. */
+export { isVisibleTo as isEventVisibleTo } from "./visibility";

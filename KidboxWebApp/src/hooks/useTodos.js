@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../firebase";
+import { isVisibleTo } from "../visibility";
 
 export function todosCol(familyId) {
   return collection(db, "families", familyId, "todos");
@@ -11,7 +12,11 @@ export function todosCol(familyId) {
 // uno scoping vero — `children[0]` su una query senza `orderBy` non ha ordine
 // garantito, quindi con due figli il web poteva mostrare un elenco diverso da
 // quello dell'app. Vedi il commento esteso in TodoHomeView.swift.
-export function useTodos(familyId) {
+//
+// Si filtra invece per visibilità, come `isVisible(to:)` in TodoHomeView,
+// TodoListView e TodoSmartListView: i to-do «Solo io» o «Membri selezionati»
+// di un altro membro non arrivano alle viste.
+export function useTodos(familyId, uid) {
   const [todos, setTodos] = useState([]);
   const [error, setError] = useState(null);
 
@@ -26,11 +31,16 @@ export function useTodos(familyId) {
     );
     const unsub = onSnapshot(
       q,
-      (snap) => setTodos(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      (snap) =>
+        setTodos(
+          snap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .filter((todo) => isVisibleTo(todo, uid))
+        ),
       (err) => setError(err.message)
     );
     return unsub;
-  }, [familyId]);
+  }, [familyId, uid]);
 
   return { todos, error };
 }
