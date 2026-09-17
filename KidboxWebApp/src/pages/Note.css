@@ -150,6 +150,11 @@
   margin-bottom: 8px;
 }
 
+/* Il chip visibilità sta nella barra dell'editor, sopra al titolo come su iOS. */
+.note-visibility-chip {
+  margin-bottom: 0;
+}
+
 .note-editor-date {
   flex: 1;
   text-align: center;

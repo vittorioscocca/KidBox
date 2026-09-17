@@ -16,8 +16,10 @@ import { useTranslation } from "../i18n/LocaleContext";
 import { MissingFamilyKeyError, loadFamilyKey } from "../services/familyKey";
 import { encryptString, readField } from "../services/noteCrypto";
 import { noteHtmlToText } from "../services/noteHtml";
-import { isVisibleTo } from "../visibility";
+import { VISIBILITY_MEMBERS, isVisibleTo, normalizedVisibilityScope } from "../visibility";
+import { useFamilyMembers } from "../hooks/useFamilyMembers";
 import RichTextEditor from "../components/RichTextEditor";
+import VisibilityPickerModal, { visibilityChipLabel } from "../components/VisibilityPickerModal";
 import "./Note.css";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -64,6 +66,9 @@ export default function Note() {
 
   const [draft, setDraft] = useState({ title: "", body: "" });
   const saveTimer = useRef(null);
+  const members = useFamilyMembers(currentFamilyId);
+  const [showVisibility, setShowVisibility] = useState(false);
+  const [visibilityLocked, setVisibilityLocked] = useState(false);
 
   // 1. Chiave di famiglia (dall'escrow su Firestore).
   useEffect(() => {
@@ -147,6 +152,7 @@ export default function Note() {
 
   // Allinea la bozza quando cambia nota selezionata (non a ogni battuta).
   useEffect(() => {
+    setVisibilityLocked(false);
     if (selected) setDraft({ title: selected.title, body: selected.body });
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -227,6 +233,33 @@ export default function Note() {
       });
       setSelectedId(id);
       setDraft({ title: "", body: "" });
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // Come `canEditVisibility` in NoteDetailView: la cambia solo chi ha creato
+  // la nota (o chiunque, se il documento è legacy senza createdBy).
+  const canEditVisibility = (note) => {
+    const cid = (note?.createdBy || "").trim();
+    return !cid || cid === user?.uid;
+  };
+
+  const saveVisibility = async (note, scope, memberIds) => {
+    setShowVisibility(false);
+    if (!currentFamilyId || !note) return;
+    try {
+      await setDoc(
+        doc(db, "families", currentFamilyId, "notes", note.id),
+        {
+          visibilityScope: scope,
+          visibilityMemberIds: scope === VISIBILITY_MEMBERS ? memberIds : [],
+          updatedBy: user.uid,
+          updatedByName: user.displayName ?? null,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
     } catch (err) {
       setError(err.message);
     }
@@ -319,6 +352,15 @@ export default function Note() {
         {selected ? (
           <>
             <div className="note-editor-bar">
+              <button
+                className="modal-chip note-visibility-chip"
+                onClick={() => {
+                  if (canEditVisibility(selected)) setShowVisibility(true);
+                  else setVisibilityLocked(true);
+                }}
+              >
+                {visibilityChipLabel(t, normalizedVisibilityScope(selected.visibilityScope))}
+              </button>
               <span className="note-editor-date">
                 {selected.updatedAt?.toDate?.()
                   ? new Intl.DateTimeFormat(locale === "en" ? "en-US" : "it-IT", {
@@ -335,6 +377,7 @@ export default function Note() {
                 🗑
               </button>
             </div>
+            {visibilityLocked && <p className="modal-hint">{t.notes.visibilityLocked}</p>}
             <input
               className="note-title-input"
               placeholder={t.notes.titlePlaceholder}
@@ -351,6 +394,17 @@ export default function Note() {
           <div className="note-placeholder">{t.notes.pickOne}</div>
         )}
       </section>
+
+      {showVisibility && selected && (
+        <VisibilityPickerModal
+          scope={normalizedVisibilityScope(selected.visibilityScope)}
+          memberIds={selected.visibilityMemberIds}
+          members={members}
+          whoCanSee={t.notes.whoCanSee}
+          onConfirm={(scope, ids) => saveVisibility(selected, scope, ids)}
+          onClose={() => setShowVisibility(false)}
+        />
+      )}
     </div>
   );
 }
