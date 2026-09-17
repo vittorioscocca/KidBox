@@ -302,6 +302,7 @@
   padding: 3px 4px;
   overflow: hidden;
   cursor: pointer;
+  user-select: none; /* il doppio click crea l'evento, non deve selezionare il numero del giorno */
   min-height: 0;
   display: flex;
   flex-direction: column;

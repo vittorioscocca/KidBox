@@ -112,6 +112,13 @@ textarea.modal-field {
   margin: 4px 0 8px;
 }
 
+/* Nota sotto il chip visibilità quando non si può cambiare (non si è il creatore). */
+.modal-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: -8px 0 12px;
+}
+
 .modal-section {
   border-radius: 14px;
   background: color-mix(in srgb, var(--bg) 88%, var(--text) 12%);

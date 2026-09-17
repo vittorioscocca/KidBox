@@ -2,8 +2,16 @@ import { useState } from "react";
 import { Timestamp, doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../AuthContext";
+import { useFamilyMembers } from "../hooks/useFamilyMembers";
 import { useTranslation } from "../i18n/LocaleContext";
-import { CATEGORIES, toLocalInputValue } from "../calendarUtils";
+import {
+  CATEGORIES,
+  VISIBILITY_FAMILY,
+  VISIBILITY_MEMBERS,
+  VISIBILITY_PRIVATE,
+  normalizedVisibilityScope,
+  toLocalInputValue,
+} from "../calendarUtils";
 import Modal from "./Modal";
 
 /**
@@ -14,6 +22,23 @@ export default function EventEditModal({ familyId, initialDate, event, onDelete,
   const { user } = useAuth();
   const { t } = useTranslation();
   const isEdit = Boolean(event);
+  const members = useFamilyMembers(familyId);
+
+  const VISIBILITY_OPTIONS = [
+    { scope: VISIBILITY_FAMILY, label: t.calendar.visibilityFamily },
+    { scope: VISIBILITY_MEMBERS, label: t.calendar.visibilityMembers },
+    { scope: VISIBILITY_PRIVATE, label: t.calendar.visibilityPrivate },
+  ];
+  const chipLabel = (scope) =>
+    VISIBILITY_OPTIONS.find((o) => o.scope === scope)?.label || VISIBILITY_OPTIONS[0].label;
+
+  // Come `canEditVisibility` su iOS: la visibilità la cambia solo chi ha creato
+  // l'evento (o chiunque, se il documento è legacy senza createdBy).
+  const canEditVisibility =
+    !isEdit || !(event?.createdBy || "").trim() || event.createdBy === user.uid;
+  // Come `visibilitySelectableMembers`: chi crea vede sempre il proprio evento,
+  // quindi non compare tra i membri da selezionare.
+  const selectableMembers = members.filter((m) => m.id !== user.uid);
 
   const defaults = () => {
     if (event) {
@@ -34,7 +59,24 @@ export default function EventEditModal({ familyId, initialDate, event, onDelete,
   const [endAt, setEndAt] = useState(toLocalInputValue(initial.end));
   const [location, setLocation] = useState(event?.location ?? "");
   const [notes, setNotes] = useState(event?.notes ?? "");
+  const [visibilityScope, setVisibilityScope] = useState(
+    normalizedVisibilityScope(event?.visibilityScope)
+  );
+  const [visibilityMemberIds, setVisibilityMemberIds] = useState(
+    new Set(event?.visibilityMemberIds ?? [])
+  );
+  const [view, setView] = useState("main"); // main | visibility
+  const [visibilityLocked, setVisibilityLocked] = useState(false);
   const [error, setError] = useState(null);
+
+  const toggleVisibilityMember = (uid) => {
+    setVisibilityMemberIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(uid)) next.delete(uid);
+      else next.add(uid);
+      return next;
+    });
+  };
 
   const save = async () => {
     const trimmed = title.trim();
@@ -57,8 +99,11 @@ export default function EventEditModal({ familyId, initialDate, event, onDelete,
       notes: notes.trim() || null,
       updatedAt: serverTimestamp(),
       updatedBy: user.uid,
-      visibilityScope: event?.visibilityScope ?? "family",
-      visibilityMemberIds: event?.visibilityMemberIds ?? [],
+      visibilityScope,
+      visibilityMemberIds:
+        visibilityScope === VISIBILITY_MEMBERS
+          ? [...visibilityMemberIds].filter((uid) => uid !== user.uid).sort()
+          : [],
     };
     // In modifica createdAt/createdBy non si toccano: sovrascriverli farebbe
     // risultare l'evento creato da chi lo ha solo modificato.
@@ -77,6 +122,56 @@ export default function EventEditModal({ familyId, initialDate, event, onDelete,
     }
   };
 
+  if (view === "visibility") {
+    return (
+      <Modal onClose={() => setView("main")}>
+        <div className="modal-header">
+          <button className="modal-text-btn" onClick={() => setView("main")}>
+            {t.calendar.cancel}
+          </button>
+          <button className="modal-save-btn" onClick={() => setView("main")}>
+            {t.calendar.confirm}
+          </button>
+        </div>
+        <div className="modal-title">{t.calendar.visibility}</div>
+        <div className="modal-label">{t.calendar.whoCanSee}</div>
+        <div className="modal-section">
+          {VISIBILITY_OPTIONS.map((opt) => (
+            <button
+              key={opt.scope}
+              className="modal-option"
+              onClick={() => {
+                setVisibilityScope(opt.scope);
+                if (opt.scope !== VISIBILITY_MEMBERS) setVisibilityMemberIds(new Set());
+              }}
+            >
+              <span>{opt.label}</span>
+              <span>{visibilityScope === opt.scope ? "●" : "○"}</span>
+            </button>
+          ))}
+        </div>
+
+        {visibilityScope === VISIBILITY_MEMBERS && (
+          <>
+            <div className="modal-label">{t.calendar.selectMembers}</div>
+            <div className="modal-section">
+              {selectableMembers.map((m) => (
+                <button
+                  key={m.id}
+                  className="modal-option"
+                  onClick={() => toggleVisibilityMember(m.id)}
+                >
+                  <span>{m.displayName || t.calendar.member}</span>
+                  <span>{visibilityMemberIds.has(m.id) ? "●" : "○"}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </Modal>
+    );
+  }
+
   return (
     <Modal onClose={onClose}>
       <div className="modal-header">
@@ -89,6 +184,17 @@ export default function EventEditModal({ familyId, initialDate, event, onDelete,
         {isEdit ? t.calendar.editEvent : t.calendar.newEvent}
       </div>
       {error && <p className="error">{error}</p>}
+
+      <button
+        className="modal-chip"
+        onClick={() => {
+          if (canEditVisibility) setView("visibility");
+          else setVisibilityLocked(true);
+        }}
+      >
+        {chipLabel(visibilityScope)}
+      </button>
+      {visibilityLocked && <p className="modal-hint">{t.calendar.visibilityLocked}</p>}
 
       <input
         className="modal-field"

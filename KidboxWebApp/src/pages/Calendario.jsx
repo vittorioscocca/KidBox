@@ -23,6 +23,7 @@ import {
   daysWithEvents,
   eventOccursOnDay,
   firstWeekday,
+  isEventVisibleTo,
   isSameDay,
   layoutOverlaps,
   monthAbbrev,
@@ -195,7 +196,7 @@ function TimeGridView({ days, events, onSelectEvent, onCreateAt, allDayLabel, sh
 
 /* ── Vista Mese: eventi elencati dentro la cella ──────────────────────── */
 
-function MonthView({ anchor, events, selectedDate, onSelectDay, onSelectEvent, locale, weekStart }) {
+function MonthView({ anchor, events, selectedDate, onSelectDay, onSelectEvent, onCreateAt, locale, weekStart }) {
   const cells = calendarDays(anchor.getFullYear(), anchor.getMonth(), weekStart);
   const initials = weekdayInitials(locale, weekStart);
   const today = new Date();
@@ -223,6 +224,9 @@ function MonthView({ anchor, events, selectedDate, onSelectDay, onSelectEvent, l
                 (isSameDay(d, selectedDate) ? " selected" : "")
               }
               onClick={() => onSelectDay(d)}
+              // Doppio click sulla cella: nuovo evento in quel giorno, come il
+              // doppio click sulla colonna oraria nelle viste giorno/settimana.
+              onDoubleClick={() => onCreateAt(d)}
             >
               <div className="mv-daynum-row">
                 <span className={"mv-daynum" + (isSameDay(d, today) ? " today" : "")}>
@@ -241,6 +245,7 @@ function MonthView({ anchor, events, selectedDate, onSelectDay, onSelectEvent, l
                         ev.stopPropagation();
                         onSelectEvent(e);
                       }}
+                      onDoubleClick={(ev) => ev.stopPropagation()}
                     >
                       <span className="mv-dot" style={{ background: cat.color }} />
                       <span className="mv-title">{e.title}</span>
@@ -321,12 +326,20 @@ export default function Calendario() {
       collection(db, "families", currentFamilyId, "calendarEvents"),
       where("isDeleted", "==", false)
     );
+    // Come il predicato `isVisible(to:)` di CalendarView su iOS: gli eventi
+    // «Solo io» o «Membri selezionati» di un altro membro non si mostrano.
+    const uid = user?.uid;
     return onSnapshot(
       q,
-      (snap) => setEvents(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      (snap) =>
+        setEvents(
+          snap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .filter((e) => isEventVisibleTo(e, uid))
+        ),
       (err) => setError(err.message)
     );
-  }, [currentFamilyId]);
+  }, [currentFamilyId, user?.uid]);
 
   const weekStart = firstWeekday(locale);
   const marked = useMemo(() => daysWithEvents(events), [events]);
@@ -446,6 +459,10 @@ export default function Calendario() {
           selectedDate={selectedDate}
           onSelectDay={setSelectedDate}
           onSelectEvent={setEditingEvent}
+          onCreateAt={(d) => {
+            setSelectedDate(d);
+            openCreate(d);
+          }}
           locale={locale}
           weekStart={weekStart}
         />
