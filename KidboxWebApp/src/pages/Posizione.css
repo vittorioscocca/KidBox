@@ -108,6 +108,7 @@
 }
 
 .person-dot {
+  position: relative;
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -119,6 +120,17 @@
   font-weight: 700;
   font-size: 0.85rem;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* La foto copre l'iniziale quando carica; se fallisce viene tolta e resta l'iniziale. */
+.person-dot img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .person-info {
@@ -128,6 +140,9 @@
 }
 
 .person-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 0.88rem;
 }
 

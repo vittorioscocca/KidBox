@@ -1,0 +1,33 @@
+.battery-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.battery-badge .battery-icon {
+  flex-shrink: 0;
+}
+
+.battery-badge.low {
+  color: #d0342c;
+}
+
+/* Il verde di sistema su fondo chiaro si legge male: più scuro in chiaro,
+   più acceso in scuro dove un verde cupo sparirebbe. */
+.battery-badge.charging {
+  color: #17803d;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .battery-badge.charging {
+    color: #4acc78;
+  }
+}
+
+:root[data-theme="dark"] .battery-badge.charging {
+  color: #4acc78;
+}

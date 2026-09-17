@@ -105,6 +105,11 @@ export function listenSharedLocations({ familyId, onChange, onError }) {
               longitude: d.lon,
               accuracy: d.accuracy ?? null,
               lastUpdateAt: d.lastUpdateAt ?? null,
+              // Scritti dai client nativi insieme alle coordinate (vedi
+              // LocationRemoteStore.updateLocation); assenti quando il
+              // livello non è noto, e allora la pila non si mostra.
+              batteryLevel: typeof d.battery === "number" ? d.battery : null,
+              isCharging: d.batteryCharging === true,
             });
           } else {
             coordByUid.delete(uid);

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import "./FamilyMap.css";
+import { batteryBadgeHtml } from "./BatteryBadge";
 
 /**
  * Mappa con i membri che condividono e le zone salvate.
@@ -149,19 +150,29 @@ export default function FamilyMap({ people, zones, onMapClick, focus, selfPositi
       // L'iniziale sta sempre sotto, l'avatar la copre quando carica: se l'URL
       // è scaduto o irraggiungibile `onerror` toglie l'immagine e resta il pin
       // leggibile, senza costruire elementi da codice inline.
-      const inner =
+      const avatar =
+        `<span class="person-pin">` +
         `<span class="pin-initial">${escapeHtml(initial)}</span>` +
         (p.avatarURL
           ? `<img src="${escapeAttr(p.avatarURL)}" alt="" onerror="this.remove()" />`
-          : "");
+          : "") +
+        `</span>`;
+      // Sotto il cerchietto nome e batteria, come AvatarMarker + BatteryBadge
+      // su iOS. L'ancora resta al centro dell'avatar, che è il punto reale.
+      const firstName = (p.name || "").trim().split(/\s+/)[0] || "";
+      const label =
+        `<span class="person-marker-label">` +
+        `<span class="person-marker-name">${escapeHtml(firstName)}</span>` +
+        batteryBadgeHtml(p.batteryLevel, p.isCharging) +
+        `</span>`;
       const icon = L.divIcon({
-        className: "person-pin",
-        html: inner,
-        iconSize: [40, 40],
-        iconAnchor: [20, 20],
+        className: "person-marker",
+        html: avatar + label,
+        iconSize: [120, 72],
+        iconAnchor: [60, 20],
       });
       L.marker([p.latitude, p.longitude], { icon })
-        .bindTooltip(p.name || "", { direction: "top", offset: [0, -14] })
+        .bindTooltip(p.name || "", { direction: "top", offset: [0, -22] })
         .addTo(peopleLayer);
       bounds.push([p.latitude, p.longitude]);
     });

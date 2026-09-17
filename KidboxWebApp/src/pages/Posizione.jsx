@@ -12,6 +12,7 @@ import {
   updateCoordinates,
 } from "../services/location";
 import FamilyMap from "../components/FamilyMap";
+import BatteryBadge from "../components/BatteryBadge";
 import Modal from "../components/Modal";
 import "./Posizione.css";
 
@@ -276,9 +277,15 @@ export default function Posizione() {
                   >
                     <span className="person-dot">
                       {(p.name || "?").charAt(0).toUpperCase()}
+                      {p.avatarURL && (
+                        <img src={p.avatarURL} alt="" onError={(e) => e.currentTarget.remove()} />
+                      )}
                     </span>
                     <span className="person-info">
-                      <span className="person-name">{p.name || "—"}</span>
+                      <span className="person-name">
+                        {p.name || "—"}
+                        <BatteryBadge level={p.batteryLevel} isCharging={p.isCharging} />
+                      </span>
                       <span className="person-meta">
                         {p.mode === "temporary" && p.expiresAt
                           ? t.location.until(timeLabel(p.expiresAt))
