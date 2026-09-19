@@ -296,6 +296,21 @@ async function incrementCountersAndGetBadges({familyId, uids, field}) {
 }
 
 /**
+ * Interruttore generale delle push, dentro `notificationPrefs` come le
+ * preferenze per categoria e con la stessa regola storica: **assente = acceso**.
+ *
+ * Vale per l'account, non per il dispositivo, ed è un gate SERVER-side di
+ * proposito. Cancellare i token per spegnere le notifiche non funziona —
+ * dicono dove consegnare, non se consegnare — e comunque non reggerebbe: iOS e
+ * Android ripersistono il token a ogni avvio, quindi lo spegnimento durerebbe
+ * fino al primo lancio dell'app. Qui invece passa ogni invio, una volta sola,
+ * e tace su tutti i dispositivi dell'utente, presenti e futuri, senza che
+ * nessun client debba sapere niente: anche una versione vecchia in giro si
+ * adegua da sola.
+ */
+const PUSH_ENABLED_FIELD = "pushEnabled";
+
+/**
  * Token FCM di più utenti in una volta sola.
  *
  * Prima ogni destinatario costava 2 round trip in serie (doc `users/{uid}`
@@ -306,14 +321,20 @@ async function incrementCountersAndGetBadges({familyId, uids, field}) {
  * Ritorna anche i `DocumentReference` dei token, così `pruneInvalidFcmTokens`
  * non deve rileggerli dopo l'invio, e la lingua scelta dal destinatario, con cui
  * chi invia traduce titolo e corpo prima della push.
+ * Rispetta l'interruttore generale `notificationPrefs.pushEnabled`, che vale
+ * per l'ACCOUNT e quindi per tutti i dispositivi: vedi
+ * [PUSH_ENABLED_FIELD]{@link PUSH_ENABLED_FIELD}.
  * @param {string[]} uids
  * @param {?(string|string[])} prefField campo di `notificationPrefs` da
- *     rispettare; `null` per ignorare le preferenze (notifiche non
- *     disattivabili). Con un array vince il primo campo effettivamente
- *     impostato: serve a introdurre una preferenza nuova senza tradire chi
- *     aveva già espresso una scelta su quella vecchia.
+ *     rispettare; `null` per ignorare le preferenze di categoria (notifiche
+ *     senza una categoria da spegnere, es. i broadcast). Con un array vince il
+ *     primo campo effettivamente impostato: serve a introdurre una preferenza
+ *     nuova senza tradire chi aveva già espresso una scelta su quella vecchia.
+ *     NON scavalca l'interruttore generale.
  * @return {Promise<Map<string, {tokens: string[], lang: string,
  *     refsByToken: Map<string, FirebaseFirestore.DocumentReference>}>>}
+ *     Gli utenti senza token — o che hanno spento le notifiche — mancano dalla
+ *     mappa: i chiamanti filtrano già con `tokensByUid.get(uid)?.tokens`.
  */
 async function getTokensForUsers(uids, prefField = null) {
   const out = new Map();
@@ -334,11 +355,19 @@ async function getTokensForUsers(uids, prefField = null) {
     const snap = userSnaps[i];
     const exists = snap && snap.exists;
     langByUid.set(uid, normalizeLang(exists ? snap.get("notificationLanguage") : null));
+    const prefs = exists ? snap.get("notificationPrefs") : null;
+
+    // L'interruttore generale, PRIMA del ramo `prefField`: chi ha spento le
+    // notifiche non riceve nemmeno quelle senza categoria — i broadcast della
+    // console, cioè proprio gli annunci che un utente che ha spento tutto
+    // percepisce come marketing. Per una comunicazione indispensabile serve un
+    // bypass esplicito sul singolo invio, non un'eccezione implicita qui.
+    if (prefs && prefs[PUSH_ENABLED_FIELD] === false) return;
+
     if (!prefField) {
       wanted.push(uid);
       return;
     }
-    const prefs = exists ? snap.get("notificationPrefs") : null;
     // Assenza di preferenze = tutto attivo: è il default storico, cambiarlo
     // silenzierebbe gli utenti che non hanno mai aperto le impostazioni.
     const fields = Array.isArray(prefField) ? prefField : [prefField];
