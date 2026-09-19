@@ -145,6 +145,24 @@ struct SettingsView: View {
             .listRowBackground(cardBackground)
 
             NavigationLink {
+                DevicesSettingsView()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "laptopcomputer.and.iphone")
+                        .foregroundStyle(KBTheme.bubbleTint)
+                        .frame(width: 22)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Dispositivi collegati")
+                            .foregroundStyle(.primary)
+                        Text("Dove hai fatto l'accesso, e come uscirne")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .listRowBackground(cardBackground)
+
+            NavigationLink {
                 PrivacySettingsView()
             } label: {
                 HStack(spacing: 12) {

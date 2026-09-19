@@ -702,6 +702,69 @@ final class NotificationManager: NSObject, ObservableObject {
         }
     }
 
+    // MARK: - Interruttore di questo dispositivo
+
+    /// Chiave locale della scelta, **per uid**.
+    ///
+    /// Per uid e non per dispositivo e basta: se su questo telefono si logga un
+    /// altro membro della famiglia, deve partire dalle proprie notifiche,
+    /// accese, non ereditare lo spegnimento di chi c'era prima.
+    private static func pushEnabledKey(_ uid: String) -> String {
+        "kb_pushEnabled_\(uid)"
+    }
+
+    /// `true` se questo dispositivo riceve notifiche per l'utente loggato.
+    ///
+    /// La scelta è della coppia account+dispositivo: lo stesso utente può
+    /// volerle spente sul tablet e accese sul telefono. Per il server la fonte
+    /// di verità è `fcmTokens/{token}.enabled`; qui in locale se ne tiene una
+    /// copia perché il token ruota (reinstallazione, ripristino, cambio
+    /// account) e con lui sparirebbe la scelta, riaccendendo le notifiche da
+    /// sole e in silenzio. Mai scritta = accese, come ogni altra preferenza.
+    func isPushEnabledOnThisDevice() -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid else { return true }
+        // `bool(forKey:)` non distingue "mai scritta" da "false".
+        return UserDefaults.standard.object(forKey: Self.pushEnabledKey(uid)) as? Bool ?? true
+    }
+
+    /// L'ordine delle due scritture non è indifferente: un fallimento non deve
+    /// lasciare la copia locale che dice una cosa e il documento del token
+    /// un'altra, perché è la copia locale a riscriverlo a ogni avvio — e
+    /// vincerebbe lei, in silenzio.
+    func setPushEnabledOnThisDevice(_ enabled: Bool) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        let key = Self.pushEnabledKey(uid)
+        let previous = isPushEnabledOnThisDevice()
+
+        if enabled {
+            // Accendendo il locale va PRIMA: è `persistFCMToken`, in fondo al
+            // giro di `enable...`, a rileggerlo per scrivere il campo.
+            UserDefaults.standard.set(true, forKey: key)
+            do {
+                // Giro completo: permesso di sistema e token di QUESTO
+                // dispositivo, che potrebbe non averne mai registrato uno — o
+                // averlo perso.
+                try await enablePushNotificationsForCurrentUser()
+            } catch {
+                UserDefaults.standard.set(previous, forKey: key)
+                throw error
+            }
+            return
+        }
+
+        // Spegnendo, il token NON si cancella: dice dove consegnare, non se.
+        // Basta marcarlo, e a tacere pensa il server. Il locale va DOPO, così
+        // se la scrittura fallisce resta acceso com'era e il toggle può dire
+        // la verità.
+        if let token = Messaging.messaging().fcmToken, !token.isEmpty {
+            try await db.collection("users").document(uid)
+                .collection("fcmTokens").document(token)
+                .setData(["enabled": false], merge: true)
+        }
+        UserDefaults.standard.set(false, forKey: key)
+        KBLog.auth.kbInfo("Push disabilitate su questo dispositivo")
+    }
+
     // MARK: - Existing preferences (unchanged)
     
     /// Clears current deep link after navigation is handled.
@@ -733,46 +796,6 @@ final class NotificationManager: NSObject, ObservableObject {
     }
     
     // MARK: - Preferences (existing)
-    
-    func fetchNotifyOnNewDocsPreference() async -> Bool {
-        guard let uid = Auth.auth().currentUser?.uid else {
-            KBLog.auth.kbDebug("No authenticated user while reading prefs")
-            return false
-        }
-        
-        KBLog.auth.kbDebug("Reading notification prefs")
-        
-        do {
-            let snap = try await db.collection("users").document(uid).getDocument()
-            
-            if let prefs = snap.get("notificationPrefs") as? [String: Any],
-               let v = prefs["notifyOnNewDocs"] as? Bool {
-                KBLog.auth.kbInfo("Preference read from map")
-                return v
-            }
-            
-            if let v = snap.get("notificationPrefs.notifyOnNewDocs") as? Bool {
-                KBLog.auth.kbInfo("Preference read via field path")
-                return v
-            }
-            
-            if let v = snap.get(FieldPath(["notificationPrefs.notifyOnNewDocs"])) as? Bool {
-                KBLog.auth.kbInfo("Preference read via literal dot field")
-                return v
-            }
-            
-            // Preferenza mai scritta = ATTIVA, come decide il server in
-            // `getUserTokensIfEnabled` (`!prefs || prefs[campo] !== false`).
-            // Con `false` qui l'interfaccia mostrava spento mentre le notifiche
-            // arrivavano davvero.
-            KBLog.auth.kbDebug("Preference not found, default true")
-            return true
-            
-        } catch {
-            KBLog.auth.kbError("Failed reading notification prefs: \(error.localizedDescription)")
-            return false
-        }
-    }
     
     func fetchNotifyOnNewMessagesPreference() async -> Bool {
         guard let uid = Auth.auth().currentUser?.uid else { return true }
@@ -840,32 +863,32 @@ final class NotificationManager: NSObject, ObservableObject {
         }
     }
     
-    // MARK: - Toggle
-    
-    func setNotifyOnNewDocs(_ enabled: Bool) async throws {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-        
-        KBLog.auth.kbInfo("Updating notifyOnNewDocs = \(enabled)")
-        
-        try await db.collection("users").document(uid).setData([
-            "notificationPrefs": [
-                "notifyOnNewDocs": enabled
-            ]
-        ], merge: true)
-        
-        try? await db.collection("users").document(uid).updateData([
-            FieldPath(["notificationPrefs.notifyOnNewDocs"]): FieldValue.delete()
-        ])
-        
-        if enabled {
-            try await enablePushNotificationsForCurrentUser()
-        } else {
-            try await disablePushNotificationsForCurrentUser()
-        }
-    }
-    
     // MARK: - Enable
-    
+
+    // Non c'è un `disable` gemello, ed è voluto: quando servirà, l'interruttore
+    // generale è dell'ACCOUNT come le `notificationPrefs`, quindi non ha niente
+    // a che vedere con i token e non va costruito qui.
+    //
+    // Quello che c'era cancellava TUTTI i documenti in `users/{uid}/fcmTokens`.
+    // Non era solo brutale — zittiva anche l'Android dello stesso account —
+    // oggi non funzionerebbe proprio: entrambi i client ripersistono il token a
+    // ogni avvio (qui via `didReceiveRegistrationToken`, su Android in
+    // `startFcmTokenOwnershipObserver`), quindi lo spegnimento durerebbe fino
+    // al primo lancio dell'app. Cancellare i token è il modo sbagliato di
+    // spegnere le notifiche: i token dicono DOVE consegnare, non SE consegnare.
+    //
+    // La forma giusta è un campo su `users/{uid}` — gemello delle
+    // `notificationPrefs`, stessa regola "assente = attivo" — e un gate
+    // server-side in `getTokensForUsers` (functions/index.js), che è l'unico
+    // punto da cui passano tutti gli invii: lì un utente spento restituisce
+    // zero token e tace su ogni dispositivo, presente e futuro, senza che
+    // nessun client debba fare nulla. Un flag locale non basterebbe: non
+    // varrebbe per gli altri device e non fermerebbe la consegna, solo la
+    // visualizzazione.
+    //
+    // Resta da decidere, quando si farà, se il generale silenzia anche i
+    // broadcast della console (`getTokensForUsers` con `prefField` nullo).
+
     func enablePushNotificationsForCurrentUser() async throws {
         KBLog.auth.kbDebug("Enabling push notifications")
         
@@ -885,26 +908,6 @@ final class NotificationManager: NSObject, ObservableObject {
         try await persistFCMTokenIfAvailable()
     }
     
-    // MARK: - Disable
-    
-    func disablePushNotificationsForCurrentUser() async throws {
-        KBLog.auth.kbInfo("User disabled notifications")
-        
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-        
-        try await db.collection("users").document(uid)
-            .setData(["notificationPrefs.notifyOnNewDocs": false], merge: true)
-        
-        let tokensRef = db.collection("users").document(uid).collection("fcmTokens")
-        let snap = try await tokensRef.getDocuments()
-        
-        for d in snap.documents {
-            try await d.reference.delete()
-        }
-        
-        KBLog.auth.kbInfo("All FCM tokens removed")
-    }
-    
     // MARK: - Token Persistence
     
     func persistFCMToken(_ token: String) async throws {
@@ -913,9 +916,13 @@ final class NotificationManager: NSObject, ObservableObject {
         let ref = db.collection("users").document(uid)
             .collection("fcmTokens").document(token)
         
+        // `enabled` si riscrive a OGNI registrazione, dalla copia locale: il
+        // token ruota, e senza questo la scelta di tenere spento il dispositivo
+        // sparirebbe con lui, riaccendendo le notifiche in silenzio.
         try await ref.setData([
             "token": token,
             "platform": "ios",
+            "enabled": isPushEnabledOnThisDevice(),
             "updatedAt": FieldValue.serverTimestamp()
         ], merge: true)
         

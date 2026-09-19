@@ -53,7 +53,6 @@ export default function ImpostazioniDettaglio() {
     notifiche: [s.notifications, NotifichePage],
     privacy: [s.privacy, PrivacyPage],
     alexa: isAlexaAvailable(locale) ? [t.alexa.title, AlexaPage] : null,
-    dispositivi: [s.devices, DispositiviPage],
     sessione: [s.session, SessionePage],
   };
   const entry = pages[section];
@@ -364,15 +363,24 @@ function AlexaPage() {
 
 /* ── Sessione ────────────────────────────────────────────────────────────── */
 
-/* ── Dispositivi collegati ───────────────────────────────────────────────── */
-
-function DispositiviPage() {
+/**
+ * Sessione: l'account, i dispositivi collegati e le uscite.
+ *
+ * Tutto in una pagina sola perché è una cosa sola — «da dove sono entrato e
+ * come ne esco». Prima i dispositivi stavano in una voce a parte sotto
+ * Preferenze, e si finiva con due posti che parlavano di sessioni senza
+ * nominarsi a vicenda.
+ */
+function SessionePage() {
   const { user, logout } = useAuth();
   const { t, locale } = useTranslation();
   const s = t.settings;
-  const [sessions, setSessions] = useState(null);
+  const p = t.profile;
+  const [deleting, setDeleting] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [sessions, setSessions] = useState(null);
   const current = installId();
 
   useEffect(() => {
@@ -399,16 +407,18 @@ function DispositiviPage() {
   }, [user, current]);
 
   const signOutOne = async (session) => {
-    if (!window.confirm(session.id === current ? s.devicesConfirmCurrent : s.devicesConfirmOther)) return;
+    if (session.id === current) {
+      // Il proprio logout passa da `logout`, che toglie già questa sessione:
+      // aspettare il proprio listener lo renderebbe più lento e dipendente
+      // dalla rete.
+      if (!window.confirm(s.devicesConfirmCurrent)) return;
+      await logout();
+      return;
+    }
+    if (!window.confirm(s.devicesConfirmOther)) return;
     setBusy(true);
     setError(null);
     try {
-      if (session.id === current) {
-        // `logout` toglie già il documento di questa sessione: passare dal
-        // proprio listener renderebbe l'uscita più lenta e dipendente dalla rete.
-        await logout();
-        return;
-      }
       await deleteDoc(doc(db, "users", user.uid, "sessions", session.id));
       setSessions((prev) => prev.filter((x) => x.id !== session.id));
     } catch (err) {
@@ -431,61 +441,6 @@ function DispositiviPage() {
       setBusy(false);
     }
   };
-
-  const fmt = (ts) =>
-    ts?.seconds
-      ? new Date(ts.seconds * 1000).toLocaleString(
-          { it: "it-IT", en: "en-US", fr: "fr-FR", es: "es-ES" }[locale] || "it-IT",
-          { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }
-        )
-      : null;
-
-  const icon = (platform) => (platform === "ios" ? "📱" : platform === "android" ? "🤖" : "💻");
-
-  return (
-    <>
-      {error && <p className="error">{error}</p>}
-      <Group label={s.devices} hint={s.devicesHint}>
-        {sessions === null && <Row icon="⏳" tint="grey" title={t.common?.loading || "…"} />}
-        {sessions?.length === 0 && <Row icon="💻" tint="grey" title={s.devicesEmpty} />}
-        {sessions?.map((session) => {
-          const when = fmt(session.lastSeenAt);
-          return (
-            <Row
-              key={session.id}
-              icon={icon(session.platform)}
-              tint="grey"
-              title={session.deviceName || s.devicesFallbackName}
-              hint={[
-                session.id === current ? s.devicesThisOne : null,
-                // «Ultima apertura» e non «ultima attività»: il campo si
-                // aggiorna alla registrazione della sessione, non a ogni gesto.
-                when ? s.devicesLastOpen.replace("%@", when) : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-              onClick={busy ? undefined : () => signOutOne(session)}
-              chevron
-            />
-          );
-        })}
-      </Group>
-      <Group hint={s.devicesSignOutAllHint}>
-        <Row icon="⎋" tint="red" title={s.devicesSignOutAll} onClick={busy ? undefined : signOutAll} danger chevron />
-      </Group>
-    </>
-  );
-}
-
-function SessionePage() {
-  const { user, logout } = useAuth();
-  const { t, locale } = useTranslation();
-  const s = t.settings;
-  const p = t.profile;
-  const [deleting, setDeleting] = useState(false);
-  const [confirmText, setConfirmText] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
 
   const confirmDelete = async () => {
     setError(null);
@@ -515,8 +470,47 @@ function SessionePage() {
         {providerName && <Row icon="🔑" tint="grey" title={s.signedInWith.replace("%@", providerName)} />}
         {lastLogin && <Row icon="🕓" tint="grey" title={p.lastLogin} right={<Value>{lastLogin}</Value>} />}
       </Group>
-      <Group>
+      <Group label={s.devices} hint={s.devicesHint}>
+        {sessions === null && <Row icon="⏳" tint="grey" title={t.common?.loading || "…"} />}
+        {sessions?.length === 0 && <Row icon="💻" tint="grey" title={s.devicesEmpty} />}
+        {sessions?.map((session) => {
+          const when = session.lastSeenAt?.seconds
+            ? new Date(session.lastSeenAt.seconds * 1000).toLocaleString(
+                { it: "it-IT", en: "en-US", fr: "fr-FR", es: "es-ES" }[locale] || "it-IT",
+                { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }
+              )
+            : null;
+          return (
+            <Row
+              key={session.id}
+              icon={session.platform === "ios" ? "📱" : session.platform === "android" ? "🤖" : "💻"}
+              tint="grey"
+              title={session.deviceName || s.devicesFallbackName}
+              hint={[
+                session.id === current ? s.devicesThisOne : null,
+                // «Ultima apertura» e non «ultima attività»: il campo si
+                // aggiorna alla registrazione della sessione, non a ogni gesto.
+                when ? s.devicesLastOpen.replace("%@", when) : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+              onClick={busy ? undefined : () => signOutOne(session)}
+              chevron
+            />
+          );
+        })}
+      </Group>
+
+      <Group hint={s.devicesSignOutAllHint}>
         <Row icon="⎋" tint="grey" title={p.logout} onClick={logout} chevron />
+        <Row
+          icon="⎋"
+          tint="red"
+          title={s.devicesSignOutAll}
+          onClick={busy ? undefined : signOutAll}
+          danger
+          chevron
+        />
         {!deleting ? (
           <Row icon="🗑" tint="red" title={p.deleteAccount} onClick={() => setDeleting(true)} danger chevron />
         ) : (

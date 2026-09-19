@@ -411,6 +411,14 @@ final class AppCoordinator: ObservableObject {
                     try? await Firestore.firestore().collection("users").document(user.uid)
                         .setData(["platform": "ios"], merge: true)
 
+                    // Questo dispositivo entra nell'elenco delle sessioni e si
+                    // mette in ascolto della propria: se un altro dispositivo
+                    // la cancella, il logout lo esegue il callback qui sotto.
+                    KBDeviceSessionRegistry.shared.start(uid: user.uid) { [weak self] in
+                        guard let self else { return }
+                        Task { @MainActor in await self.signOut(modelContext: modelContext) }
+                    }
+
                     // La chat è una preferenza dell'account: si allinea qui, prima
                     // che la Home disegni le sue card, così su un dispositivo nuovo
                     // non compare per un istante se l'utente l'aveva spenta altrove.
@@ -514,6 +522,12 @@ final class AppCoordinator: ObservableObject {
                     self.isAuthenticated = false
                     self.isBootstrappingFamilies = false
                     self.uid = nil
+
+                    // Il documento l'ha già tolto chi ha eseguito il logout (o
+                    // è stato cancellato da un altro dispositivo): qui resta
+                    // solo da chiudere l'ascolto, che senza autenticazione
+                    // fallirebbe in loop sulle rules.
+                    KBDeviceSessionRegistry.shared.stop()
 
                     UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.removeObject(forKey: "kidbox.autofill.currentUid")
                     AutoFillSnapshotWriter.clearAllAutoFillSharedArtifacts()
@@ -1585,6 +1599,10 @@ final class AppCoordinator: ObservableObject {
             KBLog.persistence.kbError("Local wipe failed: \(error.localizedDescription)")
         }
         
+        // Prima di `signOut()`: dopo, le rules non lascerebbero più scrivere e
+        // questo dispositivo resterebbe nell'elenco degli altri per sempre.
+        await KBDeviceSessionRegistry.shared.stopAndRemove()
+
         do {
             try Auth.auth().signOut()
             KBLog.auth.kbInfo("Firebase sign-out OK")

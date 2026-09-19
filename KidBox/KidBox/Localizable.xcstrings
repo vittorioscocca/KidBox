@@ -565,6 +565,28 @@
         }
       }
     },
+    "%@ · Ultima apertura %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Last opened %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Última apertura %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Dernière ouverture %@"
+          }
+        }
+      }
+    },
     "%@ – %@" : {
       "localizations" : {
         "en" : {
@@ -7441,6 +7463,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Échec de l'analyse du texte"
+          }
+        }
+      }
+    },
+    "Anche questo. Dovrai accedere di nuovo su ogni dispositivo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Including this one. You'll have to sign in again on every device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incluido este. Tendrás que iniciar sesión de nuevo en cada dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Celui-ci compris. Vous devrez vous reconnecter sur chaque appareil."
           }
         }
       }
@@ -18904,6 +18948,72 @@
         }
       }
     },
+    "Disconnette anche questo dispositivo. A differenza della disconnessione singola, questa è imposta dai server di Firebase: usala se temi che qualcun altro abbia accesso al tuo account, e cambia la password subito dopo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This signs out this device too. Unlike signing out a single device, this one is enforced by Firebase's servers: use it if you think someone else has access to your account, and change your password right after."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "También cierra la sesión en este dispositivo. A diferencia del cierre individual, este lo imponen los servidores de Firebase: úsalo si crees que alguien más tiene acceso a tu cuenta, y cambia la contraseña justo después."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cela déconnecte aussi cet appareil. Contrairement à la déconnexion d'un seul appareil, celle-ci est imposée par les serveurs de Firebase : utilisez-la si vous pensez que quelqu'un d'autre a accès à votre compte, et changez votre mot de passe juste après."
+          }
+        }
+      }
+    },
+    "Disconnettere questo dispositivo?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out this device?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cerrar la sesión de este dispositivo?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déconnecter cet appareil ?"
+          }
+        }
+      }
+    },
+    "Disconnetti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déconnecter"
+          }
+        }
+      }
+    },
     "Discreta" : {
       "comment" : "Password strength: fair",
       "localizations" : {
@@ -18967,6 +19077,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Disponible avec Pro ou Max"
+          }
+        }
+      }
+    },
+    "Dispositivi collegati" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Linked devices"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivos vinculados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appareils connectés"
+          }
+        }
+      }
+    },
+    "Dispositivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appareil"
           }
         }
       }
@@ -19525,6 +19679,28 @@
         }
       }
     },
+    "Dove hai fatto l'accesso, e come uscirne" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where you're signed in, and how to sign out"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dónde has iniciado sesión y cómo cerrarla"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Où vous êtes connecté, et comment vous déconnecter"
+          }
+        }
+      }
+    },
     "Dove sono tutti" : {
       "localizations" : {
         "en" : {
@@ -19587,6 +19763,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Où voulez-vous aller ?"
+          }
+        }
+      }
+    },
+    "Dovrà accedere di nuovo per usare KidBox." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It will have to sign in again to use KidBox."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tendrá que iniciar sesión de nuevo para usar KidBox."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il devra se reconnecter pour utiliser KidBox."
           }
         }
       }
@@ -19697,6 +19895,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Une mise à jour est disponible"
+          }
+        }
+      }
+    },
+    "È il dispositivo che stai usando: uscirai subito da KidBox." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It's the device you're using: you'll be signed out of KidBox right away."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es el dispositivo que estás usando: saldrás de KidBox de inmediato."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C'est l'appareil que vous utilisez : vous quitterez KidBox immédiatement."
           }
         }
       }
@@ -22489,6 +22709,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Se déconnecter"
+          }
+        }
+      }
+    },
+    "Esci da tutti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out of all"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar en todos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout déconnecter"
+          }
+        }
+      }
+    },
+    "Esci da tutti i dispositivi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out of all devices"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar sesión en todos los dispositivos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se déconnecter de tous les appareils"
           }
         }
       }
@@ -39141,6 +39405,28 @@
         }
       }
     },
+    "Notifiche attive su questo dispositivo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications on for this device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notificaciones activadas en este dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications activées sur cet appareil."
+          }
+        }
+      }
+    },
     "Notifiche attive." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -39295,6 +39581,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notifications désactivées"
+          }
+        }
+      }
+    },
+    "Notifiche disattivate su questo dispositivo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications off for this device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notificaciones desactivadas en este dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications désactivées sur cet appareil."
           }
         }
       }
@@ -47536,6 +47844,28 @@
         }
       }
     },
+    "Questo dispositivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet appareil"
+          }
+        }
+      }
+    },
     "Questo file richiede %@ ma hai solo %@ liberi su %@. Passa a Pro per %@." : {
       "comment" : "Storage would exceed quota message (%@ = needed, free, quota, Pro storage)",
       "localizations" : {
@@ -48818,6 +49148,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vous obtenez l’estimation de vos calories de maintien, un déficit réaliste, des objectifs de protéines, glucides et lipides, des repas avec portions et alternatives, des collations protéinées, des options avant et après l’entraînement, des conseils d’hydratation, une liste de courses et une progression sur 90 jours."
+          }
+        }
+      }
+    },
+    "Ricevi notifiche su questo dispositivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receive notifications on this device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibir notificaciones en este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recevoir les notifications sur cet appareil"
           }
         }
       }
@@ -57152,6 +57504,28 @@
         }
       }
     },
+    "Tocca un dispositivo per disconnetterlo. Viene disconnesso appena è online: se è spento o senza rete, alla prima riapertura dell'app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap a device to sign it out. It is signed out as soon as it is online: if it is off or without a connection, the next time the app is opened there."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca un dispositivo para cerrar su sesión. Se cierra en cuanto está en línea: si está apagado o sin conexión, la próxima vez que se abra la app allí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez un appareil pour le déconnecter. Il est déconnecté dès qu'il est en ligne : s'il est éteint ou sans réseau, à la prochaine ouverture de l'app."
+          }
+        }
+      }
+    },
     "Tocca un membro per scegliere solo alcune persone." : {
       "localizations" : {
         "en" : {
@@ -59144,6 +59518,28 @@
         }
       }
     },
+    "Uscire da tutti i dispositivi?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out of all devices?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cerrar sesión en todos los dispositivos?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se déconnecter de tous les appareils ?"
+          }
+        }
+      }
+    },
     "Uscire dalla famiglia?" : {
       "localizations" : {
         "en" : {
@@ -59538,6 +59934,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Valable 7 jours"
+          }
+        }
+      }
+    },
+    "Vale solo qui: puoi tenere le notifiche accese sul telefono e spente sul tablet. Spegnendolo non ricevi più niente su questo dispositivo, nemmeno gli annunci — le opzioni qui sotto valgono invece su tutti. I promemoria che hai impostato continuano ad arrivare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Applies here only: you can keep notifications on for your phone and off for your tablet. Turning it off stops everything on this device, announcements included — the options below apply to all of them instead. Reminders you set keep arriving."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo se aplica aquí: puedes mantener las notificaciones activadas en el móvil y desactivadas en la tableta. Al desactivarlo dejas de recibir nada en este dispositivo, incluidos los anuncios; las opciones de abajo, en cambio, valen para todos. Los recordatorios que has configurado siguen llegando."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne vaut qu'ici : vous pouvez garder les notifications activées sur le téléphone et désactivées sur la tablette. En le désactivant, vous ne recevez plus rien sur cet appareil, annonces comprises — les options ci-dessous valent en revanche pour tous. Les rappels que vous avez définis continuent d'arriver."
           }
         }
       }

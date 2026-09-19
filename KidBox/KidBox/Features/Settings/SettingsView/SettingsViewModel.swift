@@ -23,6 +23,10 @@ final class SettingsViewModel: ObservableObject {
     // `false` qui mostrerebbe spento ciò che invece sta arrivando.
     @Published var infoText: String? = nil
     @Published var isLoading: Bool = false
+    /// Interruttore di QUESTO dispositivo: quando è spento il server non manda
+    /// niente qui, quindi i toggle sotto non hanno più effetto. Le categorie
+    /// restano invece dell'account e valgono su tutti i dispositivi.
+    @Published var pushEnabled: Bool = true
     @Published var notifyOnNewMessages: Bool = true
     @Published var notifyOnLocationSharing: Bool = true
     @Published var notifyOnTodos: Bool = true
@@ -57,6 +61,8 @@ final class SettingsViewModel: ObservableObject {
     init() {
         // `bool(forKey:)` non distingue "mai scritta" da "false": userebbe
         // sempre `false` alla prima installazione. `object(forKey:)` sì.
+        self.pushEnabled = NotificationManager.shared.isPushEnabledOnThisDevice()
+
         let cachedChat = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewMessages) as? Bool ?? true
         self.notifyOnNewMessages = cachedChat
         KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewMessages=\(cachedChat)")
@@ -121,6 +127,11 @@ final class SettingsViewModel: ObservableObject {
             
             await notifications.refreshAuthorizationStatus()
 
+            // Locale, non remota: la scelta è di QUESTO dispositivo, e la
+            // copia locale è quella che sopravvive alla rotazione del token.
+            let localPush = notifications.isPushEnabledOnThisDevice()
+            if pushEnabled != localPush { pushEnabled = localPush }
+
             let remoteChat = await notifications.fetchNotifyOnNewMessagesPreference()
             if notifyOnNewMessages != remoteChat { notifyOnNewMessages = remoteChat }
             UserDefaults.standard.set(remoteChat, forKey: LocalKeys.notifyOnNewMessages)
@@ -162,7 +173,31 @@ final class SettingsViewModel: ObservableObject {
     }
     
     // MARK: - User actions
-    
+
+    /// Interruttore di questo dispositivo. In caso di errore torna al valore
+    /// PRECEDENTE, non a un default fisso: se la scrittura di uno spegnimento
+    /// fallisce, lasciare il toggle spento direbbe "non ricevi niente" mentre le
+    /// notifiche continuano ad arrivare.
+    func togglePushEnabled(_ enabled: Bool) {
+        let previous = pushEnabled
+        pushEnabled = enabled
+
+        Task { @MainActor in
+            do {
+                try await notifications.setPushEnabledOnThisDevice(enabled)
+                infoText = enabled
+                    ? NSLocalizedString("Notifiche attive su questo dispositivo.", comment: "")
+                    : NSLocalizedString("Notifiche disattivate su questo dispositivo.", comment: "")
+            } catch {
+                // Basta rimettere a posto la UI: a non lasciare in giro una
+                // copia locale disallineata ci pensa il manager.
+                pushEnabled = previous
+                infoText = error.localizedDescription
+                KBLog.settings.kbError("SettingsVM setPushEnabledOnThisDevice failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
     func toggleNotifyOnNewMessages(_ enabled: Bool) {
         notifyOnNewMessages = enabled
         UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewMessages)

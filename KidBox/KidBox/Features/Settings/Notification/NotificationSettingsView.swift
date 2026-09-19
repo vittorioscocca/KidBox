@@ -42,6 +42,13 @@ struct NotificationSettingsView: View {
         : Color(.systemBackground)
     }
     
+    /// Le preferenze per categoria contano solo se le notifiche sono accese sia
+    /// sul dispositivo (permesso di sistema) sia sull'account (interruttore
+    /// generale). Quando una delle due manca i toggle vanno mostrati spenti e
+    /// non toccabili: dire "attivo" mentre non arriva niente è esattamente
+    /// l'inganno che questa schermata evita altrove.
+    private var pushAllowed: Bool { !systemDenied && vm.pushEnabled }
+
     var body: some View {
         List {
             if systemDenied {
@@ -70,17 +77,41 @@ struct NotificationSettingsView: View {
                 .listRowBackground(cardBackground)
             }
 
+            // In cima e da sola: spegne le notifiche su QUESTO dispositivo,
+            // lasciando accesi gli altri dello stesso account. Chi vuole
+            // silenzio qui la trova subito, senza spegnere nove interruttori
+            // uno per uno — che per giunta valgono ovunque, non solo qui.
+            Section {
+                Toggle(
+                    "Ricevi notifiche su questo dispositivo",
+                    isOn: Binding(
+                        // Non `pushAllowed`: quello contiene già `pushEnabled`,
+                        // e l'interruttore si spegnerebbe da sé senza più poter
+                        // essere riacceso. Qui conta solo il permesso di sistema.
+                        get: { !systemDenied && vm.pushEnabled },
+                        set: { newValue in
+                            KBLog.settings.kbInfo("Toggle pushEnabled set=\(newValue)")
+                            vm.togglePushEnabled(newValue)
+                        }
+                    )
+                )
+                .disabled(vm.isLoading || systemDenied)
+            } footer: {
+                Text("Vale solo qui: puoi tenere le notifiche accese sul telefono e spente sul tablet. Spegnendolo non ricevi più niente su questo dispositivo, nemmeno gli annunci — le opzioni qui sotto valgono invece su tutti. I promemoria che hai impostato continuano ad arrivare.")
+            }
+            .listRowBackground(cardBackground)
+
             // Con la chat spenta la riga resta ma non si tocca: riaccenderla
             // manderebbe notifiche per una schermata che si rifiuta di aprirsi.
             VStack(alignment: .leading, spacing: 4) {
                 Toggle(
                     "Notifica nuovi messaggi in chat",
                     isOn: Binding(
-                        get: { !systemDenied && chatEnabled && vm.notifyOnNewMessages },
+                        get: { pushAllowed && chatEnabled && vm.notifyOnNewMessages },
                         set: { vm.toggleNotifyOnNewMessages($0) }
                     )
                 )
-                .disabled(vm.isLoading || systemDenied || !chatEnabled)
+                .disabled(vm.isLoading || !pushAllowed || !chatEnabled)
                 if !chatEnabled {
                     Text("La chat è disattivata in Impostazioni → Messaggi.")
                         .font(.caption)
@@ -92,7 +123,7 @@ struct NotificationSettingsView: View {
             Toggle(
                 "Notifiche posizione (inizio/fine condivisione)",
                 isOn: Binding(
-                    get: { !systemDenied && vm.notifyOnLocationSharing },
+                    get: { pushAllowed && vm.notifyOnLocationSharing },
                     set: { newValue in
                         KBLog.settings.kbInfo("Toggle notifyOnLocationSharing set=\(newValue)")
                         vm.notifyOnLocationSharing = newValue
@@ -100,100 +131,100 @@ struct NotificationSettingsView: View {
                     }
                 )
             )
-            .disabled(vm.isLoading || systemDenied)
+            .disabled(vm.isLoading || !pushAllowed)
             .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifiche Todo (assegnazioni/scadenze)",
                 isOn: Binding(
-                    get: { !systemDenied && vm.notifyOnTodos },
+                    get: { pushAllowed && vm.notifyOnTodos },
                     set: { vm.toggleNotifyOnTodos($0) }
                 )
             )
-            .disabled(vm.isLoading || systemDenied)
+            .disabled(vm.isLoading || !pushAllowed)
             .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifiche lista della spesa",
                 isOn: Binding(
-                    get: { !systemDenied && vm.notifyOnNewGroceryItem },
+                    get: { pushAllowed && vm.notifyOnNewGroceryItem },
                     set: { newValue in
                         KBLog.settings.kbInfo("Toggle notifyOnNewGroceryItem set=\(newValue)")
                         vm.toggleNotifyOnNewGroceryItem(newValue)
                     }
                 )
             )
-            .disabled(vm.isLoading || systemDenied)
+            .disabled(vm.isLoading || !pushAllowed)
             .accessibilityHint("Ricevi una notifica quando un membro aggiunge un prodotto alla lista della spesa.")
             .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifiche nuove note",
                 isOn: Binding(
-                    get: { !systemDenied && vm.notifyOnNewNote },
+                    get: { pushAllowed && vm.notifyOnNewNote },
                     set: { newValue in
                         KBLog.settings.kbInfo("Toggle notifyOnNewNote set=\(newValue)")
                         vm.toggleNotifyOnNewNote(newValue)
                     }
                 )
             )
-            .disabled(vm.isLoading || systemDenied)
+            .disabled(vm.isLoading || !pushAllowed)
             .accessibilityHint("Ricevi una notifica quando un membro crea una nuova nota.")
             .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifiche nuove spese",
                 isOn: Binding(
-                    get: { !systemDenied && vm.notifyOnNewExpense },
+                    get: { pushAllowed && vm.notifyOnNewExpense },
                     set: { newValue in
                         KBLog.settings.kbInfo("Toggle notifyOnNewExpense set=\(newValue)")
                         vm.toggleNotifyOnNewExpense(newValue)
                     }
                 )
             )
-            .disabled(vm.isLoading || systemDenied)
+            .disabled(vm.isLoading || !pushAllowed)
             .accessibilityHint("Ricevi una notifica quando un membro registra una nuova spesa di famiglia.")
             .listRowBackground(cardBackground)
 
             Toggle(
                 "Notifiche nuovi eventi calendario",
                 isOn: Binding(
-                    get: { !systemDenied && vm.notifyOnNewCalendarEvent },
+                    get: { pushAllowed && vm.notifyOnNewCalendarEvent },
                     set: { newValue in
                         KBLog.settings.kbInfo("Toggle notifyOnNewCalendarEvent set=\(newValue)")
                         vm.toggleNotifyOnNewCalendarEvent(newValue)
                     }
                 )
             )
-            .disabled(vm.isLoading || systemDenied)
+            .disabled(vm.isLoading || !pushAllowed)
             .accessibilityHint("Ricevi una notifica quando un membro aggiunge un evento al calendario di famiglia.")
             .listRowBackground(cardBackground)
 
             Toggle(
                 "Notifiche documenti",
                 isOn: Binding(
-                    get: { !systemDenied && vm.notifyOnNewDocument },
+                    get: { pushAllowed && vm.notifyOnNewDocument },
                     set: { newValue in
                         KBLog.settings.kbInfo("Toggle notifyOnNewDocument set=\(newValue)")
                         vm.toggleNotifyOnNewDocument(newValue)
                     }
                 )
             )
-            .disabled(vm.isLoading || systemDenied)
+            .disabled(vm.isLoading || !pushAllowed)
             .accessibilityHint("Ricevi una notifica quando un membro carica un nuovo documento.")
             .listRowBackground(cardBackground)
 
             Toggle(
                 "Notifiche Wallet",
                 isOn: Binding(
-                    get: { !systemDenied && vm.notifyOnWallet },
+                    get: { pushAllowed && vm.notifyOnWallet },
                     set: { newValue in
                         KBLog.settings.kbInfo("Toggle notifyOnWallet set=\(newValue)")
                         vm.toggleNotifyOnWallet(newValue)
                     }
                 )
             )
-            .disabled(vm.isLoading || systemDenied)
+            .disabled(vm.isLoading || !pushAllowed)
             .accessibilityHint("Ricevi una notifica quando viene aggiunto un biglietto o una carta fedeltà al Wallet.")
             .listRowBackground(cardBackground)
 
