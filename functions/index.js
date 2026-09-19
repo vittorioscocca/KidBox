@@ -296,19 +296,23 @@ async function incrementCountersAndGetBadges({familyId, uids, field}) {
 }
 
 /**
- * Interruttore generale delle push, dentro `notificationPrefs` come le
- * preferenze per categoria e con la stessa regola storica: **assente = acceso**.
+ * Interruttore delle push, sul documento del TOKEN: `fcmTokens/{token}.enabled`.
+ * Regola storica come ogni altra preferenza: **assente = acceso**.
  *
- * Vale per l'account, non per il dispositivo, ed è un gate SERVER-side di
- * proposito. Cancellare i token per spegnere le notifiche non funziona —
- * dicono dove consegnare, non se consegnare — e comunque non reggerebbe: iOS e
- * Android ripersistono il token a ogni avvio, quindi lo spegnimento durerebbe
- * fino al primo lancio dell'app. Qui invece passa ogni invio, una volta sola,
- * e tace su tutti i dispositivi dell'utente, presenti e futuri, senza che
- * nessun client debba sapere niente: anche una versione vecchia in giro si
- * adegua da sola.
+ * Sta lì e non su `users/{uid}` perché la scelta è della coppia
+ * account+dispositivo: lo stesso utente può volere le notifiche spente sul
+ * tablet e accese sul telefono, e chi si logga dopo sullo stesso telefono con
+ * un altro account parte dalle proprie, accese — ha un token suo.
+ *
+ * È un gate SERVER-side di proposito. Spegnere cancellando il documento non
+ * funzionerebbe: iOS e Android ripersistono il token a ogni avvio, quindi il
+ * silenzio durerebbe fino al primo lancio dell'app. Qui invece passa ogni
+ * invio, una volta sola. Il client, dal canto suo, tiene una copia locale
+ * della scelta per uid e la riscrive a ogni registrazione: senza, la prima
+ * rotazione del token (reinstallazione, ripristino, cambio account) la
+ * perderebbe e le notifiche si riaccenderebbero da sole, in silenzio.
  */
-const PUSH_ENABLED_FIELD = "pushEnabled";
+const TOKEN_ENABLED_FIELD = "enabled";
 
 /**
  * Token FCM di più utenti in una volta sola.
@@ -321,24 +325,25 @@ const PUSH_ENABLED_FIELD = "pushEnabled";
  * Ritorna anche i `DocumentReference` dei token, così `pruneInvalidFcmTokens`
  * non deve rileggerli dopo l'invio, e la lingua scelta dal destinatario, con cui
  * chi invia traduce titolo e corpo prima della push.
- * Rispetta l'interruttore generale `notificationPrefs.pushEnabled`, che vale
- * per l'ACCOUNT e quindi per tutti i dispositivi: vedi
- * [PUSH_ENABLED_FIELD]{@link PUSH_ENABLED_FIELD}.
+ * Salta i dispositivi che hanno spento le notifiche
+ * (`fcmTokens/{token}.enabled === false`): vedi
+ * [TOKEN_ENABLED_FIELD]{@link TOKEN_ENABLED_FIELD}.
  * @param {string[]} uids
  * @param {?(string|string[])} prefField campo di `notificationPrefs` da
  *     rispettare; `null` per ignorare le preferenze di categoria (notifiche
  *     senza una categoria da spegnere, es. i broadcast). Con un array vince il
  *     primo campo effettivamente impostato: serve a introdurre una preferenza
  *     nuova senza tradire chi aveva già espresso una scelta su quella vecchia.
- *     NON scavalca l'interruttore generale.
- * @param {?{bypassOptOut: boolean}} opts `bypassOptOut` include anche chi ha
- *     spento le notifiche, marcandolo `optedOut: true`. È una deroga per la
- *     comunicazione indispensabile, da chiedere ESPLICITAMENTE sul singolo
+ *     NON scavalca l'interruttore del dispositivo.
+ * @param {?{bypassOptOut: boolean}} opts `bypassOptOut` include anche i
+ *     dispositivi spenti, marcando l'utente `optedOut: true`. È una deroga per
+ *     la comunicazione indispensabile, da chiedere ESPLICITAMENTE sul singolo
  *     invio: il default resta rispettare la scelta dell'utente.
  * @return {Promise<Map<string, {tokens: string[], lang: string, optedOut:
  *     boolean, refsByToken: Map<string, FirebaseFirestore.DocumentReference>}>>}
- *     Gli utenti senza token — o che hanno spento le notifiche — mancano dalla
- *     mappa: i chiamanti filtrano già con `tokensByUid.get(uid)?.tokens`.
+ *     Un utente i cui dispositivi sono tutti spenti resta nella mappa con
+ *     `tokens` vuoto, come chi non ha mai registrato un token: i chiamanti
+ *     filtrano già con `tokensByUid.get(uid)?.tokens.length`.
  */
 async function getTokensForUsers(uids, prefField = null, opts = {}) {
   const bypassOptOut = opts.bypassOptOut === true;
@@ -356,26 +361,11 @@ async function getTokensForUsers(uids, prefField = null, opts = {}) {
 
   const wanted = [];
   const langByUid = new Map();
-  // Chi è entrato solo grazie alla deroga. Serve a dirlo a chi ha spedito:
-  // scavalcare un opt-out è una cosa che si deve vedere, non una che si scopre
-  // dalle lamentele.
-  const optedOutUids = new Set();
   unique.forEach((uid, i) => {
     const snap = userSnaps[i];
     const exists = snap && snap.exists;
     langByUid.set(uid, normalizeLang(exists ? snap.get("notificationLanguage") : null));
     const prefs = exists ? snap.get("notificationPrefs") : null;
-
-    // L'interruttore generale, PRIMA del ramo `prefField`: chi ha spento le
-    // notifiche non riceve nemmeno quelle senza categoria — i broadcast della
-    // console, cioè proprio gli annunci che un utente che ha spento tutto
-    // percepisce come marketing. La deroga per la comunicazione indispensabile
-    // esiste (`opts.bypassOptOut`) ma va chiesta sul singolo invio: qui dentro
-    // non c'è nessuna eccezione implicita.
-    if (prefs && prefs[PUSH_ENABLED_FIELD] === false) {
-      if (!bypassOptOut) return;
-      optedOutUids.add(uid);
-    }
 
     if (!prefField) {
       wanted.push(uid);
@@ -400,18 +390,26 @@ async function getTokensForUsers(uids, prefField = null, opts = {}) {
           .collection("fcmTokens").get();
       const tokens = [];
       const refsByToken = new Map();
+      // Vero se almeno un dispositivo spento è entrato grazie alla deroga.
+      // Serve a dirlo a chi ha spedito: scavalcare un opt-out è una cosa che si
+      // deve vedere, non una che si scopre dalle lamentele.
+      let optedOut = false;
       tokensSnap.forEach((t) => {
         const tok = t.get("token");
         if (!tok) return;
+        // Questo dispositivo ha spento le notifiche. Vale anche per quelle
+        // senza categoria — i broadcast della console, cioè proprio gli
+        // annunci che chi ha spento percepisce come marketing. La deroga per
+        // la comunicazione indispensabile esiste ma va chiesta sul singolo
+        // invio: qui dentro non c'è nessuna eccezione implicita.
+        if (t.get(TOKEN_ENABLED_FIELD) === false) {
+          if (!bypassOptOut) return;
+          optedOut = true;
+        }
         tokens.push(tok);
         refsByToken.set(tok, t.ref);
       });
-      out.set(uid, {
-        tokens,
-        refsByToken,
-        lang: langByUid.get(uid),
-        optedOut: optedOutUids.has(uid),
-      });
+      out.set(uid, {tokens, refsByToken, lang: langByUid.get(uid), optedOut});
     }));
   }
 

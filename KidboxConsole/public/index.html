@@ -1672,7 +1672,7 @@ window.bcPreview = async function(btn) {
       `<strong>${data.reachable}</strong> raggiungibili su ${data.tokens} dispositivi` +
       (silent > 0 ? ` · <span class="dim">${silent} senza token push</span>` : '') +
       (data.optedOut > 0
-        ? ` · <strong>⚠ ${data.optedOut} avevano disattivato le notifiche</strong>`
+        ? ` · <strong>⚠ ${data.optedOut} con almeno un dispositivo disattivato</strong>`
         : '');
     res.className = 'override-msg ok';
     if (data.reachable > 0) {
@@ -1701,7 +1701,7 @@ window.bcSend = async function(btn) {
   }
   const who = p.uids ? `${p.uids.length} utenti selezionati` : `segmento "${p.segment}"`;
   const override = p.bypassOptOut
-    ? '\n\n⚠ DEROGA ATTIVA: riceveranno anche gli utenti che avevano disattivato le notifiche.'
+    ? '\n\n⚠ DEROGA ATTIVA: riceveranno anche i dispositivi su cui le notifiche erano state disattivate.'
     : '';
   if (!confirm(`Invio REALE a ${who}.\n\n"${p.title}"\n${p.body}${override}\n\nLe push non si annullano. Procedere?`)) return;
 
@@ -2816,7 +2816,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
           <div class="field" style="margin:0">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
               <input id="bc-bypass" type="checkbox" onchange="bcCount()" style="width:auto;margin:0" />
-              Scavalca chi ha disattivato le notifiche
+              Scavalca i dispositivi con le notifiche disattivate
             </label>
             <div class="card-sub" style="margin-top:6px">
               Da usare <strong>solo</strong> per una comunicazione indispensabile: un problema di
