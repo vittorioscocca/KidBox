@@ -331,12 +331,17 @@ const PUSH_ENABLED_FIELD = "pushEnabled";
  *     primo campo effettivamente impostato: serve a introdurre una preferenza
  *     nuova senza tradire chi aveva già espresso una scelta su quella vecchia.
  *     NON scavalca l'interruttore generale.
- * @return {Promise<Map<string, {tokens: string[], lang: string,
- *     refsByToken: Map<string, FirebaseFirestore.DocumentReference>}>>}
+ * @param {?{bypassOptOut: boolean}} opts `bypassOptOut` include anche chi ha
+ *     spento le notifiche, marcandolo `optedOut: true`. È una deroga per la
+ *     comunicazione indispensabile, da chiedere ESPLICITAMENTE sul singolo
+ *     invio: il default resta rispettare la scelta dell'utente.
+ * @return {Promise<Map<string, {tokens: string[], lang: string, optedOut:
+ *     boolean, refsByToken: Map<string, FirebaseFirestore.DocumentReference>}>>}
  *     Gli utenti senza token — o che hanno spento le notifiche — mancano dalla
  *     mappa: i chiamanti filtrano già con `tokensByUid.get(uid)?.tokens`.
  */
-async function getTokensForUsers(uids, prefField = null) {
+async function getTokensForUsers(uids, prefField = null, opts = {}) {
+  const bypassOptOut = opts.bypassOptOut === true;
   const out = new Map();
   const unique = [...new Set(uids.filter(Boolean))];
   if (unique.length === 0) return out;
@@ -351,6 +356,10 @@ async function getTokensForUsers(uids, prefField = null) {
 
   const wanted = [];
   const langByUid = new Map();
+  // Chi è entrato solo grazie alla deroga. Serve a dirlo a chi ha spedito:
+  // scavalcare un opt-out è una cosa che si deve vedere, non una che si scopre
+  // dalle lamentele.
+  const optedOutUids = new Set();
   unique.forEach((uid, i) => {
     const snap = userSnaps[i];
     const exists = snap && snap.exists;
@@ -360,9 +369,13 @@ async function getTokensForUsers(uids, prefField = null) {
     // L'interruttore generale, PRIMA del ramo `prefField`: chi ha spento le
     // notifiche non riceve nemmeno quelle senza categoria — i broadcast della
     // console, cioè proprio gli annunci che un utente che ha spento tutto
-    // percepisce come marketing. Per una comunicazione indispensabile serve un
-    // bypass esplicito sul singolo invio, non un'eccezione implicita qui.
-    if (prefs && prefs[PUSH_ENABLED_FIELD] === false) return;
+    // percepisce come marketing. La deroga per la comunicazione indispensabile
+    // esiste (`opts.bypassOptOut`) ma va chiesta sul singolo invio: qui dentro
+    // non c'è nessuna eccezione implicita.
+    if (prefs && prefs[PUSH_ENABLED_FIELD] === false) {
+      if (!bypassOptOut) return;
+      optedOutUids.add(uid);
+    }
 
     if (!prefField) {
       wanted.push(uid);
@@ -393,7 +406,12 @@ async function getTokensForUsers(uids, prefField = null) {
         tokens.push(tok);
         refsByToken.set(tok, t.ref);
       });
-      out.set(uid, {tokens, refsByToken, lang: langByUid.get(uid)});
+      out.set(uid, {
+        tokens,
+        refsByToken,
+        lang: langByUid.get(uid),
+        optedOut: optedOutUids.has(uid),
+      });
     }));
   }
 
@@ -6995,6 +7013,10 @@ exports.sendBroadcast = onCall(
       const body = (data.body || "").trim();
       // Il default è il dry run: solo un `dryRun === false` esplicito spedisce.
       const dryRun = data.dryRun !== false;
+      // Deroga all'interruttore generale, per la comunicazione indispensabile
+      // (un problema di sicurezza, un servizio che chiude). Come il dry run, il
+      // default è la scelta prudente: si scavalca un opt-out solo dicendolo.
+      const bypassOptOut = data.bypassOptOut === true;
 
       if (!title || title.length > 80) {
         throw new HttpsError("invalid-argument", "Titolo richiesto (max 80 caratteri).");
@@ -7018,19 +7040,25 @@ exports.sendBroadcast = onCall(
       // sull'utente giusto dopo l'invio.
       // Erano fino a 2000 query in SERIE: da sole potevano superare il
       // timeout della funzione prima ancora di spedire qualcosa.
-      const tokensInfo = await getTokensForUsers(uids, null);
+      const tokensInfo = await getTokensForUsers(uids, null, {bypassOptOut});
       const tokensByUid = new Map();
       let tokenCount = 0;
+      // Quanti di questi ricevono SOLO perché la deroga è attiva. Va riportato
+      // in anteprima e scritto nell'audit: è il numero di persone a cui si sta
+      // mandando una notifica che avevano chiesto di non ricevere.
+      let optedOutCount = 0;
       for (const uid of uids) {
         const info = tokensInfo.get(uid);
         if (!info || info.tokens.length === 0) continue;
         tokensByUid.set(uid, info);
         tokenCount += info.tokens.length;
+        if (info.optedOut) optedOutCount++;
       }
 
       if (dryRun) {
         logger.info("sendBroadcast: DRY RUN", {
           callerUid, describe, recipients: uids.length, tokens: tokenCount,
+          bypassOptOut, optedOut: optedOutCount,
         });
         return {
           dryRun: true,
@@ -7038,6 +7066,8 @@ exports.sendBroadcast = onCall(
           recipients: uids.length,
           reachable: tokensByUid.size,
           tokens: tokenCount,
+          bypassOptOut,
+          optedOut: optedOutCount,
           sent: 0,
           failed: 0,
         };
@@ -7100,6 +7130,8 @@ exports.sendBroadcast = onCall(
         recipients: uids.length,
         reachable: tokensByUid.size,
         tokens: tokenCount,
+        bypassOptOut,
+        optedOut: optedOutCount,
         sent,
         failed,
         sentBy: callerUid,
@@ -7112,6 +7144,7 @@ exports.sendBroadcast = onCall(
 
       logger.info("sendBroadcast: inviato", {
         callerUid, describe, recipients: uids.length, sent, failed,
+        bypassOptOut, optedOut: optedOutCount,
       });
 
       return {
@@ -7120,6 +7153,8 @@ exports.sendBroadcast = onCall(
         recipients: uids.length,
         reachable: tokensByUid.size,
         tokens: tokenCount,
+        bypassOptOut,
+        optedOut: optedOutCount,
         sent,
         failed,
       };

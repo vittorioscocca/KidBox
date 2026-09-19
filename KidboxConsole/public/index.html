@@ -1610,6 +1610,7 @@ function bcParams() {
     title: document.getElementById('bc-title').value.trim(),
     body:  document.getElementById('bc-body').value.trim(),
   };
+  if (document.getElementById('bc-bypass')?.checked) p.bypassOptOut = true;
   if (mode === 'picked') {
     p.uids = Array.from(document.getElementById('bc-uids').selectedOptions).map(o => o.value);
   } else if (mode === 'inactive') {
@@ -1669,7 +1670,10 @@ window.bcPreview = async function(btn) {
     const silent = data.recipients - data.reachable;
     res.innerHTML = `👁 <strong>${data.recipients}</strong> destinatari (${data.describe}) · ` +
       `<strong>${data.reachable}</strong> raggiungibili su ${data.tokens} dispositivi` +
-      (silent > 0 ? ` · <span class="dim">${silent} senza token push</span>` : '');
+      (silent > 0 ? ` · <span class="dim">${silent} senza token push</span>` : '') +
+      (data.optedOut > 0
+        ? ` · <strong>⚠ ${data.optedOut} avevano disattivato le notifiche</strong>`
+        : '');
     res.className = 'override-msg ok';
     if (data.reachable > 0) {
       _bcPreviewedKey = JSON.stringify(params);
@@ -1696,12 +1700,16 @@ window.bcSend = async function(btn) {
     return;
   }
   const who = p.uids ? `${p.uids.length} utenti selezionati` : `segmento "${p.segment}"`;
-  if (!confirm(`Invio REALE a ${who}.\n\n"${p.title}"\n${p.body}\n\nLe push non si annullano. Procedere?`)) return;
+  const override = p.bypassOptOut
+    ? '\n\n⚠ DEROGA ATTIVA: riceveranno anche gli utenti che avevano disattivato le notifiche.'
+    : '';
+  if (!confirm(`Invio REALE a ${who}.\n\n"${p.title}"\n${p.body}${override}\n\nLe push non si annullano. Procedere?`)) return;
 
   btn.disabled = true; const label = btn.textContent; btn.textContent = 'Invio…';
   try {
     const { data } = await bcCall(false);
     res.innerHTML = `✓ Inviate <strong>${data.sent}</strong> notifiche a ${data.reachable} utenti` +
+      (data.optedOut > 0 ? ` · <strong>${data.optedOut} in deroga</strong>` : '') +
       (data.failed ? ` · <span class="dim">${data.failed} fallite (token morti ripuliti)</span>` : '');
     res.className = 'override-msg ok';
   } catch(e) {
@@ -2802,6 +2810,19 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
             <div class="card-sub" style="margin-top:6px">
               "Inattivo" = nessuna <strong>azione di valore</strong> registrata nei rollup del periodo.
               Chi apre l'app senza farci niente è incluso: è esattamente il target giusto.
+            </div>
+          </div>
+
+          <div class="field" style="margin:0">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input id="bc-bypass" type="checkbox" onchange="bcCount()" style="width:auto;margin:0" />
+              Scavalca chi ha disattivato le notifiche
+            </label>
+            <div class="card-sub" style="margin-top:6px">
+              Da usare <strong>solo</strong> per una comunicazione indispensabile: un problema di
+              sicurezza, un servizio che chiude. Per un annuncio di prodotto no — chi ha spento
+              ha chiesto di non ricevere proprio questo, e una push non richiesta è il motivo
+              per cui si disinstalla. Resta scritto nell'audit di chi ha derogato.
             </div>
           </div>
 
