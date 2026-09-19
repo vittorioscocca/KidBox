@@ -297,6 +297,11 @@
   function counter() {
     // /join ha il suo contatore (inviteLandingPing): non si conta due volte.
     if (/^\/join/.test(location.pathname)) return;
+    // I crawler che eseguono JavaScript (Googlebot, Bing, le anteprime di
+    // WhatsApp/Facebook) mandano il ping come un visitatore: il 19/09, dopo
+    // la richiesta di indicizzazione, 259 «aperture dirette» in un giorno con
+    // 1 restato erano Google che leggeva la sitemap. Fuori dal conteggio.
+    if (navigator.webdriver || /bot|crawl|spider|slurp|preview|facebookexternalhit|inspectiontool|lighthouse|headless/i.test(navigator.userAgent || "")) return;
     var src = firstSource();
     var page = pageOf();
     // Per /scarica, che reindirizza allo store da sola senza un tap.
