@@ -144,8 +144,13 @@ final class KBDeviceSessionRegistry {
 
             KBLog.auth.kbInfo("Sessione revocata da un altro dispositivo — logout")
             Task { @MainActor in
+                // La chiusura va presa PRIMA di `stop()`, che azzera
+                // `onRevoked` insieme al listener: invertendo i due, qui si
+                // chiamava un riferimento ormai nil e il logout non avveniva
+                // mai — il log diceva «revocata» e l'app restava dentro.
+                let callback = self.onRevoked
                 self.stop()
-                self.onRevoked?()
+                callback?()
             }
         }
     }

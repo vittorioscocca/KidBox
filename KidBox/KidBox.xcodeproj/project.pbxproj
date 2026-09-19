@@ -768,7 +768,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxAutoFill/KidBoxAutoFill.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 127;
+				CURRENT_PROJECT_VERSION = 128;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = KidBoxAutoFill/Info.plist;
@@ -797,7 +797,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxAutoFill/KidBoxAutoFill.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 127;
+				CURRENT_PROJECT_VERSION = 128;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = KidBoxAutoFill/Info.plist;
@@ -827,7 +827,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxNotificationService/KidBoxNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 127;
+				CURRENT_PROJECT_VERSION = 128;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxNotificationService/Info.plist;
@@ -858,7 +858,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxNotificationService/KidBoxNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 127;
+				CURRENT_PROJECT_VERSION = 128;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxNotificationService/Info.plist;
@@ -891,7 +891,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = KidBoxControlsExtension/KidBoxControlsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 127;
+				CURRENT_PROJECT_VERSION = 128;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxControlsExtension/Info.plist;
@@ -923,7 +923,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = KidBoxControlsExtension/KidBoxControlsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 127;
+				CURRENT_PROJECT_VERSION = 128;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxControlsExtension/Info.plist;
@@ -955,7 +955,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxShareExtension/KidBoxShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 127;
+				CURRENT_PROJECT_VERSION = 128;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxShareExtension/Info.plist;
@@ -986,7 +986,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxShareExtension/KidBoxShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 127;
+				CURRENT_PROJECT_VERSION = 128;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxShareExtension/Info.plist;
@@ -1146,7 +1146,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = KidBox/KidBox.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 127;
+				CURRENT_PROJECT_VERSION = 128;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_APP_SANDBOX = YES;
@@ -1220,7 +1220,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = KidBox/KidBox.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 127;
+				CURRENT_PROJECT_VERSION = 128;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_APP_SANDBOX = YES;
