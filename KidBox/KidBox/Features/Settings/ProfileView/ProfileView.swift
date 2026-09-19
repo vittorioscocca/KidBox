@@ -201,7 +201,10 @@ struct ProfileView: View {
         } message: {
             Text(saveErrorText ?? "Errore sconosciuto")
         }
-        .confirmationDialog("Esci dall'account?", isPresented: $showLogoutConfirm, titleVisibility: .visible) {
+        // Alert e non confirmationDialog: il foglio a scorrimento compariva in
+        // alto (Mac Catalyst / iPad lo ancorano al pulsante) invece che sotto
+        // il dito. L'alert è centrato ovunque.
+        .alert("Esci dall'account?", isPresented: $showLogoutConfirm) {
             Button("Esci", role: .destructive) { signOut() }
             Button("Annulla", role: .cancel) { }
         } message: {

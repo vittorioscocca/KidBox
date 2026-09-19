@@ -2,14 +2,25 @@
 //  OnboardingWalkthroughView.swift
 //  KidBox
 //
-//  Walkthrough di benvenuto: 5–6 schermate animate.
+//  Wizard post-registrazione, in due schermate.
 //
-//  Pagina 0 — Benvenuto
-//  Pagina 1 — Foto condivise
-//  Pagina 2 — Salute e spese
-//  Pagina 3 — Scelta percorso: crea famiglia vs entra con link/QR
-//  Pagina 4 — Crea famiglia (percorso .create) oppure Join (percorso .join)
-//  Pagina 5 — Invita partner (solo percorso .create; QR da InviteCodeViewModel)
+//  Pagina 0 — «Tu e la tua famiglia»: nome, cognome e nome della famiglia,
+//              con il CTA che salva il profilo e crea la famiglia in un colpo.
+//              In fondo, «Ho un invito» porta al percorso .join (QR).
+//  Pagina 1 — Invita il partner (percorso .create) oppure scansione QR
+//              (percorso .join).
+//
+//  Con un invito da Universal Link (`PendingFamilyInvite`) il wizard è una
+//  pagina sola: la conferma d'invito, che chiede il nome ed entra.
+//
+//  Storia: fino alla 2.2.9 il wizard aveva sette pagine — tre slide di
+//  presentazione (info_0-2), la scelta del percorso, il nome, la famiglia con
+//  il primo figlio, l'invito. GA4 con `last_step_seen` (18/09/2026) diceva che
+//  7 abbandoni su 12 si fermavano a info_0: tre schermate che non chiedono
+//  niente, mostrate a chi si è appena registrato. Il primo figlio si aggiunge
+//  dalla Home, dove ha un senso; le slide di valore restano sullo store e
+//  sulla schermata di benvenuto. Obiettivo: iniziato → completato dal 56% al
+//  75% sui 28 giorni.
 //
 //  Integrazione in RootGateView:
 //    } else if !coordinator.hasSeenOnboarding {
@@ -26,60 +37,22 @@ import SwiftData
 import FirebaseAuth
 import CryptoKit
 
-// MARK: - Page model
-
-private struct OnboardingPage: Identifiable {
-    let id:          Int
-    let icon:        String
-    let iconColor:   Color
-    let accentColor: Color
-    let title:       String
-    let subtitle:    String
-}
-
 // MARK: - OnboardingWalkthroughView
 
 struct OnboardingWalkthroughView: View {
-    
+
     private enum FamilyOnboardingPath: Equatable {
         case create
         case join
         /// Impostato in automatico quando c'è un `PendingFamilyInvite` da
-        /// link: sostituisce la scelta percorso con la conferma d'invito.
+        /// link: sostituisce tutto con la conferma d'invito.
         case linkJoin
     }
-    
+
     let onFinish: () -> Void
-    
-    private let infoPages: [OnboardingPage] = [
-        OnboardingPage(
-            id: 0,
-            icon:        "heart.fill",
-            iconColor:   Color(red: 1.00, green: 0.75, blue: 0.25),
-            accentColor: Color(red: 0.95, green: 0.38, blue: 0.10),
-            title:       "La tua famiglia,\nin un'unica app.",
-            subtitle:    "Tutto quello che riguarda i tuoi figli — organizzato, condiviso e sempre a portata di mano."
-        ),
-        OnboardingPage(
-            id: 1,
-            icon:        "photo.stack.fill",
-            iconColor:   Color(red: 0.60, green: 0.45, blue: 0.85),
-            accentColor: Color(red: 0.50, green: 0.35, blue: 0.80),
-            title:       "Ricordi condivisi\ncon il tuo partner.",
-            subtitle:    "Foto, video e momenti speciali in una galleria privata, cifrata e sincronizzata in tempo reale."
-        ),
-        OnboardingPage(
-            id: 2,
-            icon:        "stethoscope",
-            iconColor:   Color(red: 0.30, green: 0.65, blue: 0.45),
-            accentColor: Color(red: 0.20, green: 0.55, blue: 0.38),
-            title:       "Salute, spese\ne molto altro.",
-            subtitle:    "Visite mediche, vaccini, spese di famiglia, password sicure di famiglia e lista della spesa. Tutto aggiornato tra voi due."
-        )
-    ]
-    
+
     // MARK: State
-    
+
     @State private var currentPage     = 0
     @State private var iconScale:      CGFloat = 0.4
     @State private var iconOpacity:    Double  = 0
@@ -88,28 +61,38 @@ struct OnboardingWalkthroughView: View {
     @State private var bgOpacity:      Double  = 0
     @State private var ctaScale:       CGFloat = 0.92
     @State private var isTransitioning = false
-    
+
     // Famiglia creata nel flusso "crea", usata dalla pagina invito
     @State private var createdFamilyId: String? = nil
 
-    @State private var familyPath: FamilyOnboardingPath? = nil
+    /// `.create` è il default: la scelta esplicita di pagina «Come vuoi
+    /// iniziare?» non c'è più. Chi ha un QR tocca «Ho un invito» e passa a
+    /// `.join`; chi ha toccato un link arriva già in `.linkJoin`.
+    @State private var familyPath: FamilyOnboardingPath = .create
 
     // Invito da link, se il wizard è partito da un Universal Link.
     @State private var pendingLinkInvite: PendingFamilyInvite? = nil
     @State private var linkInvitePreview: InviteRemoteStore.InvitePreview? = nil
 
-    // Anagrafica raccolta a pagina 4, salvata dal CTA prima di proseguire.
+    // Anagrafica e nome famiglia raccolti a pagina 0, salvati dal CTA.
     @State private var profileFirstName   = ""
     @State private var profileLastName    = ""
-    @State private var isSavingProfile    = false
-    @State private var profileSaveError: String? = nil
-    
+    @State private var familyName         = ""
+    @State private var isSaving           = false
+    @State private var setupError: String? = nil
+
+    // «Esci» in alto a destra su ogni pagina: chi si è registrato con
+    // l'account sbagliato, o vuole solo tornare al login, prima non aveva
+    // nessuna uscita dal wizard se non disinstallare.
+    @State private var showSignOutConfirm = false
+    @State private var isSigningOut       = false
+
     @Environment(\.colorScheme)  private var colorScheme
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var coordinator: AppCoordinator
-    
+
     // MARK: Helpers
-    
+
     private var backgroundColor: Color {
         colorScheme == .dark
         ? Color(red: 0.10, green: 0.10, blue: 0.10)
@@ -120,47 +103,33 @@ struct OnboardingWalkthroughView: View {
         ? Color(red: 0.16, green: 0.16, blue: 0.16)
         : .white
     }
-    
-    // Pagine: 0-2 info · 3 scelta percorso (o conferma invito da link) ·
-    // 4 nome e cognome · 5 crea famiglia / entra con link o QR ·
-    // 6 invita (solo percorso "crea").
-    //
-    // Percorso `.linkJoin`: solo 4 pagine (0-2 info + 3), perché la 3 chiede
-    // già nome e cognome e fa il join — non serve altro.
-    private var totalPages: Int {
-        switch familyPath {
-        case .linkJoin: return 4
-        case .join: return 6
-        default: return 7
-        }
-    }
 
-    private var isInfoPage: Bool { currentPage < 3 }
-    private var isLinkJoinPage: Bool { currentPage == 3 && familyPath == .linkJoin }
-    private var isPathPickerPage: Bool { currentPage == 3 && familyPath != .linkJoin }
-    private var isNamePage: Bool { currentPage == 4 }
-    private var isCreatePage: Bool { currentPage == 5 && familyPath == .create }
-    private var isJoinPage: Bool { currentPage == 5 && familyPath == .join }
-    private var isInvitePage: Bool { currentPage == 6 && familyPath == .create }
+    // Pagine: 0 setup (nome + famiglia) · 1 invito (crea) o QR (join).
+    // Percorso `.linkJoin`: una pagina sola, la conferma d'invito.
+    private var totalPages: Int { familyPath == .linkJoin ? 1 : 2 }
+
+    private var isLinkJoinPage: Bool { familyPath == .linkJoin }
+    private var isSetupPage: Bool { currentPage == 0 && familyPath != .linkJoin }
+    private var isJoinPage: Bool { currentPage == 1 && familyPath == .join }
+    private var isInvitePage: Bool { currentPage == 1 && familyPath == .create }
     private var isLastPage: Bool { currentPage == totalPages - 1 }
 
     // Una volta creata la famiglia (o completato un join) non si torna più
-    // indietro: la scrittura su Firestore è già avvenuta, e riproporre le
-    // pagine precedenti farebbe pensare all'utente di poterla ancora annullare.
+    // indietro: la scrittura su Firestore è già avvenuta, e riproporre la
+    // pagina precedente farebbe pensare all'utente di poterla ancora annullare.
     private var canGoBack: Bool {
-        currentPage > 0 && !isTransitioning && !isSavingProfile && createdFamilyId == nil
+        currentPage > 0 && !isTransitioning && !isSaving && createdFamilyId == nil
     }
-    
-    private var infoPage: OnboardingPage { infoPages[min(currentPage, infoPages.count - 1)] }
 
-    private func stepName(for page: Int, path: FamilyOnboardingPath?) -> String {
-        switch page {
-        case 0, 1, 2: return "info_\(page)"
-        case 3: return path == .linkJoin ? "link_invite_confirm" : "path_picker"
-        case 4: return "name"
-        case 5: return path == .join ? "join_family" : "create_family"
-        case 6: return "invite"
-        default: return "unknown_\(page)"
+    /// Nomi dei passi per GA4. `setup` è nuovo; `create_family`, `name`,
+    /// `join_family`, `invite` e `link_invite_confirm` restano quelli di prima,
+    /// così il funnel per passo della routine continua a leggersi.
+    private func stepName(for page: Int, path: FamilyOnboardingPath) -> String {
+        switch (page, path) {
+        case (_, .linkJoin): return "link_invite_confirm"
+        case (0, _):         return "setup"
+        case (1, .join):     return "join_family"
+        default:             return "invite"
         }
     }
 
@@ -169,48 +138,30 @@ struct OnboardingWalkthroughView: View {
         AppAnalytics.onboardingStepShown(stepName: name, stepNumber: currentPage)
         coordinator.lastOnboardingStepSeen = name
     }
-    
+
     private var currentAccent: Color {
-        switch currentPage {
-        case 0: return Color(red: 0.95, green: 0.38, blue: 0.10)
-        case 1: return Color(red: 0.50, green: 0.35, blue: 0.80)
-        case 2: return Color(red: 0.20, green: 0.55, blue: 0.38)
-        case 3: return Color(red: 0.95, green: 0.38, blue: 0.10)
-        // 4 = nome e cognome: resta sull'arancio del percorso, il colore del
-        // ramo join entra in gioco solo dalla pagina successiva.
-        case 4: return Color(red: 0.95, green: 0.38, blue: 0.10)
-        case 5:
-            if familyPath == .join {
-                return Color(red: 0.55, green: 0.35, blue: 0.9)
-            }
-            return Color(red: 0.95, green: 0.38, blue: 0.10)
-        case 6: return Color(red: 0.95, green: 0.38, blue: 0.10)
-        default: return Color(red: 0.95, green: 0.38, blue: 0.10)
-        }
+        familyPath == .join && currentPage == 1
+        ? Color(red: 0.55, green: 0.35, blue: 0.9)
+        : Color(red: 0.95, green: 0.38, blue: 0.10)
     }
     private var currentIconColor: Color {
-        switch currentPage {
-        case 0: return Color(red: 1.00, green: 0.75, blue: 0.25)
-        case 1: return Color(red: 0.60, green: 0.45, blue: 0.85)
-        case 2: return Color(red: 0.30, green: 0.65, blue: 0.45)
-        case 3: return Color(red: 1.00, green: 0.75, blue: 0.25)
-        case 4: return Color(red: 1.00, green: 0.75, blue: 0.25)
-        case 5:
-            if familyPath == .join {
-                return Color(red: 0.60, green: 0.45, blue: 0.85)
-            }
-            return Color(red: 1.00, green: 0.75, blue: 0.25)
-        case 6: return Color(red: 1.00, green: 0.75, blue: 0.25)
-        default: return Color(red: 1.00, green: 0.75, blue: 0.25)
-        }
+        familyPath == .join && currentPage == 1
+        ? Color(red: 0.60, green: 0.45, blue: 0.85)
+        : Color(red: 1.00, green: 0.75, blue: 0.25)
     }
-    
+
     // MARK: Body
-    
+
     var body: some View {
         ZStack {
-            backgroundColor.ignoresSafeArea()
-            
+            backgroundColor
+                .ignoresSafeArea()
+                // Tocco fuori dai campi = via la tastiera. Senza, sulla pagina
+                // setup la tastiera copriva «Crea la famiglia» e l'unico modo
+                // per chiuderla era il tasto Fine, che non tutti trovano.
+                .contentShape(Rectangle())
+                .onTapGesture { dismissKeyboard() }
+
             VStack {
                 LinearGradient(
                     colors: [currentAccent.opacity(colorScheme == .dark ? 0.18 : 0.10), Color.clear],
@@ -222,37 +173,17 @@ struct OnboardingWalkthroughView: View {
                 .animation(.easeInOut(duration: 0.5), value: currentPage)
                 Spacer()
             }
-            
-            VStack {
-                HStack {
-                    if canGoBack {
-                        backButton
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                Spacer()
-            }
 
-            VStack(spacing: 0) {
-                Spacer()
+            // ScrollView e non VStack pieno: con la tastiera aperta la pagina
+            // setup (tre campi + pulsante) non ci sta, e il pulsante deve
+            // restare raggiungibile scorrendo.
+            ScrollView(showsIndicators: false) {
+              VStack(spacing: 0) {
+                Spacer(minLength: 24)
 
                 // Contenuto principale
                 Group {
-                    if isInfoPage {
-                        // Pagine info 0-2
-                        iconCard
-                            .scaleEffect(iconScale)
-                            .opacity(iconOpacity)
-                        
-                        Spacer().frame(height: 48)
-                        
-                        textBlock
-                            .opacity(textOpacity)
-                            .offset(y: textOffset)
-                        
-                    } else if isLinkJoinPage, let invite = pendingLinkInvite {
+                    if isLinkJoinPage, let invite = pendingLinkInvite {
                         LinkInviteConfirmCard(
                             cardBackground: cardBackground,
                             accentColor:    currentAccent,
@@ -273,56 +204,31 @@ struct OnboardingWalkthroughView: View {
                             onFallbackToManual: {
                                 PendingFamilyInvite.clear()
                                 pendingLinkInvite = nil
-                                familyPath = nil
+                                familyPath = .create
                             }
                         )
                         .padding(.horizontal, 24)
                         .opacity(textOpacity)
                         .offset(y: textOffset)
 
-                    } else if isPathPickerPage {
-                        FamilyPathPickerCard(
-                            cardBackground: cardBackground,
-                            accentColor:    currentAccent,
-                            selectedPath:   $familyPath
-                        )
-                        .padding(.horizontal, 24)
-                        .opacity(textOpacity)
-                        .offset(y: textOffset)
-                        
-                    } else if isNamePage {
-                        NameOnboardingCard(
+                    } else if isSetupPage {
+                        SetupFamilyCard(
                             cardBackground: cardBackground,
                             accentColor:    currentAccent,
                             iconColor:      currentIconColor,
                             firstName:      $profileFirstName,
                             lastName:       $profileLastName,
-                            isBusy:         isSavingProfile,
-                            errorText:      profileSaveError
-                        )
-                        .padding(.horizontal, 24)
-                        .opacity(textOpacity)
-                        .offset(y: textOffset)
-
-                    } else if isCreatePage {
-                        CreateFamilyCard(
-                            cardBackground: cardBackground,
-                            accentColor:    currentAccent,
-                            iconColor:      currentIconColor,
-                            modelContext:   modelContext,
-                            onFamilyCreated: { familyId in
-                                createdFamilyId = familyId
-                                AppAnalytics.onboardingStepCompleted(stepName: "create_family")
-                                coordinator.setActiveFamily(familyId)
-                                // Il documento membro è appena nato: ora che la
-                                // famiglia esiste il nome raccolto a pagina 4 può
-                                // arrivarci, altrimenti resterebbe solo su users/{uid}.
-                                Task {
-                                    await UserProfileWriter.propagateDisplayNameToMember(
-                                        familyId: familyId,
-                                        modelContext: modelContext
-                                    )
+                            familyName:     $familyName,
+                            isJoin:         familyPath == .join,
+                            isBusy:         isSaving,
+                            errorText:      setupError,
+                            onTogglePath: {
+                                withAnimation(.spring(response: 0.3)) {
+                                    familyPath = familyPath == .join ? .create : .join
                                 }
+                            },
+                            onSubmit: {
+                                if canSubmitSetup { handleCTA() }
                             }
                         )
                         .padding(.horizontal, 24)
@@ -352,7 +258,7 @@ struct OnboardingWalkthroughView: View {
                         .padding(.horizontal, 24)
                         .opacity(textOpacity)
                         .offset(y: textOffset)
-                        
+
                     } else if isInvitePage {
                         InviteOnboardingCard(
                             cardBackground: cardBackground,
@@ -372,13 +278,16 @@ struct OnboardingWalkthroughView: View {
                         .offset(y: textOffset)
                     }
                 }
-                
+
                 Spacer()
-                
-                pageIndicators
-                    .padding(.bottom, 32)
-                
-                if isJoinPage || isLinkJoinPage {
+
+                if totalPages > 1 {
+                    pageIndicators
+                        .padding(.bottom, 32)
+                }
+
+                if isJoinPage || isLinkJoinPage || isInvitePage {
+                    // Queste pagine hanno i loro pulsanti dentro la card.
                     Spacer()
                         .frame(height: 56)
                         .padding(.horizontal, 28)
@@ -389,6 +298,26 @@ struct OnboardingWalkthroughView: View {
                         .padding(.horizontal, 28)
                         .padding(.bottom, 52)
                 }
+              }
+              .frame(minHeight: UIScreen.main.bounds.height - 40)
+            }
+            .scrollDismissesKeyboard(.interactively)
+
+            // Barra in alto (indietro, esci) DOPO la ScrollView: in uno ZStack
+            // l'ultimo figlio sta sopra e riceve i tocchi. Prima stava sotto e
+            // la ScrollView, che copre tutto lo schermo, si mangiava i tap —
+            // il pulsante si vedeva ma non rispondeva.
+            VStack {
+                HStack {
+                    if canGoBack {
+                        backButton
+                    }
+                    Spacer()
+                    signOutButton
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                Spacer()
             }
         }
         .onAppear {
@@ -399,13 +328,6 @@ struct OnboardingWalkthroughView: View {
                 coordinator.onboardingStartedAt = Date()
             }
             fireStepShown()
-        }
-        // Segnala a RootGateView che siamo nel percorso "crea": così l'inserimento locale
-        // della KBFamily (che avviene prima ancora di premere "Continua") non fa completare
-        // l'onboarding automaticamente saltando la pagina del QR. Impostato qui, alla scelta
-        // del percorso, così è già attivo prima che parta FamilyCreationService.
-        .onChange(of: familyPath) { _, newPath in
-            coordinator.isCreatingFamilyInOnboarding = (newPath == .create)
         }
         .onChange(of: currentPage) { _, _ in
             fireStepShown()
@@ -418,55 +340,45 @@ struct OnboardingWalkthroughView: View {
         }
     }
 
-    // MARK: - Subviews info pages
-    
-    private var iconCard: some View {
-        ZStack {
-            Circle()
-                .fill(RadialGradient(
-                    colors: [currentIconColor.opacity(0.35), Color.clear],
-                    center: .center, startRadius: 30, endRadius: 100
-                ))
-                .frame(width: 200, height: 200)
-            
-            RoundedRectangle(cornerRadius: 36, style: .continuous)
-                .fill(cardBackground)
-                .frame(width: 130, height: 130)
-                .shadow(color: currentIconColor.opacity(colorScheme == .dark ? 0.4 : 0.25),
-                        radius: 30, x: 0, y: 12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 36, style: .continuous)
-                        .strokeBorder(currentIconColor.opacity(0.15), lineWidth: 1)
-                )
-            
-            Image(systemName: infoPage.icon)
-                .font(.system(size: 52, weight: .semibold))
-                .foregroundStyle(LinearGradient(
-                    colors: [currentIconColor, currentAccent],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                ))
+    // MARK: - Sign out
+
+    private var signOutButton: some View {
+        Button {
+            dismissKeyboard()
+            showSignOutConfirm = true
+        } label: {
+            Text("Esci")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(currentAccent)
+                .padding(.horizontal, 14)
+                .frame(height: 36)
+                .background(cardBackground, in: Capsule())
+                .shadow(color: currentAccent.opacity(0.12), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .disabled(isSigningOut || isSaving)
+        .alert("Vuoi uscire dall'account?", isPresented: $showSignOutConfirm) {
+            Button("Esci", role: .destructive) { signOut() }
+            Button("Annulla", role: .cancel) {}
+        } message: {
+            Text("Torni alla schermata di accesso. Quello che hai già creato resta sul tuo account.")
         }
     }
-    
-    private var textBlock: some View {
-        VStack(spacing: 14) {
-            Text(infoPage.title)
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
-            
-            Text(infoPage.subtitle)
-                .font(.system(size: 17))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .lineSpacing(3)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 8)
+
+    private func signOut() {
+        guard !isSigningOut else { return }
+        isSigningOut = true
+        // Flag in memoria del wizard: azzerati subito, altrimenti al prossimo
+        // login (magari con un altro account, via join) resterebbero attivi.
+        coordinator.isCreatingFamilyInOnboarding = false
+        coordinator.lastOnboardingStepSeen = nil
+        Task { @MainActor in
+            await coordinator.signOut(modelContext: modelContext)
+            KBLog.auth.kbInfo("Onboarding: sign out from wizard")
+            isSigningOut = false
         }
-        .padding(.horizontal, 32)
     }
-    
+
     // MARK: - Back button
 
     private var backButton: some View {
@@ -482,7 +394,7 @@ struct OnboardingWalkthroughView: View {
     }
 
     // MARK: - Page indicators
-    
+
     private var pageIndicators: some View {
         HStack(spacing: 8) {
             ForEach(0..<totalPages, id: \.self) { i in
@@ -493,18 +405,21 @@ struct OnboardingWalkthroughView: View {
             }
         }
     }
-    
+
     // MARK: - CTA
-    
-    @ViewBuilder
+
     private var ctaButton: some View {
-        if !isInvitePage {
         Button { handleCTA() } label: {
             HStack(spacing: 10) {
+                if isSaving {
+                    ProgressView().tint(.white)
+                }
                 Text(ctaLabel)
                     .font(.system(size: 17, weight: .semibold))
-                Image(systemName: isLastPage ? "arrow.right.circle.fill" : "arrow.right")
-                    .font(.system(size: isLastPage ? 20 : 15, weight: .semibold))
+                if !isSaving {
+                    Image(systemName: familyPath == .join ? "arrow.right" : "house.badge.plus")
+                        .font(.system(size: 15, weight: .semibold))
+                }
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -524,52 +439,33 @@ struct OnboardingWalkthroughView: View {
         .disabled(isCTADisabled)
         .opacity(isCTADisabled ? 0.45 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
-        } // end if !isInvitePage
     }
 
-    private var isCTADisabled: Bool {
-        if currentPage == 3 && familyPath == nil { return true }
-        if currentPage == 4 && !canSubmitName { return true }
-        if currentPage == 5 && familyPath == .create && createdFamilyId == nil { return true }
-        return false
-    }
+    private var isCTADisabled: Bool { !canSubmitSetup }
 
     /// Nome e cognome sono entrambi obbligatori: un `displayName` a metà
     /// (solo nome o solo cognome) è peggio del segnaposto, perché sembra
-    /// completo pur non essendolo.
-    private var canSubmitName: Bool {
+    /// completo pur non essendolo. Il nome famiglia serve solo nel percorso
+    /// «crea».
+    private var canSubmitSetup: Bool {
         !profileFirstName.trimmingCharacters(in: .whitespaces).isEmpty &&
         !profileLastName.trimmingCharacters(in: .whitespaces).isEmpty &&
-        !isSavingProfile
+        (familyPath == .join || !familyName.trimmingCharacters(in: .whitespaces).isEmpty) &&
+        !isSaving
     }
 
     private var ctaLabel: String {
-        switch currentPage {
-        case 3: return "Continua"
-        case 4: return isSavingProfile ? "Salvataggio…" : "Continua"
-        case 5: return familyPath == .join ? "Inizia" : "Continua"
-        case 6: return "Inizia"
-        default: return "Continua"
-        }
+        if isSaving { return familyPath == .join ? "Salvataggio…" : "Creazione…" }
+        return familyPath == .join ? "Continua" : "Crea la famiglia"
     }
-    
+
     // MARK: - Navigation
-    
+
     private func handleCTA() {
-        if isLastPage {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                bgOpacity = 0; textOpacity = 0; iconOpacity = 0; ctaScale = 0.88
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { onFinish() }
-        } else if isNamePage {
-            // Si avanza solo a salvataggio riuscito: proseguire dopo un errore
-            // lascerebbe l'utente convinto di aver messo il nome, e la famiglia
-            // nascerebbe comunque con un membro anonimo.
-            Task { await saveNameThenAdvance() }
-        } else {
-            AppAnalytics.onboardingStepCompleted(stepName: stepName(for: currentPage, path: familyPath))
-            advancePage()
-        }
+        // Si avanza solo a salvataggio riuscito: proseguire dopo un errore
+        // lascerebbe l'utente convinto di aver messo il nome, e la famiglia
+        // nascerebbe comunque con un membro anonimo.
+        Task { await saveSetupThenAdvance() }
     }
 
     /// Precompila i campi da quello che già si sa dell'utente.
@@ -577,7 +473,8 @@ struct OnboardingWalkthroughView: View {
     /// Il profilo locale ha la precedenza; in mancanza si spezza il
     /// `displayName` di Firebase Auth, che con Google e Facebook arriva già
     /// valorizzato. Senza questo, chi entra con un social si troverebbe a
-    /// riscrivere un nome che l'app conosce già.
+    /// riscrivere un nome che l'app conosce già. Il cognome, se c'è, propone
+    /// anche il nome della famiglia («Famiglia Rossi»).
     @MainActor
     private func prefillNameFromExistingProfile() {
         guard profileFirstName.isEmpty, profileLastName.isEmpty else { return }
@@ -591,6 +488,7 @@ struct OnboardingWalkthroughView: View {
             if !fn.isEmpty || !ln.isEmpty {
                 profileFirstName = fn
                 profileLastName = ln
+                prefillFamilyName()
                 return
             }
         }
@@ -601,10 +499,16 @@ struct OnboardingWalkthroughView: View {
         guard !parts.isEmpty else { return }
         profileFirstName = parts.removeFirst()
         profileLastName = parts.joined(separator: " ")
+        prefillFamilyName()
     }
 
-    /// Se il wizard è partito da un Universal Link, salta la scelta percorso
-    /// e mostra direttamente la conferma d'invito (pagina 3, `.linkJoin`).
+    private func prefillFamilyName() {
+        guard familyName.isEmpty, !profileLastName.isEmpty else { return }
+        familyName = String(format: NSLocalizedString("Famiglia %@", comment: "Nome famiglia proposto dal cognome"), profileLastName)
+    }
+
+    /// Se il wizard è partito da un Universal Link, mostra direttamente la
+    /// conferma d'invito (`.linkJoin`).
     ///
     /// Il controllo va fatto una volta sola all'apertura: `familyPath` diventa
     /// poi lo stato di navigazione, e un secondo tocco sul link a wizard già
@@ -613,14 +517,14 @@ struct OnboardingWalkthroughView: View {
     private func loadPendingLinkInviteIfAny(force: Bool = false) {
         // `force` serve quando il link arriva ad app già aperta: lì il percorso
         // può essere già stato scelto, e va comunque scavalcato — l'utente ha
-        // appena toccato un invito, è quello che vuole fare.
-        guard force || familyPath == nil else { return }
+        // appena toccato un invito, è quello che vuole fare. Non però a
+        // famiglia già creata: lì il join lo farà dalla Home.
+        guard force || familyPath == .create else { return }
+        guard createdFamilyId == nil else { return }
         guard let invite = PendingFamilyInvite.load() else { return }
         pendingLinkInvite = invite
         familyPath = .linkJoin
-        // `.linkJoin` ha 4 pagine (0-2 + conferma): se l'utente era più avanti
-        // nel percorso manuale, il pager resterebbe su un indice inesistente.
-        if currentPage > 3 { currentPage = 3 }
+        currentPage = 0
         Task {
             let preview = await InviteRemoteStore().fetchInvitePreview(
                 familyId: invite.familyId,
@@ -630,12 +534,15 @@ struct OnboardingWalkthroughView: View {
         }
     }
 
+    /// Salva nome e cognome e, nel percorso «crea», crea la famiglia; poi
+    /// passa alla pagina successiva. Nel percorso «entra» la famiglia arriva
+    /// dal QR alla pagina dopo.
     @MainActor
-    private func saveNameThenAdvance() async {
-        guard !isSavingProfile else { return }
-        isSavingProfile = true
-        profileSaveError = nil
-        defer { isSavingProfile = false }
+    private func saveSetupThenAdvance() async {
+        guard !isSaving, canSubmitSetup else { return }
+        isSaving = true
+        setupError = nil
+        defer { isSaving = false }
 
         do {
             try await UserProfileWriter.saveNames(
@@ -643,19 +550,62 @@ struct OnboardingWalkthroughView: View {
                 lastName: profileLastName,
                 modelContext: modelContext
             )
-            KBLog.auth.kbInfo("Onboarding: profile names saved, advancing")
-            AppAnalytics.onboardingStepCompleted(stepName: stepName(for: currentPage, path: familyPath))
+            AppAnalytics.onboardingStepCompleted(stepName: "name")
+
+            if familyPath == .create {
+                // Segnala a RootGateView che la famiglia sta per nascere QUI:
+                // la KBFamily entra in SwiftData prima della pagina invito, e
+                // senza questo flag la Home partirebbe da sola saltandola.
+                // Va acceso solo adesso e non all'apertura del wizard: acceso
+                // prima, bloccava anche l'ingresso in Home di chi una famiglia
+                // ce l'ha già (stesso account usato su Android) e stava solo
+                // aspettando che arrivasse dal server — e si ritrovava a
+                // riscrivere nome e famiglia.
+                coordinator.isCreatingFamilyInOnboarding = true
+                let service = FamilyCreationService(remote: FamilyRemoteStore(), modelContext: modelContext)
+                let created = try await service.createFamily(
+                    name: familyName.trimmingCharacters(in: .whitespaces),
+                    childName: "",
+                    childBirthDate: nil
+                )
+                let familyId = created.familyId
+
+                // Genera e salva la master key crittografica
+                let masterKey = InviteCrypto.randomBytes(32)
+                let key = CryptoKit.SymmetricKey(data: masterKey)
+                try FamilyKeychainStore.saveFamilyKey(
+                    key,
+                    familyId: familyId,
+                    userId: Auth.auth().currentUser?.uid ?? ""
+                )
+
+                createdFamilyId = familyId
+                AppAnalytics.onboardingStepCompleted(stepName: "create_family")
+                coordinator.setActiveFamily(familyId)
+                // Il documento membro è appena nato: ora che la famiglia esiste
+                // il nome raccolto qui sopra può arrivarci, altrimenti
+                // resterebbe solo su users/{uid}.
+                await UserProfileWriter.propagateDisplayNameToMember(
+                    familyId: familyId,
+                    modelContext: modelContext
+                )
+                KBLog.auth.kbInfo("Onboarding: profile saved and family created, advancing to invite")
+            } else {
+                KBLog.auth.kbInfo("Onboarding: profile saved, advancing to join")
+            }
+            AppAnalytics.onboardingStepCompleted(stepName: "setup")
             advancePage()
         } catch {
-            profileSaveError = error.localizedDescription
-            KBLog.auth.kbError("Onboarding: profile names save failed: \(error.localizedDescription)")
+            coordinator.isCreatingFamilyInOnboarding = false
+            setupError = error.localizedDescription
+            KBLog.auth.kbError("Onboarding: setup failed: \(error.localizedDescription)")
         }
     }
-    
+
     private func advancePage() {
         guard !isTransitioning else { return }
         isTransitioning = true
-        
+
         withAnimation(.easeIn(duration: 0.18)) {
             textOpacity = 0; textOffset = -16; iconScale = 0.85; iconOpacity = 0.3
         }
@@ -670,7 +620,7 @@ struct OnboardingWalkthroughView: View {
             }
         }
     }
-    
+
     private func goBack() {
         guard canGoBack else { return }
         isTransitioning = true
@@ -690,6 +640,10 @@ struct OnboardingWalkthroughView: View {
         }
     }
 
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+
     private func animateIn() {
         withAnimation(.spring(response: 0.6, dampingFraction: 0.68).delay(0.1)) {
             iconScale = 1.0; iconOpacity = 1.0
@@ -700,85 +654,8 @@ struct OnboardingWalkthroughView: View {
         withAnimation(.easeOut(duration: 0.4).delay(0.2)) { bgOpacity = 1.0 }
         withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.4)) { ctaScale = 1.0 }
     }
-    
-    // MARK: - Path picker (pagina 3)
-    
-    private struct FamilyPathPickerCard: View {
-        let cardBackground: Color
-        let accentColor: Color
-        @Binding var selectedPath: FamilyOnboardingPath?
-        
-        var body: some View {
-            VStack(spacing: 16) {
-                Text("Come vuoi iniziare?")
-                    .font(.title2.bold())
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                
-                pathOption(
-                    path: .create,
-                    icon: "house.fill",
-                    color: Color(red: 0.95, green: 0.38, blue: 0.10),
-                    title: "Crea la tua famiglia",
-                    subtitle: "Sarai il creatore e potrai invitare il tuo partner."
-                )
-                
-                pathOption(
-                    path: .join,
-                    icon: "qrcode.viewfinder",
-                    color: Color(red: 0.55, green: 0.35, blue: 0.9),
-                    title: "Entra in una famiglia",
-                    subtitle: "Hai un link d'invito o un codice QR? Usalo per unirti."
-                )
-            }
-            .padding(24)
-            .background(cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .shadow(color: accentColor.opacity(0.12), radius: 20, x: 0, y: 10)
-        }
-        
-        @ViewBuilder
-        private func pathOption(
-            path: FamilyOnboardingPath,
-            icon: String,
-            color: Color,
-            title: String,
-            subtitle: String
-        ) -> some View {
-            let isSelected = selectedPath == path
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(color.opacity(isSelected ? 0.2 : 0.1))
-                        .frame(width: 48, height: 48)
-                    Image(systemName: icon)
-                        .font(.title3)
-                        .foregroundStyle(color)
-                }
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title).font(.headline)
-                    Text(subtitle).font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? color : Color.secondary.opacity(0.4))
-                    .font(.title3)
-            }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(isSelected ? color.opacity(0.07) : Color.secondary.opacity(0.05))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isSelected ? color : Color.clear, lineWidth: 1.5)
-            )
-            .contentShape(Rectangle())
-            .onTapGesture {
-                withAnimation(.spring(response: 0.3)) { selectedPath = path }
-            }
-        }
-    }
-    
-    // MARK: - Join famiglia (pagina 4, percorso .join)
+
+    // MARK: - Join famiglia (pagina 1, percorso .join)
     
     private struct JoinFamilyOnboardingCard: View {
         let cardBackground: Color
@@ -907,9 +784,9 @@ private struct OnboardingQRScannerSheet: View {
 
 // MARK: - LinkInviteConfirmCard
 //
-// Sostituisce la scelta percorso quando il wizard parte da un Universal Link:
+// Sostituisce tutto il wizard quando parte da un Universal Link:
 // mostra la famiglia (e chi ha invitato, se noti), chiede nome e cognome e fa
-// il join in un solo passaggio — niente QR, niente scelta manuale.
+// il join in un solo passaggio — niente QR, niente pagina di setup.
 
 private struct LinkInviteConfirmCard: View {
     let cardBackground: Color
@@ -1098,52 +975,57 @@ private struct LinkInviteConfirmCard: View {
     }
 }
 
-// MARK: - CreateFamilyCard
+// MARK: - SetupFamilyCard
 //
-// Schermata 4: nome famiglia + nome primo figlio.
-// Chiama FamilyCreationService e salva il familyId nel parent via onFamilyCreated.
+// Pagina 0: nome e cognome dell'utente e nome della famiglia, in una
+// schermata sola. Il salvataggio e la creazione li fa il parent nel CTA.
+//
+// Il nome sta qui, prima della famiglia, apposta: il documento membro nasce
+// alla creazione/join, quindi avere già il nome permette di scriverlo lì
+// subito invece di lasciare il membro anonimo agli occhi degli altri.
+//
+// Nel percorso «entra» (QR) il campo famiglia sparisce: il nome della
+// famiglia lo porta l'invito.
 
-// MARK: - NameOnboardingCard
-//
-// Schermata 4: nome e cognome dell'utente, raccolti prima della famiglia.
-//
-// Sta prima apposta: il documento membro nasce alla creazione/join della
-// famiglia, quindi avere già il nome permette di scriverlo lì subito invece di
-// lasciare il membro anonimo agli occhi degli altri finché non apre il Profilo.
-// Il salvataggio vero lo fa il parent nel CTA, via `UserProfileWriter`.
-
-struct NameOnboardingCard: View {
+private struct SetupFamilyCard: View {
 
     let cardBackground: Color
     let accentColor:    Color
     let iconColor:      Color
 
-    @Binding var firstName: String
-    @Binding var lastName:  String
+    @Binding var firstName:  String
+    @Binding var lastName:   String
+    @Binding var familyName: String
+    let isJoin:    Bool
     let isBusy:    Bool
     let errorText: String?
+    let onTogglePath: () -> Void
+    /// Invio sull'ultimo campo: come premere il pulsante in fondo.
+    let onSubmit: () -> Void
 
     @FocusState private var focusedField: Field?
-    private enum Field { case first, last }
+    private enum Field { case first, last, family }
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 22) {
 
             // Header
             VStack(spacing: 12) {
                 ZStack {
                     Circle().fill(iconColor.opacity(0.15)).frame(width: 72, height: 72)
-                    Image(systemName: "person.crop.circle.fill")
+                    Image(systemName: isJoin ? "qrcode.viewfinder" : "house.fill")
                         .font(.system(size: 28, weight: .semibold))
                         .foregroundStyle(LinearGradient(
                             colors: [iconColor, accentColor],
                             startPoint: .topLeading, endPoint: .bottomTrailing
                         ))
                 }
-                Text("Come ti chiami?")
+                Text(isJoin ? "Entra nella tua famiglia" : "Tu e la tua famiglia")
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
-                Text("Il tuo nome è quello che gli altri membri vedranno in chat, nei promemoria e sulla mappa. Potrai cambiarlo dal Profilo.")
+                Text(isJoin
+                     ? "Dicci come ti chiami: al passo dopo inquadri il QR di chi ti ha invitato."
+                     : "Come ti vedranno gli altri, e come si chiama la vostra famiglia. Figli e tutto il resto li aggiungi dopo.")
                     .font(.system(size: 15))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -1153,55 +1035,22 @@ struct NameOnboardingCard: View {
 
             // Form
             VStack(spacing: 12) {
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Nome")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 10) {
-                        Image(systemName: "person.fill")
-                            .foregroundStyle(accentColor)
-                            .frame(width: 20)
-                        TextField("Es. Giulia", text: $firstName)
-                            .focused($focusedField, equals: .first)
-                            .textContentType(.givenName)
-                            .textInputAutocapitalization(.words)
-                            .autocorrectionDisabled()
-                            .disabled(isBusy)
-                            .submitLabel(.next)
-                            .onSubmit { focusedField = .last }
-                    }
-                    .padding(14)
-                    .background(cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(focusedField == .first ? accentColor : Color.secondary.opacity(0.15), lineWidth: 1.5)
-                    )
+                field(label: "Nome", icon: "person.fill", placeholder: "Es. Giulia",
+                      text: $firstName, focus: .first, content: .givenName, submit: .next) {
+                    focusedField = .last
                 }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Cognome")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 10) {
-                        Image(systemName: "person.fill")
-                            .foregroundStyle(accentColor)
-                            .frame(width: 20)
-                        TextField("Es. Rossi", text: $lastName)
-                            .focused($focusedField, equals: .last)
-                            .textContentType(.familyName)
-                            .textInputAutocapitalization(.words)
-                            .autocorrectionDisabled()
-                            .disabled(isBusy)
-                            .submitLabel(.done)
-                            .onSubmit { focusedField = nil }
+                field(label: "Cognome", icon: "person.fill", placeholder: "Es. Rossi",
+                      text: $lastName, focus: .last, content: .familyName,
+                      submit: isJoin ? .go : .next) {
+                    if isJoin { focusedField = nil; onSubmit() } else { focusedField = .family }
+                }
+                if !isJoin {
+                    field(label: "Nome famiglia", icon: "person.2.fill", placeholder: "Es. Famiglia Rossi",
+                          text: $familyName, focus: .family, content: nil, submit: .go) {
+                        focusedField = nil
+                        onSubmit()
                     }
-                    .padding(14)
-                    .background(cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(focusedField == .last ? accentColor : Color.secondary.opacity(0.15), lineWidth: 1.5)
-                    )
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
 
@@ -1211,261 +1060,72 @@ struct NameOnboardingCard: View {
                     .foregroundStyle(.red)
                     .multilineTextAlignment(.center)
             }
+
+            // Percorso alternativo, in fondo e discreto: chi ha un invito è
+            // una minoranza, e chi ha toccato un link non passa nemmeno di qui.
+            Button(action: onTogglePath) {
+                Text(isJoin ? "Non hai un invito? Crea la tua famiglia" : "Hai ricevuto un invito? Entra con il QR")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(accentColor)
+            }
+            .buttonStyle(.plain)
+            .disabled(isBusy)
         }
         .padding(24)
         .background(cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .shadow(color: accentColor.opacity(0.12), radius: 20, x: 0, y: 10)
-    }
-}
-
-// MARK: - CreateFamilyCard
-
-private struct CreateFamilyCard: View {
-
-    let cardBackground:  Color
-    let accentColor:     Color
-    let iconColor:       Color
-    let modelContext:    ModelContext
-    let onFamilyCreated: (String) -> Void
-    
-    @State private var familyName  = ""
-    @State private var childName   = ""
-    @State private var childBirth: Date? = nil
-    @State private var showDatePicker = false
-    @State private var isBusy     = false
-    @State private var errorText:  String? = nil
-    @State private var didCreate   = false
-    
-    @FocusState private var focusedField: Field?
-    private enum Field { case family, child }
-    
-    /// Il nome del figlio non entra nella condizione: è facoltativo, e
-    /// pretenderlo qui obbligava a inventarne uno pur di superare la schermata.
-    private var canCreate: Bool {
-        !familyName.trimmingCharacters(in: .whitespaces).isEmpty &&
-        !isBusy && !didCreate
-    }
-    
-    var body: some View {
-        VStack(spacing: 24) {
-            
-            // Header
-            VStack(spacing: 12) {
-                ZStack {
-                    Circle().fill(iconColor.opacity(0.15)).frame(width: 72, height: 72)
-                    Image(systemName: "house.fill")
-                        .font(.system(size: 28, weight: .semibold))
-                        .foregroundStyle(LinearGradient(
-                            colors: [iconColor, accentColor],
-                            startPoint: .topLeading, endPoint: .bottomTrailing
-                        ))
-                }
-                Text("Crea la tua famiglia")
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                Text("Dai un nome alla famiglia e aggiungi il primo figlio. Potrai modificare tutto in seguito.")
-                    .font(.system(size: 15))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(2)
+        .animation(.easeInOut(duration: 0.25), value: isJoin)
+        // «Fine» sopra la tastiera: la via d'uscita che si vede sempre.
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Fine") { focusedField = nil }
+                    .font(.body.weight(.semibold))
             }
-            .padding(.horizontal, 8)
-            
-            // Form
-            VStack(spacing: 12) {
-                
-                // Nome famiglia
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Nome famiglia")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 10) {
-                        Image(systemName: "person.2.fill")
-                            .foregroundStyle(accentColor)
-                            .frame(width: 20)
-                        TextField("Es. Famiglia Rossi", text: $familyName)
-                            .focused($focusedField, equals: .family)
-                            .textInputAutocapitalization(.words)
-                            .autocorrectionDisabled()
-                            .disabled(didCreate)
-                            .submitLabel(.next)
-                            .onSubmit { focusedField = .child }
-                    }
-                    .padding(14)
-                    .background(cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(focusedField == .family ? accentColor : Color.secondary.opacity(0.15), lineWidth: 1.5)
-                    )
-                }
-                
-                // Nome primo figlio
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Primo figlio (facoltativo)")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 10) {
-                        Image(systemName: "figure.child")
-                            .foregroundStyle(accentColor)
-                            .frame(width: 20)
-                        TextField("Nome del bambino/a", text: $childName)
-                            .focused($focusedField, equals: .child)
-                            .textInputAutocapitalization(.words)
-                            .autocorrectionDisabled()
-                            .disabled(didCreate)
-                            .submitLabel(.done)
-                            .onSubmit { focusedField = nil }
-                    }
-                    .padding(14)
-                    .background(cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(focusedField == .child ? accentColor : Color.secondary.opacity(0.15), lineWidth: 1.5)
-                    )
-                }
-                
-                // Data di nascita (opzionale)
-                Button {
-                    focusedField = nil
-                    showDatePicker.toggle()
-                } label: {
-                    HStack {
-                        Image(systemName: "calendar")
-                            .foregroundStyle(accentColor)
-                            .frame(width: 20)
-                        Text(childBirth != nil
-                             ? childBirth!.formatted(date: .long, time: .omitted)
-                             : "Data di nascita (opzionale)")
-                        .foregroundStyle(childBirth != nil ? .primary : .secondary)
-                        Spacer()
-                        Image(systemName: showDatePicker ? "chevron.up" : "chevron.down")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(14)
-                    .background(cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(Color.secondary.opacity(0.15), lineWidth: 1.5)
-                    )
-                }
-                .buttonStyle(.plain)
-                .disabled(didCreate)
-                
-                if showDatePicker {
-                    DatePicker("", selection: Binding(
-                        get: { childBirth ?? Date() },
-                        set: { childBirth = $0 }
-                    ), in: ...Date(), displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .tint(accentColor)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
-            }
-            
-            // Pulsante crea / stato
-            if didCreate {
-                HStack(spacing: 10) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                        .font(.title3)
-                    Text("Famiglia creata! Continua per invitare il partner.")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.green)
-                }
-                .transition(.opacity.combined(with: .scale(scale: 0.9)))
-                
-            } else {
-                Button {
-                    Task { await createFamily() }
-                } label: {
-                    Group {
-                        if isBusy {
-                            ProgressView().tint(.white)
-                        } else {
-                            HStack(spacing: 8) {
-                                Image(systemName: "house.badge.plus")
-                                Text("Crea famiglia")
-                            }
-                            .font(.system(size: 15, weight: .semibold))
-                        }
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                    .background(
-                        canCreate
-                        ? LinearGradient(colors: [iconColor, accentColor], startPoint: .leading, endPoint: .trailing)
-                        : LinearGradient(colors: [Color.secondary.opacity(0.3), Color.secondary.opacity(0.3)], startPoint: .leading, endPoint: .trailing),
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    )
-                }
-                .buttonStyle(.plain)
-                .disabled(!canCreate)
-            }
-            
-            if let errorText {
-                Text(errorText)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                    .multilineTextAlignment(.center)
-            }
-            
-            // Skip
-            Text("Potrai creare la famiglia anche dopo da Impostazioni")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: didCreate)
-        .animation(.easeInOut(duration: 0.25), value: showDatePicker)
     }
-    
-    @MainActor
-    private func createFamily() async {
-        let name  = familyName.trimmingCharacters(in: .whitespaces)
-        let child = childName.trimmingCharacters(in: .whitespaces)
-        guard !name.isEmpty else { return }
-        
-        isBusy = true
-        errorText = nil
-        defer { isBusy = false }
-        
-        do {
-            let service = FamilyCreationService(remote: FamilyRemoteStore(), modelContext: modelContext)
-            let created = try await service.createFamily(
-                name: name,
-                childName: child,
-                childBirthDate: childBirth
-            )
-            let familyId = created.familyId
-            
-            // Genera e salva la master key crittografica
-            let masterKey = InviteCrypto.randomBytes(32)
-            let key = CryptoKit.SymmetricKey(data: masterKey)
-            try FamilyKeychainStore.saveFamilyKey(
-                key,
-                familyId: familyId,
-                userId: Auth.auth().currentUser?.uid ?? ""
-            )
-            
-            // Collassa il calendario: una volta creata la famiglia non serve più e,
-            // se resta espanso, l'altezza della card spinge il CTA "Continua" fuori schermo.
-            withAnimation {
-                showDatePicker = false
-                didCreate = true
+
+    @ViewBuilder
+    private func field(
+        label: LocalizedStringKey,
+        icon: String,
+        placeholder: LocalizedStringKey,
+        text: Binding<String>,
+        focus: Field,
+        content: UITextContentType?,
+        submit: SubmitLabel,
+        onSubmit: @escaping () -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .foregroundStyle(accentColor)
+                    .frame(width: 20)
+                TextField(placeholder, text: text)
+                    .focused($focusedField, equals: focus)
+                    .textContentType(content)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .disabled(isBusy)
+                    .submitLabel(submit)
+                    .onSubmit(onSubmit)
             }
-            onFamilyCreated(familyId)
-            
-        } catch {
-            errorText = error.localizedDescription
+            .padding(14)
+            .background(cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(focusedField == focus ? accentColor : Color.secondary.opacity(0.15), lineWidth: 1.5)
+            )
         }
     }
 }
 
 // MARK: - InviteOnboardingCard
 //
-// Schermata 5: link condivisibile come azione primaria; QR collassabile come secondaria.
+// Pagina 1 (percorso .create): link condivisibile come azione primaria; QR collassabile come secondaria.
 // onFinish(_ didShare:) segnala al parent se l'utente ha condiviso o saltato.
 
 private struct InviteOnboardingCard: View {
@@ -1504,177 +1164,176 @@ private struct InviteOnboardingCard: View {
     }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 20) {
+        // Niente ScrollView proprio: scorre già il wizard che la contiene.
+        VStack(spacing: 20) {
 
-                // ── Header ──
-                VStack(spacing: 12) {
-                    ZStack {
-                        Circle().fill(iconColor.opacity(0.15)).frame(width: 72, height: 72)
-                        Image(systemName: "person.2.fill")
-                            .font(.system(size: 28, weight: .semibold))
-                            .foregroundStyle(LinearGradient(
-                                colors: [iconColor, accentColor],
-                                startPoint: .topLeading, endPoint: .bottomTrailing
-                            ))
-                    }
-                    Text("Manda il link al tuo partner")
-                        .font(.system(size: 26, weight: .bold, design: .rounded))
-                        .multilineTextAlignment(.center)
-                    Text("Invia via WhatsApp o SMS — può unirsi anche dopo, non serve essere vicini.")
+            // ── Header ──
+            VStack(spacing: 12) {
+                ZStack {
+                    Circle().fill(iconColor.opacity(0.15)).frame(width: 72, height: 72)
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundStyle(LinearGradient(
+                            colors: [iconColor, accentColor],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        ))
+                }
+                Text("Manda il link al tuo partner")
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                Text("Invia via WhatsApp o SMS — può unirsi anche dopo, non serve essere vicini.")
+                    .font(.system(size: 15))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+            }
+            .padding(.horizontal, 8)
+
+            // ── Pulsante condividi (primario) ──
+            if vm.isBusy {
+                HStack(spacing: 10) {
+                    ProgressView().scaleEffect(0.85).tint(accentColor)
+                    Text("Preparazione link…")
                         .font(.system(size: 15))
                         .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(2)
                 }
-                .padding(.horizontal, 8)
-
-                // ── Pulsante condividi (primario) ──
-                if vm.isBusy {
+                .frame(maxWidth: .infinity).frame(height: 52)
+                .background(Color.secondary.opacity(0.08),
+                            in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            } else if !vm.shareText.isEmpty {
+                ShareLink(
+                    item: vm.shareText,
+                    subject: Text(InviteCodeViewModel.shareSubject)
+                ) {
                     HStack(spacing: 10) {
-                        ProgressView().scaleEffect(0.85).tint(accentColor)
-                        Text("Preparazione link…")
-                            .font(.system(size: 15))
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 17, weight: .semibold))
+                        Text("Invia link al partner")
+                            .font(.system(size: 17, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity).frame(height: 52)
+                    .background(
+                        LinearGradient(colors: [iconColor, accentColor],
+                                       startPoint: .leading, endPoint: .trailing),
+                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    )
+                    .shadow(color: accentColor.opacity(0.35), radius: 10, x: 0, y: 5)
+                }
+                .simultaneousGesture(TapGesture().onEnded {
+                    AppAnalytics.inviteShared(channel: "system_share_sheet")
+                })
+
+                // Copia link (secondario)
+                Button {
+                    vm.copyToClipboard()
+                    AppAnalytics.inviteShared(channel: "copy")
+                    withAnimation { didCopy = true }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        withAnimation { didCopy = false }
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: didCopy ? "checkmark" : "doc.on.doc")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text(didCopy ? "Copiato!" : "Copia link")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundStyle(didCopy ? .green : .secondary)
+                    .frame(maxWidth: .infinity).frame(height: 42)
+                    .background(Color.secondary.opacity(0.07),
+                                in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
+                // Il segreto viaggia dentro il link: chi lo riceve entra.
+                Text("Il link contiene la chiave: vale 7 giorni, una volta sola. Mandalo solo alla persona giusta.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 2)
+            } else if let err = vm.errorMessage {
+                VStack(spacing: 8) {
+                    Text(err).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    Button("Riprova") { Task { await vm.generateInviteCode() } }
+                        .font(.caption.weight(.medium)).foregroundStyle(accentColor)
+                }
+                .padding()
+            }
+
+            // ── QR collassabile (secondario) ──
+            VStack(spacing: 0) {
+                Button {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) { showQR.toggle() }
+                } label: {
+                    HStack {
+                        Text("Oppure mostra il QR se siete vicini — più sicuro")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Image(systemName: showQR ? "chevron.up" : "chevron.down")
+                            .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
                     }
-                    .frame(maxWidth: .infinity).frame(height: 52)
-                    .background(Color.secondary.opacity(0.08),
-                                in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                } else if !vm.shareText.isEmpty {
-                    ShareLink(
-                        item: vm.shareText,
-                        subject: Text(InviteCodeViewModel.shareSubject)
-                    ) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 17, weight: .semibold))
-                            Text("Invia link al partner")
-                                .font(.system(size: 17, weight: .semibold))
-                        }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity).frame(height: 52)
-                        .background(
-                            LinearGradient(colors: [iconColor, accentColor],
-                                           startPoint: .leading, endPoint: .trailing),
-                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        )
-                        .shadow(color: accentColor.opacity(0.35), radius: 10, x: 0, y: 5)
-                    }
-                    .simultaneousGesture(TapGesture().onEnded {
-                        AppAnalytics.inviteShared(channel: "system_share_sheet")
-                    })
+                    .padding(.vertical, 10)
+                }
+                .buttonStyle(.plain)
 
-                    // Copia link (secondario)
-                    Button {
-                        vm.copyToClipboard()
-                        AppAnalytics.inviteShared(channel: "copy")
-                        withAnimation { didCopy = true }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            withAnimation { didCopy = false }
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: didCopy ? "checkmark" : "doc.on.doc")
-                                .font(.system(size: 14, weight: .semibold))
-                            Text(didCopy ? "Copiato!" : "Copia link")
-                                .font(.system(size: 14, weight: .semibold))
-                        }
-                        .foregroundStyle(didCopy ? .green : .secondary)
-                        .frame(maxWidth: .infinity).frame(height: 42)
-                        .background(Color.secondary.opacity(0.07),
-                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-
-                    // Il segreto viaggia dentro il link: chi lo riceve entra.
-                    Text("Il link contiene la chiave: vale 24 ore, una volta sola. Mandalo solo alla persona giusta.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.top, 2)
-                } else if let err = vm.errorMessage {
+                if showQR, let qrPayload = vm.qrPayload {
                     VStack(spacing: 8) {
-                        Text(err).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                        Button("Riprova") { Task { await vm.generateInviteCode() } }
-                            .font(.caption.weight(.medium)).foregroundStyle(accentColor)
+                        QRCodeView(payload: qrPayload)
+                            .frame(width: 140, height: 140)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        Text("Valido 7 giorni").font(.caption).foregroundStyle(.secondary)
+                        Text("La chiave viene letta dalla fotocamera: non passa da chat, email o backup.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 12)
                     }
-                    .padding()
-                }
-
-                // ── QR collassabile (secondario) ──
-                VStack(spacing: 0) {
-                    Button {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) { showQR.toggle() }
-                    } label: {
-                        HStack {
-                            Text("Oppure mostra il QR se siete vicini — più sicuro")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Image(systemName: showQR ? "chevron.up" : "chevron.down")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 10)
-                    }
-                    .buttonStyle(.plain)
-
-                    if showQR, let qrPayload = vm.qrPayload {
-                        VStack(spacing: 8) {
-                            QRCodeView(payload: qrPayload)
-                                .frame(width: 140, height: 140)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            Text("Valido 24 ore").font(.caption).foregroundStyle(.secondary)
-                            Text("La chiave viene letta dalla fotocamera: non passa da chat, email o backup.")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 12)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(cardBackground,
-                                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                    }
-                }
-
-                Divider().padding(.vertical, 4)
-
-                // ── Bottoni di completamento ──
-                VStack(spacing: 10) {
-                    Button {
-                        onFinish(true)
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill")
-                            Text("Ho inviato il link")
-                        }
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity).frame(height: 52)
-                        .background(
-                            LinearGradient(colors: [iconColor, accentColor],
-                                           startPoint: .leading, endPoint: .trailing),
-                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        )
-                    }
-                    .buttonStyle(.plain)
-
-                    Button {
-                        AppAnalytics.onboardingInviteStepSkipped()
-                        onFinish(false)
-                    } label: {
-                        Text("Farlo dopo →")
-                            .font(.system(size: 15))
-                            .foregroundStyle(.tertiary)
-                            .padding(.vertical, 6)
-                    }
-                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(cardBackground,
+                                in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
-            .padding(.vertical, 8)
+
+            Divider().padding(.vertical, 4)
+
+            // ── Bottoni di completamento ──
+            VStack(spacing: 10) {
+                Button {
+                    onFinish(true)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                        Text("Ho inviato il link")
+                    }
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity).frame(height: 52)
+                    .background(
+                        LinearGradient(colors: [iconColor, accentColor],
+                                       startPoint: .leading, endPoint: .trailing),
+                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    AppAnalytics.onboardingInviteStepSkipped()
+                    onFinish(false)
+                } label: {
+                    Text("Farlo dopo →")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.tertiary)
+                        .padding(.vertical, 6)
+                }
+                .buttonStyle(.plain)
+            }
         }
+        .padding(.vertical, 8)
         .onAppear {
             guard !didGenerate else { return }
             didGenerate = true

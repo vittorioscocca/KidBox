@@ -38,6 +38,16 @@ struct InviteWrapService {
     /// Dominio degli inviti. Deve combaciare con l'entitlement
     /// `associated-domains` e con `apple-app-site-association`.
     static let inviteLinkBaseURL = "https://kidboxapp.com/join"
+    /// Durata di un invito: 7 giorni, uso singolo.
+    ///
+    /// Era 24 ore fino alla 2.2.9. Troppo poco per come circolano davvero i
+    /// link: mandato su WhatsApp la sera, aperto dal partner un giorno o due
+    /// dopo → «invito scaduto», e chi lo riceve non riprova. Nei 28 giorni al
+    /// 18/09/2026, 45 inviti generati e 15 tentativi di join. Il segreto resta
+    /// monouso e revocabile da InviteCodeView; `stripExpiredInvites` lo
+    /// svuota comunque alla scadenza.
+    static let defaultTTL: TimeInterval = 7 * 24 * 3600
+
 
     /// Costruisce il link d'invito con il segreto nel **frammento**.
     ///
@@ -55,7 +65,7 @@ struct InviteWrapService {
         "\(inviteLinkBaseURL)?familyId=\(familyId)&inviteId=\(inviteId)#k=\(secretBase64url)"
     }
     
-    /// TTL consigliato: 24h
+    /// TTL: `defaultTTL` (7 giorni)
     ///
     /// `familyName`/`inviterDisplayName` sono denormalizzati sul documento
     /// invito così chi riceve il link può leggerli PRIMA di entrare — la
@@ -67,7 +77,7 @@ struct InviteWrapService {
         familyId: String,
         familyName: String,
         inviterDisplayName: String,
-        ttlSeconds: TimeInterval = 24 * 3600
+        ttlSeconds: TimeInterval = Self.defaultTTL
     ) async throws -> Result {
         guard let uid = Auth.auth().currentUser?.uid else {
             KBLog.auth.kbError("Invite create failed: not authenticated")

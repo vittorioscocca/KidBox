@@ -60,7 +60,7 @@ final class InviteCodeViewModel: ObservableObject {
                 familyId: familyId,
                 familyName: familyName,
                 inviterDisplayName: currentUserDisplayName(),
-                ttlSeconds: 24 * 3600
+                ttlSeconds: InviteWrapService.defaultTTL
             )
             KBLog.sync.kbInfo("InviteCodeVM: encrypted invite created inviteId=\(invite.inviteId)")
             

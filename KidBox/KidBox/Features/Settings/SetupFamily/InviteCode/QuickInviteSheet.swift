@@ -148,7 +148,7 @@ struct QuickInviteSheet: View {
             }
             .disabled(vm.isBusy)
 
-            Text("Vale 24 ore e una volta sola.")
+            Text("Vale 7 giorni e una volta sola.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -196,7 +196,7 @@ struct QuickInviteSheet: View {
 
             // Il segreto viaggia dentro il link: chi lo riceve entra, e il link
             // resta nella conversazione. Detto corto, ma detto.
-            Text("Il link contiene la chiave: vale 24 ore e una volta sola.")
+            Text("Il link contiene la chiave: vale 7 giorni e una volta sola.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

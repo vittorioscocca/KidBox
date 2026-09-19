@@ -87,6 +87,12 @@ struct RootGateView: View {
                     .ignoresSafeArea()
             } else if !coordinator.isAuthenticated {
                 LoginView()
+            } else if coordinator.isBootstrappingFamilies && !hasAnyLocalFamily {
+                // Le famiglie stanno arrivando dal server: né Home né wizard
+                // finché non si sa se l'utente ne ha già una.
+                Color(red: 0.95, green: 0.38, blue: 0.10)
+                    .ignoresSafeArea()
+                    .overlay { ProgressView().tint(.white) }
             } else if shouldShowHome {
                 Group {
                     #if targetEnvironment(macCatalyst)

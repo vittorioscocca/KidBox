@@ -49,402 +49,6 @@
         }
       }
     },
-    "Invita l'altro genitore o chi vuoi: chi entra con il link vede %@ e tutto quello che aggiungerete, in tempo reale." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invite the other parent or anyone you like: whoever joins with the link sees %@ and everything you add from now on, in real time."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invita al otro progenitor o a quien quieras: quien entre con el enlace verá %@ y todo lo que añadáis, en tiempo real."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invitez l'autre parent ou qui vous voulez : la personne qui rejoint avec le lien voit %@ et tout ce que vous ajouterez, en temps réel."
-          }
-        }
-      }
-    },
-    "Per ora lo vedi solo tu" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Only you can see this for now"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Por ahora solo lo ves tú"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pour l'instant, vous seul le voyez"
-          }
-        }
-      }
-    },
-    "questa carta" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this card"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "esta tarjeta"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cette carte"
-          }
-        }
-      }
-    },
-    "questa cosa da fare" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this to-do"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "esta tarea"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cette tâche"
-          }
-        }
-      }
-    },
-    "questa foto" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this photo"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "esta foto"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cette photo"
-          }
-        }
-      }
-    },
-    "questa lista della spesa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this shopping list"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "esta lista de la compra"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cette liste de courses"
-          }
-        }
-      }
-    },
-    "questa nota" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this note"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "esta nota"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cette note"
-          }
-        }
-      }
-    },
-    "questa password" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this password"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "esta contraseña"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ce mot de passe"
-          }
-        }
-      }
-    },
-    "questa spesa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this expense"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "este gasto"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cette dépense"
-          }
-        }
-      }
-    },
-    "questo animale" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this pet"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "esta mascota"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cet animal"
-          }
-        }
-      }
-    },
-    "questo biglietto" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this ticket"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "esta entrada"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ce billet"
-          }
-        }
-      }
-    },
-    "questo contenuto" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this item"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "este contenido"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ce contenu"
-          }
-        }
-      }
-    },
-    "questo dato di salute" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this health record"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "este dato de salud"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cette donnée de santé"
-          }
-        }
-      }
-    },
-    "questo documento" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this document"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "este documento"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ce document"
-          }
-        }
-      }
-    },
-    "questo evento" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this event"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "este evento"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cet événement"
-          }
-        }
-      }
-    },
-    "questo luogo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this place"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "este lugar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ce lieu"
-          }
-        }
-      }
-    },
-    "questo veicolo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this vehicle"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "este vehículo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ce véhicule"
-          }
-        }
-      }
-    },
-    "questo viaggio" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "this trip"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "este viaje"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ce voyage"
-          }
-        }
-      }
-    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -1308,7 +912,7 @@
       }
     },
     "%1$d messaggi AI · %2$d/%3$d oggi" : {
-      "comment" : "Fitness plan AI usage summary\nMeal plan AI usage summary",
+      "comment" : "Clinical record AI usage summary\nFitness plan AI usage summary\nMeal plan AI usage summary",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14302,6 +13906,7 @@
       }
     },
     "Come ti chiami?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14345,7 +13950,30 @@
         }
       }
     },
+    "Come ti vedranno gli altri, e come si chiama la vostra famiglia. Figli e tutto il resto li aggiungi dopo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How others will see you, and what your family is called. Children and everything else come later."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cómo te verán los demás y cómo se llama vuestra familia. Los hijos y todo lo demás los añades después."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment les autres vous verront, et le nom de votre famille. Les enfants et tout le reste viendront après."
+          }
+        }
+      }
+    },
     "Come vuoi iniziare?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -15697,7 +15325,7 @@
       }
     },
     "Contesto troppo grande (%1$@ caratteri, max %2$@). Riduci i documenti allegati in Salute." : {
-      "comment" : "Fitness plan payload error\nMeal plan payload error",
+      "comment" : "Clinical record payload error\nFitness plan payload error\nMeal plan payload error",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -16781,6 +16409,7 @@
       }
     },
     "Crea la tua famiglia" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -17819,6 +17448,7 @@
       }
     },
     "Dai un nome alla famiglia e aggiungi il primo figlio. Potrai modificare tutto in seguito." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -19115,6 +18745,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dites-nous votre nom et vous entrez tout de suite."
+          }
+        }
+      }
+    },
+    "Dicci come ti chiami: al passo dopo inquadri il QR di chi ti ha invitato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tell us your name: next you'll scan the QR code of whoever invited you."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dinos cómo te llamas: en el siguiente paso escanearás el QR de quien te invitó."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dites-nous votre nom : à l'étape suivante, vous scannerez le QR de la personne qui vous a invité."
           }
         }
       }
@@ -21382,28 +21034,6 @@
         }
       }
     },
-    "Email non verificata. Ti abbiamo inviato di nuovo il link: apri l'email, verifica l'indirizzo e poi accedi." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Email not verified. We sent you the link again: open the email, verify your address, then sign in."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Correo no verificado. Te hemos enviado el enlace de nuevo: abre el correo, verifica la dirección y luego inicia sesión."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "E-mail non vérifié. Nous vous avons renvoyé le lien : ouvrez l'e-mail, vérifiez votre adresse, puis connectez-vous."
-          }
-        }
-      }
-    },
     "Email di recupero inviata." : {
       "localizations" : {
         "en" : {
@@ -21422,6 +21052,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "E-mail de récupération envoyé."
+          }
+        }
+      }
+    },
+    "Email non verificata. Ti abbiamo inviato di nuovo il link: apri l'email, verifica l'indirizzo e poi accedi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Email not verified. We sent you the link again: open the email, verify your address, then sign in."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Correo no verificado. Te hemos enviado el enlace de nuevo: abre el correo, verifica la dirección y luego inicia sesión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-mail non vérifié. Nous vous avons renvoyé le lien : ouvrez l'e-mail, vérifiez votre adresse, puis connectez-vous."
           }
         }
       }
@@ -21665,6 +21317,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rejoignez notre famille sur KidBox"
+          }
+        }
+      }
+    },
+    "Entra nella tua famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join your family"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entra en tu familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rejoindre votre famille"
           }
         }
       }
@@ -24000,6 +23674,29 @@
         }
       }
     },
+    "Famiglia %@" : {
+      "comment" : "Nome famiglia proposto dal cognome",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ family"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Familia %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Famille %@"
+          }
+        }
+      }
+    },
     "Famiglia aggiunta!" : {
       "localizations" : {
         "en" : {
@@ -24045,6 +23742,7 @@
       }
     },
     "Famiglia creata! Continua per invitare il partner." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -24998,6 +24696,7 @@
       }
     },
     "Foto, video e momenti speciali in una galleria privata, cifrata e sincronizzata in tempo reale." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -26736,6 +26435,28 @@
         }
       }
     },
+    "Hai ricevuto un invito? Entra con il QR" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got an invite? Join with the QR code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Tienes una invitación? Entra con el QR"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez une invitation ? Rejoignez avec le QR"
+          }
+        }
+      }
+    },
     "Hai ricevuto un link d'invito? Aprilo e ti porta qui dentro. Altrimenti inquadra il codice QR di chi ti invita." : {
       "localizations" : {
         "en" : {
@@ -26759,6 +26480,7 @@
       }
     },
     "Hai un link d'invito o un codice QR? Usalo per unirti." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -27534,7 +27256,30 @@
         }
       }
     },
+    "Il link contiene la chiave: chi lo riceve può entrare. Resta nella chat o nella posta finché non viene usato. Vale 7 giorni, una volta sola, e puoi annullarlo qui sotto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The link contains the key: whoever receives it can join. It stays in the chat or email until it is used. Valid for 7 days, once only, and you can cancel it below."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El enlace contiene la clave: quien lo reciba puede entrar. Queda en el chat o en el correo hasta que se use. Vale 7 días, una sola vez, y puedes anularlo aquí abajo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lien contient la clé : la personne qui le reçoit peut entrer. Il reste dans la discussion ou l'e-mail jusqu'à son utilisation. Valable 7 jours, une seule fois, et vous pouvez l'annuler ci-dessous."
+          }
+        }
+      }
+    },
     "Il link contiene la chiave: chi lo riceve può entrare. Resta nella chat o nella posta finché non viene usato. Vale 24 ore, una volta sola, e puoi annullarlo qui sotto." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -27556,7 +27301,52 @@
         }
       }
     },
+    "Il link contiene la chiave: vale 7 giorni e una volta sola." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The link contains the key: valid for 7 days, once only."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El enlace contiene la clave: vale 7 días y una sola vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lien contient la clé : valable 7 jours, une seule fois."
+          }
+        }
+      }
+    },
+    "Il link contiene la chiave: vale 7 giorni, una volta sola. Mandalo solo alla persona giusta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The link contains the key: valid for 7 days, once only. Send it only to the right person."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El enlace contiene la clave: vale 7 días, una sola vez. Envíalo solo a la persona correcta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lien contient la clé : valable 7 jours, une seule fois. Ne l'envoyez qu'à la bonne personne."
+          }
+        }
+      }
+    },
     "Il link contiene la chiave: vale 24 ore e una volta sola." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -27579,6 +27369,7 @@
       }
     },
     "Il link contiene la chiave: vale 24 ore, una volta sola. Mandalo solo alla persona giusta." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -28024,6 +27815,7 @@
       }
     },
     "Il tuo nome è quello che gli altri membri vedranno in chat, nei promemoria e sulla mappa. Potrai cambiarlo dal Profilo." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -30501,6 +30293,28 @@
         }
       }
     },
+    "Invita l'altro genitore o chi vuoi: chi entra con il link vede %@ e tutto quello che aggiungerete, in tempo reale." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invite the other parent or anyone you like: whoever joins with the link sees %@ and everything you add from now on, in real time."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invita al otro progenitor o a quien quieras: quien entre con el enlace verá %@ y todo lo que añadáis, en tiempo real."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitez l'autre parent ou qui vous voulez : la personne qui rejoint avec le lien voit %@ et tout ce que vous ajouterez, en temps réel."
+          }
+        }
+      }
+    },
     "Invita l'altro genitore o gli altri membri: documenti, wallet, salute, spese e calendario diventano condivisi e aggiornati per tutti, in tempo reale." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31496,6 +31310,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le traitement sera marqué comme inactif. Vous pourrez le réactiver plus tard."
+          }
+        }
+      }
+    },
+    "La famiglia ha raggiunto il limite di %d messaggi AI per oggi. Riprova domani." : {
+      "comment" : "AI daily quota reached",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your family has reached today’s limit of %d AI messages. Try again tomorrow."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La familia ha alcanzado el límite de %d mensajes de IA de hoy. Vuelve a intentarlo mañana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La famille a atteint la limite de %d messages IA pour aujourd’hui. Réessayez demain."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La famiglia ha raggiunto il limite di %d messaggi AI per oggi. Riprova domani."
           }
         }
       }
@@ -37883,6 +37727,7 @@
       }
     },
     "Nome del bambino/a" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -38631,6 +38476,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vous n'avez pas de compte ?"
+          }
+        }
+      }
+    },
+    "Non hai un invito? Crea la tua famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No invite? Create your family"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Sin invitación? Crea tu familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas d'invitation ? Créez votre famille"
           }
         }
       }
@@ -43284,6 +43151,28 @@
         }
       }
     },
+    "Per ora lo vedi solo tu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only you can see this for now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por ahora solo lo ves tú"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour l'instant, vous seul le voyez"
+          }
+        }
+      }
+    },
     "Per salvare questo contatto in Rubrica devi consentire l'accesso ai Contatti dalle Impostazioni." : {
       "localizations" : {
         "en" : {
@@ -44503,6 +44392,7 @@
       }
     },
     "Potrai creare la famiglia anche dopo da Impostazioni" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -45438,6 +45328,7 @@
       }
     },
     "Primo figlio (facoltativo)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -47248,6 +47139,28 @@
         }
       }
     },
+    "questa carta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this card"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta tarjeta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cette carte"
+          }
+        }
+      }
+    },
     "Questa chat ti aiuta a ottenere risposte su KidBox e, se serve, a inviare una segnalazione al nostro team." : {
       "localizations" : {
         "en" : {
@@ -47266,6 +47179,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ce chat vous aide à obtenir des réponses sur KidBox et, si nécessaire, à envoyer un signalement à notre équipe."
+          }
+        }
+      }
+    },
+    "questa cosa da fare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this to-do"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta tarea"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cette tâche"
+          }
+        }
+      }
+    },
+    "questa foto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this photo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta foto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cette photo"
           }
         }
       }
@@ -47315,6 +47272,94 @@
         }
       }
     },
+    "questa lista della spesa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this shopping list"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta lista de la compra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cette liste de courses"
+          }
+        }
+      }
+    },
+    "questa nota" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this note"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta nota"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cette note"
+          }
+        }
+      }
+    },
+    "questa password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this password"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta contraseña"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ce mot de passe"
+          }
+        }
+      }
+    },
+    "questa spesa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this expense"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este gasto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cette dépense"
+          }
+        }
+      }
+    },
     "Questa voce è privata: può aprirla solo chi l'ha creata." : {
       "localizations" : {
         "en" : {
@@ -47337,6 +47382,72 @@
         }
       }
     },
+    "questo animale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this pet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta mascota"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cet animal"
+          }
+        }
+      }
+    },
+    "questo biglietto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this ticket"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esta entrada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ce billet"
+          }
+        }
+      }
+    },
+    "questo contenuto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this item"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este contenido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ce contenu"
+          }
+        }
+      }
+    },
     "Questo contenuto non è più disponibile." : {
       "localizations" : {
         "en" : {
@@ -47355,6 +47466,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ce contenu n'est plus disponible."
+          }
+        }
+      }
+    },
+    "questo dato di salute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this health record"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este dato de salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cette donnée de santé"
+          }
+        }
+      }
+    },
+    "questo documento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this document"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este documento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ce document"
+          }
+        }
+      }
+    },
+    "questo evento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this event"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este evento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cet événement"
           }
         }
       }
@@ -47404,6 +47581,28 @@
         }
       }
     },
+    "questo luogo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this place"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este lugar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ce lieu"
+          }
+        }
+      }
+    },
     "questo membro" : {
       "comment" : "Fallback member label",
       "localizations" : {
@@ -47427,6 +47626,96 @@
         }
       }
     },
+    "Questo messaggio costa %1$d messaggi AI perché il contesto è ampio, e oggi alla famiglia ne restano %2$d su %3$d. Riprova domani." : {
+      "comment" : "AI daily quota: message costs more units than remaining",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This message costs %1$d AI messages because the context is large, and your family has only %2$d of %3$d left today. Try again tomorrow."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este mensaje cuesta %1$d mensajes de IA porque el contexto es amplio, y hoy a la familia le quedan solo %2$d de %3$d. Vuelve a intentarlo mañana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce message coûte %1$d messages IA car le contexte est volumineux, et il n’en reste que %2$d sur %3$d à la famille aujourd’hui. Réessayez demain."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo messaggio costa %1$d messaggi AI perché il contesto è ampio, e oggi alla famiglia ne restano %2$d su %3$d. Riprova domani."
+          }
+        }
+      }
+    },
+    "Questo messaggio costa circa %1$d messaggi AI, oggi ne restano %2$d." : {
+      "comment" : "Fitness copilot cost estimate exceeding remaining quota",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This message costs about %1$d AI messages; %2$d left today."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este mensaje cuesta unos %1$d mensajes de IA; hoy quedan %2$d."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce message coûte environ %1$d messages IA ; il en reste %2$d aujourd’hui."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo messaggio costa circa %1$d messaggi AI, oggi ne restano %2$d."
+          }
+        }
+      }
+    },
+    "Questo messaggio costa circa %d messaggi AI." : {
+      "comment" : "Fitness copilot cost estimate",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This message costs about %d AI messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este mensaje cuesta unos %d mensajes de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce message coûte environ %d messages IA."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo messaggio costa circa %d messaggi AI."
+          }
+        }
+      }
+    },
     "Questo QR non è un invito KidBox valido." : {
       "localizations" : {
         "en" : {
@@ -47445,6 +47734,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ce QR code n'est pas une invitation KidBox valide."
+          }
+        }
+      }
+    },
+    "questo veicolo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this vehicle"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este vehículo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ce véhicule"
+          }
+        }
+      }
+    },
+    "questo viaggio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this trip"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este viaje"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ce voyage"
           }
         }
       }
@@ -48779,6 +49112,7 @@
       }
     },
     "Ricordi condivisi\ncon il tuo partner." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -50171,6 +50505,7 @@
       }
     },
     "Salute, spese\ne molto altro." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -50567,6 +50902,7 @@
       }
     },
     "Sarai il creatore e potrai invitare il tuo partner." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -52425,126 +52761,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Séance du %@ mise à jour"
-          }
-        }
-      }
-    },
-    "Questo messaggio costa %1$d messaggi AI perché il contesto è ampio, e oggi alla famiglia ne restano %2$d su %3$d. Riprova domani." : {
-      "comment" : "AI daily quota: message costs more units than remaining",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This message costs %1$d AI messages because the context is large, and your family has only %2$d of %3$d left today. Try again tomorrow."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este mensaje cuesta %1$d mensajes de IA porque el contexto es amplio, y hoy a la familia le quedan solo %2$d de %3$d. Vuelve a intentarlo mañana."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce message coûte %1$d messages IA car le contexte est volumineux, et il n’en reste que %2$d sur %3$d à la famille aujourd’hui. Réessayez demain."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Questo messaggio costa %1$d messaggi AI perché il contesto è ampio, e oggi alla famiglia ne restano %2$d su %3$d. Riprova domani."
-          }
-        }
-      }
-    },
-    "La famiglia ha raggiunto il limite di %d messaggi AI per oggi. Riprova domani." : {
-      "comment" : "AI daily quota reached",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your family has reached today’s limit of %d AI messages. Try again tomorrow."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La familia ha alcanzado el límite de %d mensajes de IA de hoy. Vuelve a intentarlo mañana."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La famille a atteint la limite de %d messages IA pour aujourd’hui. Réessayez demain."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La famiglia ha raggiunto il limite di %d messaggi AI per oggi. Riprova domani."
-          }
-        }
-      }
-    },
-    "Questo messaggio costa circa %1$d messaggi AI, oggi ne restano %2$d." : {
-      "comment" : "Fitness copilot cost estimate exceeding remaining quota",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This message costs about %1$d AI messages; %2$d left today."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este mensaje cuesta unos %1$d mensajes de IA; hoy quedan %2$d."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce message coûte environ %1$d messages IA ; il en reste %2$d aujourd’hui."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Questo messaggio costa circa %1$d messaggi AI, oggi ne restano %2$d."
-          }
-        }
-      }
-    },
-    "Questo messaggio costa circa %d messaggi AI." : {
-      "comment" : "Fitness copilot cost estimate",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This message costs about %d AI messages."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este mensaje cuesta unos %d mensajes de IA."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce message coûte environ %d messages IA."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Questo messaggio costa circa %d messaggi AI."
           }
         }
       }
@@ -57798,6 +58014,28 @@
         }
       }
     },
+    "Tu e la tua famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You and your family"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tú y tu familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous et votre famille"
+          }
+        }
+      }
+    },
     "Tutta la famiglia" : {
       "comment" : "Visibility: whole family",
       "localizations" : {
@@ -58043,6 +58281,7 @@
       }
     },
     "Tutto quello che riguarda i tuoi figli — organizzato, condiviso e sempre a portata di mano." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -59214,7 +59453,30 @@
         }
       }
     },
+    "Vale 7 giorni e una volta sola." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valid for 7 days, once only."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vale 7 días y una sola vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valable 7 jours, une seule fois."
+          }
+        }
+      }
+    },
     "Vale 24 ore e una volta sola." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -59258,7 +59520,30 @@
         }
       }
     },
+    "Valido 7 giorni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valid for 7 days"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Válido 7 días"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valable 7 jours"
+          }
+        }
+      }
+    },
     "Valido 24 ore" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -60284,6 +60569,7 @@
       }
     },
     "Visite mediche, vaccini, spese di famiglia, password sicure di famiglia e lista della spesa. Tutto aggiornato tra voi due." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -60884,6 +61170,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Zones d'arrivée"
+          }
+        }
+      }
+    },
+    "Vuoi uscire dall'account?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out of your account?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cerrar sesión?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se déconnecter du compte ?"
+          }
+        }
+      }
+    },
+    "Torni alla schermata di accesso. Quello che hai già creato resta sul tuo account." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You'll go back to the sign-in screen. Anything you've already created stays on your account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volverás a la pantalla de acceso. Lo que ya has creado se queda en tu cuenta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous revenez à l'écran de connexion. Ce que vous avez déjà créé reste sur votre compte."
           }
         }
       }

@@ -109,7 +109,7 @@ private struct InviteCodeViewBody: View {
 
                             // Il segreto viaggia dentro il link: va detto, perché
                             // resta nella conversazione anche dopo l'invio.
-                            Label("Il link contiene la chiave: chi lo riceve può entrare. Resta nella chat o nella posta finché non viene usato. Vale 24 ore, una volta sola, e puoi annullarlo qui sotto.", systemImage: "exclamationmark.triangle.fill")
+                            Label("Il link contiene la chiave: chi lo riceve può entrare. Resta nella chat o nella posta finché non viene usato. Vale 7 giorni, una volta sola, e puoi annullarlo qui sotto.", systemImage: "exclamationmark.triangle.fill")
                                 .font(.footnote)
                                 .foregroundStyle(.orange)
                         }

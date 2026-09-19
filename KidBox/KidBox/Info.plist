@@ -2,10 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleIconName</key>
-	<string>AppIcon</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>it.vittorioscocca.kidbox.password-security-refresh</string>
+	</array>
 	<key>CFBundleAllowMixedLocalizations</key>
 	<true/>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -43,6 +47,8 @@
 	<string>KidBox</string>
 	<key>KEYCHAIN_ACCESS_GROUP</key>
 	<string>$(AppIdentifierPrefix)it.vittorioscocca.KidBox</string>
+	<key>KidBoxSharedKeychainAccessGroup</key>
+	<string>$(AppIdentifierPrefix)it.vittorioscocca.kidbox.shared</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>fbapi</string>
@@ -50,23 +56,28 @@
 		<string>fbauth2</string>
 		<string>App-Prefs</string>
 	</array>
-	<key>NSContactsUsageDescription</key>
-	<string>KidBox usa i contatti per permetterti di condividere un contatto in chat.</string>
-	<key>NSHealthShareUsageDescription</key>
-	<string>KidBox legge passi, peso, frequenza cardiaca, pressione, ossigeno, fitness cardio, ECG e allenamenti da Apple Salute.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>KidBox non scrive dati in Apple Salute.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>location</string>
+		<string>fetch</string>
+	</array>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIImageName</key>
+		<string></string>
+	</dict>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
-			<key>UTTypeIdentifier</key>
-			<string>it.vittorioscocca.kidbox.kbpw</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.plain-text</string>
 			</array>
 			<key>UTTypeDescription</key>
 			<string>KidBox Password Export</string>
+			<key>UTTypeIdentifier</key>
+			<string>it.vittorioscocca.kidbox.kbpw</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
@@ -77,24 +88,5 @@
 			</dict>
 		</dict>
 	</array>
-	<key>BGTaskSchedulerPermittedIdentifiers</key>
-	<array>
-		<string>it.vittorioscocca.kidbox.password-security-refresh</string>
-	</array>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-		<string>location</string>
-		<string>fetch</string>
-	</array>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>KidBoxSharedKeychainAccessGroup</key>
-	<string>$(AppIdentifierPrefix)it.vittorioscocca.kidbox.shared</string>
-	<key>UILaunchScreen</key>
-	<dict>
-		<key>UIImageName</key>
-		<string></string>
-	</dict>
 </dict>
 </plist>

@@ -62,6 +62,13 @@ final class AppCoordinator: ObservableObject {
     /// In-memory only: si azzera al riavvio (recupero desiderato) e in `completeOnboarding()`.
     @Published var isCreatingFamilyInOnboarding = false
 
+    /// `true` dal login finché `FamilyBootstrapService` non ha chiesto al server
+    /// le famiglie dell'utente. Su un'installazione nuova SwiftData è vuoto:
+    /// senza questo, RootGateView mostrava il wizard a chi una famiglia ce
+    /// l'ha già (stesso account su Android) per il tempo del bootstrap — e con
+    /// il wizard a due pagine si finiva davanti a «nome, cognome, famiglia».
+    @Published var isBootstrappingFamilies = false
+
     /// Nome dell'ultimo step di onboarding mostrato, usato per capire se il
     /// wizard è ancora aperto quando l'app va in background (onboarding_abandoned).
     @Published var lastOnboardingStepSeen: String?
@@ -393,6 +400,7 @@ final class AppCoordinator: ObservableObject {
                         self.uid = nil
                         return
                     }
+                    self.isBootstrappingFamilies = true
                     self.isAuthenticated = true
                     self.uid = user.uid
                     
@@ -410,6 +418,7 @@ final class AppCoordinator: ObservableObject {
 
                     KBLog.sync.kbDebug("Calling FamilyBootstrapService.bootstrapIfNeeded")
                     await FamilyBootstrapService(modelContext: modelContext).bootstrapIfNeeded()
+                    self.isBootstrappingFamilies = false
                     
                     // ── Prefetch piano + storage per il gate upload ───────────
                     // Fatto in background dopo il bootstrap: popola
@@ -503,6 +512,7 @@ final class AppCoordinator: ObservableObject {
 
                 } else {
                     self.isAuthenticated = false
+                    self.isBootstrappingFamilies = false
                     self.uid = nil
 
                     UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.removeObject(forKey: "kidbox.autofill.currentUid")
