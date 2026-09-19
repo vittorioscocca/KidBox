@@ -8,11 +8,17 @@ import { Link } from "react-router-dom";
 import "../pages/Impostazioni.css";
 
 /** Etichetta di gruppo + card che raccoglie le righe. */
-export function Group({ label, children, tone }) {
+/**
+ * `hint` è il piede del gruppo, l'equivalente del `footer:` di una `Section`
+ * SwiftUI: la spiegazione lunga che non sta in una riga e che su iOS e Android
+ * compare sotto la card.
+ */
+export function Group({ label, children, tone, hint }) {
   return (
     <section className="set-group">
       {label && <h2 className={`set-group-label${tone ? ` ${tone}` : ""}`}>{label}</h2>}
       <div className="set-card set-list">{children}</div>
+      {hint && <p className="set-group-hint">{hint}</p>}
     </section>
   );
 }

@@ -286,6 +286,7 @@ export default function Impostazioni() {
         <Row icon="💬" tint="blue" title={s.messages} hint={s.messagesRowHint} to={`${base}/messaggi`} chevron />
         <Row icon="✨" tint="purple" title={s.ai} hint={s.aiRowHint} to={`${base}/assistente`} chevron />
         <Row icon="🔔" title={s.notifications} hint={s.notificationsRowHint} to={`${base}/notifiche`} chevron />
+        <Row icon="💻" tint="grey" title={s.devices} hint={s.devicesRowHint} to={`${base}/dispositivi`} chevron />
         <Row icon="🛡️" tint="green" title={s.privacy} hint={s.privacyRowHint} to={`${base}/privacy`} chevron />
         {/* La skill esiste solo in italiano: vedi `isAlexaAvailable`. */}
         {isAlexaAvailable(locale) && (

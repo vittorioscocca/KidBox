@@ -24,6 +24,10 @@ import { isAlexaAvailable } from "../i18n/alexaAvailability";
 import { HEALTH_CONTEXT_PREFS, NOTIFICATION_PREFS } from "../services/settings";
 import { deleteAccount, fetchStorageUsage, loadPlan } from "../services/profile";
 import { PushNotConfiguredError, disablePush, enablePush, pushStatus } from "../services/push";
+import { installId, removeDeviceSession } from "../services/deviceSession";
+import { collection, deleteDoc, doc, getDocs } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { app, db } from "../firebase";
 import { fetchUsage } from "../services/aiChat";
 import { useAccountSettings } from "../hooks/useAccountSettings";
 import { DeviceRow, Group, PageHeader, Row, StackRow, SwitchRow, Value } from "../components/SettingsRows";
@@ -49,6 +53,7 @@ export default function ImpostazioniDettaglio() {
     notifiche: [s.notifications, NotifichePage],
     privacy: [s.privacy, PrivacyPage],
     alexa: isAlexaAvailable(locale) ? [t.alexa.title, AlexaPage] : null,
+    dispositivi: [s.devices, DispositiviPage],
     sessione: [s.session, SessionePage],
   };
   const entry = pages[section];
@@ -358,6 +363,119 @@ function AlexaPage() {
 }
 
 /* ── Sessione ────────────────────────────────────────────────────────────── */
+
+/* ── Dispositivi collegati ───────────────────────────────────────────────── */
+
+function DispositiviPage() {
+  const { user, logout } = useAuth();
+  const { t, locale } = useTranslation();
+  const s = t.settings;
+  const [sessions, setSessions] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const current = installId();
+
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    (async () => {
+      try {
+        const snap = await getDocs(collection(db, "users", user.uid, "sessions"));
+        if (!alive) return;
+        const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        // Questo dispositivo in cima, poi i più recenti.
+        rows.sort((a, b) => {
+          if ((a.id === current) !== (b.id === current)) return a.id === current ? -1 : 1;
+          return (b.lastSeenAt?.seconds || 0) - (a.lastSeenAt?.seconds || 0);
+        });
+        setSessions(rows);
+      } catch (err) {
+        if (alive) setError(err.message);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [user, current]);
+
+  const signOutOne = async (session) => {
+    if (!window.confirm(session.id === current ? s.devicesConfirmCurrent : s.devicesConfirmOther)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      if (session.id === current) {
+        // `logout` toglie già il documento di questa sessione: passare dal
+        // proprio listener renderebbe l'uscita più lenta e dipendente dalla rete.
+        await logout();
+        return;
+      }
+      await deleteDoc(doc(db, "users", user.uid, "sessions", session.id));
+      setSessions((prev) => prev.filter((x) => x.id !== session.id));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const signOutAll = async () => {
+    if (!window.confirm(s.devicesConfirmAll)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await httpsCallable(getFunctions(app, "europe-west1"), "signOutAllDevices")();
+      await removeDeviceSession(user?.uid).catch(() => {});
+      await logout();
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  };
+
+  const fmt = (ts) =>
+    ts?.seconds
+      ? new Date(ts.seconds * 1000).toLocaleString(
+          { it: "it-IT", en: "en-US", fr: "fr-FR", es: "es-ES" }[locale] || "it-IT",
+          { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }
+        )
+      : null;
+
+  const icon = (platform) => (platform === "ios" ? "📱" : platform === "android" ? "🤖" : "💻");
+
+  return (
+    <>
+      {error && <p className="error">{error}</p>}
+      <Group label={s.devices} hint={s.devicesHint}>
+        {sessions === null && <Row icon="⏳" tint="grey" title={t.common?.loading || "…"} />}
+        {sessions?.length === 0 && <Row icon="💻" tint="grey" title={s.devicesEmpty} />}
+        {sessions?.map((session) => {
+          const when = fmt(session.lastSeenAt);
+          return (
+            <Row
+              key={session.id}
+              icon={icon(session.platform)}
+              tint="grey"
+              title={session.deviceName || s.devicesFallbackName}
+              hint={[
+                session.id === current ? s.devicesThisOne : null,
+                // «Ultima apertura» e non «ultima attività»: il campo si
+                // aggiorna alla registrazione della sessione, non a ogni gesto.
+                when ? s.devicesLastOpen.replace("%@", when) : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+              onClick={busy ? undefined : () => signOutOne(session)}
+              chevron
+            />
+          );
+        })}
+      </Group>
+      <Group hint={s.devicesSignOutAllHint}>
+        <Row icon="⎋" tint="red" title={s.devicesSignOutAll} onClick={busy ? undefined : signOutAll} danger chevron />
+      </Group>
+    </>
+  );
+}
 
 function SessionePage() {
   const { user, logout } = useAuth();

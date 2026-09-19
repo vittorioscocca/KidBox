@@ -1,6 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { setInternalTraffic } from "./services/analytics";
 import {
+  removeDeviceSession,
+  startDeviceSession,
+  stopDeviceSession,
+} from "./services/deviceSession";
+import {
   onAuthStateChanged,
   signInWithPopup,
   signOut,
@@ -45,6 +50,16 @@ export function AuthProvider({ children }) {
         }
         setInternalTraffic(u);
         setUser(u);
+
+        // Questo browser entra nell'elenco dei dispositivi e si mette in
+        // ascolto della propria sessione: se un altro dispositivo la cancella,
+        // qui si esce. `startDeviceSession` è idempotente, quindi può essere
+        // chiamata a ogni risveglio del listener.
+        if (u) {
+          startDeviceSession(u.uid, () => signOut(auth));
+        } else {
+          stopDeviceSession();
+        }
       }),
     []
   );
@@ -84,7 +99,17 @@ export function AuthProvider({ children }) {
 
   const resetPassword = (email) => sendPasswordResetEmail(auth, email);
 
-  const logout = () => signOut(auth);
+  /**
+   * La rimozione della sessione va PRIMA del `signOut`: dopo, le rules non
+   * lascerebbero più scrivere e questo browser resterebbe per sempre
+   * nell'elenco degli altri dispositivi. Il logout avviene comunque, anche se
+   * la cancellazione fallisce: un errore di rete non deve impedire a qualcuno
+   * di uscire dal proprio account.
+   */
+  const logout = async () => {
+    await removeDeviceSession(auth.currentUser?.uid).catch(() => {});
+    return signOut(auth);
+  };
 
   return (
     <AuthContext.Provider

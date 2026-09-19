@@ -55,6 +55,14 @@
   padding-left: 6px;
 }
 
+.set-group-hint {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted);
+  padding: 0 6px;
+  margin: 8px 0 0;
+}
+
 .set-group-label.gold {
   color: var(--accent2);
 }

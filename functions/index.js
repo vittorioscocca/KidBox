@@ -5088,6 +5088,69 @@ async function deleteMemberPrivateFamilyData(familyId, uid) {
   await deleteStoragePrefix(`families/${familyId}/avatars/${uid}`).catch(() => {});
 }
 
+/**
+ * «Esci da tutti i dispositivi»: l'unico logout che regge anche contro un
+ * client che non collabora.
+ *
+ * Il logout per singolo dispositivo è cooperativo — quel device ascolta il
+ * proprio documento in `users/{uid}/sessions` e si slogga da sé. Va benissimo
+ * per il vecchio portatile o il tablet di casa, ma un'app modificata potrebbe
+ * ignorarlo. Qui invece si passa da `revokeRefreshTokens`, che è lato Firebase:
+ * ogni refresh token emesso finora diventa inutilizzabile e nessun client può
+ * più rinnovarsi.
+ *
+ * Due limiti da conoscere, perché decidono cosa promettere nell'interfaccia:
+ *
+ * 1. Gli ID token già emessi restano validi fino alla scadenza, **fino a
+ *    un'ora**. Nell'immediato a chiudere la porta sono i documenti di sessione
+ *    cancellati qui sotto, che i client vedono sparire in tempo reale; la
+ *    revoca è la rete di sicurezza che arriva dopo.
+ * 2. Le Security Rules non controllano la revoca da sole. Per bloccare un
+ *    client ostile *dentro* quell'ora servirebbe confrontare in ogni regola
+ *    `request.auth.token.auth_time` con `sessionsRevokedAt`, cioè una `get()`
+ *    in più a ogni valutazione su tutto il ruleset. Il campo lo scriviamo già
+ *    qui: se un giorno servirà, l'informazione c'è.
+ *
+ * Chi chiama viene disconnesso insieme agli altri: è quello che dice il
+ * pulsante, e lasciarsi fuori sarebbe la sorpresa sbagliata dopo «tutti».
+ */
+exports.signOutAllDevices = onCall(
+    {region: "europe-west1", maxInstances: 20, invoker: "public"},
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+
+      const db = admin.firestore();
+
+      // Prima i documenti di sessione: è la via veloce, quella che i client
+      // online eseguono entro un secondo. La revoca dei refresh token, più
+      // lenta ad arrivare, viene dopo.
+      const sessionsRef = db.collection("users").doc(uid).collection("sessions");
+      const sessionsSnap = await sessionsRef.get();
+      await deleteCollection(sessionsRef).catch((err) => {
+        logger.error("signOutAllDevices: sessioni non cancellate", {uid, err: String(err)});
+        throw new HttpsError("internal", "Disconnessione non riuscita.");
+      });
+
+      await admin.auth().revokeRefreshTokens(uid);
+
+      // L'istante da cui le sessioni sono da considerarsi morte. Non lo legge
+      // ancora nessuno: serve a poter irrigidire le rules senza dover prima
+      // aspettare che il campo si popoli su tutti gli account.
+      await db.collection("users").doc(uid).set({
+        sessionsRevokedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, {merge: true}).catch((err) => {
+        logger.warn("signOutAllDevices: sessionsRevokedAt non scritto", {uid, err: String(err)});
+      });
+
+      // I token push NON si toccano: dicono dove consegnare, non se un utente è
+      // loggato. Li ripulisce il client quando esegue il proprio logout, e
+      // quelli morti li toglie `pruneInvalidFcmTokens` al primo invio.
+      logger.info("signOutAllDevices", {uid, sessions: sessionsSnap.size});
+      return {ok: true, sessions: sessionsSnap.size};
+    },
+);
+
 exports.deleteAccount = onCall(
     {region: "europe-west1", maxInstances: 20, invoker: "public"},
     async (request) => {

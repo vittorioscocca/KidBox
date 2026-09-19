@@ -153,6 +153,16 @@ service cloud.firestore {
         allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
       }
 
+      // ── SESSIONI (un documento per dispositivo) ────────────
+      // L'elenco dei dispositivi collegati, e la leva del logout remoto: ogni
+      // client ascolta il PROPRIO documento e si slogga quando sparisce.
+      // `delete` da un altro dispositivo dello stesso account è il punto di
+      // tutta la feature, perciò vale la stessa regola degli altri: chiunque
+      // sia loggato come questo uid può toccarli.
+      match /sessions/{sessionId} {
+        allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
+      }
+
       // ── CHAT AI (private per-utente, sync cross-device) ────
       match /aiConversations/{conversationId} {
         allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
