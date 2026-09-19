@@ -290,6 +290,11 @@ enum FitnessPlanForegroundSync {
             return
         }
 
+        // Stessi permessi del pulsante "Sincronizza ora": senza, chi aveva
+        // collegato Salute prima che leggessimo le distanze chiudeva le sedute
+        // con le sole calorie da questo innesco, e con i chilometri dall'altro.
+        await KBHealthKitService.shared.requestAuthorizationForNewTypesIfLinked()
+
         let result = await FitnessHealthSync.reconcile(plan: plan)
         FitnessPlanStore.setLastHealthSync(Date(), childId: childId)
         guard result.didChange else { return }

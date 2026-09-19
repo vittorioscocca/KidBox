@@ -76,6 +76,11 @@ final class KBHealthKitService {
     /// Metri percorsi nell'allenamento, dal primo tipo di distanza che ne ha.
     /// Vale zero per palestra, yoga e simili: lì la distanza non esiste e la
     /// riga non deve mostrarla.
+    ///
+    /// Le statistiche per tipo esistono solo per gli allenamenti costruiti con
+    /// `HKWorkoutBuilder` (Apple Watch); le app di terze parti che scrivono
+    /// direttamente l'`HKWorkout` valorizzano solo `totalDistance`, che resta
+    /// l'ultima risorsa.
     private static func distanceMeters(of workout: HKWorkout) -> Double? {
         for identifier in distanceIdentifiers {
             guard
@@ -84,6 +89,9 @@ final class KBHealthKitService {
                     .doubleValue(for: .meter()),
                 meters > 0
             else { continue }
+            return meters
+        }
+        if let meters = workout.totalDistance?.doubleValue(for: .meter()), meters > 0 {
             return meters
         }
         return nil
@@ -97,6 +105,31 @@ final class KBHealthKitService {
     func requestAuthorization() async throws {
         guard isAvailable else { throw KBHealthKitError.notAvailable }
         try await store.requestAuthorization(toShare: [], read: readTypes)
+    }
+
+    /// Chiede i tipi di lettura aggiunti dopo che la persona aveva già
+    /// collegato Salute (oggi: le distanze). HealthKit non rivela cosa è stato
+    /// concesso in lettura, ma dice se una richiesta è ancora da fare: per i
+    /// tipi già decisi la chiamata è silenziosa, quindi la schermata compare
+    /// una volta sola e solo con le voci nuove.
+    ///
+    /// Non tocca chi non ha mai collegato Salute: per quella persona il
+    /// permesso si chiede solo da un gesto esplicito, non da una
+    /// sincronizzazione in sottofondo.
+    func requestAuthorizationForNewTypesIfLinked() async {
+        guard isAvailable else { return }
+        let workoutOnly: Set<HKObjectType> = [HKObjectType.workoutType()]
+        guard
+            let linked = try? await store.statusForAuthorizationRequest(toShare: [], read: workoutOnly),
+            linked == .unnecessary,
+            let status = try? await store.statusForAuthorizationRequest(toShare: [], read: readTypes),
+            status == .shouldRequest
+        else { return }
+        do {
+            try await store.requestAuthorization(toShare: [], read: readTypes)
+        } catch {
+            KBLog.sync.kbError("requestAuthorizationForNewTypesIfLinked FAIL err=\(error.localizedDescription)")
+        }
     }
 
     func fetchSnapshot() async throws -> KBHealthImportSnapshot {
