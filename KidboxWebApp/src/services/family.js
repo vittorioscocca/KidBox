@@ -28,7 +28,9 @@ import { db, functions } from "../firebase";
 import { loadFamilyKeyBytes } from "./familyKey";
 
 const INVITE_BASE_URL = "https://kidboxapp.com/join";
-const INVITE_TTL_SECONDS = 24 * 3600;
+// 7 giorni, uso singolo: come iOS (`InviteWrapService.defaultTTL`). Erano 24 ore,
+// troppo poche per un link mandato su WhatsApp e aperto il giorno dopo.
+const INVITE_TTL_SECONDS = 7 * 24 * 3600;
 
 const enc = new TextEncoder();
 
