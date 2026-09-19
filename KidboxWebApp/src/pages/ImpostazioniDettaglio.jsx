@@ -501,8 +501,11 @@ function SessionePage() {
         })}
       </Group>
 
+      {/* Da solo col suo piede, come sui client mobile: è l'uscita imposta dal
+          server, e la differenza con il tocco sulla riga qui sopra va letta
+          prima di premere. Il logout normale non si ripete qui — si esce
+          toccando «Questo dispositivo» nell'elenco, o dalla barra laterale. */}
       <Group hint={s.devicesSignOutAllHint}>
-        <Row icon="⎋" tint="grey" title={p.logout} onClick={logout} chevron />
         <Row
           icon="⎋"
           tint="red"
@@ -511,6 +514,9 @@ function SessionePage() {
           danger
           chevron
         />
+      </Group>
+
+      <Group>
         {!deleting ? (
           <Row icon="🗑" tint="red" title={p.deleteAccount} onClick={() => setDeleting(true)} danger chevron />
         ) : (
