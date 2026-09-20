@@ -1,0 +1,28 @@
+# Novità Android 2.3.1 (55) — testi «Novità di questa versione» per Google Play
+
+Limite Play: 500 caratteri per lingua. Scritti il 20/09/2026.
+
+## it-IT
+
+• Cure a lungo termine: il calendario si apre all'istante anche dopo centinaia di giorni, con il giorno di oggi evidenziato correttamente e tutto lo storico a portata di scorrimento.
+• Promemoria: se le notifiche sono disattivate, KidBox te lo dice subito e ti porta alle impostazioni, invece di restare in silenzio. Vale per cure, visite, esami, vaccini, biglietti e documenti.
+• Le schede a schermo intero non nascondono più l'ultimo campo sotto la barra di navigazione.
+
+## en-US
+
+• Long-term treatments: the calendar now opens instantly even after hundreds of days, with today correctly highlighted and the full history a scroll away.
+• Reminders: if notifications are turned off, KidBox tells you right away and takes you to the settings instead of staying silent. This applies to treatments, appointments, tests, vaccinations, tickets and documents.
+• Full-screen forms no longer hide the last field behind the navigation bar.
+
+## es-ES
+
+• Tratamientos de larga duración: el calendario se abre al instante incluso tras cientos de días, con el día de hoy bien resaltado y todo el historial a un desplazamiento.
+• Recordatorios: si las notificaciones están desactivadas, KidBox te lo dice enseguida y te lleva a los ajustes, en lugar de quedarse en silencio. Vale para tratamientos, citas, pruebas, vacunas, entradas y documentos.
+• Los formularios a pantalla completa ya no ocultan el último campo bajo la barra de navegación.
+
+## fr-FR
+
+• Traitements de longue durée : le calendrier s'ouvre instantanément même après des centaines de jours, avec le jour d'aujourd'hui bien mis en évidence et tout l'historique à portée de main.
+• Rappels : si les notifications sont désactivées, KidBox vous le dit tout de suite et vous conduit aux réglages, au lieu de rester silencieux. Pour traitements, rendez-vous, examens, vaccins, billets et documents.
+• Les formulaires plein écran ne cachent plus le dernier champ sous la barre de navigation.
+

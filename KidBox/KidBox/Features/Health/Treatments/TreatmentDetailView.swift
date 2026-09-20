@@ -83,6 +83,13 @@ struct TreatmentDetailView: View {
     }
     
     private var takenCount: Int { doseLogs.filter { $0.taken }.count }
+
+    /// Log vivi raggruppati per giorno terapeutico: un solo passaggio per corpo,
+    /// invece di un `filter` su tutti i log per ogni cella della timeline
+    /// (su una cura di 555 giorni con 111 log erano 61.000 confronti a render).
+    private var doseLogsByDay: [Int: [KBDoseLog]] {
+        Dictionary(grouping: doseLogs.filter { !$0.isDeleted }, by: \.dayNumber)
+    }
     
     private var totalDoseCount: Int {
         if !treatment.isLongTerm { return treatment.totalDoses }
@@ -381,12 +388,17 @@ struct TreatmentDetailView: View {
     private var timelineRow: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                // LazyHStack, non HStack: una cura a lungo termine ha centinaia di
+                // giorni e costruirli tutti insieme è lo stesso disegno che su
+                // Android bloccava il main thread. Le celle hanno frame fisso, quindi
+                // scrollTo(anchor: .center) resta preciso anche da lazy.
+                let byDay = doseLogsByDay
+                LazyHStack(spacing: 8) {
                     ForEach(timelineDays, id: \.self) { offset in
                         let date       = dateForOffset(offset)
                         let isToday    = offset == currentDayOffset
                         let isSelected = offset == selectedDayOffset
-                        let dayDoses   = doseLogs.filter { $0.dayNumber == offset + 1 && !$0.isDeleted }
+                        let dayDoses   = byDay[offset + 1] ?? []
                         let expected   = expectedDoseSlotsCount(dayOffset: offset)
                         let allTaken   = expected > 0 && dayDoses.count == expected && dayDoses.allSatisfy { $0.taken }
                         
@@ -609,24 +621,7 @@ struct TreatmentDetailView: View {
                 .font(.subheadline.bold()).foregroundStyle(tint)
             
             if !notifGranted {
-                HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Notifiche disabilitate").font(.caption.bold())
-                        Text("Abilita le notifiche nelle Impostazioni per ricevere i promemoria.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-                .padding(10)
-                .background(RoundedRectangle(cornerRadius: 10).fill(Color.orange.opacity(0.08)))
-                
-                Button("Apri Impostazioni") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
-                    }
-                }
-                .font(.caption).foregroundStyle(tint)
-                
+                KBNotificationsDisabledCard(tint: tint)
             } else {
                 Toggle(isOn: Binding(
                     get: { treatment.reminderEnabled },

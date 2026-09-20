@@ -12,6 +12,7 @@ final class PasswordsSecurityScanner {
     private let modelContext: ModelContext
     private let familyId: String
     private let checker: PwnedChecker
+    private let remote = PasswordRemoteStore()
 
     init(modelContext: ModelContext, familyId: String, checker: PwnedChecker = .shared) {
         self.modelContext = modelContext
@@ -41,45 +42,57 @@ final class PasswordsSecurityScanner {
             }
 
             guard let plain = try? entry.decryptPassword(), !plain.isEmpty else { continue }
-            let prev = entry.pwnedCount ?? 0
+            let prev = entry.pwnedCount
 
             let result = (try? await checker.check(plain)) ?? PwnedChecker.unknown
             if result == PwnedChecker.unknown {
                 continue
             }
 
-            entry.pwnedCount = result
+            // La data del controllo vive solo in locale: è "quando QUESTO device
+            // ha verificato", non un dato della famiglia.
             entry.pwnedCheckedAt = .now
-            // `updatedAt` NON si tocca: significa "quando l'utente ha modificato
-            // questa password", e uno scan di sicurezza non è una modifica sua.
-            //
-            // Toccarlo faceva danni visibili: le sezioni della lista sono ordinate
-            // per data di modifica decrescente (PasswordsHomeView.sections), quindi
-            // a ogni risposta del controllo quella voce saltava in cima al gruppo.
-            // Con lo scan che procede una password alla volta — c'è un throttle di
-            // 200ms per richiesta in PwnedChecker — la lista si riordinava sotto gli
-            // occhi dell'utente per tutta la durata, per poi fermarsi di colpo.
-            //
-            // La data del controllo ha già il suo campo dedicato, `pwnedCheckedAt`,
-            // aggiornato qui sopra. La sincronizzazione continua a funzionare: in
-            // ingresso `applyEntryDTO` accetta con `remoteTs >= existing.updatedAt`,
-            // quindi il nuovo `pwnedCount` si propaga anche a parità di timestamp.
-            entry.syncState = .pendingUpsert
-            PasswordsRepository.enqueuePasswordEntryUpsert(
-                entryId: entry.id,
-                familyId: familyId,
-                modelContext: modelContext
-            )
+            touched += 1
 
-            if prev <= 0, result > 0 {
+            // Verdetto invariato: nessuna scrittura su Firestore. Prima ogni scan
+            // riscriveva il documento intero di TUTTE le password, con
+            // `updatedAt: serverTimestamp()`: ~150 scritture a settimana a
+            // pagamento, contate come «aggiornamenti» nel rollup, e sugli altri
+            // device tutte le password risultavano «modificate adesso» (la lista
+            // si riordinava — il difetto che il commento qui sotto credeva di aver
+            // chiuso, e che invece era chiuso solo in locale).
+            //
+            // `updatedAt` NON si tocca, né in locale né in remoto: significa
+            // "quando l'utente ha modificato questa password", e uno scan non è
+            // una modifica sua. La sincronizzazione regge: in ingresso
+            // `applyEntryDTO` accetta con `remoteTs >= existing.updatedAt`, quindi
+            // il nuovo `pwnedCount` si propaga anche a parità di timestamp.
+            guard prev != result else { continue }
+
+            // Solo i due campi del verdetto, e il valore locale si aggiorna solo se
+            // il server l'ha preso: se la scrittura fallisce (offline) il prossimo
+            // scan rivede la differenza e riprova, senza passare dall'outbox che
+            // farebbe l'upsert intero.
+            do {
+                try await remote.updatePwnedVerdict(
+                    entryId: entry.id,
+                    familyId: familyId,
+                    pwnedCount: result,
+                    checkedAt: entry.pwnedCheckedAt ?? .now
+                )
+                entry.pwnedCount = result
+            } catch {
+                KBLog.sync.kbError("[PasswordSecurity] verdict write failed id=\(entry.id): \(error.localizedDescription)")
+                continue
+            }
+
+            if (prev ?? 0) <= 0, result > 0 {
                 newlyCompromised += 1
             }
-            touched += 1
         }
 
         if touched > 0 {
             try? modelContext.save()
-            SyncCenter.shared.flushGlobal(modelContext: modelContext)
             UserDefaults.standard.set(Date(), forKey: Self.lastScanKey(familyId: familyId))
             UserDefaults.standard.set(true, forKey: Self.moduleOpenedKey(familyId: familyId))
         }

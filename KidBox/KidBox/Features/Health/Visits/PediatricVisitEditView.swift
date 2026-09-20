@@ -38,6 +38,7 @@ struct PediatricVisitEditView: View {
     @State private var showNewDoctorForm  = false
     @State private var visitStatus: KBVisitStatus = .pending
     @State private var visitReminderOn    = false
+    @State private var visitReminderDenied = false   // notifiche negate: card sotto l'interruttore
     
     @Query private var recentVisitsQ: [KBMedicalVisit]
     
@@ -71,6 +72,7 @@ struct PediatricVisitEditView: View {
     @State private var hasNextVisit      = false
     @State private var nextVisitDate     = Date()
     @State private var nextVisitReminder = true   // promemoria giorno prima, default on
+    @State private var nextVisitReminderDenied = false
     
     @State private var isSaving = false
     
@@ -399,9 +401,14 @@ struct PediatricVisitEditView: View {
                         Toggle("", isOn: $visitReminderOn)
                             .labelsHidden()
                             .tint(tint)
+                            .reminderPermissionGate(isOn: $visitReminderOn, denied: $visitReminderDenied)
                     }
                     .padding(.horizontal)
                     .padding(.top, 4)
+                    if visitReminderDenied {
+                        KBNotificationsDisabledCard(tint: tint)
+                            .padding(.horizontal)
+                    }
                 }
                 Divider().padding(.horizontal)
                 // ── Stato visita ──
@@ -879,6 +886,10 @@ struct PediatricVisitEditView: View {
                             }
                             Spacer()
                             Toggle("", isOn: $nextVisitReminder).labelsHidden().tint(tint)
+                                .reminderPermissionGate(isOn: $nextVisitReminder, denied: $nextVisitReminderDenied)
+                        }
+                        if nextVisitReminderDenied {
+                            KBNotificationsDisabledCard(tint: tint)
                         }
                     }
                 }

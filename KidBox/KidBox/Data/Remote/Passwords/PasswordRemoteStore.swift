@@ -158,6 +158,19 @@ final class PasswordRemoteStore {
         KBLog.sync.kbDebug("[PasswordRemote] upsert group id=\(group.id)")
     }
 
+    /// Esito del controllo di sicurezza: solo i due campi del verdetto, senza
+    /// `updatedAt`/`updatedBy`. Uno scan non è una modifica dell'utente: il
+    /// documento intero con `serverTimestamp()` faceva risultare «modificate
+    /// adesso» tutte le password sugli altri device (lista che si riordina) e
+    /// contava come `content_updated` nel rollup — ~150 scritture a settimana
+    /// per un dato che di solito non cambia.
+    func updatePwnedVerdict(entryId: String, familyId: String, pwnedCount: Int, checkedAt: Date) async throws {
+        try await passwordsCol(familyId: familyId).document(entryId).setData([
+            "pwnedCount": pwnedCount,
+            "pwnedCheckedAt": Timestamp(date: checkedAt),
+        ], merge: true)
+    }
+
     func softDeleteEntry(entryId: String, familyId: String) async throws {
         guard let uid = Auth.auth().currentUser?.uid else {
             throw NSError(domain: "KidBox", code: -1, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])

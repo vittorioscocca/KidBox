@@ -96,7 +96,7 @@ struct EditWalletDocumentSheet: View {
                         Toggle("Data di scadenza", isOn: $hasExpiryDate)
                         if hasExpiryDate {
                             DatePicker("Scadenza", selection: $expiryDate, displayedComponents: .date)
-                            Toggle("Avvisami una settimana prima della scadenza", isOn: $notifyBeforeExpiry)
+                            WalletDocumentNotifyToggle(isOn: $notifyBeforeExpiry)
                         }
                     }
                 }
@@ -104,7 +104,7 @@ struct EditWalletDocumentSheet: View {
                 if kind == .patente {
                     PatenteCategoriesEditor(categories: $patenteCategories)
                     Section {
-                        Toggle("Avvisami una settimana prima della scadenza", isOn: $notifyBeforeExpiry)
+                        WalletDocumentNotifyToggle(isOn: $notifyBeforeExpiry)
                     }
                 }
 

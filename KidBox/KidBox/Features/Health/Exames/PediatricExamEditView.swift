@@ -34,6 +34,7 @@ struct PediatricExamEditView: View {
     @State private var hasDeadline = false
     @State private var deadline    = Date()
     @State private var reminderOn   = false
+    @State private var reminderDenied = false
     @State private var reminderTime = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date()) ?? Date()
     @State private var preparation = ""
     @State private var notes       = ""
@@ -133,6 +134,9 @@ struct PediatricExamEditView: View {
                         .tint(.orange)
                         .onChange(of: reminderOn) { _, newValue in
                             handleReminderToggle(newValue)
+                        }
+                        if reminderDenied {
+                            KBNotificationsDisabledCard(tint: .orange)
                         }
                         if reminderOn {
                             DatePicker(
@@ -570,6 +574,7 @@ struct PediatricExamEditView: View {
         // prima di toccare Salva
         if newValue {
             KBExamReminderService.shared.requestAuthorization { granted in
+                reminderDenied = !granted
                 if !granted { reminderOn = false }
             }
         }

@@ -17,6 +17,7 @@ struct WalletTicketDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @State private var reminderDenied = false
     @EnvironmentObject private var coordinator: AppCoordinator
 
     @Query private var tickets: [KBWalletTicket]
@@ -363,6 +364,22 @@ struct WalletTicketDetailView: View {
                 .pickerStyle(.menu)
                 .labelsHidden()
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+                if reminderDenied {
+                    KBNotificationsDisabledCard()
+                }
+            }
+            .task {
+                // Promemoria attivo (tutto tranne «Nessuno») ma notifiche bloccate:
+                // l'avviso compare subito, il biglietto proverà ad avvisare e non potrà.
+                if ticket.reminderOffsetHours != 0 {
+                    reminderDenied = !(await KBReminderPermission.isGranted())
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+                Task { @MainActor in
+                    if await KBReminderPermission.isGranted() { reminderDenied = false }
+                }
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -375,6 +392,22 @@ struct WalletTicketDetailView: View {
     }
 
     private func applyReminderOffset(ticket: KBWalletTicket, hours: Int?) {
+        // «Nessuno» (0) è sempre libero; ogni altra scelta, compreso il
+        // «Predefinito» (nil), arma una notifica e passa dal permesso: se
+        // negato la tendina resta com'era e compare l'avviso.
+        guard hours == 0 else {
+            Task { @MainActor in
+                let ok = await KBReminderPermission.requestIfNeeded()
+                reminderDenied = !ok
+                if ok { commitReminderOffset(ticket: ticket, hours: hours) }
+            }
+            return
+        }
+        reminderDenied = false
+        commitReminderOffset(ticket: ticket, hours: 0)
+    }
+
+    private func commitReminderOffset(ticket: KBWalletTicket, hours: Int?) {
         ticket.reminderOffsetHours = hours
         if let uid = Auth.auth().currentUser?.uid {
             ticket.updatedBy = uid

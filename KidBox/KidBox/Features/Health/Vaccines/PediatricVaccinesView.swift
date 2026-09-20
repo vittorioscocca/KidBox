@@ -634,6 +634,7 @@ struct PediatricVaccineEditView: View {
     @State private var adminSite         = ""
     @State private var notes             = ""
     @State private var reminderOn      = false
+    @State private var reminderDenied  = false
     @State private var nextDoseDate     = Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date()
     
     private let sites = ["Braccio sinistro", "Braccio destro", "Coscia sinistra", "Coscia destra", "Orale", "Nasale", "Altro"]
@@ -760,6 +761,10 @@ struct PediatricVaccineEditView: View {
                                         }
                                     }
                                     .tint(tint)
+                                    .reminderPermissionGate(isOn: $reminderOn, denied: $reminderDenied)
+                                    if reminderDenied {
+                                        KBNotificationsDisabledCard(tint: tint)
+                                    }
                                     if reminderOn {
                                         DatePicker(
                                             "Data prevista richiamo",
