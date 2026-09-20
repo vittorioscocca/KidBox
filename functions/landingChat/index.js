@@ -7,7 +7,8 @@
  *
  *   1. le domande suggerite e le FAQ hanno risposte scritte nel browser
  *      (`KidboxLanding/public/assets/chat.js`): chi le usa non arriva qui, o ci
- *      arriva solo per un contatore (`action: "faq"`);
+ *      arriva solo per un contatore (`action: "faq"`). Il listino è l'unica
+ *      risposta scritta composta qui (`action: "price"`), dal documento vivo;
  *   2. una domanda già fatta da qualcun altro, nella stessa lingua e con la
  *      stessa base di conoscenza, esce dalla cache Firestore senza modello;
  *   3. il resto va a Haiku con la base di conoscenza in prompt caching, risposte
@@ -147,6 +148,72 @@ function plansText(plans) {
         return `- **${p.displayName}** — ${price}. Spazio per la famiglia: ${storage(p.storageBytes)}. ${ai}. Nella scheda: ${features}.`;
       })
       .join("\n");
+}
+
+/**
+ * Risposta scritta a «Quanto costa?», nelle quattro lingue, dal listino vivo:
+ * nessun modello e nessuna cache da rinnovare. Era la domanda con risposta
+ * `llm` più ripetuta nel report (20/09/2026).
+ * @param {object} plans
+ * @param {string} lang
+ * @return {string} markdown
+ */
+function priceAnswer(plans, lang) {
+  const L = {
+    it: {
+      locale: "it-IT", free: "gratis, per sempre", month: "al mese",
+      storage: "di spazio per la famiglia",
+      aiOnce: (n) => `${n} messaggi AI di prova, una tantum`,
+      aiDaily: (n) => `${n} messaggi AI al giorno`,
+      intro: "KidBox ha tre piani, sempre **per famiglia**: un solo abbonamento copre tutti i membri, senza limite di persone.",
+      outro: "L'abbonamento si acquista dall'app (App Store o Google Play), si rinnova ogni mese e si annulla quando vuoi. Il piano Free non scade mai.",
+    },
+    en: {
+      locale: "en-GB", free: "free, forever", month: "per month",
+      storage: "of family storage",
+      aiOnce: (n) => `${n} one-off trial AI messages`,
+      aiDaily: (n) => `${n} AI messages per day`,
+      intro: "KidBox has three plans, always **per family**: one subscription covers every member, with no limit on people.",
+      outro: "You subscribe from the app (App Store or Google Play); it renews monthly and you can cancel whenever you like. The Free plan never expires.",
+    },
+    es: {
+      locale: "es-ES", free: "gratis, para siempre", month: "al mes",
+      storage: "de espacio para la familia",
+      aiOnce: (n) => `${n} mensajes de IA de prueba, por una sola vez`,
+      aiDaily: (n) => `${n} mensajes de IA al día`,
+      intro: "KidBox tiene tres planes, siempre **por familia**: una sola suscripción cubre a todos los miembros, sin límite de personas.",
+      outro: "La suscripción se compra desde la app (App Store o Google Play), se renueva cada mes y se cancela cuando quieras. El plan Free no caduca nunca.",
+    },
+    fr: {
+      locale: "fr-FR", free: "gratuit, pour toujours", month: "par mois", colon: "\u00a0:",
+      storage: "d'espace pour la famille",
+      aiOnce: (n) => `${n} messages IA d'essai, une seule fois`,
+      aiDaily: (n) => `${n} messages IA par jour`,
+      intro: "KidBox propose trois offres, toujours **par famille** : un seul abonnement couvre tous les membres, sans limite de personnes.",
+      outro: "L'abonnement s'achète depuis l'app (App Store ou Google Play), se renouvelle chaque mois et s'annule quand vous voulez. L'offre Free n'expire jamais.",
+    },
+  }[lang] || null;
+  if (!L) return priceAnswer(plans, "it");
+  const storage = (bytes) => {
+    const gb = bytes / 1024 ** 3;
+    if (gb >= 1) return `${Number.isInteger(gb) ? gb : gb.toFixed(1)} GB`;
+    return `${Math.round(bytes / 1024 ** 2)} MB`;
+  };
+  const lines = Object.values(plans)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map((p) => {
+        const price = p.priceMonthly === 0 ? L.free :
+          `${new Intl.NumberFormat(L.locale, {style: "currency", currency: p.currency || "EUR"})
+              .format(p.priceMonthly)} ${L.month}`;
+        const ai = p.aiPeriod === "lifetime" ? L.aiOnce(p.aiLimit) : L.aiDaily(p.aiLimit);
+        // Le voci della scheda senza segnaposto: spazio e messaggi sono già detti.
+        const extras = (p.features?.[lang] || p.features?.it || [])
+            .filter((f) => f.included !== false && !/\{(storage|aiLimit)\}/.test(String(f.text)))
+            .map((f) => String(f.text));
+        return `- **${p.displayName}** — ${price}${L.colon || ":"} ${storage(p.storageBytes)} ${L.storage}, ${ai}` +
+          (extras.length ? `. ${extras.join(" · ")}.` : ".");
+      });
+  return `${L.intro}\n\n${lines.join("\n")}\n\n${L.outro}`;
 }
 
 /** Prefisso fisso del prompt: regole + base di conoscenza con il listino. */
@@ -473,6 +540,23 @@ exports.landingChat = onRequest(
           res.status(204).send("");
           return;
         }
+        if (body.action === "price") {
+          // Il listino, scritto dal server senza modello: si conta come le
+          // altre risposte scritte (`faq_price` / `faqmatch_price`).
+          const match = Boolean(body.match) && typeof body.question === "string";
+          const [{plans}] = await Promise.all([
+            plansConfig.loadPlans(),
+            bump(romeDay(), {[`${match ? "faqmatch" : "faq"}_price`]: 1, [`faqlang_${lang}`]: 1}),
+            match ? recordQuestion({
+              question: body.question.trim().slice(0, QUESTION_MAX_CHARS),
+              lang,
+              source: "faq_price",
+              turn: 1,
+            }) : Promise.resolve(),
+          ]);
+          res.json({answer: priceAnswer(plans, lang), source: "written"});
+          return;
+        }
         if (body.action === "ask") {
           await handleAsk(body, req, res);
           return;
@@ -485,4 +569,4 @@ exports.landingChat = onRequest(
     },
 );
 
-exports._test = {normalizeQuestion, sanitizeHistory, plansText, costOf, languageBlock};
+exports._test = {normalizeQuestion, sanitizeHistory, plansText, priceAnswer, costOf, languageBlock};

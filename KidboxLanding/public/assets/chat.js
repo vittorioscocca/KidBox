@@ -9,8 +9,8 @@
  *   3. tutto il resto va a `/api/chat` (rewrite di Hosting sulla function), che
  *      prima prova la sua cache e solo dopo chiama il modello.
  * Le domande sui prezzi non hanno una risposta scritta qui: il listino si
- * cambia dalla console, e il server lo legge vivo. La risposta del server però
- * resta in cache, quindi il chip «Quanto costa?» costa un modello a settimana.
+ * cambia dalla console, e la scrive il server (`action: "price"`) leggendo il
+ * documento vivo, senza modello.
  *
  * Nessun cookie; in sessionStorage restano la conversazione (per ritrovarla
  * cambiando pagina) e un id di sessione casuale, usato solo per il limite di
@@ -43,7 +43,7 @@
   /*
    * Testi e risposte scritte. `triggers`: frammenti (minuscoli, senza accenti)
    * che, in una domanda breve, bastano a dire di cosa si parla. `ask: true`:
-   * la risposta la dà il server (dati vivi), il chip manda il testo come domanda.
+   * la risposta la scrive il server dal listino vivo (`action: "price"`).
    * Le risposte seguono `functions/landingChat/knowledge.md`: se cambia quello,
    * si rileggono anche queste.
    */
@@ -852,10 +852,8 @@
     if (busy) return;
     if (state.asked.indexOf(faq.id) < 0) state.asked.push(faq.id);
     if (faq.ask) {
-      // I prezzi li dà il server, che legge il listino vivo. Il chip manda il
-      // testo canonico, così tutti i tocchi leggono la stessa voce in cache;
-      // una domanda scritta va com'è, perché «costo del viaggio?» non è il listino.
-      askServer(typed || faq.q, typed || faq.q);
+      // I prezzi li scrive il server dal listino vivo, senza modello.
+      askPrice(faq, typed);
       return;
     }
     push("user", typed || faq.q);
@@ -865,6 +863,30 @@
     if (typed) { body.match = true; body.question = typed; }
     post(body, true);
     track("landing_chat_question", { source: typed ? "faq_match" : "faq_chip", faq_id: faq.id });
+  }
+
+  function askPrice(faq, typed) {
+    push("user", typed || faq.q);
+    busy = true;
+    sendBtn.disabled = true;
+    renderLog();
+    var body = { action: "price" };
+    if (typed) { body.match = true; body.question = typed; }
+    post(body).then(function (res) {
+      if (res && res.answer) {
+        push("assistant", res.answer);
+        track("landing_chat_question", { source: typed ? "faq_match" : "faq_chip", faq_id: faq.id });
+      } else {
+        push("assistant", T.unavailable);
+        track("landing_chat_question", { source: "fallback_error" });
+      }
+    }).catch(function () {
+      push("assistant", T.unavailable);
+    }).then(function () {
+      busy = false;
+      sendBtn.disabled = false;
+      renderLog();
+    });
   }
 
   function askServer(shown, sent) {
