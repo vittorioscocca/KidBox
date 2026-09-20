@@ -1,0 +1,44 @@
+# Novità macOS 2.3.1 — testi «Novità» per App Store Connect (Mac)
+
+La 2.3.0 su Mac non è mai uscita: la scheda Mac 2.3.1 cumula le note dell'onboarding (già sulla scheda dal 7/09) più le tre voci della 2.3.1. Scritto il 20/09/2026.
+
+## it
+
+• Iniziare è più veloce: dopo la registrazione bastano nome, cognome e nome della famiglia, poi l'invito al partner. Le schermate di presentazione sono sparite.
+• Il link d'invito vale 7 giorni invece di 24 ore: chi lo apre il giorno dopo entra lo stesso.
+• «Esci» disponibile anche durante la configurazione iniziale, per cambiare account.
+• Chi ha già una famiglia su un altro dispositivo entra direttamente, senza rifare la configurazione.
+• Promemoria: se le notifiche sono disattivate, KidBox te lo dice subito e ti porta alle Impostazioni, invece di restare in silenzio. Vale per visite, esami, vaccini, cure, biglietti e documenti.
+• Cure a lungo termine: la timeline dei giorni è più fluida anche dopo centinaia di giorni, con oggi al centro e tutto lo storico a portata di scorrimento.
+• Password: il controllo di sicurezza settimanale non fa più risultare «modificate» tutte le password sugli altri dispositivi della famiglia; l'ordine della lista resta quello che hai deciso tu.
+
+## en-GB
+
+• Getting started is faster: after signing up, all you need is your name and your family's name, then the invite for your partner. The intro screens are gone.
+• Invite links now last 7 days instead of 24 hours: opening one the next day still works.
+• "Sign out" is available during initial setup too, to switch account.
+• If you already have a family on another device, you go straight in without setting up again.
+• Reminders: if notifications are turned off, KidBox tells you right away and takes you to Settings instead of staying silent. This applies to appointments, tests, vaccinations, treatments, tickets and documents.
+• Long-term treatments: the day timeline is smoother even after hundreds of days, with today centred and the full history a scroll away.
+• Passwords: the weekly security check no longer marks every password as "modified" on your family's other devices; the list stays in the order you chose.
+
+## es-ES
+
+• Empezar es más rápido: tras registrarte bastan tu nombre, tu apellido y el nombre de la familia, y luego la invitación para tu pareja. Las pantallas de presentación han desaparecido.
+• El enlace de invitación vale 7 días en lugar de 24 horas: quien lo abre al día siguiente entra igualmente.
+• «Cerrar sesión» disponible también durante la configuración inicial, para cambiar de cuenta.
+• Si ya tienes una familia en otro dispositivo, entras directamente sin repetir la configuración.
+• Recordatorios: si las notificaciones están desactivadas, KidBox te lo dice enseguida y te lleva a Ajustes, en lugar de quedarse en silencio. Vale para citas, pruebas, vacunas, tratamientos, entradas y documentos.
+• Tratamientos de larga duración: la línea de días es más fluida incluso tras cientos de días, con el día de hoy en el centro y todo el historial a un desplazamiento.
+• Contraseñas: el control de seguridad semanal ya no marca todas las contraseñas como «modificadas» en los demás dispositivos de la familia; la lista mantiene el orden que tú decidiste.
+
+## fr-FR
+
+• Démarrer est plus rapide : après l'inscription, il suffit de votre nom, de votre prénom et du nom de la famille, puis de l'invitation pour votre partenaire. Les écrans de présentation ont disparu.
+• Le lien d'invitation est valable 7 jours au lieu de 24 heures : l'ouvrir le lendemain fonctionne toujours.
+• « Se déconnecter » est disponible aussi pendant la configuration initiale, pour changer de compte.
+• Si vous avez déjà une famille sur un autre appareil, vous entrez directement, sans refaire la configuration.
+• Rappels : si les notifications sont désactivées, KidBox vous le dit tout de suite et vous conduit aux Réglages, au lieu de rester silencieux. Valable pour rendez-vous, examens, vaccins, traitements, billets et documents.
+• Traitements de longue durée : la frise des jours est plus fluide même après des centaines de jours, avec aujourd'hui au centre et tout l'historique à portée de main.
+• Mots de passe : le contrôle de sécurité hebdomadaire ne marque plus tous les mots de passe comme « modifiés » sur les autres appareils de la famille ; la liste garde l'ordre que vous avez choisi.
+

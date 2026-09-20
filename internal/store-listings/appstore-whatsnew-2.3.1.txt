@@ -1,0 +1,28 @@
+# Novità iOS 2.3.1 (129) — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 20/09/2026. Stesse tre voci di Android 2.3.1 tranne la terza (taglio dei form sotto la barra), che era solo Android; al suo posto il controllo sicurezza password, che qui è visibile.
+
+## it
+
+• Promemoria: se le notifiche sono disattivate, KidBox te lo dice subito e ti porta alle Impostazioni, invece di restare in silenzio. Vale per visite, esami, vaccini, cure, biglietti e documenti.
+• Cure a lungo termine: la timeline dei giorni è più fluida anche dopo centinaia di giorni, con oggi al centro e tutto lo storico a portata di scorrimento.
+• Password: il controllo di sicurezza settimanale non fa più risultare «modificate» tutte le password sugli altri dispositivi della famiglia; l'ordine della lista resta quello che hai deciso tu.
+
+## en-GB
+
+• Reminders: if notifications are turned off, KidBox tells you right away and takes you to Settings instead of staying silent. This applies to appointments, tests, vaccinations, treatments, tickets and documents.
+• Long-term treatments: the day timeline is smoother even after hundreds of days, with today centred and the full history a scroll away.
+• Passwords: the weekly security check no longer marks every password as "modified" on your family's other devices; the list stays in the order you chose.
+
+## es-ES
+
+• Recordatorios: si las notificaciones están desactivadas, KidBox te lo dice enseguida y te lleva a Ajustes, en lugar de quedarse en silencio. Vale para citas, pruebas, vacunas, tratamientos, entradas y documentos.
+• Tratamientos de larga duración: la línea de días es más fluida incluso tras cientos de días, con el día de hoy en el centro y todo el historial a un desplazamiento.
+• Contraseñas: el control de seguridad semanal ya no marca todas las contraseñas como «modificadas» en los demás dispositivos de la familia; la lista mantiene el orden que tú decidiste.
+
+## fr-FR
+
+• Rappels : si les notifications sont désactivées, KidBox vous le dit tout de suite et vous conduit aux Réglages, au lieu de rester silencieux. Valable pour rendez-vous, examens, vaccins, traitements, billets et documents.
+• Traitements de longue durée : la frise des jours est plus fluide même après des centaines de jours, avec aujourd'hui au centre et tout l'historique à portée de main.
+• Mots de passe : le contrôle de sécurité hebdomadaire ne marque plus tous les mots de passe comme « modifiés » sur les autres appareils de la famille ; la liste garde l'ordre que vous avez choisi.
+

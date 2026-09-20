@@ -27,3 +27,19 @@ e, per Play, il service account `play-purchase-validator` impersonato con scope
 Una descrizione si può modificare solo su una versione in «Prepare for
 Submission» o «Waiting for Review»; le localizzazioni degli abbonamenti già
 approvate (ACTIVE) non si toccano via API.
+
+## Note «Novità» (whatsNew) per versione
+
+Testi per versione in `appstore-whatsnew-<versione>.txt` (iOS) e
+`appstore-mac-whatsnew-<versione>.txt` (Mac, che cumula quando una versione iOS
+è saltata su Mac), più `play-whatsnew-<versione>.txt` per Google Play (limite
+500 caratteri per lingua, formato `<it-IT>…</it-IT>` da incollare nella console).
+
+Su App Store Connect si applicano con lo script riutilizzabile:
+
+    node scripts/asc-whatsnew.js --platform IOS --version 2.3.1 \
+         --file internal/store-listings/appstore-whatsnew-2.3.1.txt --apply
+
+(senza `--apply` mostra attuale/nuovo e non scrive). Stessa autenticazione del
+report giornaliero. Applicate il 20/09/2026 su iOS 2.3.1 e Mac 2.3.1, entrambe
+in «Prepare for Submission».
