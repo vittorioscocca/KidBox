@@ -73,18 +73,16 @@ Facebook.local.xcconfig
 #
 # Configurazione locale delle sessioni e worktree creati dagli agenti. I
 # worktree stanno in `.claude/worktrees/` e sono copie complete del repo: i tre
-# abbandonati trovati il 10/09/2026 pesavano 200 MB. Niente qui dentro
-# appartiene al progetto.
-.claude/
-
-# Eccezione: il launch.json della landing resta tracciato — descrive il server
-# di anteprima del sito, che è configurazione del progetto e non della
-# macchina. Le tre righe servono tutte: git non entra in una cartella ignorata,
-# quindi prima si riammette la cartella, poi si rignora il suo contenuto, e
-# infine si riammette il singolo file.
-!KidboxLanding/.claude/
-KidboxLanding/.claude/*
-!KidboxLanding/.claude/launch.json
+# abbandonati trovati il 10/09/2026 pesavano 200 MB. Restano fuori dal repo
+# le impostazioni della macchina e i worktree; `.claude/skills/` (procedure
+# del progetto, dal 20/09/2026) e `.claude/launch.json` (server di anteprima)
+# sono invece configurazione del progetto e si versionano.
+# Vale a ogni livello (anche KidboxLanding/.claude, KidboxWebApp/.claude):
+# si ignora il contenuto della cartella, non la cartella, così le eccezioni
+# sotto possono riammettere i singoli file.
+**/.claude/*
+!**/.claude/launch.json
+!/.claude/skills/
 
 # Cruscotto generato da scripts/build-dashboard.js (pubblicato come artefatto)
 dashboard/

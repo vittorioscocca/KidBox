@@ -1,0 +1,53 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "webapp",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "KidboxWebApp",
+        "--",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
+      "port": 5173
+    },
+    {
+      "name": "landing",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd KidboxLanding && npx firebase serve --only hosting:landing --project kidbox-42cd7 -p 5050"
+      ],
+      "port": 5050
+    },
+    {
+      "name": "console",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5070",
+        "--directory",
+        "KidboxConsole/public"
+      ],
+      "port": 5070
+    },
+    {
+      "name": "dashboard",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5090",
+        "--directory",
+        "dashboard"
+      ],
+      "port": 5090
+    }
+  ]
+}
