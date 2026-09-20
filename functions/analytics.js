@@ -130,6 +130,29 @@ function resolveUid(data, isCreate) {
   return isCreate ? (created || updated) : (updated || created);
 }
 
+// Campi scritti da automatismi dei client, non dall'utente. Una scrittura che
+// tocca SOLO questi non è un'azione di valore: il controllo settimanale di
+// sicurezza delle password (Have I Been Pwned) aggiorna il verdetto per conto
+// suo, e contarlo come `content_updated` gonfiava la feature `passwords` di
+// ~150 «aggiornamenti» a settimana senza che nessuno avesse toccato niente.
+const MACHINE_ONLY_FIELDS = new Set(["pwnedCount", "pwnedCheckedAt"]);
+
+/**
+ * Chiavi il cui valore differisce fra i due stati (confronto per valore:
+ * i Timestamp Firestore si serializzano in secondi+nanosecondi).
+ * @param {Object} before stato precedente
+ * @param {Object} after stato successivo
+ * @return {string[]} chiavi cambiate
+ */
+function changedKeys(before, after) {
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+  const out = [];
+  for (const k of keys) {
+    if (JSON.stringify(before[k]) !== JSON.stringify(after[k])) out.push(k);
+  }
+  return out;
+}
+
 /**
  * Classifica la scrittura. Ritorna null se non è un'azione di valore.
  * @param {?Object} before stato precedente
@@ -150,6 +173,11 @@ function classify(before, after, completedField) {
       before[completedField] !== true &&
       after[completedField] === true) {
     return "content_completed";
+  }
+
+  const changed = changedKeys(before, after);
+  if (changed.length > 0 && changed.every((k) => MACHINE_ONLY_FIELDS.has(k))) {
+    return null;
   }
 
   return "content_updated";
