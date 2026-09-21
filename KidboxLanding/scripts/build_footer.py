@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 PUBLIC = ROOT / "public"
 sys.path.insert(0, str(ROOT / "tools"))
-from blog_data import ARTICLES, CATEGORIES  # noqa: E402
+from blog_data import ARTICLES, CATEGORIES, category_slug  # noqa: E402
 from tools_data import TOOLS  # noqa: E402
 from site_langs import (BLOG_DIR, HOME, LABEL, LANG_JS, LANG_MENU_CSS, LANGS, STATIC_BASES,  # noqa: E402
                         TOOLS_DIR, clean_url, lang_menu, static_file)
@@ -238,7 +238,7 @@ def footer(lang):
         cols.append(body)
 
     blog = f"<h3>{C['blog_h']}</h3>" + ul(
-        [link(f"{C['blog']}/{slug}", cat[lang][0]) for slug, cat in CATEGORIES.items()
+        [link(f"{C['blog']}/{category_slug(slug, lang)}", cat[lang][0]) for slug, cat in CATEGORIES.items()
          if lang in cat and any(a["category"] == slug and lang in a for a in ARTICLES)]
         + [link(f"{C['blog']}/", C["all_blog"] + " →")])
     info = (f"<h3>{C['kidbox_h']}</h3>" + ul([link(h, t) for h, t in C["kidbox"]])

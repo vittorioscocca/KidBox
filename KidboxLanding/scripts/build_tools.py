@@ -165,13 +165,15 @@ def active_langs():
     return [l for l in ALL_LANGS if (PUBLIC / HOME[l]).exists()]
 
 
-def alternates(lang, depth, dirs, canonical, has):
+def alternates(lang, depth, dirs, canonical, has, path=None):
     """Href relativi della pagina gemella in ogni lingua (`hrefs`, per menu e
     footer; senza gemella → home di quella lingua) e percorsi assoluti delle
-    gemelle che esistono (`real`, per hreflang)."""
+    gemelle che esistono (`real`, per hreflang). `path(l)` è il nome della
+    pagina in quella lingua, se diverso da `canonical` (slug tradotti del blog)."""
     prefix = "../" * depth
     homes = {l: HOME[l] if (PUBLIC / HOME[l]).exists() else HOME["en"] for l in ALL_LANGS}
-    real = {l: f"{dirs[l]}/{canonical}" for l in active_langs() if has(l)}
+    path = path or (lambda l: canonical)
+    real = {l: f"{dirs[l]}/{path(l)}" for l in active_langs() if has(l)}
     hrefs = {l: prefix + real[l] if l in real else prefix + homes[l] for l in ALL_LANGS}
     return hrefs, real
 

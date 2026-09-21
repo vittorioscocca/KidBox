@@ -7,6 +7,1193 @@
       "**/.DS_Store",
       "**/node_modules/**"
     ],
+    "redirects": [
+      {
+        "source": "/en/blog/animale-anziano-cure-e-controlli",
+        "destination": "/en/blog/when-your-dog-or-cat-gets-old",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/animale-e-vacanze-pensione-pet-sitter",
+        "destination": "/en/blog/holiday-without-the-dog-or-cat",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/animale-in-famiglia-chi-se-ne-occupa",
+        "destination": "/en/blog/sharing-pet-care-in-the-family",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/animali-e-auto",
+        "destination": "/en/blog/pets-and-cars",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/app-di-famiglia-gratis-cosa-guardare",
+        "destination": "/en/blog/free-family-apps-what-to-check",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/app-di-famiglia-iphone-android-web",
+        "destination": "/en/blog/family-app-iphone-android-web",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/app-per-coppie-cosa-serve",
+        "destination": "/en/blog/apps-for-couples",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/app-per-genitori-separati-cosa-serve",
+        "destination": "/en/blog/co-parenting-apps-what-they-need",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/app-tabella-faccende-cosa-guardare",
+        "destination": "/en/blog/chore-chart-apps",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/arrivo-di-un-cane-o-un-gatto",
+        "destination": "/en/blog/new-dog-or-cat-first-weeks-checklist",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/assistenza-a-un-familiare-turni",
+        "destination": "/en/blog/caring-for-an-elderly-parent-among-siblings",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/bambini-difficili-a-tavola",
+        "destination": "/en/blog/picky-eaters-meal-planning",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/bambini-e-animali-in-casa",
+        "destination": "/en/blog/children-and-pets-at-home",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/bollette-e-contratti-di-casa",
+        "destination": "/en/blog/household-bills-and-contracts",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/budget-di-casa-spese-condivise",
+        "destination": "/en/blog/household-budget-shared-expenses",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/calendario-di-affido",
+        "destination": "/en/blog/shared-custody-schedules",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/calendario-famiglia-ricomposta",
+        "destination": "/en/blog/blended-family-calendar",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/calendario-genitori-separati",
+        "destination": "/en/blog/co-parenting-calendar",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/carico-mentale-dei-genitori",
+        "destination": "/en/blog/mental-load-of-parents",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/cartella-clinica-di-famiglia",
+        "destination": "/en/blog/family-health-record",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/casa-e-faccende",
+        "destination": "/en/blog/home-and-chores",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/cena-di-natale-organizzazione",
+        "destination": "/en/blog/organising-christmas-dinner",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/chat-con-figli-adolescenti",
+        "destination": "/en/blog/family-chat-with-teenagers",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/chat-di-famiglia-separata-da-whatsapp",
+        "destination": "/en/blog/family-chat-separate-from-whatsapp",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/co-genitorialita-a-distanza",
+        "destination": "/en/blog/long-distance-co-parenting",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/comunicazione-tra-genitori-separati",
+        "destination": "/en/blog/talking-to-your-ex-about-the-kids",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/condivisione-temporanea-della-posizione",
+        "destination": "/en/blog/temporary-location-sharing",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/confini-nella-co-genitorialita",
+        "destination": "/en/blog/co-parenting-boundaries",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/confronti",
+        "destination": "/en/blog/app-comparisons",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/cosa-si-mangia-stasera",
+        "destination": "/en/blog/whats-for-dinner-tonight",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/dati-di-salute-dal-telefono",
+        "destination": "/en/blog/health-data-from-your-phone",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/dati-sanitari-cifrati",
+        "destination": "/en/blog/encrypted-medical-documents",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/digitalizzare-i-documenti-di-casa",
+        "destination": "/en/blog/digitising-household-documents",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/dividere-le-faccende-in-coppia",
+        "destination": "/en/blog/splitting-chores-as-a-couple",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/documenti-dei-figli-in-due-case",
+        "destination": "/en/blog/kids-documents-two-homes",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/documenti-di-famiglia-in-ordine",
+        "destination": "/en/blog/family-documents-in-order",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/due-auto-in-famiglia",
+        "destination": "/en/blog/two-cars-two-parents",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/faccende-e-adhd",
+        "destination": "/en/blog/chores-and-adhd",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/faccende-per-adolescenti",
+        "destination": "/en/blog/chores-for-teenagers",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/faccende-per-eta-bambini",
+        "destination": "/en/blog/age-appropriate-chores-for-kids",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/faccende-tra-adulti",
+        "destination": "/en/blog/chores-between-adults",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/famiglia-allargata-organizzazione",
+        "destination": "/en/blog/blended-family-organisation",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/far-fare-le-faccende-ai-bambini",
+        "destination": "/en/blog/get-kids-to-do-chores",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/farmaci-e-terapie-dei-figli",
+        "destination": "/en/blog/childrens-medicines-who-gives-them",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/fatture-e-referti-letti-dall-ai",
+        "destination": "/en/blog/ai-reads-invoices-and-medical-reports",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/figlio-malato-organizzarsi-tra-genitori",
+        "destination": "/en/blog/child-is-ill-and-both-parents-work",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/figlio-neopatentato-in-famiglia",
+        "destination": "/en/blog/newly-licensed-teen-driver",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/foto-del-viaggio-album-condiviso",
+        "destination": "/en/blog/holiday-photos-shared-family-album",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/garanzie-degli-elettrodomestici",
+        "destination": "/en/blog/appliance-warranties",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/genitori-separati",
+        "destination": "/en/blog/co-parenting",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/genitorialita-parallela",
+        "destination": "/en/blog/parallel-parenting",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/gruppi-whatsapp-della-classe",
+        "destination": "/en/blog/class-parents-whatsapp-group",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/impegni-sportivi-dei-figli",
+        "destination": "/en/blog/kids-sports-schedules",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/incidente-o-guasto-cosa-fare",
+        "destination": "/en/blog/accident-or-breakdown-what-to-do",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/itinerario-viaggio-con-bambini",
+        "destination": "/en/blog/trip-itinerary-with-children",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/lavorare-a-blocchi-con-i-figli",
+        "destination": "/en/blog/time-blocking-with-kids-at-home",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/libretto-del-cane-e-del-gatto",
+        "destination": "/en/blog/dog-and-cat-health-record",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/libretto-vaccinale-dei-figli",
+        "destination": "/en/blog/childrens-vaccination-record",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/lista-condivisa-per-coppie",
+        "destination": "/en/blog/shared-to-do-list-for-couples",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/lista-della-spesa-condivisa",
+        "destination": "/en/blog/shared-grocery-list",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/manutenzione-auto-storico-interventi",
+        "destination": "/en/blog/family-car-maintenance-history",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/manutenzione-caldaia-e-impianti",
+        "destination": "/en/blog/boiler-and-home-systems-maintenance",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/menu-della-settimana-in-famiglia",
+        "destination": "/en/blog/family-weekly-menu",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/nuovo-partner-e-co-genitorialita",
+        "destination": "/en/blog/co-parenting-with-a-new-partner",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/orari-dopo-scuola-genitori-che-lavorano",
+        "destination": "/en/blog/after-school-when-both-parents-work",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/organizer-di-famiglia-vs-calendario-e-chat",
+        "destination": "/en/blog/family-organiser-vs-calendar-and-chat",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/organizzazione-familiare",
+        "destination": "/en/blog/family-organisation",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/partner-non-usa-app-di-famiglia",
+        "destination": "/en/blog/partner-wont-use-family-app",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/password-di-famiglia-condivise",
+        "destination": "/en/blog/family-passwords",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/pasti-e-spesa",
+        "destination": "/en/blog/meals-and-groceries",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/pasti-in-famiglia-con-budget",
+        "destination": "/en/blog/family-meals-on-a-budget",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/piano-fitness-in-famiglia",
+        "destination": "/en/blog/exercising-when-you-have-kids",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/piano-settimanale-delle-pulizie",
+        "destination": "/en/blog/weekly-cleaning-schedule",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/posizione-famiglia-senza-controllo",
+        "destination": "/en/blog/family-location-sharing-without-surveillance",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/posizione-in-coppia-e-privacy",
+        "destination": "/en/blog/location-sharing-as-a-couple",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/preparare-i-pasti-in-anticipo",
+        "destination": "/en/blog/meal-prep-two-hour-method",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/primo-anno-da-neogenitori",
+        "destination": "/en/blog/first-year-as-new-parents",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/primo-tragitto-da-solo-del-figlio",
+        "destination": "/en/blog/childs-first-walk-to-school-alone",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/produttivita-in-casa",
+        "destination": "/en/blog/productivity-at-home",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/promemoria-che-funzionano",
+        "destination": "/en/blog/reminders-that-work",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/quando-un-partner-fa-di-piu",
+        "destination": "/en/blog/when-one-partner-does-more-at-home",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/quanto-costa-l-auto-di-famiglia",
+        "destination": "/en/blog/what-the-family-car-really-costs",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/quanto-costa-un-animale-domestico",
+        "destination": "/en/blog/what-a-dog-or-cat-really-costs",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/quanto-tempo-conservare-i-documenti",
+        "destination": "/en/blog/how-long-to-keep-family-documents",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/regali-di-natale-organizzazione",
+        "destination": "/en/blog/organising-christmas-presents",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/rientro-a-scuola-organizzazione",
+        "destination": "/en/blog/back-to-school-checklist",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/riordino-della-domenica",
+        "destination": "/en/blog/sunday-reset",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/riunione-di-famiglia",
+        "destination": "/en/blog/weekly-family-meeting",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/rotazione-delle-faccende",
+        "destination": "/en/blog/chore-rotation",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/routine-del-mattino-in-famiglia",
+        "destination": "/en/blog/family-morning-routine",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/routine-della-sera-in-famiglia",
+        "destination": "/en/blog/family-evening-routine",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/salute-e-documenti",
+        "destination": "/en/blog/health-and-documents",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/scadenze-auto-bollo-assicurazione-revisione",
+        "destination": "/en/blog/family-car-deadlines-tax-insurance-inspection",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/scadenze-di-casa-bollette-garanzie",
+        "destination": "/en/blog/household-deadlines-bills-warranties",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/scadenze-documenti-di-identita",
+        "destination": "/en/blog/childrens-id-and-passport-expiry",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/spesa-con-alexa",
+        "destination": "/en/blog/grocery-list-with-alexa",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/spese-dei-figli-genitori-separati",
+        "destination": "/en/blog/kids-expenses-separated-parents",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/spese-di-viaggio-in-famiglia",
+        "destination": "/en/blog/family-holiday-budget",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/spese-mediche-di-famiglia",
+        "destination": "/en/blog/family-medical-expenses",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/storia-sanitaria-dei-figli",
+        "destination": "/en/blog/kids-health-history",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/tabella-delle-faccende-per-bambini",
+        "destination": "/en/blog/chore-chart-for-kids",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/tasse-e-assicurazione-della-casa",
+        "destination": "/en/blog/home-taxes-and-insurance-deadlines",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/tempo-davanti-agli-schermi-in-famiglia",
+        "destination": "/en/blog/screen-time-in-the-family",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/trasloco-in-famiglia-checklist",
+        "destination": "/en/blog/moving-house-with-children-checklist",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/vacanze-con-altre-famiglie",
+        "destination": "/en/blog/holiday-with-grandparents-or-another-family",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/valigia-e-documenti-viaggio-con-bambini",
+        "destination": "/en/blog/travelling-with-children-packing-checklist",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/vendere-o-cambiare-l-auto",
+        "destination": "/en/blog/selling-or-replacing-the-family-car",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/viaggi-in-famiglia",
+        "destination": "/en/blog/family-travel",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/viaggiare-con-farmaci-e-allergie",
+        "destination": "/en/blog/travelling-with-allergies-or-medicine",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/viaggio-in-auto-con-bambini",
+        "destination": "/en/blog/road-trips-with-children",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/vocali-in-famiglia-trascritti",
+        "destination": "/en/blog/voice-notes-in-the-family",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/volare-con-bambini",
+        "destination": "/en/blog/flying-with-children",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/wallet-di-famiglia-carte-e-biglietti",
+        "destination": "/en/blog/family-wallet-cards-and-tickets",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/weekend-fuori-porta-con-bambini",
+        "destination": "/en/blog/weekend-away-with-children",
+        "type": 301
+      },
+      {
+        "source": "/en/blog/zone-di-arrivo-scuola-e-casa",
+        "destination": "/en/blog/arrival-zones-school-and-home",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/app-di-famiglia-gratis-cosa-guardare",
+        "destination": "/es/blog/apps-familiares-gratis",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/app-di-famiglia-iphone-android-web",
+        "destination": "/es/blog/app-familiar-iphone-android-web",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/app-per-coppie-cosa-serve",
+        "destination": "/es/blog/apps-para-parejas",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/app-per-genitori-separati-cosa-serve",
+        "destination": "/es/blog/apps-para-la-coparentalidad",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/assistenza-a-un-familiare-turni",
+        "destination": "/es/blog/cuidar-a-un-padre-mayor-entre-hermanos",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/bambini-difficili-a-tavola",
+        "destination": "/es/blog/ninos-que-comen-mal",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/budget-di-casa-spese-condivise",
+        "destination": "/es/blog/presupuesto-de-casa-en-pareja",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/calendario-di-affido",
+        "destination": "/es/blog/calendarios-de-custodia-compartida",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/calendario-famiglia-ricomposta",
+        "destination": "/es/blog/calendario-familia-reconstituida",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/calendario-genitori-separati",
+        "destination": "/es/blog/calendario-de-coparentalidad",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/carico-mentale-dei-genitori",
+        "destination": "/es/blog/carga-mental-de-los-padres",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/casa-e-faccende",
+        "destination": "/es/blog/casa-y-tareas",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/cena-di-natale-organizzazione",
+        "destination": "/es/blog/organizar-la-cena-de-navidad",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/chat-di-famiglia-separata-da-whatsapp",
+        "destination": "/es/blog/chat-familiar-separado-de-whatsapp",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/co-genitorialita-a-distanza",
+        "destination": "/es/blog/coparentalidad-a-distancia",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/comunicazione-tra-genitori-separati",
+        "destination": "/es/blog/hablar-con-tu-ex-sobre-los-hijos",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/confini-nella-co-genitorialita",
+        "destination": "/es/blog/limites-en-la-coparentalidad",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/confronti",
+        "destination": "/es/blog/comparativas-de-apps",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/cosa-si-mangia-stasera",
+        "destination": "/es/blog/que-hay-de-cena",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/dividere-le-faccende-in-coppia",
+        "destination": "/es/blog/repartir-las-tareas-en-pareja",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/documenti-dei-figli-in-due-case",
+        "destination": "/es/blog/documentos-de-los-hijos-dos-casas",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/documenti-di-famiglia-in-ordine",
+        "destination": "/es/blog/documentos-de-la-familia-en-orden",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/faccende-e-adhd",
+        "destination": "/es/blog/tareas-del-hogar-y-tdah",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/faccende-per-adolescenti",
+        "destination": "/es/blog/tareas-para-adolescentes",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/faccende-per-eta-bambini",
+        "destination": "/es/blog/tareas-del-hogar-segun-la-edad",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/faccende-tra-adulti",
+        "destination": "/es/blog/tareas-entre-adultos",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/famiglia-allargata-organizzazione",
+        "destination": "/es/blog/familias-reconstituidas-organizacion",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/far-fare-le-faccende-ai-bambini",
+        "destination": "/es/blog/que-los-ninos-hagan-las-tareas",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/genitori-separati",
+        "destination": "/es/blog/padres-separados",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/genitorialita-parallela",
+        "destination": "/es/blog/parentalidad-paralela",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/impegni-sportivi-dei-figli",
+        "destination": "/es/blog/actividades-deportivas-de-los-hijos",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/lavorare-a-blocchi-con-i-figli",
+        "destination": "/es/blog/trabajar-por-bloques-con-ninos-en-casa",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/lista-condivisa-per-coppie",
+        "destination": "/es/blog/lista-de-tareas-compartida-en-pareja",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/lista-della-spesa-condivisa",
+        "destination": "/es/blog/lista-de-la-compra-compartida",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/menu-della-settimana-in-famiglia",
+        "destination": "/es/blog/menu-semanal-en-familia",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/nuovo-partner-e-co-genitorialita",
+        "destination": "/es/blog/coparentalidad-con-nueva-pareja",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/orari-dopo-scuola-genitori-che-lavorano",
+        "destination": "/es/blog/despues-del-colegio-padres-que-trabajan",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/organizer-di-famiglia-vs-calendario-e-chat",
+        "destination": "/es/blog/organizador-familiar-vs-calendario-y-chat",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/organizzazione-familiare",
+        "destination": "/es/blog/organizacion-familiar",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/partner-non-usa-app-di-famiglia",
+        "destination": "/es/blog/tu-pareja-no-usa-la-app-familiar",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/pasti-e-spesa",
+        "destination": "/es/blog/comidas-y-compra",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/pasti-in-famiglia-con-budget",
+        "destination": "/es/blog/comidas-en-familia-con-presupuesto",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/piano-settimanale-delle-pulizie",
+        "destination": "/es/blog/plan-semanal-de-limpieza",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/posizione-famiglia-senza-controllo",
+        "destination": "/es/blog/compartir-ubicacion-en-familia",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/preparare-i-pasti-in-anticipo",
+        "destination": "/es/blog/cocinar-por-adelantado",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/primo-anno-da-neogenitori",
+        "destination": "/es/blog/primer-ano-padres-primerizos",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/produttivita-in-casa",
+        "destination": "/es/blog/productividad-en-casa",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/promemoria-che-funzionano",
+        "destination": "/es/blog/recordatorios-que-funcionan",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/quando-un-partner-fa-di-piu",
+        "destination": "/es/blog/cuando-uno-hace-mas-en-casa",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/regali-di-natale-organizzazione",
+        "destination": "/es/blog/organizar-los-regalos-de-navidad",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/rientro-a-scuola-organizzazione",
+        "destination": "/es/blog/vuelta-al-cole-sin-caos",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/riordino-della-domenica",
+        "destination": "/es/blog/reseteo-del-domingo",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/riunione-di-famiglia",
+        "destination": "/es/blog/reunion-familiar-semanal",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/rotazione-delle-faccende",
+        "destination": "/es/blog/rotacion-de-tareas",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/routine-del-mattino-in-famiglia",
+        "destination": "/es/blog/rutina-de-la-manana-en-familia",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/routine-della-sera-in-famiglia",
+        "destination": "/es/blog/rutina-de-la-noche-en-familia",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/salute-e-documenti",
+        "destination": "/es/blog/salud-y-documentos",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/spese-dei-figli-genitori-separati",
+        "destination": "/es/blog/gastos-de-los-hijos-padres-separados",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/storia-sanitaria-dei-figli",
+        "destination": "/es/blog/historial-de-salud-de-los-hijos",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/tabella-delle-faccende-per-bambini",
+        "destination": "/es/blog/cuadrante-de-tareas-para-ninos",
+        "type": 301
+      },
+      {
+        "source": "/es/blog/tempo-davanti-agli-schermi-in-famiglia",
+        "destination": "/es/blog/pantallas-en-familia",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/app-di-famiglia-gratis-cosa-guardare",
+        "destination": "/fr/blog/applis-familiales-gratuites",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/app-di-famiglia-iphone-android-web",
+        "destination": "/fr/blog/appli-familiale-iphone-android-web",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/app-per-coppie-cosa-serve",
+        "destination": "/fr/blog/applis-pour-couples",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/app-per-genitori-separati-cosa-serve",
+        "destination": "/fr/blog/applis-de-coparentalite",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/assistenza-a-un-familiare-turni",
+        "destination": "/fr/blog/s-occuper-d-un-parent-age-entre-freres-et-soeurs",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/bambini-difficili-a-tavola",
+        "destination": "/fr/blog/enfants-difficiles-a-table",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/budget-di-casa-spese-condivise",
+        "destination": "/fr/blog/budget-du-foyer-a-deux",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/calendario-di-affido",
+        "destination": "/fr/blog/calendriers-de-garde-alternee",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/calendario-famiglia-ricomposta",
+        "destination": "/fr/blog/calendrier-famille-recomposee",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/calendario-genitori-separati",
+        "destination": "/fr/blog/calendrier-de-coparentalite",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/carico-mentale-dei-genitori",
+        "destination": "/fr/blog/charge-mentale-des-parents",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/casa-e-faccende",
+        "destination": "/fr/blog/maison-et-taches",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/cena-di-natale-organizzazione",
+        "destination": "/fr/blog/organiser-le-repas-de-noel",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/chat-di-famiglia-separata-da-whatsapp",
+        "destination": "/fr/blog/chat-familial-separe-de-whatsapp",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/co-genitorialita-a-distanza",
+        "destination": "/fr/blog/coparentalite-a-distance",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/comunicazione-tra-genitori-separati",
+        "destination": "/fr/blog/parler-des-enfants-avec-son-ex",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/confini-nella-co-genitorialita",
+        "destination": "/fr/blog/limites-dans-la-coparentalite",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/confronti",
+        "destination": "/fr/blog/comparatifs-apps",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/cosa-si-mangia-stasera",
+        "destination": "/fr/blog/qu-est-ce-qu-on-mange-ce-soir",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/dividere-le-faccende-in-coppia",
+        "destination": "/fr/blog/partager-les-taches-en-couple",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/documenti-dei-figli-in-due-case",
+        "destination": "/fr/blog/papiers-des-enfants-deux-maisons",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/documenti-di-famiglia-in-ordine",
+        "destination": "/fr/blog/papiers-de-famille-en-ordre",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/faccende-e-adhd",
+        "destination": "/fr/blog/taches-menageres-et-tdah",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/faccende-per-adolescenti",
+        "destination": "/fr/blog/taches-pour-les-ados",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/faccende-per-eta-bambini",
+        "destination": "/fr/blog/taches-menageres-selon-l-age",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/faccende-tra-adulti",
+        "destination": "/fr/blog/taches-entre-adultes",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/famiglia-allargata-organizzazione",
+        "destination": "/fr/blog/famille-recomposee-organisation",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/far-fare-le-faccende-ai-bambini",
+        "destination": "/fr/blog/faire-participer-les-enfants-aux-taches",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/genitori-separati",
+        "destination": "/fr/blog/parents-separes",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/genitorialita-parallela",
+        "destination": "/fr/blog/parentalite-parallele",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/impegni-sportivi-dei-figli",
+        "destination": "/fr/blog/activites-sportives-des-enfants",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/lavorare-a-blocchi-con-i-figli",
+        "destination": "/fr/blog/travailler-par-blocs-avec-des-enfants",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/lista-condivisa-per-coppie",
+        "destination": "/fr/blog/liste-de-taches-partagee-en-couple",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/lista-della-spesa-condivisa",
+        "destination": "/fr/blog/liste-de-courses-partagee",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/menu-della-settimana-in-famiglia",
+        "destination": "/fr/blog/menu-de-la-semaine-en-famille",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/nuovo-partner-e-co-genitorialita",
+        "destination": "/fr/blog/coparentalite-avec-un-nouveau-conjoint",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/orari-dopo-scuola-genitori-che-lavorano",
+        "destination": "/fr/blog/apres-l-ecole-parents-qui-travaillent",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/organizer-di-famiglia-vs-calendario-e-chat",
+        "destination": "/fr/blog/organiseur-familial-vs-calendrier-et-chat",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/organizzazione-familiare",
+        "destination": "/fr/blog/organisation-familiale",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/partner-non-usa-app-di-famiglia",
+        "destination": "/fr/blog/conjoint-n-utilise-pas-l-appli-familiale",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/pasti-e-spesa",
+        "destination": "/fr/blog/repas-et-courses",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/pasti-in-famiglia-con-budget",
+        "destination": "/fr/blog/repas-en-famille-avec-un-budget",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/piano-settimanale-delle-pulizie",
+        "destination": "/fr/blog/planning-de-menage-hebdomadaire",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/posizione-famiglia-senza-controllo",
+        "destination": "/fr/blog/partager-sa-position-en-famille",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/preparare-i-pasti-in-anticipo",
+        "destination": "/fr/blog/cuisiner-a-l-avance",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/primo-anno-da-neogenitori",
+        "destination": "/fr/blog/premiere-annee-jeunes-parents",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/produttivita-in-casa",
+        "destination": "/fr/blog/productivite-a-la-maison",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/promemoria-che-funzionano",
+        "destination": "/fr/blog/rappels-qui-fonctionnent",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/quando-un-partner-fa-di-piu",
+        "destination": "/fr/blog/quand-l-un-en-fait-plus-a-la-maison",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/regali-di-natale-organizzazione",
+        "destination": "/fr/blog/organiser-les-cadeaux-de-noel",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/rientro-a-scuola-organizzazione",
+        "destination": "/fr/blog/rentree-sans-chaos",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/riordino-della-domenica",
+        "destination": "/fr/blog/reset-du-dimanche",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/riunione-di-famiglia",
+        "destination": "/fr/blog/reunion-de-famille-hebdomadaire",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/rotazione-delle-faccende",
+        "destination": "/fr/blog/rotation-des-taches",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/routine-del-mattino-in-famiglia",
+        "destination": "/fr/blog/routine-du-matin-en-famille",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/routine-della-sera-in-famiglia",
+        "destination": "/fr/blog/routine-du-soir-en-famille",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/salute-e-documenti",
+        "destination": "/fr/blog/sante-et-papiers",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/spese-dei-figli-genitori-separati",
+        "destination": "/fr/blog/depenses-des-enfants-parents-separes",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/storia-sanitaria-dei-figli",
+        "destination": "/fr/blog/dossier-de-sante-des-enfants",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/tabella-delle-faccende-per-bambini",
+        "destination": "/fr/blog/tableau-des-taches-pour-enfants",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/tempo-davanti-agli-schermi-in-famiglia",
+        "destination": "/fr/blog/ecrans-en-famille",
+        "type": 301
+      }
+    ],
     "rewrites": [
       {
         "source": "/join",

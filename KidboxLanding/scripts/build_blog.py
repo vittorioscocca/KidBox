@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PUBLIC = ROOT / "public"
 sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "scripts"))
-from blog_data import ARTICLES, CATEGORIES  # noqa: E402
+from blog_data import ARTICLES, CATEGORIES, article_slug, category_slug  # noqa: E402
 from build_tools import (SCRIPT, active_langs, alternates, extract, final_block,  # noqa: E402
                          footer_langs, head_links, hero, nav_for, parts_for, rebase_links)
 from site_langs import BLOG_DIR, LANG_JS  # noqa: E402
@@ -206,7 +206,9 @@ def fmt_date(iso, L):
 
 # ── Pagina ──────────────────────────────────────────────────────────────
 
-def page(lang, title, desc, canonical, body, depth, ld=None, og_type="website"):
+def page(lang, title, desc, canonical, body, depth, ld=None, og_type="website", path=None):
+    """`canonical` identifica la pagina ('' indice, slug di categoria o di
+    articolo, sempre italiano); `path(l)` è il nome del file in ogni lingua."""
     L = LANGS[lang]
     # `parts_for`/`nav_for` leggono le loro chiavi da build_tools.LANGS: si
     # passano le nostre, che hanno gli stessi campi (src, other_dir, …).
@@ -214,7 +216,7 @@ def page(lang, title, desc, canonical, body, depth, ld=None, og_type="website"):
     build_tools.LANGS = {lang: L, **{k: v for k, v in saved.items() if k != lang}}
     try:
         style, stores, footer, phone = parts_for(lang, depth)
-        hrefs, real = alternates(lang, depth, BLOG_DIR, canonical, lambda l: blog_has(l, canonical))
+        hrefs, real = alternates(lang, depth, BLOG_DIR, canonical, lambda l: blog_has(l, canonical), path)
         nav = nav_for(lang, depth, L, hrefs)
         footer = footer_langs(footer, hrefs)
     finally:
@@ -258,7 +260,7 @@ def card(a, lang):
     A = a[lang]
     L = LANGS[lang]
     return f"""
-  <a class="b-card rv" href="{a['slug']}">
+  <a class="b-card rv" href="{article_slug(a, lang)}">
     <h3>{html.escape(A['title'])}</h3>
     <p>{html.escape(A['desc'])}</p>
     <span class="b-meta"><span>{L['min'].format(n=minutes(A['body']))}</span><span>·</span><span>{fmt_date(a['date'], L)}</span></span>
@@ -305,7 +307,7 @@ def build_index(lang):
   <p class="b-cat-desc">{html.escape(desc)}</p>
   <div class="b-grid">{cards}
   </div>
-  <p class="b-more"><a href="{cslug}">{html.escape(L['all_in'].format(cat=short))}</a></p>
+  <p class="b-more"><a href="{category_slug(cslug, lang)}">{html.escape(L['all_in'].format(cat=short))}</a></p>
 </section>"""
     body = f"""
 <div class="crumbs"><a href="{prefix}{L['src']}">{L['home']}</a><span>/</span><span class="cur">{L['blog']}</span></div>
@@ -338,8 +340,8 @@ def build_category(lang, cslug, arts):
 <div style="height:24px"></div>
 %HERO%"""
     title = f"{long_title} · {L['suffix']}"
-    out = PUBLIC / L["dir"] / f"{cslug}.html"
-    out.write_text(page(lang, title, desc, cslug, body, depth), encoding="utf-8")
+    out = PUBLIC / L["dir"] / f"{category_slug(cslug, lang)}.html"
+    out.write_text(page(lang, title, desc, cslug, body, depth, path=lambda l: category_slug(cslug, l)), encoding="utf-8")
 
 
 def build_article(lang, a):
@@ -354,6 +356,12 @@ def build_article(lang, a):
     # I link assoluti del sito ("/strumenti/x", "/blog/y") diventano relativi,
     # così le pagine funzionano anche aperte da file e sotto un prefisso.
     body_html = re.sub(r'href="/([^"]*)"', lambda m: f'href="{prefix}{m.group(1)}"', body_html)
+    # Nei body i link agli articoli usano lo slug italiano in ogni lingua
+    # (`check()` li verifica così): qui diventano l'URL tradotto.
+    body_html = re.sub(rf'(href="{re.escape(prefix)}{re.escape(L["dir"])}/)([^"#]+)',
+                       lambda m: m.group(1) + (article_slug(by_slug[m.group(2)], lang) if m.group(2) in by_slug
+                                               else category_slug(m.group(2), lang)),
+                       body_html)
 
     related = "".join(card(by_slug[s], lang) for s in a["related"] if s in by_slug and lang in by_slug[s])
     tool_links = ""
@@ -373,10 +381,10 @@ def build_article(lang, a):
         "inLanguage": lang,
         "author": {"@type": "Organization", "name": "KidBox"},
         "publisher": {"@type": "Organization", "name": "KidBox", "logo": {"@type": "ImageObject", "url": f"{SITE}/icon.png"}},
-        "mainEntityOfPage": f"{SITE}/{L['dir']}/{a['slug']}",
+        "mainEntityOfPage": f"{SITE}/{L['dir']}/{article_slug(a, lang)}",
     }
     body = f"""
-<div class="crumbs"><a href="{prefix}{L['src']}">{L['home']}</a><span>/</span><a href="./">{L['blog']}</a><span>/</span><a href="{a['category']}">{html.escape(short)}</a><span>/</span><span class="cur">{html.escape(A['title'])}</span></div>
+<div class="crumbs"><a href="{prefix}{L['src']}">{L['home']}</a><span>/</span><a href="./">{L['blog']}</a><span>/</span><a href="{category_slug(a['category'], lang)}">{html.escape(short)}</a><span>/</span><span class="cur">{html.escape(A['title'])}</span></div>
 <article class="b-art">
   <header class="b-art-head rv">
     <h1>{html.escape(A['title'])}</h1>
@@ -391,12 +399,13 @@ def build_article(lang, a):
     <h2>{L['related']}</h2>
     <div class="b-grid">{related}
     </div>
-    <p class="b-more"><a href="{a['category']}">{html.escape(L['in_cat'].format(cat=short))} →</a> &nbsp; <a href="./">{L['back']} →</a></p>
+    <p class="b-more"><a href="{category_slug(a['category'], lang)}">{html.escape(L['in_cat'].format(cat=short))} →</a> &nbsp; <a href="./">{L['back']} →</a></p>
   </section>
 </article>"""
     title = f"{A['title']} · {L['suffix']}"
-    out = PUBLIC / L["dir"] / f"{a['slug']}.html"
-    out.write_text(page(lang, title, A["desc"], a["slug"], body, depth, ld=ld, og_type="article"), encoding="utf-8")
+    out = PUBLIC / L["dir"] / f"{article_slug(a, lang)}.html"
+    out.write_text(page(lang, title, A["desc"], a["slug"], body, depth, ld=ld, og_type="article",
+                        path=lambda l: article_slug(a, l)), encoding="utf-8")
 
 
 def check():
@@ -428,7 +437,12 @@ def main():
     langs = [l for l in active_langs() if l in LANGS]
     for lang in langs:
         groups = by_category(lang)
-        (PUBLIC / LANGS[lang]["dir"]).mkdir(parents=True, exist_ok=True)
+        out_dir = PUBLIC / LANGS[lang]["dir"]
+        out_dir.mkdir(parents=True, exist_ok=True)
+        # Tutto è generato: una pagina rimasta da uno slug precedente resterebbe
+        # servita (e indicizzata) accanto a quella nuova.
+        for stale in out_dir.glob("*.html"):
+            stale.unlink()
         for a in ARTICLES:
             if lang in a:
                 build_article(lang, a)
@@ -439,6 +453,8 @@ def main():
     n = len(ARTICLES)
     import build_sitemap
     build_sitemap.main()
+    import build_redirects
+    build_redirects.main()
     print(f"{n} articoli; per lingua: " + ", ".join(f"{l} {sum(1 for a in ARTICLES if l in a)}" for l in langs) + " "
           f"({sum(words(a['it']['body']) for a in ARTICLES)} parole IT)")
 

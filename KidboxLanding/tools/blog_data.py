@@ -12,7 +12,8 @@ Struttura:
   CATEGORIES  slug → {it/en: (titolo breve per la card, titolo lungo della
               sezione, descrizione)}; l'ordine è quello della pagina indice.
   ARTICLES    una voce per articolo:
-    slug      parte finale dell'URL (uguale nelle due lingue)
+    slug      identità dell'articolo e parte finale dell'URL italiano; in EN/ES/FR
+              l'URL usa lo slug tradotto di tools/blog_slugs.py (`article_slug`)
     category  slug della categoria
     date      ISO, data di pubblicazione/aggiornamento
     tools     slug degli Strumenti collegati (public/strumenti/<slug>)
@@ -2184,3 +2185,8 @@ for _slug, _names in _CAT_ES_FR.items():
 from blog_i18n import apply as _apply_translations  # noqa: E402
 
 _apply_translations(ARTICLES)
+
+# Slug tradotti (URL delle pagine EN/ES/FR): l'identità resta lo slug italiano.
+from blog_slugs import article_slug, category_slug, check as _check_slugs  # noqa: E402,F401
+
+_check_slugs(ARTICLES, CATEGORIES)

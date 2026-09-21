@@ -21,7 +21,7 @@ from xml.sax.saxutils import escape
 ROOT = Path(__file__).resolve().parent.parent
 PUBLIC = ROOT / "public"
 sys.path.insert(0, str(ROOT / "tools"))
-from blog_data import ARTICLES, CATEGORIES  # noqa: E402
+from blog_data import ARTICLES, CATEGORIES, article_slug, category_slug  # noqa: E402
 from tools_data import TOOLS  # noqa: E402
 
 SITE = "https://kidboxapp.com"
@@ -69,12 +69,12 @@ def groups():
     blog_langs = [l for l in LANGS if any(l in a for a in ARTICLES)]
     out.append(({l: f"{BLOG_DIR[l]}/" for l in blog_langs}, max(a["date"] for a in ARTICLES)))
     for cslug, cat in CATEGORIES.items():
-        paths = {l: f"{BLOG_DIR[l]}/{cslug}" for l in LANGS
+        paths = {l: f"{BLOG_DIR[l]}/{category_slug(cslug, l)}" for l in LANGS
                  if l in cat and any(a["category"] == cslug and l in a for a in ARTICLES)}
         dates = [a["date"] for a in ARTICLES if a["category"] == cslug]
         if paths:
             out.append((paths, max(dates)))
-    out += [({l: f"{BLOG_DIR[l]}/{a['slug']}" for l in LANGS if l in a}, a["date"]) for a in ARTICLES]
+    out += [({l: f"{BLOG_DIR[l]}/{article_slug(a, l)}" for l in LANGS if l in a}, a["date"]) for a in ARTICLES]
     return out
 
 
