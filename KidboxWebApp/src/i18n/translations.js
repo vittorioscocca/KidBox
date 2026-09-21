@@ -632,6 +632,15 @@ export const translations = {
       cancel: "Annulla",
       details: "Dettagli",
       noResults: "Nessun risultato con questi filtri.",
+      period: {
+        all: "Tutti",
+        m3: "Ultimi 3 mesi",
+        m6: "Ultimi 6 mesi",
+        y1: "Ultimo anno",
+        custom: "Personalizzato",
+        from: "Da",
+        to: "A",
+      },
       attachments: {
         title: "Allegati",
         empty: "Nessun allegato",
@@ -2104,6 +2113,15 @@ export const translations = {
       cancel: "Cancel",
       details: "Details",
       noResults: "No results with these filters.",
+      period: {
+        all: "All",
+        m3: "Last 3 months",
+        m6: "Last 6 months",
+        y1: "Last year",
+        custom: "Custom",
+        from: "From",
+        to: "To",
+      },
       attachments: {
         title: "Attachments",
         empty: "No attachments",
@@ -3526,6 +3544,15 @@ export const translations = {
       cancel: "Annuler",
       details: "Détails",
       noResults: "Aucun résultat avec ces filtres.",
+      period: {
+        all: "Tous",
+        m3: "3 derniers mois",
+        m6: "6 derniers mois",
+        y1: "Dernière année",
+        custom: "Personnalisé",
+        from: "Du",
+        to: "Au",
+      },
       attachments: {
         title: "Pièces jointes",
         empty: "Aucune pièce jointe",
@@ -4942,6 +4969,15 @@ export const translations = {
       cancel: "Cancelar",
       details: "Detalles",
       noResults: "Ningún resultado con estos filtros.",
+      period: {
+        all: "Todos",
+        m3: "Últimos 3 meses",
+        m6: "Últimos 6 meses",
+        y1: "Último año",
+        custom: "Personalizado",
+        from: "Desde",
+        to: "Hasta",
+      },
       attachments: {
         title: "Adjuntos",
         empty: "Sin adjuntos",

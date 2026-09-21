@@ -21,6 +21,7 @@ import {
   treatmentTag,
 } from "../../services/health";
 import HealthAttachments from "./HealthAttachments";
+import PeriodFilter, { emptyPeriod, inPeriod } from "./PeriodFilter";
 import { frequencyLabel } from "../../services/healthContext";
 import {
   Field,
@@ -64,12 +65,17 @@ export default function HealthTreatments({
   const [editing, setEditing] = useState(null);
   const [openId, setOpenId] = useState(null);
   const [showEnded, setShowEnded] = useState(false);
+  const [period, setPeriod] = useState(emptyPeriod);
 
   const activeIds = useMemo(
     () => new Set(activeTreatments.map((t) => t.id)),
     [activeTreatments]
   );
-  const shown = showEnded ? treatments : treatments.filter((t) => activeIds.has(t.id));
+  const shown = treatments.filter((t) => {
+    if (!showEnded && !activeIds.has(t.id)) return false;
+    // Riferimento come su iOS: la più recente fra inizio e fine.
+    return inPeriod(Math.max(t.startDate || 0, t.endDate || 0) || null, period);
+  });
 
   const takenFor = (treatmentId) =>
     doseLogs.filter((l) => l.treatmentId === treatmentId && l.taken).length;
@@ -118,9 +124,10 @@ export default function HealthTreatments({
           {c.showEnded}
         </button>
       </div>
+      <PeriodFilter value={period} onChange={setPeriod} h={h} tint="#9973D9" />
 
       {shown.length === 0 ? (
-        <p className="pw-empty">{c.empty}</p>
+        <p className="pw-empty">{treatments.length === 0 ? c.empty : h.noResults}</p>
       ) : (
         <ul className="sa-list">
           {shown.map((t) => {

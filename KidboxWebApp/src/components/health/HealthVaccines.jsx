@@ -19,6 +19,7 @@ import {
   vaccineTypeInfo,
 } from "../../services/health";
 import { Field, ModuleHeader, fmtDate, fromDateInput, label, toDateInput } from "./shared";
+import PeriodFilter, { emptyPeriod, inPeriod } from "./PeriodFilter";
 
 const emptyVaccine = () => ({
   vaccineTypeRaw: "esavalente",
@@ -49,10 +50,17 @@ export default function HealthVaccines({
   const w = h.vaccines;
   const [editing, setEditing] = useState(null);
   const [statusFilter, setStatusFilter] = useState(null);
+  const [period, setPeriod] = useState(emptyPeriod);
 
   const shown = useMemo(
-    () => (statusFilter ? vaccines.filter((v) => v.statusRaw === statusFilter) : vaccines),
-    [vaccines, statusFilter]
+    () =>
+      vaccines.filter((v) => {
+        if (statusFilter && v.statusRaw !== statusFilter) return false;
+        // Riferimento come su iOS: somministrazione, poi prenotazione, poi
+        // ultimo aggiornamento.
+        return inPeriod(v.administeredDate || v.scheduledDate || v.updatedAt, period);
+      }),
+    [vaccines, statusFilter, period]
   );
 
   const remove = async (id) => {
@@ -87,6 +95,7 @@ export default function HealthVaccines({
           );
         })}
       </div>
+      <PeriodFilter value={period} onChange={setPeriod} h={h} tint="#F28C73" />
 
       {shown.length === 0 ? (
         <p className="pw-empty">{vaccines.length === 0 ? w.empty : h.noResults}</p>

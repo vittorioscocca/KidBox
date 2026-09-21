@@ -16,6 +16,7 @@ import {
 } from "../../services/health";
 import HealthAIChat from "./HealthAIChat";
 import HealthAttachments from "./HealthAttachments";
+import PeriodFilter, { emptyPeriod, inPeriod } from "./PeriodFilter";
 import AIFab from "../AIFab";
 import { HEALTH_SCOPES, examsSystemPrompt } from "../../services/healthChat";
 import {
@@ -57,6 +58,7 @@ export default function HealthExams({
   const [selectedId, setSelectedId] = useState(null);
   const [statusFilter, setStatusFilter] = useState(null);
   const [search, setSearch] = useState("");
+  const [period, setPeriod] = useState(emptyPeriod);
   const [chatOpen, setChatOpen] = useState(false);
 
   const now = Date.now();
@@ -65,12 +67,14 @@ export default function HealthExams({
     const q = search.trim().toLowerCase();
     return exams.filter((e) => {
       if (statusFilter && e.statusRaw !== statusFilter) return false;
+      // Riferimento come su iOS: la scadenza, altrimenti la creazione.
+      if (!inPeriod(e.deadline || e.createdAt, period)) return false;
       if (!q) return true;
       return [e.name, e.location, e.notes, e.resultText]
         .filter(Boolean)
         .some((s) => s.toLowerCase().includes(q));
     });
-  }, [exams, statusFilter, search]);
+  }, [exams, statusFilter, search, period]);
 
   const selected = exams.find((e) => e.id === selectedId) || null;
 
@@ -113,6 +117,7 @@ export default function HealthExams({
           );
         })}
       </div>
+      <PeriodFilter value={period} onChange={setPeriod} h={h} tint="#40A6BF" />
 
       {shown.length === 0 ? (
         <p className="pw-empty">{exams.length === 0 ? x.empty : h.noResults}</p>

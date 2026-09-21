@@ -18,6 +18,7 @@ import {
 } from "../../services/health";
 import HealthAIChat from "./HealthAIChat";
 import HealthAttachments from "./HealthAttachments";
+import PeriodFilter, { emptyPeriod, inPeriod } from "./PeriodFilter";
 import AIFab from "../AIFab";
 import { HEALTH_SCOPES, visitsSystemPrompt } from "../../services/healthChat";
 import {
@@ -65,18 +66,20 @@ export default function HealthVisits({
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState(null);
+  const [period, setPeriod] = useState(emptyPeriod);
   const [chatOpen, setChatOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return visits.filter((item) => {
       if (statusFilter && item.visitStatus !== statusFilter) return false;
+      if (!inPeriod(item.date, period)) return false;
       if (!q) return true;
       return [item.reason, item.doctorName, item.diagnosis, item.recommendations]
         .filter(Boolean)
         .some((s) => s.toLowerCase().includes(q));
     });
-  }, [visits, search, statusFilter]);
+  }, [visits, search, statusFilter, period]);
 
   const selected = visits.find((x) => x.id === selectedId) || null;
 
@@ -119,6 +122,7 @@ export default function HealthVisits({
           );
         })}
       </div>
+      <PeriodFilter value={period} onChange={setPeriod} h={h} tint="#5A99D9" />
 
       {filtered.length === 0 ? (
         <p className="pw-empty">{visits.length === 0 ? v.empty : h.noResults}</p>
