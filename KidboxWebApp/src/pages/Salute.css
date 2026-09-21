@@ -415,6 +415,105 @@
   background: var(--accent);
 }
 
+/* ── Allegati (visite, esami, cure) ─────────────────────────────────────── */
+
+.sa-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  width: 100%;
+}
+
+.sa-attachments-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.sa-attachments-empty,
+.sa-attachments-hint {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.sa-attachment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sa-attachment {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.sa-attachment-icon {
+  font-size: 1.1rem;
+}
+
+.sa-attachment-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sa-attachment-name {
+  font-size: 0.86rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sa-attachment-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.sa-attachment-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.sa-attachment-actions button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.sa-attachment-add {
+  align-self: flex-start;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.sa-attachment-add:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* ── Schede e form ──────────────────────────────────────────────────────── */
 
 .sa-card {

@@ -67,6 +67,9 @@ export async function uploadDocument({
   /** Tag libero su `notes`: le altre sezioni lo usano per legare un documento
    *  a un'entità (`pet:{id}`, `petEvent:{id}`, `treatment:{id}`). */
   notes,
+  /** Soggetto sanitario dell'allegato (visite, esami, cure): i client nativi lo
+   *  scrivono e la cartella clinica lo usa per filtrare i referti. */
+  childId,
   onProgress,
 }) {
   const key = await loadFamilyKey({ familyId, userId });
@@ -114,6 +117,7 @@ export async function uploadDocument({
   };
   if (categoryId) data.categoryId = categoryId;
   if (notes) data.notes = notes;
+  if (childId) data.childId = childId;
 
   await setDoc(doc(documentsCol(familyId), docId), data);
 

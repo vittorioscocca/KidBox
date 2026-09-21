@@ -50,6 +50,18 @@ const profilesCol = (familyId) => col(familyId, "pediatricProfiles");
  * `raw` è il valore persistito: non va tradotto né normalizzato, altrimenti i
  * record scritti dal telefono non verrebbero più riconosciuti.
  */
+/* ── Allegati ───────────────────────────────────────────────────────────── */
+
+/**
+ * Tag su `notes` dei documenti allegati, identici a `VisitAttachmentTag`,
+ * `ExamAttachmentTag` e `TreatmentAttachmentTag` su iOS: lo stesso referto si
+ * vede dal telefono e da qui.
+ */
+export const visitTag = (id) => `visit:${id}`;
+export const examTag = (id) => `exam:${id}`;
+export const treatmentTag = (id) => `treatment:${id}`;
+export const HEALTH_ATTACHMENT_PREFIXES = ["visit:", "exam:", "treatment:"];
+
 export const DOCTOR_SPECIALIZATIONS = [
   { raw: "Pediatra", it: "Pediatra", en: "Pediatrician" },
   { raw: "Medico di Base", it: "Medico di Base", en: "General practitioner" },

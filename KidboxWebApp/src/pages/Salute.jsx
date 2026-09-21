@@ -29,7 +29,9 @@ import {
   listenTreatments,
   listenVaccines,
   listenVisits,
+  HEALTH_ATTACHMENT_PREFIXES,
 } from "../services/health";
+import { listenTaggedDocuments } from "../services/attachments";
 import HealthVisits from "../components/health/HealthVisits";
 import HealthTreatments from "../components/health/HealthTreatments";
 import HealthVaccines from "../components/health/HealthVaccines";
@@ -86,6 +88,9 @@ export default function Salute() {
   const [treatments, setTreatments] = useState([]);
   const [doseLogs, setDoseLogs] = useState([]);
   const [vaccines, setVaccines] = useState([]);
+  // Referti allegati a visite, esami e cure: un solo listener sui documenti
+  // di famiglia, raggruppati per tag (`visit:{id}`, `exam:{id}`, `treatment:{id}`).
+  const [attachments, setAttachments] = useState(new Map());
   const [profile, setProfile] = useState(null);
 
   /**
@@ -144,6 +149,16 @@ export default function Salute() {
     return () => stops.forEach((stop) => stop());
   }, [currentFamilyId, subjectId]);
 
+  useEffect(() => {
+    if (!currentFamilyId) return undefined;
+    return listenTaggedDocuments({
+      familyId: currentFamilyId,
+      prefixes: HEALTH_ATTACHMENT_PREFIXES,
+      onChange: setAttachments,
+      onError: (err) => setError(err.message),
+    });
+  }, [currentFamilyId]);
+
   // Cambiando soggetto i dati del precedente devono sparire subito: senza
   // questo azzeramento la griglia mostra per un istante i contatori sbagliati.
   // Solo un cambio vero di soggetto azzera. Il primo giro e la risoluzione
@@ -190,6 +205,7 @@ export default function Salute() {
     vaccines,
     profile,
     plan,
+    attachments,
     h,
     locale,
     onError: (err) => setError(err?.message || String(err)),

@@ -7,8 +7,15 @@
  */
 import { useMemo, useState } from "react";
 import Modal from "../Modal";
-import { EXAM_STATUSES, deleteExam, examStatusInfo, saveExam } from "../../services/health";
+import {
+  EXAM_STATUSES,
+  deleteExam,
+  examStatusInfo,
+  examTag,
+  saveExam,
+} from "../../services/health";
 import HealthAIChat from "./HealthAIChat";
+import HealthAttachments from "./HealthAttachments";
 import AIFab from "../AIFab";
 import { HEALTH_SCOPES, examsSystemPrompt } from "../../services/healthChat";
 import {
@@ -39,6 +46,7 @@ export default function HealthExams({
   userId,
   subject,
   exams,
+  attachments,
   h,
   locale,
   onError,
@@ -165,6 +173,15 @@ export default function HealthExams({
             />
             <DetailRow label={x.resultDate} value={fmtDate(selected.resultDate, locale)} />
             <DetailRow label={x.result} value={selected.resultText} />
+            <HealthAttachments
+              familyId={familyId}
+              userId={userId}
+              childId={subject.id}
+              tag={examTag(selected.id)}
+              attachments={attachments}
+              h={h}
+              onError={onError}
+            />
             <div className="pw-form-actions">
               <button className="pw-danger" onClick={() => remove(selected.id)}>
                 {h.delete}

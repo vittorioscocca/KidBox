@@ -14,8 +14,10 @@ import {
   deleteVisit,
   saveVisit,
   visitStatusInfo,
+  visitTag,
 } from "../../services/health";
 import HealthAIChat from "./HealthAIChat";
+import HealthAttachments from "./HealthAttachments";
 import AIFab from "../AIFab";
 import { HEALTH_SCOPES, visitsSystemPrompt } from "../../services/healthChat";
 import {
@@ -52,6 +54,7 @@ export default function HealthVisits({
   subject,
   visits,
   treatments,
+  attachments,
   h,
   locale,
   onError,
@@ -200,6 +203,16 @@ export default function HealthVisits({
                       .join(" — ")
                   : null
               }
+            />
+
+            <HealthAttachments
+              familyId={familyId}
+              userId={userId}
+              childId={subject.id}
+              tag={visitTag(selected.id)}
+              attachments={attachments}
+              h={h}
+              onError={onError}
             />
 
             <div className="pw-form-actions">

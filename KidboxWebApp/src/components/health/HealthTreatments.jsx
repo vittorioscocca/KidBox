@@ -18,7 +18,9 @@ import {
   saveTreatment,
   setDoseTaken,
   totalDoses,
+  treatmentTag,
 } from "../../services/health";
+import HealthAttachments from "./HealthAttachments";
 import { frequencyLabel } from "../../services/healthContext";
 import {
   Field,
@@ -52,6 +54,7 @@ export default function HealthTreatments({
   treatments,
   activeTreatments,
   doseLogs,
+  attachments,
   h,
   locale,
   onError,
@@ -168,13 +171,24 @@ export default function HealthTreatments({
                 </div>
 
                 {isOpen && (
-                  <DoseGrid
-                    treatment={t}
-                    doseLogs={doseLogs}
-                    c={c}
-                    locale={locale}
-                    onToggle={toggleDose}
-                  />
+                  <>
+                    <DoseGrid
+                      treatment={t}
+                      doseLogs={doseLogs}
+                      c={c}
+                      locale={locale}
+                      onToggle={toggleDose}
+                    />
+                    <HealthAttachments
+                      familyId={familyId}
+                      userId={userId}
+                      childId={subject.id}
+                      tag={treatmentTag(t.id)}
+                      attachments={attachments}
+                      h={h}
+                      onError={onError}
+                    />
+                  </>
                 )}
               </li>
             );
