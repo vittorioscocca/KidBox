@@ -728,6 +728,7 @@ export const translations = {
       },
       treatments: {
         title: "Cure",
+        searchPlaceholder: "Cerca per farmaco, principio attivo, note",
         add: "Nuova cura",
         editTitle: "Modifica cura",
         empty: "Nessuna cura in corso.",
@@ -758,6 +759,7 @@ export const translations = {
       },
       vaccines: {
         title: "Vaccini",
+        searchPlaceholder: "Cerca per vaccino, nome commerciale, lotto",
         add: "Nuovo vaccino",
         editTitle: "Modifica vaccino",
         empty: "Nessun vaccino registrato.",
@@ -2209,6 +2211,7 @@ export const translations = {
       },
       treatments: {
         title: "Treatments",
+        searchPlaceholder: "Search by drug, active ingredient, notes",
         add: "New treatment",
         editTitle: "Edit treatment",
         empty: "No treatment in progress.",
@@ -2239,6 +2242,7 @@ export const translations = {
       },
       vaccines: {
         title: "Vaccines",
+        searchPlaceholder: "Search by vaccine, brand name, batch",
         add: "New vaccine",
         editTitle: "Edit vaccine",
         empty: "No vaccine recorded.",
@@ -3637,6 +3641,7 @@ export const translations = {
       },
       treatments: {
         title: "Traitements",
+        searchPlaceholder: "Rechercher par médicament, principe actif, notes",
         add: "Nouveau traitement",
         editTitle: "Modifier le traitement",
         empty: "Aucun traitement en cours.",
@@ -3666,6 +3671,7 @@ export const translations = {
       },
       vaccines: {
         title: "Vaccins",
+        searchPlaceholder: "Rechercher par vaccin, nom commercial, lot",
         add: "Nouveau vaccin",
         editTitle: "Modifier le vaccin",
         empty: "Aucun vaccin enregistré.",
@@ -5062,6 +5068,7 @@ export const translations = {
       },
       treatments: {
         title: "Tratamientos",
+        searchPlaceholder: "Buscar por fármaco, principio activo, notas",
         add: "Nuevo tratamiento",
         editTitle: "Editar tratamiento",
         empty: "Ningún tratamiento en curso.",
@@ -5091,6 +5098,7 @@ export const translations = {
       },
       vaccines: {
         title: "Vacunas",
+        searchPlaceholder: "Buscar por vacuna, nombre comercial, lote",
         add: "Nueva vacuna",
         editTitle: "Editar vacuna",
         empty: "Ninguna vacuna registrada.",

@@ -51,17 +51,30 @@ export default function HealthVaccines({
   const [editing, setEditing] = useState(null);
   const [statusFilter, setStatusFilter] = useState(null);
   const [period, setPeriod] = useState(emptyPeriod);
+  const [search, setSearch] = useState("");
 
-  const shown = useMemo(
-    () =>
-      vaccines.filter((v) => {
-        if (statusFilter && v.statusRaw !== statusFilter) return false;
-        // Riferimento come su iOS: somministrazione, poi prenotazione, poi
-        // ultimo aggiornamento.
-        return inPeriod(v.administeredDate || v.scheduledDate || v.updatedAt, period);
-      }),
-    [vaccines, statusFilter, period]
-  );
+  const shown = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return vaccines.filter((v) => {
+      if (statusFilter && v.statusRaw !== statusFilter) return false;
+      // Riferimento come su iOS: somministrazione, poi prenotazione, poi
+      // ultimo aggiornamento.
+      if (!inPeriod(v.administeredDate || v.scheduledDate || v.updatedAt, period)) return false;
+      if (!q) return true;
+      const type = vaccineTypeInfo(v.vaccineTypeRaw);
+      return [
+        type?.it,
+        type?.en,
+        v.vaccineTypeRaw,
+        v.commercialName,
+        v.lotNumber,
+        v.administeredBy,
+        v.notes,
+      ]
+        .filter(Boolean)
+        .some((x) => x.toLowerCase().includes(q));
+    });
+  }, [vaccines, statusFilter, period, search]);
 
   const remove = async (id) => {
     if (!window.confirm(w.confirmDelete)) return;
@@ -81,6 +94,12 @@ export default function HealthVaccines({
       </ModuleHeader>
 
       <div className="sa-filters">
+        <input
+          className="sa-search"
+          placeholder={w.searchPlaceholder}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
         {VACCINE_STATUSES.map((s) => {
           const on = statusFilter === s.raw;
           return (

@@ -66,15 +66,21 @@ export default function HealthTreatments({
   const [openId, setOpenId] = useState(null);
   const [showEnded, setShowEnded] = useState(false);
   const [period, setPeriod] = useState(emptyPeriod);
+  const [search, setSearch] = useState("");
 
   const activeIds = useMemo(
     () => new Set(activeTreatments.map((t) => t.id)),
     [activeTreatments]
   );
+  const q = search.trim().toLowerCase();
   const shown = treatments.filter((t) => {
     if (!showEnded && !activeIds.has(t.id)) return false;
     // Riferimento come su iOS: la più recente fra inizio e fine.
-    return inPeriod(Math.max(t.startDate || 0, t.endDate || 0) || null, period);
+    if (!inPeriod(Math.max(t.startDate || 0, t.endDate || 0) || null, period)) return false;
+    if (!q) return true;
+    return [t.drugName, t.activeIngredient, t.notes]
+      .filter(Boolean)
+      .some((x) => x.toLowerCase().includes(q));
   });
 
   const takenFor = (treatmentId) =>
@@ -116,6 +122,12 @@ export default function HealthTreatments({
       </ModuleHeader>
 
       <div className="sa-filters">
+        <input
+          className="sa-search"
+          placeholder={c.searchPlaceholder}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
         <button
           className={"sa-chip" + (showEnded ? " on" : "")}
           style={showEnded ? { background: "var(--accent)" } : undefined}
