@@ -1,9 +1,8 @@
 /**
  * Analisi ed esami — porting di `PediatricExamsView` / `PediatricExamEditView`.
  *
- * L'ordinamento è per scadenza crescente, con gli esami senza scadenza in
- * fondo: è quello che serve a una lista che esiste soprattutto per ricordare
- * cosa non è ancora stato fatto.
+ * L'ordinamento è dal più recente al meno recente (scadenza, altrimenti
+ * creazione), lo stesso di visite, cure e vaccini.
  */
 import { useMemo, useState } from "react";
 import Modal from "../Modal";

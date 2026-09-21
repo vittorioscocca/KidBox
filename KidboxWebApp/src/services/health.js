@@ -401,8 +401,9 @@ export function listenExams({ familyId, childId, onChange, onError }) {
     ref: examsCol(familyId),
     childId,
     read: readExam,
-    // Come su iOS: prima le scadenze più vicine, gli esami senza scadenza in fondo.
-    sort: (a, b) => (a.deadline || Infinity) - (b.deadline || Infinity),
+    // Dal più recente al meno recente sulla stessa data di riferimento del
+    // filtro temporale (scadenza, altrimenti creazione), come le altre liste.
+    sort: (a, b) => ((b.deadline || b.createdAt) || 0) - ((a.deadline || a.createdAt) || 0),
     onChange,
     onError,
   });
