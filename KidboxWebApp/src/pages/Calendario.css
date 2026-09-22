@@ -611,3 +611,68 @@
     line-height: 18px;
   }
 }
+
+/* ── Promemoria nel calendario ────────────────────────────────────────── */
+
+/* Il selettore Evento | Promemoria in cima al modale di creazione. */
+.kind-selector {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  background: var(--surface-2, rgba(127, 127, 127, 0.12));
+}
+
+.kind-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary, #666);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.kind-btn.active {
+  background: var(--card-bg, #fff);
+  color: var(--text, #111);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Riga dei promemoria sopra la griglia oraria. */
+.reminder-chip {
+  display: block;
+  width: 100%;
+  padding: 3px 6px;
+  border: none;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--text, #111);
+  font: inherit;
+  font-size: 11px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.reminder-chip.done {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+/* Promemoria dentro la cella del mese: stessa riga degli eventi, pallino
+   diverso per non confonderli con un appuntamento. */
+.mv-reminder.done .mv-title {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.mv-dot-reminder {
+  background: var(--accent);
+  border-radius: 2px;
+}

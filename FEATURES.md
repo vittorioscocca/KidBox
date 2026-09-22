@@ -66,6 +66,7 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 | Funzione | Cosa fa | Piano |
 |---|---|---|
 | Famiglia e profili | Un profilo per membro e per figlio; più famiglie per utente, una attiva | F |
+| Account | Accesso Apple, Google, Facebook o email+password; email non verificata rifiutata ovunque; «Password dimenticata» e, dal profilo, «Cambia password» solo per gli account email (iOS e Android) | F |
 | Inviti | Link di invito + QR affiancato; la chiave di famiglia viaggia avvolta nell'invito | F |
 | Onboarding | Wizard di creazione famiglia; checklist «Per iniziare» in Home | F |
 | Abbonamento | Free / Pro / Max, per famiglia; acquisto da App Store o Play, ricevute validate lato server | — |
@@ -73,8 +74,8 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 ### Organizzazione
 | Funzione | Cosa fa | Piano |
 |---|---|---|
-| Calendario | Eventi di famiglia; viste Mese, **Giorno e Settimana** con griglia oraria | F |
-| To-do | Liste e cose da fare **di famiglia**, assegnabili, con promemoria | F |
+| Calendario | Eventi di famiglia e **promemoria** (to-do con scadenza); viste Mese, **Giorno e Settimana** con griglia oraria, vista ricordata fra un'apertura e l'altra | F |
+| To-do | Liste e cose da fare **di famiglia**, assegnabili, con promemoria; quelli **urgenti** suonano come una sveglia | F |
 | Lista della spesa | Condivisa in tempo reale, con «aggiunto da … e quando»; dettabile ad Alexa | F |
 | Note | Note condivise, cifrate | F |
 | Spese | Voci per categoria, più quelle che nascono da sole dalle altre schede | F |
@@ -141,6 +142,15 @@ verrebbe da pensare. Ognuna è costata almeno una volta.
   non filtra più le letture.
 - **I promemoria dei to-do sono locali al dispositivo** (alarm), tranne quelli
   serviti dallo scheduler ogni 5 minuti. Il sync non arma nessun alarm.
+  Vale anche per gli **urgenti**: un promemoria creato dal web o da un altro
+  telefono non fa suonare la sveglia qui.
+- **«Urgente» non è un colore: è la sveglia.** Un promemoria (to-do o evento)
+  segnato urgente suona anche in silenzioso e in full immersion — AlarmKit su
+  iOS, `setAlarmClock` + notifica a schermo intero su Android. Dal browser non
+  suona niente: la sveglia è del telefono.
+- **Il promemoria di un evento non è mai esistito fino al 22/09/2026**:
+  l'interruttore scriveva `reminderMinutes` e nessun client lo leggeva. Ora lo
+  arma il dispositivo che salva l'evento.
 - **Le notifiche si congelano nella lingua della schedulazione**: su iOS non
   c'è un hook alla consegna.
 - **La posizione è divisa in due**: `locations/{uid}` è lo stato, le coordinate

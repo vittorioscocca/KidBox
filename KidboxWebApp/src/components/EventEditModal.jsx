@@ -13,7 +13,15 @@ import VisibilityPickerModal, { visibilityChipLabel } from "./VisibilityPickerMo
  * Creazione e modifica evento, come CalendarEventFormView su iOS: stessa view per
  * entrambi i casi, distinti dalla presenza di `event`.
  */
-export default function EventEditModal({ familyId, initialDate, event, onDelete, onClose }) {
+export default function EventEditModal({
+  familyId,
+  initialDate,
+  event,
+  onDelete,
+  onClose,
+  /** La barra `Evento | Promemoria`, passata solo in creazione. */
+  kindSelector = null,
+}) {
   const { user } = useAuth();
   const { t } = useTranslation();
   const isEdit = Boolean(event);
@@ -43,6 +51,10 @@ export default function EventEditModal({ familyId, initialDate, event, onDelete,
   const [endAt, setEndAt] = useState(toLocalInputValue(initial.end));
   const [location, setLocation] = useState(event?.location ?? "");
   const [notes, setNotes] = useState(event?.notes ?? "");
+  // `reminderMinutes` esisteva già ma non armava niente: da oggi lo leggono
+  // iOS e Android, che al momento giusto avvisano davvero.
+  const [hasReminder, setHasReminder] = useState((event?.reminderMinutes ?? 0) > 0);
+  const [isUrgent, setIsUrgent] = useState((event?.priority ?? 0) === 1);
   const [visibilityScope, setVisibilityScope] = useState(
     normalizedVisibilityScope(event?.visibilityScope)
   );
@@ -73,6 +85,11 @@ export default function EventEditModal({ familyId, initialDate, event, onDelete,
       endDate: Timestamp.fromDate(endDate >= startDate ? endDate : startDate),
       location: location.trim() || null,
       notes: notes.trim() || null,
+      reminderMinutes: hasReminder ? event?.reminderMinutes ?? 30 : null,
+      // Urgente senza promemoria non vuol dire niente: non c'è nulla da far
+      // suonare. Si scrive sempre, anche a zero, così toglierlo arriva agli
+      // altri dispositivi invece di restare qui.
+      priority: hasReminder && isUrgent ? 1 : 0,
       updatedAt: serverTimestamp(),
       updatedBy: user.uid,
       visibilityScope,
@@ -125,6 +142,7 @@ export default function EventEditModal({ familyId, initialDate, event, onDelete,
       <div className="modal-title">
         {isEdit ? t.calendar.editEvent : t.calendar.newEvent}
       </div>
+      {kindSelector}
       {error && <p className="error">{error}</p>}
 
       <button
@@ -190,6 +208,21 @@ export default function EventEditModal({ familyId, initialDate, event, onDelete,
           />
         </div>
       </div>
+
+      <div className="modal-label">{t.calendar.reminderLabel}</div>
+      <div className="modal-section">
+        <div className="modal-row clickable" onClick={() => setHasReminder((v) => !v)}>
+          <span>{t.calendar.reminderLabel}</span>
+          <span className={`modal-check ${hasReminder ? "on" : "off"}`}>✓</span>
+        </div>
+        {hasReminder && (
+          <div className="modal-row clickable" onClick={() => setIsUrgent((v) => !v)}>
+            <span>{t.calendar.urgent}</span>
+            <span className={`modal-check ${isUrgent ? "on" : "off"}`}>✓</span>
+          </div>
+        )}
+      </div>
+      {hasReminder && <p className="modal-hint">{t.calendar.urgentHint}</p>}
 
       <input
         className="modal-field"

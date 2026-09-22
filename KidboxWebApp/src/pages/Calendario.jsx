@@ -13,6 +13,10 @@ import { useFamily } from "../FamilyContext";
 import { useAuth } from "../AuthContext";
 import { useTranslation } from "../i18n/LocaleContext";
 import EventEditModal from "../components/EventEditModal";
+import ReminderEditModal from "../components/ReminderEditModal";
+import { useTodos } from "../hooks/useTodos";
+import { useTodoLists } from "../hooks/useTodoLists";
+import { useChildren } from "../hooks/useChildren";
 import {
   HOUR_HEIGHT,
   addDays,
@@ -37,6 +41,12 @@ import {
 import "./Calendario.css";
 
 const VIEWS = ["day", "week", "month", "year"];
+/**
+ * La vista scelta sopravvive alla chiusura del browser: chi lavora a settimana
+ * non deve rimetterla ogni volta. È una preferenza del dispositivo, come
+ * `@AppStorage` su iOS e SharedPreferences su Android.
+ */
+const VIEW_STORAGE_KEY = "kidbox:calendarView";
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 
 /* ── Griglia oraria condivisa da Giorno e Settimana ───────────────────── */
@@ -141,7 +151,17 @@ function AllDayRow({ days, events, onSelectEvent, label }) {
   );
 }
 
-function TimeGridView({ days, events, onSelectEvent, onCreateAt, allDayLabel, showHeader }) {
+function TimeGridView({
+  days,
+  events,
+  remindersOn,
+  onSelectEvent,
+  onSelectReminder,
+  onCreateAt,
+  allDayLabel,
+  reminderLabel,
+  showHeader,
+}) {
   const { locale } = useTranslation();
   const scrollRef = useRef(null);
   const today = new Date();
@@ -176,6 +196,30 @@ function TimeGridView({ days, events, onSelectEvent, onCreateAt, allDayLabel, sh
         label={allDayLabel}
       />
 
+      {/* I promemoria stanno in una riga propria sopra la griglia, come in
+          Calendario di Apple: hanno un istante, non una durata, e disegnarli
+          come blocchi li farebbe sembrare appuntamenti di un'ora. */}
+      {days.some((d) => remindersOn(d).length > 0) && (
+        <div className="allday-row">
+          <div className="allday-label">{reminderLabel}</div>
+          <div className="allday-cells" style={{ "--cols": days.length }}>
+            {days.map((day) => (
+              <div key={day.toISOString()} className="allday-cell">
+                {remindersOn(day).map((todo) => (
+                  <button
+                    key={todo.id}
+                    className={"reminder-chip" + (todo.isDone ? " done" : "")}
+                    onClick={() => onSelectReminder(todo)}
+                  >
+                    {todo.title}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="timegrid-body" ref={scrollRef}>
         <HourGutter />
         <div className="day-columns" style={{ "--cols": days.length }}>
@@ -196,7 +240,7 @@ function TimeGridView({ days, events, onSelectEvent, onCreateAt, allDayLabel, sh
 
 /* ── Vista Mese: eventi elencati dentro la cella ──────────────────────── */
 
-function MonthView({ anchor, events, selectedDate, onSelectDay, onSelectEvent, onCreateAt, locale, weekStart }) {
+function MonthView({ anchor, events, remindersOn, selectedDate, onSelectDay, onSelectEvent, onSelectReminder, onCreateAt, locale, weekStart }) {
   const cells = calendarDays(anchor.getFullYear(), anchor.getMonth(), weekStart);
   const initials = weekdayInitials(locale, weekStart);
   const today = new Date();
@@ -255,6 +299,20 @@ function MonthView({ anchor, events, selectedDate, onSelectDay, onSelectEvent, o
                     </button>
                   );
                 })}
+                {remindersOn(d).slice(0, 3).map((todo) => (
+                  <button
+                    key={todo.id}
+                    className={"mv-event mv-reminder" + (todo.isDone ? " done" : "")}
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      onSelectReminder(todo);
+                    }}
+                    onDoubleClick={(ev) => ev.stopPropagation()}
+                  >
+                    <span className="mv-dot mv-dot-reminder" />
+                    <span className="mv-title">{todo.title}</span>
+                  </button>
+                ))}
                 {dayEvents.length > 4 && (
                   <span className="mv-more">+{dayEvents.length - 4}</span>
                 )}
@@ -304,6 +362,32 @@ function YearView({ year, marked, onSelectMonth, locale, weekStart }) {
   );
 }
 
+/**
+ * La barra `Evento | Promemoria` in cima al modale di creazione, come in
+ * Calendario di Apple. Le due schede non condividono nulla se non questa
+ * barra: un evento sta in `calendarEvents`, un promemoria è un to-do.
+ */
+function KindSelector({ kind, onChange, t }) {
+  return (
+    <div className="kind-selector">
+      <button
+        type="button"
+        className={"kind-btn" + (kind === "event" ? " active" : "")}
+        onClick={() => onChange("event")}
+      >
+        {t.calendar.kindEvent}
+      </button>
+      <button
+        type="button"
+        className={"kind-btn" + (kind === "reminder" ? " active" : "")}
+        onClick={() => onChange("reminder")}
+      >
+        {t.calendar.kindReminder}
+      </button>
+    </div>
+  );
+}
+
 /* ── Pagina ───────────────────────────────────────────────────────────── */
 
 export default function Calendario() {
@@ -311,7 +395,14 @@ export default function Calendario() {
   const { user } = useAuth();
   const { t, locale } = useTranslation();
 
-  const [view, setView] = useState("month");
+  const [view, setView] = useState(() => {
+    const stored = localStorage.getItem(VIEW_STORAGE_KEY);
+    return VIEWS.includes(stored) ? stored : "month";
+  });
+  const changeView = (next) => {
+    setView(next);
+    localStorage.setItem(VIEW_STORAGE_KEY, next);
+  };
   const [anchor, setAnchor] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [events, setEvents] = useState([]);
@@ -319,6 +410,35 @@ export default function Calendario() {
   const [showAdd, setShowAdd] = useState(false);
   const [addDate, setAddDate] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [editingReminder, setEditingReminder] = useState(null);
+  /** Quale delle due schede è aperta quando si crea qualcosa di nuovo. */
+  const [newItemKind, setNewItemKind] = useState("event");
+
+  // I promemoria del calendario **sono** to-do con una scadenza: stessa
+  // collezione, stesse liste, stessa visibilità. Il calendario è solo
+  // un'altra porta d'ingresso agli stessi elementi.
+  const children = useChildren(currentFamilyId);
+  const { todos } = useTodos(currentFamilyId, user?.uid);
+  const todoLists = useTodoLists(currentFamilyId);
+  const reminders = useMemo(
+    () => todos.filter((todo) => Boolean(todo.dueAt)),
+    [todos]
+  );
+  const remindersByDay = useMemo(() => {
+    const map = new Map();
+    reminders.forEach((todo) => {
+      const due = todo.dueAt?.toDate?.();
+      if (!due) return;
+      const key = dayKey(due);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(todo);
+    });
+    return map;
+  }, [reminders]);
+  const remindersOn = (day) =>
+    (remindersByDay.get(dayKey(day)) ?? []).sort(
+      (a, b) => (a.dueAt?.toMillis?.() ?? 0) - (b.dueAt?.toMillis?.() ?? 0)
+    );
 
   useEffect(() => {
     if (!currentFamilyId) return undefined;
@@ -361,7 +481,15 @@ export default function Calendario() {
 
   const openCreate = (date) => {
     setAddDate(date ?? selectedDate);
+    setNewItemKind("event");
     setShowAdd(true);
+  };
+
+  const closeAdd = () => {
+    setShowAdd(false);
+    setAddDate(null);
+    setEditingEvent(null);
+    setNewItemKind("event");
   };
 
   const deleteEvent = async (ev) => {
@@ -406,7 +534,7 @@ export default function Calendario() {
             <button
               key={v}
               className={"seg-btn" + (view === v ? " active" : "")}
-              onClick={() => setView(v)}
+              onClick={() => changeView(v)}
             >
               {t.calendar[v]}
             </button>
@@ -434,9 +562,12 @@ export default function Calendario() {
         <TimeGridView
           days={[anchor]}
           events={events}
+          remindersOn={remindersOn}
           onSelectEvent={setEditingEvent}
+          onSelectReminder={setEditingReminder}
           onCreateAt={openCreate}
           allDayLabel={t.calendar.allDayShort}
+          reminderLabel={t.calendar.remindersSection}
           showHeader={false}
         />
       )}
@@ -445,9 +576,12 @@ export default function Calendario() {
         <TimeGridView
           days={weekDays(anchor, weekStart)}
           events={events}
+          remindersOn={remindersOn}
           onSelectEvent={setEditingEvent}
+          onSelectReminder={setEditingReminder}
           onCreateAt={openCreate}
           allDayLabel={t.calendar.allDayShort}
+          reminderLabel={t.calendar.remindersSection}
           showHeader
         />
       )}
@@ -456,9 +590,11 @@ export default function Calendario() {
         <MonthView
           anchor={anchor}
           events={events}
+          remindersOn={remindersOn}
           selectedDate={selectedDate}
           onSelectDay={setSelectedDate}
           onSelectEvent={setEditingEvent}
+          onSelectReminder={setEditingReminder}
           onCreateAt={(d) => {
             setSelectedDate(d);
             openCreate(d);
@@ -476,24 +612,49 @@ export default function Calendario() {
             const d = new Date(anchor.getFullYear(), m, 1);
             setAnchor(d);
             setSelectedDate(d);
-            setView("month");
+            changeView("month");
           }}
           locale={locale}
           weekStart={weekStart}
         />
       )}
 
-      {(showAdd || editingEvent) && (
-        <EventEditModal
+      {(showAdd || editingEvent) && !editingReminder && (
+        <>
+          {showAdd && newItemKind === "reminder" ? (
+            <ReminderEditModal
+              familyId={currentFamilyId}
+              childId={children[0]?.id ?? ""}
+              initialDate={addDate ?? selectedDate}
+              lists={todoLists}
+              kindSelector={<KindSelector kind={newItemKind} onChange={setNewItemKind} t={t} />}
+              onClose={closeAdd}
+            />
+          ) : (
+            <EventEditModal
+              familyId={currentFamilyId}
+              initialDate={addDate ?? selectedDate}
+              event={editingEvent}
+              onDelete={editingEvent ? () => deleteEvent(editingEvent) : null}
+              kindSelector={
+                showAdd && !editingEvent ? (
+                  <KindSelector kind={newItemKind} onChange={setNewItemKind} t={t} />
+                ) : null
+              }
+              onClose={closeAdd}
+            />
+          )}
+        </>
+      )}
+
+      {editingReminder && (
+        <ReminderEditModal
           familyId={currentFamilyId}
-          initialDate={addDate ?? selectedDate}
-          event={editingEvent}
-          onDelete={editingEvent ? () => deleteEvent(editingEvent) : null}
-          onClose={() => {
-            setShowAdd(false);
-            setAddDate(null);
-            setEditingEvent(null);
-          }}
+          childId={editingReminder.childId ?? children[0]?.id ?? ""}
+          initialDate={editingReminder.dueAt?.toDate?.() ?? selectedDate}
+          todo={editingReminder}
+          lists={todoLists}
+          onClose={() => setEditingReminder(null)}
         />
       )}
     </div>
