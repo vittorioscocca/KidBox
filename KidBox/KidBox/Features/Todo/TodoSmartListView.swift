@@ -248,7 +248,15 @@ struct TodoSmartListView: View {
         todo.doneAt = todo.isDone ? now : nil
         todo.doneBy = todo.isDone ? uid : nil
         todo.syncState = .pendingUpsert
-        
+
+        // Un promemoria fatto non deve più suonare — e da quando gli urgenti
+        // sono sveglie a tutto schermo, dimenticarlo si sente.
+        if todo.isDone {
+            TodoReminderService.cancel(todoId: todo.id)
+            todo.reminderEnabled = false
+            todo.reminderId = nil
+        }
+
         try? modelContext.save()
         
         SyncCenter.shared.enqueueTodoUpsert(todoId: todo.id, familyId: familyId, modelContext: modelContext)
@@ -261,6 +269,10 @@ struct TodoSmartListView: View {
             let now = Date()
             
             for todo in filteredTodos {
+                // Cancellato: via anche l'avviso, notifica o sveglia che sia.
+                TodoReminderService.cancel(todoId: todo.id)
+                todo.reminderEnabled = false
+                todo.reminderId = nil
                 todo.isDeleted = true
                 todo.updatedBy = uid
                 todo.updatedAt = now
@@ -283,6 +295,10 @@ struct TodoSmartListView: View {
 
             for i in offsets {
                 let todo = filteredTodos[i]
+                // Cancellato: via anche l'avviso, notifica o sveglia che sia.
+                TodoReminderService.cancel(todoId: todo.id)
+                todo.reminderEnabled = false
+                todo.reminderId = nil
                 todo.isDeleted = true
                 todo.updatedBy = uid
                 // Senza bump di updatedAt la cancellazione perde i confronti

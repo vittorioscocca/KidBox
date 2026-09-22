@@ -630,6 +630,10 @@ struct TodoHomeView: View {
         for todo in todosToDelete {
             let before = "isDeleted=\(todo.isDeleted) syncState=\(todo.syncState.rawValue) updatedAt=\(todo.updatedAt)"
             
+            // Cancellato: via anche l'avviso, notifica o sveglia che sia.
+            TodoReminderService.cancel(todoId: todo.id)
+            todo.reminderEnabled = false
+            todo.reminderId = nil
             todo.isDeleted = true
             todo.syncState = .pendingDelete
             todo.lastSyncError = nil

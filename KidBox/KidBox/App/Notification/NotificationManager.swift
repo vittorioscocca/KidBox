@@ -231,12 +231,12 @@ final class NotificationManager: NSObject, ObservableObject {
             pendingDeepLink = .note(familyId: familyId, noteId: noteId)
             KBLog.auth.kbInfo("DeepLink set for note familyId=\(familyId) noteId=\(noteId)")
             
-        } else if type == "new_calendar_event" {
+        } else if type == "new_calendar_event" || type == "calendar_event_reminder" {
             guard
                 let familyId = userInfo["familyId"] as? String,
                 let eventId  = userInfo["eventId"]  as? String
             else {
-                KBLog.auth.kbError("Invalid new_calendar_event payload")
+                KBLog.auth.kbError("Invalid calendar event payload type=\(type ?? "nil")")
                 return
             }
             pendingDeepLink = .calendarEvent(familyId: familyId, eventId: eventId)

@@ -1242,6 +1242,7 @@ final class SyncCenter: ObservableObject {
                 isDone: todo.isDone,
                 notes: todo.notes,
                 dueAt: todo.dueAt,
+                dueHasTime: todo.hasDueTime,
                 doneAt: todo.doneAt,
                 doneBy: todo.doneBy,
                 assignedTo: todo.assignedTo,
@@ -1450,6 +1451,9 @@ final class SyncCenter: ObservableObject {
                 // 🛡️ isDeleted=true: hard delete locale se esiste, altrimenti skip
                 if dto.isDeleted {
                     if let existing = try fetchTodo(id: dto.id, modelContext: modelContext) {
+                        // Un to-do cancellato altrove non deve continuare a
+                        // suonare qui: la riga sparisce, l'avviso no.
+                        TodoReminderService.cancel(todoId: existing.id)
                         modelContext.delete(existing)
                     }
                     continue
@@ -1475,9 +1479,17 @@ final class SyncCenter: ObservableObject {
                     todo.title = dto.title
                     todo.isDone = dto.isDone
                     todo.isDeleted = false
+
+                    // Come sotto: il sync può spegnere un promemoria, mai armarlo.
+                    if dto.isDone, todo.reminderEnabled {
+                        TodoReminderService.cancel(todoId: todo.id)
+                        todo.reminderEnabled = false
+                        todo.reminderId = nil
+                    }
                     
                     todo.notes = dto.notes
                     todo.dueAt = dto.dueAt
+                    todo.dueHasTime = dto.dueHasTime ?? true
                     todo.doneAt = dto.doneAt
                     todo.doneBy = dto.doneBy
                     
@@ -1552,6 +1564,7 @@ final class SyncCenter: ObservableObject {
                     if dto.isDeleted {
                         if let existing = try fetchTodo(id: dto.id, modelContext: modelContext) {
                             KBLog.sync.kbInfo("[todo][inbound][\(batch)] remote isDeleted=true -> HARD DELETE local=\(todoSummary(existing))")
+                            TodoReminderService.cancel(todoId: existing.id)
                             modelContext.delete(existing)
                             KBLog.sync.kbDebug("[todo][inbound][\(batch)] hard deleted id=\(dto.id)")
                         } else {
@@ -1601,8 +1614,20 @@ final class SyncCenter: ObservableObject {
                             
                             existing.isDone = dto.isDone
                             existing.isDeleted = false
-                            
+
+                            // Il sync non **arma** promemoria (restano del
+                            // device), ma deve poterli **spegnere**: un to-do
+                            // chiuso da un altro membro o dal web continuerebbe
+                            // altrimenti a suonare qui — e da quando gli urgenti
+                            // sono sveglie a tutto schermo, si sente.
+                            if dto.isDone, existing.reminderEnabled {
+                                TodoReminderService.cancel(todoId: existing.id)
+                                existing.reminderEnabled = false
+                                existing.reminderId = nil
+                            }
+
                             existing.dueAt = dto.dueAt
+                            existing.dueHasTime = dto.dueHasTime ?? true
                             existing.doneAt = dto.doneAt
                             existing.doneBy = dto.doneBy
                             
@@ -1659,6 +1684,7 @@ final class SyncCenter: ObservableObject {
                         created.isDeleted = false
                         
                         created.dueAt = dto.dueAt
+                        created.dueHasTime = dto.dueHasTime ?? true
                         created.doneAt = dto.doneAt
                         created.doneBy = dto.doneBy
                         
@@ -1688,6 +1714,7 @@ final class SyncCenter: ObservableObject {
                     
                     if let existing = try fetchTodo(id: id, modelContext: modelContext) {
                         KBLog.sync.kbInfo("[todo][inbound][\(batch)] remove -> HARD DELETE local=\(todoSummary(existing))")
+                        TodoReminderService.cancel(todoId: existing.id)
                         modelContext.delete(existing)
                         KBLog.sync.kbDebug("[todo][inbound][\(batch)] hard deleted id=\(id)")
                     } else {
@@ -1789,6 +1816,7 @@ extension TodoRemoteStore {
                 isDeleted: data["isDeleted"] as? Bool ?? false,
                 notes: data["notes"] as? String,
                 dueAt: (data["dueAt"] as? Timestamp)?.dateValue(),
+                dueHasTime: data["dueHasTime"] as? Bool,
                 doneAt: (data["doneAt"] as? Timestamp)?.dateValue(),
                 doneBy: data["doneBy"] as? String,
                 updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue(),

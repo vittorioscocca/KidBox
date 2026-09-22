@@ -61,12 +61,45 @@ function jwt(pem) {
   return `${header}.${payload}.${sig}`;
 }
 
-async function call(tok, method, path, body) {
+// Il token vale 20 minuti: un giro lungo li supera, e App Store Connect ogni
+// tanto rifiuta un token perfettamente valido (401 isolato, visto il
+// 20/09/2026 su una chiave attiva e un orologio allineato). Il token sta in un
+// posto solo, si rifà dopo 15 minuti, e la richiesta ritenta una volta sola
+// con uno nuovo prima di dare la colpa alla chiave.
+let TOKEN = null;
+let TOKEN_AT = 0;
+let RITENTATI = 0;
+function auth(pem) {
+  return (nuovo = false) => {
+    if (nuovo || !TOKEN || Date.now() - TOKEN_AT > 15 * 60 * 1000) {
+      if (nuovo) RITENTATI++;
+      TOKEN = jwt(pem);
+      TOKEN_AT = Date.now();
+    }
+    return TOKEN;
+  };
+}
+
+const ERRORE_401 = [
+  "401 rimasto anche dopo un token nuovo (la riprova è automatica): questa volta non è transitorio.",
+  `Prima di rigenerare la chiave, controlla che ${KEY_ID} risulti «Attiva» in App Store Connect`,
+  "(Utenti e accesso → Integrazioni → Chiavi API), che Key ID e Issuer ID qui nello script combacino",
+  "con quelli mostrati lì, e che l'ora della macchina sia giusta. Solo se tutto torna, rigenera la",
+  "chiave con ruolo Admin («Vendite e report» non basta: non può creare le istanze dei report) e",
+  'salvala con: security add-generic-password -a kidbox -s asc-api-key -w "$(base64 -i AuthKey.p8)" -U',
+].join("\n");
+
+async function call(tok, method, path, body, riprova = true) {
   const res = await fetch(`${API}${path}`, {
     method,
-    headers: { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${tok()}`, "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
   });
+  if (res.status === 401 && riprova) {
+    // Il 401 dice che la richiesta non è passata: ripeterla non scrive due volte.
+    tok(true);
+    return call(tok, method, path, body, false);
+  }
   const text = await res.text();
   const json = text ? JSON.parse(text) : {};
   if (!res.ok) throw new Error(`${method} ${path}: ${json.errors?.[0]?.detail || json.errors?.[0]?.title || res.status}`);
@@ -94,7 +127,7 @@ function parseNotes(file) {
   for (const [loc, txt] of Object.entries(notes)) {
     if (txt.length > LIMIT) { console.error(`${loc}: ${txt.length} caratteri, oltre il limite di ${LIMIT}`); process.exit(2); }
   }
-  const tok = jwt(privateKey());
+  const tok = auth(privateKey());
 
   const versions = await call(tok, "GET", `/apps/${APP_ID}/appStoreVersions?filter[platform]=${PLATFORM}&filter[versionString]=${VERSION}&fields[appStoreVersions]=platform,versionString,appVersionState`);
   const v = versions.data?.[0];
@@ -131,4 +164,8 @@ function parseNotes(file) {
   const extra = Object.keys(byLocale).filter((l) => !notes[l]);
   if (extra.length) console.log(`\nLingue sulla scheda senza note nel file: ${extra.join(", ")}`);
   if (!APPLY) console.log("\n(prova: niente scritto; aggiungi --apply)");
-})().catch((e) => { console.error(e.message); process.exit(1); });
+})().catch((e) => {
+  console.error(e.message);
+  if (/401|NOT_AUTHORIZED|expired|bearer token/i.test(e.message)) console.error(ERRORE_401);
+  process.exit(1);
+});

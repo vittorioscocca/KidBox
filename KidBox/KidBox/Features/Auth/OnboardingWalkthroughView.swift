@@ -87,6 +87,13 @@ struct OnboardingWalkthroughView: View {
     @State private var showSignOutConfirm = false
     @State private var isSigningOut       = false
 
+    // Invito toccato PRIMA di installare: la pagina /join l'ha copiato negli
+    // appunti. `pasteboardMayHaveInvite` lo rileva senza leggere (niente
+    // banner); la lettura vera parte solo dal tocco dell'utente.
+    // Vedi InvitePasteboardPickup.
+    @State private var pasteboardMayHaveInvite = false
+    @State private var pasteboardCheckFailed   = false
+
     @Environment(\.colorScheme)  private var colorScheme
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -229,7 +236,10 @@ struct OnboardingWalkthroughView: View {
                             },
                             onSubmit: {
                                 if canSubmitSetup { handleCTA() }
-                            }
+                            },
+                            pasteboardInvite: pasteboardMayHaveInvite,
+                            pasteboardInviteFailed: pasteboardCheckFailed,
+                            onUseInvite: { useInviteFromPasteboard() }
                         )
                         .padding(.horizontal, 24)
                         .opacity(textOpacity)
@@ -324,6 +334,7 @@ struct OnboardingWalkthroughView: View {
             animateIn()
             prefillNameFromExistingProfile()
             loadPendingLinkInviteIfAny()
+            Task { pasteboardMayHaveInvite = await InvitePasteboardPickup.mightHaveInvite() }
             if coordinator.onboardingStartedAt == nil {
                 coordinator.onboardingStartedAt = Date()
             }
@@ -637,6 +648,16 @@ struct OnboardingWalkthroughView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 isTransitioning = false
             }
+        }
+    }
+
+    /// Tocco su «Usa l'invito»: legge gli appunti (banner di sistema, una
+    /// volta). Se c'è un invito, `store()` avvisa il wizard che passa da solo
+    /// alla conferma; altrimenti si spiega come fare.
+    private func useInviteFromPasteboard() {
+        dismissKeyboard()
+        if InvitePasteboardPickup.pickUp() == nil {
+            pasteboardCheckFailed = true
         }
     }
 
@@ -1002,6 +1023,11 @@ private struct SetupFamilyCard: View {
     let onTogglePath: () -> Void
     /// Invio sull'ultimo campo: come premere il pulsante in fondo.
     let onSubmit: () -> Void
+    /// Negli appunti c'è probabilmente un link (rilevato senza leggerlo).
+    let pasteboardInvite: Bool
+    /// L'utente ha provato e negli appunti non c'era un invito KidBox.
+    let pasteboardInviteFailed: Bool
+    let onUseInvite: () -> Void
 
     @FocusState private var focusedField: Field?
     private enum Field { case first, last, family }
@@ -1032,6 +1058,36 @@ private struct SetupFamilyCard: View {
                     .lineSpacing(2)
             }
             .padding(.horizontal, 8)
+
+            if pasteboardInvite && !isJoin {
+                // Invito copiato da /join prima dell'installazione: un tocco
+                // e si entra, senza tornare sul messaggio.
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Hai ricevuto un invito?", systemImage: "envelope.open.fill")
+                        .font(.subheadline.weight(.semibold))
+                    Text(pasteboardInviteFailed
+                         ? "Negli appunti non c'è un invito KidBox. Torna sul messaggio che hai ricevuto e tocca di nuovo il link."
+                         : "Sembra che tu abbia un link d'invito negli appunti: usalo per entrare nella famiglia che ti aspetta.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if !pasteboardInviteFailed {
+                        Button(action: onUseInvite) {
+                            Text("Usa l'invito")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 40)
+                                .background(accentColor, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isBusy)
+                    }
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
 
             // Form
             VStack(spacing: 12) {

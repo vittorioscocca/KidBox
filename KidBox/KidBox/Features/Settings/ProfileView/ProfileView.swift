@@ -119,6 +119,10 @@ struct ProfileView: View {
     @State private var savedFamilyAddress: String = ""
     @State private var savedAvatarHash: Int = 0
     @State private var showLogoutConfirm = false
+    /// Solo chi è entrato con email e password ha una password da cambiare:
+    /// per Apple e Google la voce non compare.
+    @State private var isPasswordAccount = false
+    @State private var showChangePasswordSheet = false
     /// Spazio famiglia occupato — allineato ad Android: la card Abbonamento
     /// mostra piano + consumo reale, non solo la quota del piano.
     @State private var storageUsedBytes: Int64 = KBStorageGate.shared.cachedUsedBytes
@@ -249,6 +253,9 @@ struct ProfileView: View {
                     }
                 }
             )
+        }
+        .sheet(isPresented: $showChangePasswordSheet) {
+            ChangePasswordSheet()
         }
         .ownerOnlyAlert(isPresented: $showOwnerOnly)
         .sheet(isPresented: $showUpgradeSheet) {
@@ -543,6 +550,40 @@ struct ProfileView: View {
                     label: "Ultimo accesso",
                     value: lastLoginAt?.formatted(date: .abbreviated, time: .shortened) ?? "—"
                 )
+
+                if isPasswordAccount {
+                    Divider().padding(.leading, 52)
+
+                    Button {
+                        showChangePasswordSheet = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(red: 0.55, green: 0.4, blue: 0.9).opacity(0.15))
+                                    .frame(width: 32, height: 32)
+                                Image(systemName: "key.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(Color(red: 0.55, green: 0.4, blue: 0.9))
+                            }
+                            .padding(.leading, 4)
+
+                            Text("Cambia password")
+                                .font(.system(size: 14))
+                                .foregroundStyle(.primary)
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .padding(.vertical, 4)
         }
@@ -824,7 +865,8 @@ struct ProfileView: View {
         let user = Auth.auth().currentUser
         email = user?.email ?? ""
         lastLoginAt = user?.metadata.lastSignInDate
-        KBLog.auth.kbDebug("ProfileView appeared authed=\((user != nil))")
+        isPasswordAccount = user?.providerData.contains { $0.providerID == EmailAuthProviderID } ?? false
+        KBLog.auth.kbDebug("ProfileView appeared authed=\((user != nil)) passwordAccount=\(isPasswordAccount)")
     }
     
     private func loadLocalProfile() {

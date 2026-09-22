@@ -565,28 +565,6 @@
         }
       }
     },
-    "%@ · Ultima apertura %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · Last opened %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · Última apertura %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · Dernière ouverture %@"
-          }
-        }
-      }
-    },
     "%@ – %@" : {
       "localizations" : {
         "en" : {
@@ -693,6 +671,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ · %lld %@"
+          }
+        }
+      }
+    },
+    "%@ · Ultima apertura %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Last opened %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Última apertura %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Dernière ouverture %@"
           }
         }
       }
@@ -7176,6 +7176,28 @@
         }
       }
     },
+    "Almeno 6 caratteri." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At least 6 characters."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al menos 6 caracteres."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Au moins 6 caractères."
+          }
+        }
+      }
+    },
     "Altezza" : {
 
     },
@@ -10592,6 +10614,28 @@
         }
       }
     },
+    "Cambia la password con cui accedi a KidBox." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change the password you use to sign in to KidBox."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambia la contraseña con la que accedes a KidBox."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifiez le mot de passe avec lequel vous vous connectez à KidBox."
+          }
+        }
+      }
+    },
     "Cambia password" : {
       "localizations" : {
         "en" : {
@@ -11598,6 +11642,50 @@
         }
       }
     },
+    "Cerca cura" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search treatment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar tratamiento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher un traitement"
+          }
+        }
+      }
+    },
+    "Cerca esame" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search exam"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar examen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher un examen"
+          }
+        }
+      }
+    },
     "Cerca Farmaco" : {
       "localizations" : {
         "en" : {
@@ -11836,6 +11924,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rechercher une carte"
+          }
+        }
+      }
+    },
+    "Cerca vaccino" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search vaccine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar vacuna"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher un vaccin"
           }
         }
       }
@@ -12256,6 +12366,28 @@
             "value" : "Qui peut voir ce groupe"
           }
         }
+      }
+    },
+    "Chi può vedere questo promemoria" : {
+      "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Who can see this reminder"
+        }
+      },
+      "es" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Quién puede ver este recordatorio"
+        }
+      },
+      "fr" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Qui peut voir ce rappel"
+        }
+      }
       }
     },
     "Chi può vedere questo to-do" : {
@@ -14634,6 +14766,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Confirmer la dose"
+          }
+        }
+      }
+    },
+    "Conferma nuova password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm new password"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmar nueva contraseña"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmer le nouveau mot de passe"
           }
         }
       }
@@ -17204,6 +17358,28 @@
         }
       }
     },
+    "D'ora in poi accedi con la nuova password." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From now on, sign in with your new password."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A partir de ahora, accede con la nueva contraseña."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désormais, connectez-vous avec le nouveau mot de passe."
+          }
+        }
+      }
+    },
     "Da" : {
       "localizations" : {
         "en" : {
@@ -17776,6 +17952,28 @@
             "value" : "Date et lieu de naissance"
           }
         }
+      }
+    },
+    "Data e ora" : {
+      "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Date and time"
+        }
+      },
+      "es" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Fecha y hora"
+        }
+      },
+      "fr" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Date et heure"
+        }
+      }
       }
     },
     "DATA E ORA" : {
@@ -20009,6 +20207,50 @@
         }
       }
     },
+    "Elenco" : {
+      "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "List"
+        }
+      },
+      "es" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Lista"
+        }
+      },
+      "fr" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Liste"
+        }
+      }
+      }
+    },
+    "Elenco non disponibile: riprova." : {
+      "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "List unavailable: try again."
+        }
+      },
+      "es" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Lista no disponible: inténtalo de nuevo."
+        }
+      },
+      "fr" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Liste indisponible : réessayez."
+        }
+      }
+      }
+    },
     "Elettrica" : {
       "localizations" : {
         "en" : {
@@ -21697,6 +21939,28 @@
         }
       }
     },
+    "Errore di rete. Controlla la connessione." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network error. Check your connection."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error de red. Comprueba la conexión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erreur réseau. Vérifiez la connexion."
+          }
+        }
+      }
+    },
     "Errore download" : {
       "localizations" : {
         "en" : {
@@ -23286,6 +23550,28 @@
             "value" : "EUR"
           }
         }
+      }
+    },
+    "Eventi" : {
+      "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Events"
+        }
+      },
+      "es" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Eventos"
+        }
+      },
+      "fr" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Événements"
+        }
+      }
       }
     },
     "Eventi e affidamenti" : {
@@ -26695,6 +26981,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hai raggiunto il limite di 2 famiglie per account. Elimina una famiglia esistente per crearne una nuova."
+          }
+        }
+      }
+    },
+    "Hai ricevuto un invito?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got an invite?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Tienes una invitación?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez reçu une invitation ?"
           }
         }
       }
@@ -31854,6 +32162,50 @@
         }
       }
     },
+    "La nuova password è troppo debole (min. 6 caratteri)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The new password is too weak (min. 6 characters)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La nueva contraseña es demasiado débil (mín. 6 caracteres)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le nouveau mot de passe est trop faible (6 caractères min.)."
+          }
+        }
+      }
+    },
+    "La password attuale non è corretta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The current password is incorrect."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La contraseña actual no es correcta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le mot de passe actuel est incorrect."
+          }
+        }
+      }
+    },
     "La password in chiaro non lascia mai il dispositivo: KidBox invia solo i primi 5 caratteri dell'hash SHA-1 con modello k-anonymity." : {
       "localizations" : {
         "en" : {
@@ -32517,6 +32869,28 @@
             "value" : "Les séances marquées comme faites, à la main ou par Apple Santé, apparaissent ici."
           }
         }
+      }
+    },
+    "Le sveglie sono state negate a KidBox: il promemoria urgente arriva come notifica. Puoi riattivarle nelle Impostazioni." : {
+      "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Alarms are denied for KidBox: an urgent reminder arrives as a notification. You can turn them back on in Settings."
+        }
+      },
+      "es" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Las alarmas están denegadas para KidBox: un recordatorio urgente llega como notificación. Puedes reactivarlas en Ajustes."
+        }
+      },
+      "fr" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Les alarmes sont refusées à KidBox : un rappel urgent arrive sous forme de notification. Vous pouvez les réactiver dans Réglages."
+        }
+      }
       }
     },
     "Le tue famiglie" : {
@@ -35292,6 +35666,28 @@
         }
       }
     },
+    "Modifica promemoria" : {
+      "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Edit reminder"
+        }
+      },
+      "es" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Editar recordatorio"
+        }
+      },
+      "fr" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Modifier le rappel"
+        }
+      }
+      }
+    },
     "Modifica seduta" : {
       "localizations" : {
         "en" : {
@@ -35844,6 +36240,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Né(e) : %@"
+          }
+        }
+      }
+    },
+    "Negli appunti non c'è un invito KidBox. Torna sul messaggio che hai ricevuto e tocca di nuovo il link." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There's no KidBox invite in your clipboard. Go back to the message you received and tap the link again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En el portapapeles no hay una invitación de KidBox. Vuelve al mensaje que recibiste y toca de nuevo el enlace."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il n'y a pas d'invitation KidBox dans le presse-papiers. Revenez au message reçu et touchez à nouveau le lien."
           }
         }
       }
@@ -38277,6 +38695,28 @@
         }
       }
     },
+    "Nome o descrizione del promemoria" : {
+      "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Reminder name or description"
+        }
+      },
+      "es" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Nombre o descripción del recordatorio"
+        }
+      },
+      "fr" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Nom ou description du rappel"
+        }
+      }
+      }
+    },
     "Nome prodotto" : {
       "localizations" : {
         "en" : {
@@ -38473,6 +38913,28 @@
             "value" : "Non assignés à moi"
           }
         }
+      }
+    },
+    "Non c'è ancora un elenco: il promemoria finisce in «Promemoria», creato adesso." : {
+      "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "There is no list yet: the reminder goes to “Reminders”, created now."
+        }
+      },
+      "es" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Todavía no hay ninguna lista: el recordatorio va a «Recordatorios», creada ahora."
+        }
+      },
+      "fr" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Il n’y a pas encore de liste : le rappel ira dans « Rappels », créée maintenant."
+        }
+      }
       }
     },
     "Non ci sono ancora dati sanitari registrati, ma puoi farmi domande generali." : {
@@ -41019,6 +41481,28 @@
         }
       }
     },
+    "Nuovo promemoria" : {
+      "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "New reminder"
+        }
+      },
+      "es" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Nuevo recordatorio"
+        }
+      },
+      "fr" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Nouveau rappel"
+        }
+      }
+      }
+    },
     "Nuovo to-do" : {
       "localizations" : {
         "en" : {
@@ -42810,6 +43294,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mot de passe"
+          }
+        }
+      }
+    },
+    "Password aggiornata ✅" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password updated ✅"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraseña actualizada ✅"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mot de passe mis à jour ✅"
+          }
+        }
+      }
+    },
+    "Password attuale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current password"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraseña actual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mot de passe actuel"
           }
         }
       }
@@ -46187,6 +46715,28 @@
         }
       }
     },
+    "Promemoria salvato, ma la notifica non è stata creata: controlla i permessi." : {
+      "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Reminder saved, but the notification was not created: check permissions."
+        }
+      },
+      "es" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Recordatorio guardado, pero no se creó la notificación: revisa los permisos."
+        }
+      },
+      "fr" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Rappel enregistré, mais la notification n’a pas été créée : vérifiez les autorisations."
+        }
+      }
+      }
+    },
     "Promemoria vaccino" : {
       "localizations" : {
         "en" : {
@@ -47800,6 +48350,28 @@
         }
       }
     },
+    "Questo dispositivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet appareil"
+          }
+        }
+      }
+    },
     "questo documento" : {
       "localizations" : {
         "en" : {
@@ -47840,28 +48412,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "cet événement"
-          }
-        }
-      }
-    },
-    "Questo dispositivo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This device"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este dispositivo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cet appareil"
           }
         }
       }
@@ -53823,6 +54373,28 @@
         }
       }
     },
+    "Sembra che tu abbia un link d'invito negli appunti: usalo per entrare nella famiglia che ti aspetta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It looks like you have an invite link in your clipboard: use it to join the family waiting for you."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parece que tienes un enlace de invitación en el portapapeles: úsalo para entrar en la familia que te espera."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il semble que vous ayez un lien d'invitation dans le presse-papiers : utilisez-le pour rejoindre la famille qui vous attend."
+          }
+        }
+      }
+    },
     "Senza AI" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -54088,6 +54660,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le poids et la taille sont nécessaires pour créer le plan. Mettez-les à jour dans l’app Santé ou dans la Fiche médicale."
+          }
+        }
+      }
+    },
+    "Sessione non valida. Esci e accedi di nuovo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session no longer valid. Sign out and sign in again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesión no válida. Cierra sesión y vuelve a entrar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session non valide. Déconnectez-vous et reconnectez-vous."
           }
         }
       }
@@ -54755,6 +55349,28 @@
             "value" : "Seul le créateur du billet peut modifier la visibilité."
           }
         }
+      }
+    },
+    "Solo chi ha creato il promemoria può modificare la visibilità." : {
+      "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Only whoever created the reminder can change its visibility."
+        }
+      },
+      "es" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Solo quien ha creado el recordatorio puede cambiar su visibilidad."
+        }
+      },
+      "fr" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Seule la personne qui a créé le rappel peut en modifier la visibilité."
+        }
+      }
       }
     },
     "Solo chi ha creato il to-do può modificare la visibilità." : {
@@ -57746,6 +58362,28 @@
         }
       }
     },
+    "Torni alla schermata di accesso. Quello che hai già creato resta sul tuo account." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You'll go back to the sign-in screen. Anything you've already created stays on your account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volverás a la pantalla de acceso. Lo que ya has creado se queda en tu cuenta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous revenez à l'écran de connexion. Ce que vous avez déjà créé reste sur votre compte."
+          }
+        }
+      }
+    },
     "Totale" : {
       "localizations" : {
         "en" : {
@@ -58362,6 +59000,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Triathlon"
+          }
+        }
+      }
+    },
+    "Troppi tentativi. Riprova tra qualche minuto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many attempts. Try again in a few minutes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demasiados intentos. Inténtalo de nuevo en unos minutos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trop de tentatives. Réessayez dans quelques minutes."
           }
         }
       }
@@ -59186,6 +59846,28 @@
         }
       }
     },
+    "Un promemoria urgente attiva una sveglia: suona anche se il telefono è silenzioso o se è attiva una full immersion." : {
+      "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "An urgent reminder sets off an alarm: it rings even if the phone is silenced or a Focus is on."
+        }
+      },
+      "es" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Un recordatorio urgente activa una alarma: suena aunque el teléfono esté en silencio o haya un modo de concentración activo."
+        }
+      },
+      "fr" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Un rappel urgent déclenche une alarme : elle sonne même si le téléphone est en silencieux ou si un mode de concentration est actif."
+        }
+      }
+      }
+    },
     "Un solo orario: una dose ogni %lld giorni." : {
       "localizations" : {
         "en" : {
@@ -59362,6 +60044,28 @@
         }
       }
     },
+    "Urgente mette in evidenza il promemoria. Su questo dispositivo la sveglia non è disponibile: arriva una notifica." : {
+      "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Urgent highlights the reminder. On this device the alarm is not available: a notification arrives instead."
+        }
+      },
+      "es" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Urgente destaca el recordatorio. En este dispositivo la alarma no está disponible: llega una notificación."
+        }
+      },
+      "fr" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Urgent met le rappel en évidence. Sur cet appareil l’alarme n’est pas disponible : une notification arrive à la place."
+        }
+      }
+      }
+    },
     "Urologia" : {
       "comment" : "Clinical topic: urology",
       "localizations" : {
@@ -59426,6 +60130,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Utilisez « Puce » pour les lignes à puces ; les notes sont aussi visibles dans la liste."
+          }
+        }
+      }
+    },
+    "Usa l'invito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use the invite"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar la invitación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser l'invitation"
           }
         }
       }
@@ -59916,28 +60642,6 @@
         }
       }
     },
-    "Valido 7 giorni" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Valid for 7 days"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Válido 7 días"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Valable 7 jours"
-          }
-        }
-      }
-    },
     "Vale solo qui: puoi tenere le notifiche accese sul telefono e spente sul tablet. Spegnendolo non ricevi più niente su questo dispositivo, nemmeno gli annunci — le opzioni qui sotto valgono invece su tutti. I promemoria che hai impostato continuano ad arrivare." : {
       "localizations" : {
         "en" : {
@@ -59956,6 +60660,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ne vaut qu'ici : vous pouvez garder les notifications activées sur le téléphone et désactivées sur la tablette. En le désactivant, vous ne recevez plus rien sur cet appareil, annonces comprises — les options ci-dessous valent en revanche pour tous. Les rappels que vous avez définis continuent d'arriver."
+          }
+        }
+      }
+    },
+    "Valido 7 giorni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valid for 7 days"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Válido 7 días"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valable 7 jours"
           }
         }
       }
@@ -61437,6 +62163,28 @@
         }
       }
     },
+    "Vuoi uscire dall'account?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out of your account?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cerrar sesión?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se déconnecter du compte ?"
+          }
+        }
+      }
+    },
     "Wallet" : {
       "localizations" : {
         "en" : {
@@ -61588,50 +62336,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Zones d'arrivée"
-          }
-        }
-      }
-    },
-    "Vuoi uscire dall'account?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign out of your account?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Cerrar sesión?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se déconnecter du compte ?"
-          }
-        }
-      }
-    },
-    "Torni alla schermata di accesso. Quello che hai già creato resta sul tuo account." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You'll go back to the sign-in screen. Anything you've already created stays on your account."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volverás a la pantalla de acceso. Lo que ya has creado se queda en tu cuenta."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vous revenez à l'écran de connexion. Ce que vous avez déjà créé reste sur votre compte."
           }
         }
       }

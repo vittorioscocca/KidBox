@@ -68,6 +68,7 @@ struct PediatricExamsView: View {
     @State private var showDeleteConfirm = false
     
     // Filter
+    @State private var searchText        = ""
     @State private var timeFilter        = ExamTimeFilter.all
     @State private var showFilterSheet   = false
     @State private var customFilterStart = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
@@ -120,7 +121,24 @@ struct PediatricExamsView: View {
         return ref >= cutoff
     }
     
-    private var filtered: [KBMedicalExam] { exams.filter { passesFilter($0) } }
+    private func passesSearch(_ e: KBMedicalExam) -> Bool {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return true }
+        return e.name.localizedCaseInsensitiveContains(query)
+            || (e.location    ?? "").localizedCaseInsensitiveContains(query)
+            || (e.preparation ?? "").localizedCaseInsensitiveContains(query)
+            || (e.notes       ?? "").localizedCaseInsensitiveContains(query)
+            || (e.resultText  ?? "").localizedCaseInsensitiveContains(query)
+    }
+    
+    /// Dal più recente al meno recente sulla stessa data del filtro (scadenza,
+    /// altrimenti creazione): la @Query ordina per createdAt, che per un esame
+    /// inserito a posteriori non è la sua data.
+    private var filtered: [KBMedicalExam] {
+        exams
+            .filter { passesFilter($0) && passesSearch($0) }
+            .sorted { ($0.deadline ?? $0.createdAt) > ($1.deadline ?? $1.createdAt) }
+    }
     private var pending:  [KBMedicalExam] { filtered.filter { $0.status == .pending } }
     private var booked:   [KBMedicalExam] { filtered.filter { $0.status == .booked } }
     private var done:     [KBMedicalExam] { filtered.filter { $0.status == .done || $0.status == .resultIn } }
@@ -174,6 +192,11 @@ struct PediatricExamsView: View {
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Analisi & Esami")
+        .searchable(
+            text: $searchText,
+            placement: .navigationBarDrawer(displayMode: .automatic),
+            prompt: "Cerca esame"
+        )
         .toolbar { toolbarItems }
         .overlay(alignment: .bottomTrailing) {
             if !isSelecting && !exams.isEmpty {

@@ -2421,10 +2421,11 @@ exports.askAI = onCall(
 
       // Unità base calcolate sulla dimensione del payload.
       const payloadUnits = askAIMessageUnitsForPayload(totalChars);
-      // Cartella clinica e piano alimentare girano su Sonnet (~3× il costo per
-      // token di Haiku) e non beneficiano del prompt caching (chiamata one-shot):
-      // le facciamo costare un minimo fisso di unità per riflettere il costo reale
-      // a prescindere dal payload.
+      // Generazioni pesanti: sono chiamate one-shot, quindi non beneficiano del
+      // prompt caching; e cartella clinica e piano fitness girano anche su Sonnet
+      // (~3× il costo per token di Haiku — il piano alimentare resta su Haiku,
+      // vedi `sonnetGeneration` sopra). Le facciamo costare un minimo fisso di
+      // unità per riflettere il costo reale a prescindere dal payload.
       let messageUnits = payloadUnits;
       if (clinicalRecord) messageUnits = Math.max(CLINICAL_RECORD_MIN_UNITS, payloadUnits);
       if (mealPlan) messageUnits = Math.max(MEAL_PLAN_MIN_UNITS, payloadUnits);

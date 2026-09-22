@@ -86,3 +86,12 @@ Facebook.local.xcconfig
 
 # Cruscotto generato da scripts/build-dashboard.js (pubblicato come artefatto)
 dashboard/
+
+# Log degli emulatori Firebase
+#
+# `firestore-debug.log` (root e firestore-tests/) era versionato: ogni giro di
+# `npm test` lo riscrive, e una sola esecuzione produceva 500 righe di diff che
+# coprivano le modifiche vere. Sono log di macchina, non stato del progetto.
+# Tolti dal tracciamento il 20/09/2026; il pattern prende anche gli altri
+# emulatori (firebase-, database-, pubsub-, ui-debug.log).
+*-debug.log

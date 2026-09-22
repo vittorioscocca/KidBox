@@ -35,6 +35,13 @@ final class KBTodoItem {
     
     var reminderEnabled: Bool = false
     var reminderId: String? = nil   // identifier UNUserNotificationCenter
+
+    /// La scadenza porta con sé un orario, oppure è «tutto il giorno».
+    /// Opzionale per migrazione SwiftData: `nil` → equivalente a `true`, che è
+    /// il comportamento storico (ogni `dueAt` nasceva con data **e** ora).
+    /// Quando è `false` la UI mostra solo il giorno e `dueAt` viene fissato
+    /// alle 9:00 locali, l'ora in cui suona un promemoria senza orario.
+    var dueHasTime: Bool? = nil
     
     // ✅ M3 (make optional for migration safety)
     var syncStateRaw: Int?
@@ -69,6 +76,7 @@ final class KBTodoItem {
         visibilityMemberIds: [String] = [],
         notes: String? = nil,
         dueAt: Date? = nil,
+        dueHasTime: Bool = true,
         isDone: Bool = false,
         doneAt: Date? = nil,
         doneBy: String? = nil,
@@ -86,6 +94,7 @@ final class KBTodoItem {
         self.visibilityMemberIds = visibilityMemberIds
         self.notes = notes
         self.dueAt = dueAt
+        self.dueHasTime = dueHasTime
         self.isDone = isDone
         self.doneAt = doneAt
         self.doneBy = doneBy
@@ -101,6 +110,16 @@ final class KBTodoItem {
         self.syncStateRaw = KBSyncState.pendingUpsert.rawValue
         self.lastSyncError = nil
     }
+
+    /// Urgente: il promemoria diventa una sveglia, non una notifica.
+    /// `priorityRaw == 1` è il campo storico, non se ne aggiunge uno nuovo.
+    var isUrgent: Bool {
+        get { (priorityRaw ?? 0) == 1 }
+        set { priorityRaw = newValue ? 1 : 0 }
+    }
+
+    /// L'orario c'è davvero, tenendo conto delle righe precedenti al campo.
+    var hasDueTime: Bool { dueHasTime ?? true }
 
     func isVisible(to currentUid: String?) -> Bool {
         KBVisibilityScope.isVisible(

@@ -70,9 +70,41 @@ function jwt(pem) {
   return `${header}.${payload}.${sig}`;
 }
 
-async function get(tok, path) {
+// Il token vale 20 minuti: un giro lungo li supera, e App Store Connect ogni
+// tanto rifiuta un token perfettamente valido (401 isolato, visto il
+// 20/09/2026 su una chiave attiva e un orologio allineato). Il token sta in un
+// posto solo, si rifà dopo 15 minuti, e la richiesta ritenta una volta sola
+// con uno nuovo prima di dare la colpa alla chiave.
+let TOKEN = null;
+let TOKEN_AT = 0;
+let RITENTATI = 0;
+function auth(pem) {
+  return (nuovo = false) => {
+    if (nuovo || !TOKEN || Date.now() - TOKEN_AT > 15 * 60 * 1000) {
+      if (nuovo) RITENTATI++;
+      TOKEN = jwt(pem);
+      TOKEN_AT = Date.now();
+    }
+    return TOKEN;
+  };
+}
+
+const ERRORE_401 = [
+  "401 rimasto anche dopo un token nuovo (la riprova è automatica): questa volta non è transitorio.",
+  `Prima di rigenerare la chiave, controlla che ${KEY_ID} risulti «Attiva» in App Store Connect`,
+  "(Utenti e accesso → Integrazioni → Chiavi API), che Key ID e Issuer ID qui nello script combacino",
+  "con quelli mostrati lì, e che l'ora della macchina sia giusta. Solo se tutto torna, rigenera la",
+  "chiave con ruolo Admin («Vendite e report» non basta: non può creare le istanze dei report) e",
+  'salvala con: security add-generic-password -a kidbox -s asc-api-key -w "$(base64 -i AuthKey.p8)" -U',
+].join("\n");
+
+async function get(tok, path, riprova = true) {
   const url = path.startsWith("http") ? path : `${API}${path}`;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${tok}` } });
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${tok()}` } });
+  if (res.status === 401 && riprova) {
+    tok(true);
+    return get(tok, path, false);
+  }
   const json = await res.json();
   if (!res.ok) throw new Error(`${path.replace(API, "")}: ${json.errors?.[0]?.detail || json.errors?.[0]?.title || res.status}`);
   return json;
@@ -153,7 +185,7 @@ async function main() {
   const yesterday = shiftDay(romeDate(), -1);
   const since = shiftDay(yesterday, -13);
   const pem = privateKey();
-  const tok = jwt(pem);
+  const tok = auth(pem);
   const out = { app: APP_ID, yesterday, notes: [], reports: {} };
 
   // 1. Richiesta ONGOING (preferita) o snapshot.
@@ -234,6 +266,8 @@ async function main() {
     text: (r.attributes.body || "").replace(/\s+/g, " ").trim().slice(0, 200),
   }));
 
+  if (RITENTATI) out.notes.push(`App Store ha rifiutato ${RITENTATI} token validi (401 transitorio): ripresi con un token nuovo, i dati del report sono completi.`);
+
   if (asJson || raw) {
     process.stdout.write(JSON.stringify(out, null, 2) + "\n");
     return;
@@ -302,8 +336,6 @@ function print(o) {
 
 main().catch((e) => {
   console.error(`Errore App Store Connect: ${e.message}`);
-  if (/401|NOT_AUTHORIZED|expired/i.test(e.message)) {
-    console.error("Chiave API non valida o revocata: rigenerarla in App Store Connect (Utenti e accesso → Integrazioni → Chiavi API) e salvarla nel Portachiavi.");
-  }
+  if (/401|NOT_AUTHORIZED|expired|bearer token/i.test(e.message)) console.error(ERRORE_401);
   process.exit(1);
 });

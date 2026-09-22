@@ -31,6 +31,11 @@ enum KidBoxLocalNotificationsCleanup {
         center.removeAllPendingNotificationRequests()
         center.removeAllDeliveredNotifications()
 
+        // Le sveglie dei promemoria urgenti non sono notifiche: vivono in
+        // AlarmKit e sopravvivono a `removeAllPending…`. Senza questo
+        // continuerebbero a suonare per l'account appena uscito.
+        KBUrgentAlarmService.cancelAll()
+
         // Il registro di cosa è armato su questo device e i puntatori alle
         // notifiche AI: senza questi, al login successivo l'app crederebbe di
         // avere ancora in coda notifiche che non esistono più.

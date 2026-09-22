@@ -34,7 +34,9 @@ struct TodoEditView: View {
     @State private var notes = ""
     @State private var dueDate: Date? = nil
     @State private var hasDate = false
-    @State private var hasTime = false
+    /// La scadenza porta un orario, oppure vale «tutto il giorno» (suona alle
+    /// 9:00). Prima esisteva come variabile e non era collegata a nulla.
+    @State private var hasTime = true
     @State private var isUrgent = false
     
     @State private var assignedTo: String? = nil
@@ -197,10 +199,12 @@ struct TodoEditView: View {
                                 get: { dueDate ?? Date() },
                                 set: { dueDate = $0 }
                             ),
-                            displayedComponents: [.date, .hourAndMinute]
+                            displayedComponents: hasTime ? [.date, .hourAndMinute] : [.date]
                         )
                         .datePickerStyle(.compact)
                         .environment(\.locale, appLocale())
+
+                        Toggle("Ora", isOn: $hasTime)
                     }
                     
                     Toggle("Promemoria", isOn: Binding(
@@ -238,7 +242,11 @@ struct TodoEditView: View {
                     )
                 }
                 
-                Toggle("Urgente", isOn: $isUrgent)
+                Section {
+                    Toggle("Urgente", isOn: $isUrgent)
+                } footer: {
+                    Text(kbUrgentFooterText).font(.caption)
+                }
                 
                 if !isPrivateScope {
                     Section("Assegnato a") {
@@ -374,7 +382,7 @@ struct TodoEditView: View {
         notes         = t.notes ?? ""
         dueDate       = t.dueAt
         hasDate       = t.dueAt != nil
-        hasTime       = false
+        hasTime       = t.hasDueTime
         isUrgent      = (t.priorityRaw ?? 0) == 1
         assignedTo    = t.assignedTo
         wantsReminder = (t.dueAt != nil) && t.reminderEnabled
@@ -395,11 +403,12 @@ struct TodoEditView: View {
         
         // helper: cancella reminder se presente
         func cancelReminderIfNeeded(_ todo: KBTodoItem) {
-            if todo.reminderEnabled, let rid = todo.reminderId {
-                TodoReminderService.cancel(reminderId: rid)
-                todo.reminderEnabled = false
-                todo.reminderId = nil
-            }
+            // Si annulla anche senza `reminderId`: i to-do precedenti al campo
+            // lo hanno `nil` pur avendo un avviso in coda, e da oggi c'è pure
+            // la sveglia, che vive in AlarmKit e non in quell'identificatore.
+            TodoReminderService.cancel(todoId: todo.id)
+            todo.reminderEnabled = false
+            todo.reminderId = nil
         }
         
         // helper: schedule (sempre 1 per todo)
@@ -411,7 +420,8 @@ struct TodoEditView: View {
                     familyId: familyId,
                     childId:  childId,
                     title:    todo.title,
-                    dueAt:    due
+                    dueAt:    due,
+                    isUrgent: todo.isUrgent
                 )
                 todo.reminderEnabled = true
                 todo.reminderId = rid
@@ -420,11 +430,19 @@ struct TodoEditView: View {
             }
         }
         
+        // Senza orario il promemoria suona alle 9:00: un avviso a mezzanotte
+        // non lo legge nessuno. Stessa regola della scheda del calendario.
+        let resolvedDue: Date? = {
+            guard hasDate, let d = dueDate else { return nil }
+            return hasTime ? d : kbStartOfDayReminderTime(d)
+        }()
+
         if let existing = editingTodo {
             // ✅ Update local fields
             existing.title = trimmedTitle
             existing.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
-            existing.dueAt = hasDate ? dueDate : nil
+            existing.dueAt = resolvedDue
+            existing.dueHasTime = hasTime
             if existing.createdBy == nil { existing.createdBy = uid }
             existing.priorityRaw = isUrgent ? 1 : 0
             
@@ -481,7 +499,8 @@ struct TodoEditView: View {
             title: trimmedTitle,
             listId: listId,
             notes: trimmedNotes.isEmpty ? nil : trimmedNotes,
-            dueAt: hasDate ? dueDate : nil,
+            dueAt: resolvedDue,
+            dueHasTime: hasTime,
             isDone: false,
             doneAt: nil,
             doneBy: nil,
@@ -504,7 +523,10 @@ struct TodoEditView: View {
         // ✅ insert first
         modelContext.insert(local)
         
-        // ✅ reminder after insert (and if due exists)
+        // ✅ reminder after insert (and if due exists).
+        // `priorityRaw` è già assegnato qui sopra: `scheduleReminder` legge
+        // `todo.isUrgent` per decidere fra sveglia e notifica, e invertendo
+        // l'ordine la prima sveglia non partirebbe mai.
         if wantsReminder, let due = local.dueAt {
             await scheduleReminder(local, due: due)
         }

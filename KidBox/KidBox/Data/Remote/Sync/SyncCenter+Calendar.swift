@@ -97,6 +97,7 @@ extension SyncCenter {
                         category:        KBEventCategory(rawValue: dto.categoryRaw) ?? .family,
                         recurrence:      KBEventRecurrence(rawValue: dto.recurrenceRaw) ?? .none,
                         reminderMinutes: dto.reminderMinutes,
+                        isUrgent:        (dto.priority ?? 0) == 1,
                         visibilityScope: KBVisibilityScope.normalized(dto.visibilityScope),
                         visibilityMemberIds: dto.visibilityMemberIds,
                         isDeleted:       false,
@@ -130,6 +131,7 @@ extension SyncCenter {
         local.categoryRaw      = dto.categoryRaw
         local.recurrenceRaw    = dto.recurrenceRaw
         local.reminderMinutes  = dto.reminderMinutes
+        local.priorityRaw      = dto.priority ?? 0
         local.visibilityScope = KBVisibilityScope.normalized(dto.visibilityScope)
         local.visibilityMemberIds = dto.visibilityMemberIds
         local.isDeleted        = dto.isDeleted
@@ -182,6 +184,7 @@ extension SyncCenter {
                 categoryRaw:     e.categoryRaw,
                 recurrenceRaw:   e.recurrenceRaw,
                 reminderMinutes: e.reminderMinutes,
+                priority:        e.priorityRaw,
                 visibilityScope: KBVisibilityScope.normalized(e.visibilityScope),
                 visibilityMemberIds: e.visibilityMemberIds,
                 isDeleted:       e.isDeleted,

@@ -44,6 +44,13 @@ struct CalendarView: View {
         sort: \KBCalendarEvent.startDate,
         order: .forward
     ) private var allEvents: [KBCalendarEvent]
+
+    /// I promemoria del calendario **sono** to-do: stessa collezione, stesse
+    /// liste, stessa visibilità. Il calendario è solo un'altra porta.
+    @Query(
+        sort: \KBTodoItem.dueAt,
+        order: .forward
+    ) private var allTodos: [KBTodoItem]
     
     var familyId: String
     var highlightEventId: String? = nil
@@ -54,19 +61,48 @@ struct CalendarView: View {
             $0.familyId == familyId && !$0.isDeleted && $0.isVisible(to: uid)
         }
     }
+
+    /// Solo i to-do con una scadenza: gli altri vivono nel backlog «Da fare»
+    /// e non hanno un giorno in cui disegnarli.
+    private var reminders: [KBTodoItem] {
+        let uid = Auth.auth().currentUser?.uid
+        return allTodos.filter {
+            $0.familyId == familyId && !$0.isDeleted && $0.dueAt != nil && $0.isVisible(to: uid)
+        }
+    }
     
     private var datesWithEvents: Set<DateComponents> {
-        Set(
+        var comps = Set(
             events.flatMap { event in
                 calendarDayComponentsCoveredByEvent(event)
             }
         )
+        // Anche i promemoria accendono il pallino del giorno: un calendario
+        // che dice «niente» su un giorno con un promemoria sta mentendo.
+        for reminder in reminders {
+            guard let due = reminder.dueAt else { continue }
+            comps.insert(Calendar.current.dateComponents([.year, .month, .day], from: due))
+        }
+        return comps
     }
     
     @State private var selectedDate = Date()
     @State private var addSheetDate: AddSheetDate?
     @State private var editingEvent: KBCalendarEvent?
-    @State private var viewMode: CalendarViewMode = .month
+    @State private var editingReminder: KBTodoItem?
+    /// La vista scelta sopravvive alla chiusura dell'app: chi lavora a
+    /// settimana non deve rimetterla a ogni apertura. È una preferenza del
+    /// dispositivo, non della famiglia, quindi resta in `UserDefaults`.
+    @AppStorage("kb.calendar.viewMode") private var viewModeRaw = CalendarViewMode.month.rawValue
+    private var viewMode: CalendarViewMode {
+        CalendarViewMode(rawValue: viewModeRaw) ?? .month
+    }
+    private var viewModeBinding: Binding<CalendarViewMode> {
+        Binding(
+            get: { viewMode },
+            set: { viewModeRaw = $0.rawValue }
+        )
+    }
     /// Evento già aperto dalla notifica. Una sola apertura: senza questo,
     /// chiudere la scheda la farebbe riaprire al primo aggiornamento della
     /// lista eventi. Equivale a `openedEventId` di `CalendarScreen` su Android.
@@ -82,53 +118,69 @@ struct CalendarView: View {
         let date: Date
     }
 
+    private var modePicker: some View {
+        Picker("Vista", selection: viewModeBinding) {
+            ForEach(CalendarViewMode.allCases) { mode in
+                Text(mode.label).tag(mode)
+            }
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+    }
+
+    /// Le tre viste stanno qui e non nel `body`: insieme al resto della
+    /// schermata il type-checker di Swift non ce la faceva più a dedurre
+    /// l'espressione («unable to type-check in reasonable time»).
+    @ViewBuilder
+    private var currentModeView: some View {
+        switch viewMode {
+        case .day, .week:
+            DayWeekView(
+                selectedDate: $selectedDate,
+                isWeek:       viewMode == .week,
+                events:       events,
+                reminders:    reminders,
+                onEditEvent:  { editingEvent = $0 },
+                onEditReminder: { editingReminder = $0 },
+                onAddEvent:   { addSheetDate = AddSheetDate(date: $0) }
+            )
+        case .year:
+            YearOverviewView(
+                year:            Calendar.current.component(.year, from: selectedDate),
+                datesWithEvents: datesWithEvents,
+                selectedDate:    $selectedDate,
+                onSelectDate: { date in
+                    selectedDate = date
+                    viewModeRaw = CalendarViewMode.month.rawValue
+                }
+            )
+        case .month:
+            MonthDetailView(
+                selectedDate:    $selectedDate,
+                datesWithEvents: datesWithEvents,
+                events:          events,
+                reminders:       reminders,
+                cardBackground:  cardBackground,
+                familyId:        familyId,
+                onEditEvent:     { editingEvent = $0 },
+                onDeleteEvent:   { deleteEvent($0) },
+                onEditReminder:  { editingReminder = $0 },
+                onToggleReminder: { toggleReminderDone($0) },
+                onDeleteReminder: { deleteReminder($0) },
+                onAddEvent:      { addSheetDate = AddSheetDate(date: $0) }
+            )
+        }
+    }
+
     var body: some View {
         ZStack {
             backgroundColor.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                Picker("Vista", selection: $viewMode) {
-                    ForEach(CalendarViewMode.allCases) { mode in
-                        Text(mode.label).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-                
+                modePicker
                 Divider()
-                
-                switch viewMode {
-                case .day, .week:
-                    DayWeekView(
-                        selectedDate: $selectedDate,
-                        isWeek:       viewMode == .week,
-                        events:       events,
-                        onEditEvent:  { editingEvent = $0 },
-                        onAddEvent:   { addSheetDate = AddSheetDate(date: $0) }
-                    )
-                case .year:
-                    YearOverviewView(
-                        year:            Calendar.current.component(.year, from: selectedDate),
-                        datesWithEvents: datesWithEvents,
-                        selectedDate:    $selectedDate,
-                        onSelectDate: { date in
-                            selectedDate = date
-                            viewMode = .month
-                        }
-                    )
-                case .month:
-                    MonthDetailView(
-                        selectedDate:    $selectedDate,
-                        datesWithEvents: datesWithEvents,
-                        events:          events,
-                        cardBackground:  cardBackground,
-                        familyId:        familyId,
-                        onEditEvent:     { editingEvent = $0 },
-                        onDeleteEvent:   { deleteEvent($0) },
-                        onAddEvent:      { addSheetDate = AddSheetDate(date: $0) }
-                    )
-                }
+                currentModeView
             }
         }
         .kbRefreshable {
@@ -150,10 +202,10 @@ struct CalendarView: View {
             }
         }
         .sheet(item: $addSheetDate) { wrapper in
-            CalendarEventFormView(
+            CalendarNewItemSheet(
                 familyId: familyId,
-                initialDate: wrapper.date,
-                event: nil,
+                childId: activeChildId,
+                date: wrapper.date,
                 prefillTitle: sharePrefillTitle
             )
             .environment(\.modelContext, modelContext)
@@ -161,6 +213,15 @@ struct CalendarView: View {
         .sheet(item: $editingEvent) { event in
             CalendarEventFormView(familyId: familyId, initialDate: event.startDate, event: event)
                 .environment(\.modelContext, modelContext)
+        }
+        .sheet(item: $editingReminder) { reminder in
+            CalendarReminderFormView(
+                familyId: familyId,
+                childId: reminder.childId,
+                initialDate: reminder.dueAt ?? selectedDate,
+                todo: reminder
+            )
+            .environment(\.modelContext, modelContext)
         }
         .onReceive(coordinator.$pendingShareEventDraft.compactMap { $0 }) { draft in
             KBLog.sync.kbInfo("CalendarView.onReceive: draft received title=\(draft.title)")
@@ -280,6 +341,8 @@ struct CalendarView: View {
                 modelContext: modelContext
             )
         }
+        // L'evento sparisce: il suo avviso non deve sopravvivergli.
+        CalendarEventReminderService.cancel(eventId: eventId)
         event.isDeleted = true
         event.updatedAt = Date()
         event.updatedBy = uid
@@ -287,6 +350,52 @@ struct CalendarView: View {
             eventId: eventId, familyId: fid, modelContext: modelContext)
         modelContext.delete(event)
         try? modelContext.save()
+        Task { @MainActor in
+            SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        }
+    }
+
+    /// Il figlio della famiglia attiva, che i to-do pretendono ancora nel
+    /// documento. Non filtra niente (i to-do sono di famiglia), ma il campo
+    /// continua a essere scritto: vedi la nota in `TodoHomeView`.
+    private var activeChildId: String {
+        allTodos.first(where: { $0.familyId == familyId && !$0.childId.isEmpty })?.childId ?? ""
+    }
+
+    /// Spunta o despunta un promemoria dal calendario, senza aprirlo.
+    private func toggleReminderDone(_ todo: KBTodoItem) {
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let done = !todo.isDone
+        if done {
+            // Un promemoria fatto non deve più suonare.
+            TodoReminderService.cancel(todoId: todo.id)
+            todo.reminderEnabled = false
+            todo.reminderId = nil
+        }
+        todo.isDone = done
+        todo.doneAt = done ? Date() : nil
+        todo.doneBy = done ? uid : nil
+        todo.updatedAt = Date()
+        todo.updatedBy = uid
+        todo.syncState = .pendingUpsert
+        try? modelContext.save()
+        SyncCenter.shared.enqueueTodoUpsert(todoId: todo.id, familyId: familyId, modelContext: modelContext)
+        Task { @MainActor in
+            SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        }
+    }
+
+    private func deleteReminder(_ todo: KBTodoItem) {
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        TodoReminderService.cancel(todoId: todo.id)
+        todo.reminderEnabled = false
+        todo.reminderId = nil
+        todo.isDeleted = true
+        todo.updatedAt = Date()
+        todo.updatedBy = uid
+        todo.syncState = .pendingUpsert
+        try? modelContext.save()
+        SyncCenter.shared.enqueueTodoDelete(todoId: todo.id, familyId: familyId, modelContext: modelContext)
         Task { @MainActor in
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
         }
@@ -485,16 +594,31 @@ private struct MonthDetailView: View {
     @Binding var selectedDate:   Date
     let datesWithEvents:         Set<DateComponents>
     let events:                  [KBCalendarEvent]
+    let reminders:               [KBTodoItem]
     let cardBackground:          Color
     let familyId:                String
     let onEditEvent:             (KBCalendarEvent) -> Void
     let onDeleteEvent:           (KBCalendarEvent) -> Void
+    let onEditReminder:          (KBTodoItem) -> Void
+    let onToggleReminder:        (KBTodoItem) -> Void
+    let onDeleteReminder:        (KBTodoItem) -> Void
     let onAddEvent:              (Date) -> Void
     
     @State private var displayedMonth = Date()
     
     private var eventsOnSelectedDate: [KBCalendarEvent] {
         events.filter { eventOccursOnDay($0, day: selectedDate) }
+    }
+
+    private var remindersOnSelectedDate: [KBTodoItem] {
+        reminders
+            .filter { reminderOccursOnDay($0, day: selectedDate) }
+            // I fatti in fondo: restano visibili, ma non rubano la riga in
+            // cima a quelli ancora da fare.
+            .sorted { lhs, rhs in
+                if lhs.isDone != rhs.isDone { return !lhs.isDone }
+                return (lhs.dueAt ?? .distantFuture) < (rhs.dueAt ?? .distantFuture)
+            }
     }
     
     // ── FIX: DateFormatter rispetta il locale di sistema ──────────────────
@@ -599,7 +723,7 @@ private struct MonthDetailView: View {
     
     private var dayEventsList: some View {
         Group {
-            if eventsOnSelectedDate.isEmpty {
+            if eventsOnSelectedDate.isEmpty && remindersOnSelectedDate.isEmpty {
                 KBEmptyStateView(
                     systemImage: "calendar",
                     title: "Nessun evento",
@@ -610,14 +734,34 @@ private struct MonthDetailView: View {
                 )
             } else {
                 List {
-                    ForEach(eventsOnSelectedDate) { event in
-                        CalendarEventRow(event: event)
-                            .contentShape(Rectangle())
-                            .onTapGesture { onEditEvent(event) }
-                            .listRowBackground(cardBackground)
+                    if !eventsOnSelectedDate.isEmpty {
+                        Section("Eventi") {
+                            ForEach(eventsOnSelectedDate) { event in
+                                CalendarEventRow(event: event)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { onEditEvent(event) }
+                                    .listRowBackground(cardBackground)
+                            }
+                            .onDelete { indexSet in
+                                for idx in indexSet { onDeleteEvent(eventsOnSelectedDate[idx]) }
+                            }
+                        }
                     }
-                    .onDelete { indexSet in
-                        for idx in indexSet { onDeleteEvent(eventsOnSelectedDate[idx]) }
+                    if !remindersOnSelectedDate.isEmpty {
+                        Section("Promemoria") {
+                            ForEach(remindersOnSelectedDate) { reminder in
+                                CalendarReminderRow(
+                                    todo: reminder,
+                                    onToggleDone: { onToggleReminder(reminder) }
+                                )
+                                .contentShape(Rectangle())
+                                .onTapGesture { onEditReminder(reminder) }
+                                .listRowBackground(cardBackground)
+                            }
+                            .onDelete { indexSet in
+                                for idx in indexSet { onDeleteReminder(remindersOnSelectedDate[idx]) }
+                            }
+                        }
                     }
                 }
                 .listStyle(.insetGrouped)
@@ -636,7 +780,9 @@ private struct DayWeekView: View {
     @Binding var selectedDate: Date
     let isWeek:      Bool
     let events:      [KBCalendarEvent]
+    let reminders:   [KBTodoItem]
     let onEditEvent: (KBCalendarEvent) -> Void
+    let onEditReminder: (KBTodoItem) -> Void
     let onAddEvent:  (Date) -> Void
 
     private var days: [Date] {
@@ -656,8 +802,10 @@ private struct DayWeekView: View {
             TimeGridView(
                 days:          days,
                 events:        events,
+                reminders:     reminders,
                 showsDayHeader: isWeek,
                 onSelectEvent: onEditEvent,
+                onSelectReminder: onEditReminder,
                 onCreateAt:    onAddEvent
             )
         }
@@ -734,8 +882,10 @@ private struct TimeGridView: View {
 
     let days:           [Date]
     let events:         [KBCalendarEvent]
+    let reminders:      [KBTodoItem]
     let showsDayHeader: Bool
     let onSelectEvent:  (KBCalendarEvent) -> Void
+    let onSelectReminder: (KBTodoItem) -> Void
     let onCreateAt:     (Date) -> Void
 
     /// Ora di apertura della griglia: a mezzanotte non c'è niente da vedere.
@@ -749,6 +899,7 @@ private struct TimeGridView: View {
             }
 
             allDayRow
+            remindersRow
 
             ScrollViewReader { proxy in
                 ScrollView {
@@ -843,6 +994,62 @@ private struct TimeGridView: View {
 
             Divider()
         }
+    }
+
+    /// I promemoria stanno in una riga propria sopra la griglia, come fa
+    /// Calendario di Apple: hanno un istante, non una durata, e disegnarli
+    /// come blocchi li farebbe sembrare appuntamenti di un'ora.
+    @ViewBuilder
+    private var remindersRow: some View {
+        if days.contains(where: { !remindersOn($0).isEmpty }) {
+            HStack(alignment: .top, spacing: 0) {
+                Image(systemName: "checklist")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                    .frame(width: kbHourGutterWidth, alignment: .trailing)
+                    .padding(.trailing, 4)
+
+                HStack(alignment: .top, spacing: 1) {
+                    ForEach(days, id: \.self) { day in
+                        VStack(spacing: 2) {
+                            ForEach(remindersOn(day)) { todo in
+                                HStack(spacing: 4) {
+                                    Image(systemName: todo.isDone ? "checkmark.circle.fill" : (todo.isUrgent ? "alarm.fill" : "circle"))
+                                        .font(.system(size: 9))
+                                    Text(todo.title)
+                                        .font(.caption2)
+                                        .lineLimit(1)
+                                        .strikethrough(todo.isDone)
+                                    Spacer(minLength: 0)
+                                }
+                                .foregroundStyle(todo.isDone ? Color.secondary : Color.accentColor)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(
+                                    Color.accentColor.opacity(todo.isDone ? 0.08 : 0.16),
+                                    in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                )
+                                .contentShape(Rectangle())
+                                .onTapGesture { onSelectReminder(todo) }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .top)
+                    }
+                }
+            }
+            .frame(minHeight: 22)
+            .padding(.vertical, 4)
+            .padding(.trailing, 4)
+
+            Divider()
+        }
+    }
+
+    private func remindersOn(_ day: Date) -> [KBTodoItem] {
+        reminders
+            .filter { reminderOccursOnDay($0, day: day) }
+            .sorted { ($0.dueAt ?? .distantFuture) < ($1.dueAt ?? .distantFuture) }
     }
 
     private var hourGutter: some View {
@@ -1090,6 +1297,12 @@ fileprivate func eventOccursOnDay(_ event: KBCalendarEvent, day: Date) -> Bool {
     return eventStart < dayEnd && eventEnd >= dayStart
 }
 
+/// Un promemoria cade in un giorno solo: ha un istante, non una durata.
+fileprivate func reminderOccursOnDay(_ todo: KBTodoItem, day: Date) -> Bool {
+    guard let due = todo.dueAt else { return false }
+    return Calendar.current.isDate(due, inSameDayAs: day)
+}
+
 fileprivate func calendarDays(for month: Date) -> [Date?] {
     let cal   = localizedCalendar()
     let start = cal.date(from: cal.dateComponents([.year, .month], from: month))!
@@ -1153,6 +1366,115 @@ private struct CalendarEventRow: View {
     }
 }
 
+// MARK: - CalendarReminderRow
+
+/// Riga di un promemoria nell'elenco del giorno. Il cerchio a sinistra spunta
+/// senza aprire la scheda, come nelle liste To-Do.
+private struct CalendarReminderRow: View {
+    let todo: KBTodoItem
+    let onToggleDone: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button(action: onToggleDone) {
+                Image(systemName: todo.isDone ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(todo.isDone ? Color.accentColor : Color.secondary)
+            }
+            .buttonStyle(.plain)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(todo.title)
+                    .font(.body)
+                    .strikethrough(todo.isDone)
+                    .foregroundStyle(todo.isDone ? .secondary : .primary)
+
+                HStack(spacing: 6) {
+                    if let due = todo.dueAt {
+                        if todo.hasDueTime {
+                            Text(due, style: .time)
+                        } else {
+                            Text("Tutto il giorno")
+                        }
+                    }
+                    if todo.isUrgent {
+                        Label("Urgente", systemImage: "alarm.waves.left.and.right")
+                            .foregroundStyle(.orange)
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Image(systemName: "checklist")
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+// MARK: - CalendarNewItemSheet
+
+/// Il selettore `Evento | Promemoria` del pulsante «+», come in Calendario di
+/// Apple. Le due schede non condividono nulla se non questa barra: un evento
+/// è un `KBCalendarEvent`, un promemoria è un `KBTodoItem` in una lista.
+private struct CalendarNewItemSheet: View {
+    let familyId: String
+    let childId: String
+    let date: Date
+    var prefillTitle: String = ""
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @State private var kind: CalendarNewItemKind = .event
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                Picker("", selection: $kind) {
+                    ForEach(CalendarNewItemKind.allCases) { value in
+                        Text(value.label).tag(value)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+
+                Divider()
+
+                switch kind {
+                case .event:
+                    CalendarEventFormView(
+                        familyId: familyId,
+                        initialDate: date,
+                        event: nil,
+                        prefillTitle: prefillTitle,
+                        showsNavigationChrome: false
+                    )
+                    .environment(\.modelContext, modelContext)
+                case .reminder:
+                    CalendarReminderFormView(
+                        familyId: familyId,
+                        childId: childId,
+                        initialDate: date,
+                        showsNavigationChrome: false
+                    )
+                    .environment(\.modelContext, modelContext)
+                }
+            }
+            .navigationTitle(kind == .event ? "Nuovo evento" : "Nuovo promemoria")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Annulla") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
 // MARK: - CalendarEventFormView
 
 struct CalendarEventFormView: View {
@@ -1164,6 +1486,9 @@ struct CalendarEventFormView: View {
     let initialDate: Date
     var event:       KBCalendarEvent?
     var prefillTitle: String = ""
+    /// Falso quando la scheda vive dentro il selettore Evento/Promemoria,
+    /// che la barra di navigazione ce l'ha già sua.
+    var showsNavigationChrome: Bool = true
     
     @Query private var members: [KBFamilyMember]
     
@@ -1181,6 +1506,7 @@ struct CalendarEventFormView: View {
     @State private var recurrence    = KBEventRecurrence.none
     @State private var hasReminder   = false
     @State private var reminderIndex = 1
+    @State private var isUrgent      = false
     
     @State private var isVisibilitySheetPresented = false
     @State private var selectedVisibilityScope = KBVisibilityScope.family
@@ -1209,11 +1535,18 @@ struct CalendarEventFormView: View {
         members.filter { $0.userId != currentUid }
     }
     
-    init(familyId: String, initialDate: Date, event: KBCalendarEvent? = nil, prefillTitle: String = "") {
+    init(
+        familyId: String,
+        initialDate: Date,
+        event: KBCalendarEvent? = nil,
+        prefillTitle: String = "",
+        showsNavigationChrome: Bool = true
+    ) {
         self.familyId = familyId
         self.initialDate = initialDate
         self.event = event
         self.prefillTitle = prefillTitle
+        self.showsNavigationChrome = showsNavigationChrome
         let fid = familyId
         _members = Query(
             filter: #Predicate<KBFamilyMember> { $0.familyId == fid && !$0.isDeleted },
@@ -1261,7 +1594,31 @@ struct CalendarEventFormView: View {
     }
     
     var body: some View {
-        NavigationStack {
+        Group {
+            if showsNavigationChrome {
+                NavigationStack {
+                    formBody
+                        .navigationTitle(event == nil ? "Nuovo evento" : "Modifica evento")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Annulla") { dismiss() }
+                                    .foregroundStyle(primaryText)
+                            }
+                        }
+                }
+            } else {
+                formBody
+            }
+        }
+        .alert("Visibilità bloccata", isPresented: $showVisibilityLockedAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Solo chi ha creato l’evento può modificare la visibilità.")
+        }
+    }
+
+    private var formBody: some View {
             ZStack {
                 backgroundColor.ignoresSafeArea()
                 
@@ -1344,6 +1701,16 @@ struct CalendarEventFormView: View {
                                         }
                                     }
                                     .pickerStyle(.menu)
+
+                                    Divider()
+                                    Toggle(isOn: $isUrgent) {
+                                        Label("Urgente", systemImage: "alarm.waves.left.and.right")
+                                            .foregroundStyle(primaryText)
+                                    }
+                                    .tint(buttonBg)
+                                    Text(kbUrgentFooterText)
+                                        .font(.caption)
+                                        .foregroundStyle(secondaryText)
                                 }
                             }
                             
@@ -1394,14 +1761,6 @@ struct CalendarEventFormView: View {
                     }
                 }
             }
-            .navigationTitle(event == nil ? "Nuovo evento" : "Modifica evento")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Annulla") { dismiss() }
-                        .foregroundStyle(primaryText)
-                }
-            }
             .onAppear {
                 guard !didPopulateFields else { return }
                 didPopulateFields = true
@@ -1447,12 +1806,6 @@ struct CalendarEventFormView: View {
                     isVisibilitySheetPresented = false
                 }
             }
-        }
-        .alert("Visibilità bloccata", isPresented: $showVisibilityLockedAlert) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("Solo chi ha creato l’evento può modificare la visibilità.")
-        }
     }
     
     @ViewBuilder
@@ -1591,6 +1944,7 @@ struct CalendarEventFormView: View {
                 hasReminder   = true
                 reminderIndex = reminderOptions.firstIndex(where: { $0.minutes == mins }) ?? 1
             }
+            isUrgent = e.isUrgent
         } else {
             startDate = Calendar.current.startOfDay(for: initialDate)
             endDate   = startDate.addingTimeInterval(3600)
@@ -1606,10 +1960,16 @@ struct CalendarEventFormView: View {
         let uid  = Auth.auth().currentUser?.uid ?? ""
         let now  = Date()
         let mins = hasReminder ? reminderOptions[reminderIndex].minutes : nil
+        // Urgente senza promemoria non vuol dire niente: non c'è niente da
+        // far suonare. Si azzera qui invece di lasciarlo scritto sul documento.
+        let urgent = hasReminder && isUrgent
         // Rete di sicurezza: i picker già impediscono una fine anteriore
         // all'inizio, ma qui si chiude comunque la porta a un evento salvato
         // con le date invertite.
         let safeEndDate = max(endDate, startDate)
+        // L'id dell'evento appena creato, per armarne il promemoria: `event`
+        // resta nil in creazione.
+        var savedEventId: String? = nil
 
         if let e = event {
             e.title           = title.trimmingCharacters(in: .whitespaces)
@@ -1621,6 +1981,7 @@ struct CalendarEventFormView: View {
             e.category        = category
             e.recurrence      = recurrence
             e.reminderMinutes = mins
+            e.isUrgent        = urgent
             e.visibilityScope = KBVisibilityScope.normalized(selectedVisibilityScope)
             if selectedVisibilityScope == KBVisibilityScope.members {
                 e.visibilityMemberIds = Array(selectedVisibilityMemberIds).sorted()
@@ -1647,6 +2008,7 @@ struct CalendarEventFormView: View {
                 category:        category,
                 recurrence:      recurrence,
                 reminderMinutes: mins,
+                isUrgent:        urgent,
                 visibilityScope: KBVisibilityScope.normalized(selectedVisibilityScope),
                 visibilityMemberIds: selectedVisibilityScope == KBVisibilityScope.members
                     ? Array(selectedVisibilityMemberIds).sorted()
@@ -1657,6 +2019,7 @@ struct CalendarEventFormView: View {
                 createdBy:       uid
             )
             newEvent.syncState = .pendingUpsert
+            savedEventId = newEvent.id
             modelContext.insert(newEvent)
             SyncCenter.shared.enqueueCalendarUpsert(
                 eventId: newEvent.id, familyId: familyId, modelContext: modelContext)
@@ -1667,6 +2030,24 @@ struct CalendarEventFormView: View {
         }
         
         try? modelContext.save()
+
+        // Fino a oggi `reminderMinutes` veniva salvato e basta: nessuno lo
+        // leggeva, su nessun client. Qui l'avviso viene armato davvero.
+        let reminderEventId = event?.id ?? savedEventId
+        let reminderTitle = title.trimmingCharacters(in: .whitespaces)
+        let fireAt = mins.map { startDate.addingTimeInterval(-Double($0) * 60) }
+        if let reminderEventId {
+            Task {
+                await CalendarEventReminderService.sync(
+                    eventId: reminderEventId,
+                    familyId: familyId,
+                    title: reminderTitle,
+                    fireAt: fireAt,
+                    isUrgent: urgent
+                )
+            }
+        }
+
         Task { @MainActor in
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
         }

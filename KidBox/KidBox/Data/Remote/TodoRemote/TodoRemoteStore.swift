@@ -36,6 +36,8 @@ struct RemoteTodoWrite {
     let isDone: Bool
     let notes: String?
     let dueAt: Date?
+    /// `false` = scadenza senza orario («tutto il giorno»).
+    let dueHasTime: Bool
     let doneAt: Date?
     let doneBy: String?
     let assignedTo: String?
@@ -55,6 +57,7 @@ struct TodoRemoteDTO {
     let isDeleted: Bool
     let notes: String?
     let dueAt: Date?
+    let dueHasTime: Bool?
     let doneAt: Date?
     let doneBy: String?
     let updatedAt: Date?
@@ -120,6 +123,7 @@ final class TodoRemoteStore {
         
         data["notes"] = todo.notes as Any
         data["dueAt"] = todo.dueAt.map { Timestamp(date: $0) } as Any
+        data["dueHasTime"] = todo.dueHasTime
         data["doneAt"] = todo.doneAt.map { Timestamp(date: $0) } as Any
         data["doneBy"] = todo.doneBy as Any
         data["assignedTo"] = todo.assignedTo as Any
@@ -405,6 +409,7 @@ extension TodoRemoteStore {
                         isDeleted: data["isDeleted"] as? Bool ?? false,
                         notes: data["notes"] as? String,
                         dueAt: (data["dueAt"] as? Timestamp)?.dateValue(),
+                        dueHasTime: data["dueHasTime"] as? Bool,
                         doneAt: (data["doneAt"] as? Timestamp)?.dateValue(),
                         doneBy: data["doneBy"] as? String,
                         updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue(),

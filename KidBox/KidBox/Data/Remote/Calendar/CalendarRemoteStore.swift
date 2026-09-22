@@ -47,6 +47,9 @@ final class CalendarRemoteStore {
         data["notes"]            = dto.notes             ?? FieldValue.delete()
         data["location"]         = dto.location          ?? FieldValue.delete()
         data["reminderMinutes"]  = dto.reminderMinutes   ?? FieldValue.delete()
+        // `priority` si scrive sempre: è l'unico modo perché togliere
+        // «urgente» arrivi agli altri device invece di restare qui.
+        data["priority"]         = dto.priority ?? 0
         
         try await col(familyId: dto.familyId)
             .document(dto.id)
@@ -114,6 +117,7 @@ final class CalendarRemoteStore {
             categoryRaw:     d["categoryRaw"] as? String ?? KBEventCategory.family.rawValue,
             recurrenceRaw:   d["recurrenceRaw"]     as? String ?? KBEventRecurrence.none.rawValue,
             reminderMinutes: d["reminderMinutes"]   as? Int,
+            priority:        d["priority"]           as? Int,
             visibilityScope: KBVisibilityScope.normalized(d["visibilityScope"] as? String),
             visibilityMemberIds: d["visibilityMemberIds"] as? [String] ?? [],
             isDeleted:       d["isDeleted"]         as? Bool   ?? false,

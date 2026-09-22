@@ -70,7 +70,8 @@ struct PediatricVaccinesView: View {
     @State private var selectedIds       = Set<String>()
     @State private var showDeleteConfirm = false
     
-    // ── Filtro periodo ──
+    // ── Filtro periodo e ricerca ──
+    @State private var searchText        = ""
     @State private var timeFilter        = VaccineTimeFilter.all
     @State private var showFilterSheet   = false
     @State private var customFilterStart = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
@@ -131,7 +132,29 @@ struct PediatricVaccinesView: View {
         )
     }
     
-    private var filtered:    [KBVaccine] { vaccines.filter { passesFilter($0) } }
+    private func passesSearch(_ v: KBVaccine) -> Bool {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return true }
+        return v.vaccineType.displayName.localizedCaseInsensitiveContains(query)
+            || v.vaccineTypeRaw.localizedCaseInsensitiveContains(query)
+            || (v.commercialName ?? "").localizedCaseInsensitiveContains(query)
+            || (v.administeredBy ?? "").localizedCaseInsensitiveContains(query)
+            || (v.lotNumber      ?? "").localizedCaseInsensitiveContains(query)
+            || (v.notes          ?? "").localizedCaseInsensitiveContains(query)
+    }
+    
+    /// Dal più recente al meno recente sulla stessa data del filtro
+    /// (somministrazione, poi appuntamento, poi aggiornamento): la @Query
+    /// ordina solo per administeredDate e lascia i vaccini programmati in un
+    /// ordine casuale.
+    private var filtered: [KBVaccine] {
+        vaccines
+            .filter { passesFilter($0) && passesSearch($0) }
+            .sorted {
+                ($0.administeredDate ?? $0.scheduledDate ?? $0.updatedAt)
+                > ($1.administeredDate ?? $1.scheduledDate ?? $1.updatedAt)
+            }
+    }
     private var administered: [KBVaccine] { filtered.filter { $0.status == .administered } }
     private var scheduled:    [KBVaccine] { filtered.filter { $0.status == .scheduled } }
     private var planned:      [KBVaccine] { filtered.filter { $0.status == .planned } }
@@ -198,6 +221,11 @@ struct PediatricVaccinesView: View {
         }
         .navigationTitle("Vaccini")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(
+            text: $searchText,
+            placement: .navigationBarDrawer(displayMode: .automatic),
+            prompt: "Cerca vaccino"
+        )
         .toolbar { toolbarItems }
         .sheet(isPresented: $showEditSheet) {
             PediatricVaccineEditView(

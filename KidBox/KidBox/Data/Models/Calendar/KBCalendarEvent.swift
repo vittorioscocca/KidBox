@@ -41,6 +41,11 @@ final class KBCalendarEvent {
     // ── Reminder ──────────────────────────────────────────────────────────────
     /// Minutes before startDate; nil = no reminder.
     var reminderMinutes: Int?
+    /// Urgente: il promemoria diventa una **sveglia** (suona in silenzioso e
+    /// in full immersion) invece di una notifica. Stesso vocabolario dei to-do,
+    /// dove l'urgenza vive su `priority`. Default inline `0` per la migrazione
+    /// SwiftData: le righe già esistenti nascono non urgenti.
+    var priorityRaw: Int = 0
     
     // ── Health item link ──────────────────────────────────────────────────────
     /// ID dell'oggetto sanitario collegato (KBMedicalVisit, KBMedicalExam, KBVaccine).
@@ -71,6 +76,18 @@ final class KBCalendarEvent {
         set { categoryRaw = newValue.rawValue }
     }
     
+    /// Urgente: il promemoria diventa una sveglia, non una notifica.
+    var isUrgent: Bool {
+        get { priorityRaw == 1 }
+        set { priorityRaw = newValue ? 1 : 0 }
+    }
+
+    /// Istante in cui deve scattare il promemoria, o `nil` se non ce n'è uno.
+    var reminderFireDate: Date? {
+        guard let minutes = reminderMinutes else { return nil }
+        return startDate.addingTimeInterval(-Double(minutes) * 60)
+    }
+
     var recurrence: KBEventRecurrence {
         get { KBEventRecurrence(rawValue: recurrenceRaw) ?? .none }
         set { recurrenceRaw = newValue.rawValue }
@@ -96,6 +113,7 @@ final class KBCalendarEvent {
         category:         KBEventCategory  = .family,
         recurrence:       KBEventRecurrence = .none,
         reminderMinutes:  Int?         = nil,
+        isUrgent:         Bool         = false,
         visibilityScope:  String       = KBVisibilityScope.family,
         visibilityMemberIds: [String] = [],
         isDeleted:        Bool         = false,
@@ -116,6 +134,7 @@ final class KBCalendarEvent {
         self.categoryRaw     = category.rawValue
         self.recurrenceRaw   = recurrence.rawValue
         self.reminderMinutes = reminderMinutes
+        self.priorityRaw     = isUrgent ? 1 : 0
         self.visibilityScope = KBVisibilityScope.normalized(visibilityScope)
         self.visibilityMemberIds = visibilityMemberIds
         self.isDeleted       = isDeleted
@@ -223,6 +242,7 @@ struct KBCalendarEventDTO {
     var categoryRaw:     String
     var recurrenceRaw:   String
     var reminderMinutes: Int?
+    var priority:        Int?
     var visibilityScope: String
     var visibilityMemberIds: [String]
     var isDeleted:       Bool

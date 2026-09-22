@@ -1,0 +1,24 @@
+<it-IT>
+• Scheda medica: la data di nascita ora resta quella che scegli, anche per gli adulti della famiglia.
+• Tastiera: nelle schede di cure, visite, esami, vaccini, animali, veicoli, casa e portafoglio il modulo scorre sopra la tastiera e ogni campo e ogni pulsante restano raggiungibili.
+• Cure a lungo termine: il calendario si apre all'istante, con il giorno di oggi evidenziato correttamente.
+• Promemoria: se le notifiche sono disattivate, KidBox te lo dice subito e ti porta alle impostazioni.
+</it-IT>
+<en-US>
+• Medical record: the date of birth now stays the one you pick, for adults in the family too.
+• Keyboard: in the forms for treatments, appointments, tests, vaccinations, pets, vehicles, home and wallet, the page scrolls above the keyboard and every field and button stays within reach.
+• Long-term treatments: the calendar opens instantly, with today correctly highlighted.
+• Reminders: if notifications are turned off, KidBox tells you right away and takes you to the settings.
+</en-US>
+<es-ES>
+• Ficha médica: la fecha de nacimiento se mantiene tal como la eliges, también para los adultos.
+• Teclado: en las fichas de tratamientos, citas, pruebas, vacunas, mascotas, vehículos, casa y cartera, el formulario se desplaza sobre el teclado y cada campo y botón queda al alcance.
+• Tratamientos largos: el calendario se abre al instante, con hoy bien resaltado.
+• Recordatorios: si las notificaciones están desactivadas, KidBox te lo dice enseguida y te lleva a los ajustes.
+</es-ES>
+<fr-FR>
+• Dossier médical : la date de naissance reste celle que vous choisissez, aussi pour les adultes.
+• Clavier : dans les fiches de traitements, rendez-vous, examens, vaccins, animaux, véhicules, maison et portefeuille, le formulaire défile au-dessus du clavier, chaque champ et bouton reste accessible.
+• Traitements longs : le calendrier s'ouvre instantanément, avec aujourd'hui bien mis en évidence.
+• Rappels : si les notifications sont désactivées, KidBox vous le dit et vous conduit aux réglages.
+</fr-FR>

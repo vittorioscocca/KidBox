@@ -21,6 +21,22 @@ i suoi commit si vedono solo con `git -C KidBoxAndroid`.
 - `/deploy-functions` — controlli, deploy scopato, verifica, commit per path
 - `/report-giornaliero` — routine analytics (GA4, console, store, costi); accessi in `internal/analytics-accessi.md`
 - `/gating-pro` — feature Pro/Max: i tre presidi server/service/view
+- `/auto-miglioramento` — giro di miglioramento: chiude le scommesse scadute,
+  propone tre candidati con previsione falsificabile, si ferma; registro in
+  `internal/auto-miglioramento/registro.md`
+- `/localizzazione` — stringhe in it/en/fr/es sulle quattro superfici e le trappole che rendono il buco invisibile
+- `/porting-android` — portare una funzione da iOS o correggere un bug Android senza ripagare le trappole note
+- `/release-client` — note «Novità» in quattro lingue, schede store, dichiarazioni Play; build e versione restano dell'utente
+- `/triage-ticket` — ticket nuovi da Firestore, causa e file; solo report (il task pianificato rimanda qui)
+- `/qa-device` — giro di test del giorno su quattro superfici; piano in `internal/qa/PIANO-TEST.md`
+- `/rules-change` — regole Firestore: i due file, la suite, la verifica differenziale, cosa guardare dopo
+- `/piani` — riallineamento del listino dopo una modifica dalla console admin
+- `/notifiche` — push, locali, promemoria, lingua e deep link: tre strade diverse con trappole diverse
+- `/letture-firestore` — misurare letture e costi prima di ottimizzare; i tranelli della metrica
+- `/landing-blog` — articoli, generatori, footer e sitemap della landing; regole editoriali
+- `/alexa` — accoppiamento, nome di invocazione (sei punti), gate di lingua; il backend non si tocca
+- `/cifratura` — la chiave di famiglia: dove vive, come arriva a un membro, cosa il server non può fare
+- `/ai` — purpose, modello, unità scalate e quote; le trappole di copilota, cache e max_tokens
 
 ## Divisione del lavoro
 

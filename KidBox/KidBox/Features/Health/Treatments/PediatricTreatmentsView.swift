@@ -178,6 +178,7 @@ struct PediatricTreatmentsView: View {
     @State private var selectedIds       = Set<String>()
     @State private var showDeleteConfirm = false
     
+    @State private var searchText        = ""
     @State private var timeFilter        = TreatmentTimeFilter.all
     @State private var showFilterSheet   = false
     @State private var customFilterStart = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
@@ -225,7 +226,15 @@ struct PediatricTreatmentsView: View {
         return ref >= cutoff
     }
     
-    private var filtered:    [KBTreatment] { treatments.filter { passesTimeFilter($0) } }
+    private func passesSearch(_ t: KBTreatment) -> Bool {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return true }
+        return t.drugName.localizedCaseInsensitiveContains(query)
+            || (t.activeIngredient ?? "").localizedCaseInsensitiveContains(query)
+            || (t.notes            ?? "").localizedCaseInsensitiveContains(query)
+    }
+    
+    private var filtered:    [KBTreatment] { treatments.filter { passesTimeFilter($0) && passesSearch($0) } }
     private var active:      [KBTreatment] { filtered.filter { lifecycle($0) == .active } }
     private var completed:   [KBTreatment] { filtered.filter { lifecycle($0) == .completed } }
     private var inactive:    [KBTreatment] { filtered.filter { lifecycle($0) == .inactive } }
@@ -284,6 +293,11 @@ struct PediatricTreatmentsView: View {
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Cure")
+        .searchable(
+            text: $searchText,
+            placement: .navigationBarDrawer(displayMode: .automatic),
+            prompt: "Cerca cura"
+        )
         .toolbar { toolbarItems }
         .sheet(isPresented: $showAddSheet) {
             PediatricTreatmentEditView(

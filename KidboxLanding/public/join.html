@@ -94,9 +94,9 @@
       <a class="btn secondary" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox">Scarica per Android</a>
     </div>
 
-    <p class="muted">
-      Dopo aver installato l'app, torna qui e riapri il link che hai ricevuto:
-      l'invito si aprirà direttamente in KidBox.
+    <p class="muted" id="after-install">
+      Dopo aver installato l'app, apri KidBox: l'invito si apre da solo. Se non
+      succede, torna sul messaggio che hai ricevuto e tocca di nuovo il link.
     </p>
 
     <p class="muted">
@@ -188,13 +188,79 @@
       webJoin.href = "https://app.kidboxapp.com/join" + location.search + location.hash;
       webJoin.addEventListener("click", function () { ping("web"); });
 
+      // ── L'invito deve sopravvivere al passaggio dallo store ──────────────
+      //
+      // Il problema misurato (5 viste di questa pagina in 7 giorni, 2 tap sullo
+      // store, 0 join): chi installa apre KidBox e l'app non sa niente
+      // dell'invito, quindi gli propone di creare una famiglia sua. Tornare qui
+      // e ritoccare il link non lo fa quasi nessuno.
+      //
+      // Due strade, nessuna delle quali manda il segreto a un server:
+      //
+      // 1. Appunti (iOS e Android): si copia il link intero, frammento
+      //    compreso, un istante prima di andare allo store. Al primo avvio
+      //    l'app lo rilegge dal dispositivo — su iOS con il banner di sistema
+      //    «Consenti incolla», un tap.
+      // 2. Referrer di Play (solo Android): i parametri viaggiano dentro l'URL
+      //    del Play Store e l'app li ritrova con InstallReferrerClient. Qui
+      //    passano SOLO familyId e inviteId, mai il segreto: il referrer
+      //    transita per i server di Google, che ospitano già la chiave di
+      //    famiglia avvolta su Firestore — dargli anche la chiave per aprirla
+      //    sarebbe consegnare le due metà allo stesso soggetto.
+      //
+      // Se entrambe falliscono non cambia niente rispetto a prima: si riapre il
+      // link dal messaggio ricevuto, che resta la via sempre valida.
+      var PLAY_URL = "https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox";
+      var inviteLink = location.href;
+
+      function copyInvite() {
+        // `document.execCommand` e non l'API asincrona: quest'ultima su Safari
+        // vuole un gesto ancora "caldo" e qui subito dopo si cambia pagina.
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = inviteLink;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.top = "-1000px";
+          document.body.appendChild(ta);
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          var ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+          if (ok) return true;
+        } catch (e) {}
+        try {
+          if (navigator.clipboard) { navigator.clipboard.writeText(inviteLink); return true; }
+        } catch (e) {}
+        return false;
+      }
+
+      // Il link di Play con il referrer: solo gli identificativi dell'invito,
+      // che le regole Firestore mostrano già a qualunque utente autenticato per
+      // l'anteprima («stai per entrare nella famiglia di …»).
+      (function () {
+        var q = new URLSearchParams(location.search);
+        var familyId = q.get("familyId");
+        var inviteId = q.get("inviteId");
+        if (!familyId || !inviteId) return;
+        var ref = "kb_invite=1&familyId=" + encodeURIComponent(familyId) +
+                  "&inviteId=" + encodeURIComponent(inviteId);
+        var playLink = document.querySelector('.stores a[href*="play.google.com"]');
+        if (playLink) playLink.href = PLAY_URL + "&referrer=" + encodeURIComponent(ref);
+      })();
+
       // Il tap sullo store è il passo che dice se la pagina funziona.
       document.querySelectorAll(".stores a").forEach(function (a) {
         a.addEventListener("click", function () {
           var store = a.href.indexOf("apple") > -1 ? "ios" : "android";
+          var copied = copyInvite();
           ping("store_" + store);
           if (window.gtag) {
-            gtag("event", "invite_store_click", { store: store });
+            gtag("event", "invite_store_click", { store: store, copied: copied ? "yes" : "no" });
+          }
+          var after = document.getElementById("after-install");
+          if (after && copied) {
+            after.textContent = "Invito copiato. Installa KidBox e aprila: l'invito si apre da solo. Se non succede, torna sul messaggio e tocca di nuovo il link.";
           }
         });
       });

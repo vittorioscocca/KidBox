@@ -386,7 +386,15 @@ struct TodoListView: View {
         todo.doneAt = todo.isDone ? now : nil
         todo.doneBy = todo.isDone ? uid : nil
         todo.syncState = .pendingUpsert
-        
+
+        // Un promemoria fatto non deve più suonare — e da quando gli urgenti
+        // sono sveglie a tutto schermo, dimenticarlo si sente.
+        if todo.isDone {
+            TodoReminderService.cancel(todoId: todo.id)
+            todo.reminderEnabled = false
+            todo.reminderId = nil
+        }
+
         let after = "isDone=\(todo.isDone) isDeleted=\(todo.isDeleted) syncState=\(todo.syncState.rawValue)"
         
         KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] toggleDone todoId=\(todo.id) BEFORE \(before) AFTER \(after)")
@@ -424,6 +432,10 @@ struct TodoListView: View {
                 let todo = visibleTodos[index]
                 let before = "isDeleted=\(todo.isDeleted) syncState=\(todo.syncState.rawValue) updatedAt=\(todo.updatedAt)"
                 
+                // Cancellato: via anche l'avviso, notifica o sveglia che sia.
+                TodoReminderService.cancel(todoId: todo.id)
+                todo.reminderEnabled = false
+                todo.reminderId = nil
                 todo.isDeleted = true
                 todo.updatedBy = uid
                 todo.updatedAt = now
