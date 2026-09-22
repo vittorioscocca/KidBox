@@ -1,0 +1,39 @@
+# Novità iOS 2.3.2 (132) — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 22/09/2026 sulle modifiche della 2.3.2: calendario e to-do sincronizzati (promemoria dal «+», to-do con data nel calendario), avviso «urgente» che suona anche in silenzioso, promemoria per gli eventi, recupero dell'invito toccato prima di installare l'app, ricerca in cure/esami/vaccini con ordine dal più recente, cambio password dal profilo.
+
+## it
+
+• Calendario e to-do finalmente insieme: dal «+» scegli Evento o Promemoria, e ogni to-do con una data compare nel calendario restando nella sua lista. Uno solo da aggiornare, non due.
+• Promemoria urgenti: quelli che segni come urgenti suonano anche a telefono silenzioso o in Full Immersion, come una sveglia.
+• Eventi del calendario: adesso puoi farti avvisare prima, con l'anticipo che scegli tu.
+• Inviti: se hai toccato il link d'invito prima di installare KidBox, all'apertura l'app te lo propone e entri nella famiglia giusta, senza tornare sul messaggio.
+• Salute: ricerca in cure, esami e vaccini, con le liste ordinate dal più recente.
+• Profilo: chi accede con email e password può cambiarla direttamente dall'app.
+
+## en-GB
+
+• Calendar and to-dos together at last: from "+" you choose Event or Reminder, and every to-do with a date shows up in the calendar while staying in its list. One thing to update, not two.
+• Urgent reminders: the ones you mark as urgent ring even on silent or in Focus, like an alarm.
+• Calendar events: you can now be alerted in advance, with the notice you choose.
+• Invites: if you tapped an invite link before installing KidBox, the app offers it to you on opening and takes you into the right family, with no need to go back to the message.
+• Health: search in treatments, tests and vaccinations, with lists sorted newest first.
+• Profile: if you sign in with email and password, you can now change it from inside the app.
+
+## es-ES
+
+• Calendario y tareas por fin juntos: desde el «+» eliges Evento o Recordatorio, y cada tarea con fecha aparece en el calendario sin salir de su lista. Una sola cosa que actualizar, no dos.
+• Recordatorios urgentes: los que marcas como urgentes suenan también en silencio o en modo Concentración, como una alarma.
+• Eventos del calendario: ahora puedes recibir el aviso con la antelación que elijas.
+• Invitaciones: si tocaste el enlace antes de instalar KidBox, al abrir la app te lo propone y entras en la familia correcta, sin volver al mensaje.
+• Salud: búsqueda en tratamientos, pruebas y vacunas, con las listas de lo más reciente a lo más antiguo.
+• Perfil: quien entra con email y contraseña puede cambiarla desde la app.
+
+## fr-FR
+
+• Le calendrier et les tâches enfin ensemble : depuis le « + », vous choisissez Événement ou Rappel, et chaque tâche avec une date apparaît dans le calendrier tout en restant dans sa liste. Une seule chose à mettre à jour, pas deux.
+• Rappels urgents : ceux que vous marquez comme urgents sonnent même en silencieux ou en mode Concentration, comme un réveil.
+• Événements du calendrier : vous pouvez désormais être prévenu à l'avance, avec le délai de votre choix.
+• Invitations : si vous avez touché le lien d'invitation avant d'installer KidBox, l'app vous le propose à l'ouverture et vous rejoignez la bonne famille, sans revenir au message.
+• Santé : recherche dans les traitements, examens et vaccins, avec les listes du plus récent au plus ancien.
+• Profil : si vous vous connectez avec e-mail et mot de passe, vous pouvez le changer depuis l'app.
