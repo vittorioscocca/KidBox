@@ -80,11 +80,21 @@ Due regole, entrambe pagate:
    Attenzione: `getUserTokensIfEnabled` restituisce **solo** i token e i ref li
    butta via.
 
-Stato al 23/09/2026: **15 funzioni inviano push, solo 5 puliscono** —
-`notifyDueTodoReminders`, `notifyNewGroceryItem`, `notifyTodoAssigned`,
-`onGeofenceEvent`, `sendBroadcast`. Le altre dieci (chat, calendario, spese,
-note, documenti, wallet, casi critici, posizione…) accumulano token morti. Se
-tocchi una di quelle, la pulizia è due righe: aggiungila.
+Dal 23/09/2026 **tutte e 15 le funzioni che inviano push puliscono**. Le dieci
+che non lo facevano usano `sendMulticastAndPrune(messages, owners, label)`, che
+invia, conta e ripulisce in un colpo solo: `owners[i]` è il destinatario di
+`messages[i]` e le due liste si riempiono fianco a fianco nello stesso giro di
+ciclo. Se non combaciano, invia e **salta** la pulizia. Usalo anche tu per un
+invio nuovo, invece di riscrivere `Promise.allSettled` a mano.
+
+Due forme che non ci rientrano, e il motivo:
+
+- `notifyUpcomingWalletTickets` salta i membri senza token, quindi l'indice del
+  ciclo non coincide con quello dei membri: va per indice esplicito;
+- `notifyCriticalCase` appiattisce i token di **più admin** in un unico invio,
+  quindi prima di cancellare raggruppa i falliti per proprietario
+  (`ownerOfToken`). Cancellare il token di un altro è peggio che lasciarne uno
+  morto.
 
 ## Il motore dei promemoria to-do
 
