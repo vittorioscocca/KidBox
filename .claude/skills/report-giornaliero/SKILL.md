@@ -94,6 +94,8 @@ Formato, in italiano, compatto:
 
 📈 **GA4 KidBox — [data di ieri]**
 
+**I tre numeri che contano** (sempre in cima, sempre questi, con il confronto sulla settimana prima): famiglie con 2+ membri **senza le famiglie di prova**, WAU di valore del rollup, fidelizzazione a 7 giorni di Play. Se uno di questi non si è mosso, dillo: è la notizia, anche quando tutto il resto cresce.
+
 **Sintesi in 3 righe** — come sta andando: utenti attivi ieri e l'altro ieri per piattaforma (iOS / Android / web) contro la media 7gg; nuovi utenti; una frase sul trend a 14 giorni.
 
 **Funnel acquisizione (ieri, e altro ieri tra parentesi)**
