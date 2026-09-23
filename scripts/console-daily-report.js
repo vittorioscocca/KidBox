@@ -186,14 +186,24 @@ async function main() {
       select: { fields: [{ fieldPath: "__name__" }] },
     },
   });
+  // Per famiglia: quanti membri e se c'è dentro un account di test dello
+  // sviluppatore. Serve la seconda informazione perché provare un invito
+  // richiede per forza DUE account, quindi ogni prova di join crea una
+  // famiglia «con 2+ membri» che non è un utente vero: il 22/09/2026 il
+  // numero è passato da 12 a 15 ed erano tre prove.
   const perFamily = {};
   for (const r of memberRows) {
     const name = r.document?.name;
     if (!name) continue;
     const fid = name.split("/families/")[1]?.split("/")[0];
-    if (fid) perFamily[fid] = (perFamily[fid] || 0) + 1;
+    if (!fid) continue;
+    const memberId = name.split("/").pop();
+    const f = (perFamily[fid] = perFamily[fid] || { n: 0, internal: false });
+    f.n += 1;
+    if (internalUids.has(memberId)) f.internal = true;
   }
-  const sizes = Object.values(perFamily);
+  const sizes = Object.values(perFamily).map((f) => f.n);
+  const external = Object.values(perFamily).filter((f) => !f.internal);
   out.families = {
     total: famTotal,
     createdYesterday: famYesterday,
@@ -203,6 +213,8 @@ async function main() {
     withMembers: sizes.length,
     with2plus: sizes.filter((n) => n >= 2).length,
     with3plus: sizes.filter((n) => n >= 3).length,
+    with2plusExternal: external.filter((f) => f.n >= 2).length,
+    with3plusExternal: external.filter((f) => f.n >= 3).length,
     paying: { pro: famPro, max: famMax, overridePro: ovPro, overrideMax: ovMax },
   };
 
@@ -358,6 +370,7 @@ function print(o) {
   L.push("## Famiglie");
   L.push(`Totali ${f.total} · create ieri ${f.createdYesterday} · create 7gg ${f.created7d} · membri totali ${f.membersTotal}`);
   L.push(`Funnel struttura: con ≥1 membro ${f.withMembers} → con 2+ membri ${f.with2plus} (${pct(f.with2plus / (f.withMembers || 1))}) → con 3+ ${f.with3plus}`);
+  L.push(`Senza le famiglie di prova (con dentro un account dello sviluppatore): 2+ membri ${f.with2plusExternal}, 3+ ${f.with3plusExternal}. È QUESTO il numero da seguire: ogni prova di invito crea una famiglia a 2 membri che non è un utente vero.`);
   L.push(`A pagamento: pro ${f.paying.pro} · max ${f.paying.max} · override console pro/max ${f.paying.overridePro}/${f.paying.overrideMax}`);
   L.push("");
 
