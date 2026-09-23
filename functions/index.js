@@ -1578,11 +1578,22 @@ exports.notifyTodoAssigned = onDocumentWritten(
       });
 
       const result = await admin.messaging().sendEachForMulticast(payload);
-      result.responses.forEach((resp) => {
-        if (!resp.success) {
-          console.error("FCM error detail:", resp.error?.code, resp.error?.message);
-        }
-      });
+      if (result.failureCount > 0) {
+        // `warn` e non `error`: la causa quasi sempre è un token morto (app
+        // disinstallata), cioè funzionamento normale. Con `console.error` questo
+        // punto scriveva severity ERROR e faceva suonare l'allarme applicativo
+        // per una disinstallazione — l'unico posto in tutte le functions che lo
+        // facesse.
+        const codes = result.responses
+            .filter((resp) => !resp.success)
+            .map((resp) => resp.error?.code || "sconosciuto");
+        logger.warn("notifyTodoAssigned: invio fallito", {uid: newAssignee, codes});
+        // E il token morto va tolto: senza la pulizia quel destinatario non
+        // riceve più nulla a ogni to-do assegnato, per sempre. Qui i ref non li
+        // abbiamo (`getUserTokensIfEnabled` restituisce solo i token), quindi
+        // costa una query in più — solo quando c'è davvero un fallimento.
+        await pruneInvalidFcmTokens(newAssignee, tokens, result.responses).catch(() => {});
+      }
 
       logger.info("notifyTodoAssigned send result", {successCount: result.successCount, failureCount: result.failureCount});
     },
