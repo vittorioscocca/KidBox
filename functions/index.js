@@ -596,6 +596,64 @@ async function pruneInvalidFcmTokens(uid, tokens, responses, refsByToken = null)
   }
 }
 
+/**
+ * Invia i messaggi già composti e ripulisce i token morti di ogni destinatario.
+ *
+ * `owners[i]` descrive il destinatario di `messages[i]`: le due liste si
+ * riempiono fianco a fianco nello stesso giro di ciclo. Se per qualunque motivo
+ * non combaciano, si invia comunque e si salta la pulizia — cancellare il token
+ * di un altro è peggio che lasciarne uno morto.
+ *
+ * Il fallimento di invio è `warn`, mai `error`: la causa quasi sempre è un
+ * token morto (app disinstallata), cioè funzionamento normale, e un ERROR
+ * farebbe suonare l'allarme applicativo. Vedi `/notifiche`.
+ * @param {Array<object>} messages messaggi multicast pronti
+ * @param {Array<{uid: string, tokens: string[], refsByToken?: Map}>} owners
+ * @param {string} label nome della funzione chiamante, per i log
+ * @return {Promise<{successCount: number, failureCount: number}>}
+ */
+async function sendMulticastAndPrune(messages, owners, label) {
+  const results = await Promise.allSettled(
+      messages.map((msg) => admin.messaging().sendEachForMulticast(msg)),
+  );
+
+  const aligned = Array.isArray(owners) && owners.length === messages.length;
+  if (!aligned) {
+    logger.warn(`${label}: destinatari non allineati, pulizia saltata`, {
+      messages: messages.length, owners: Array.isArray(owners) ? owners.length : null,
+    });
+  }
+
+  let successCount = 0;
+  let failureCount = 0;
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (r.status !== "fulfilled") {
+      // Una promise rifiutata è un invio intero andato male, non un token:
+      // si conta come uno e non c'è niente da ripulire.
+      failureCount += 1;
+      logger.warn(`${label}: invio non riuscito`, {err: String(r.reason)});
+      continue;
+    }
+    successCount += r.value.successCount;
+    failureCount += r.value.failureCount;
+    if (r.value.failureCount === 0 || !aligned) continue;
+
+    const owner = owners[i];
+    const codes = r.value.responses
+        .filter((resp) => !resp.success)
+        .map((resp) => resp.error?.code || "sconosciuto");
+    logger.warn(`${label}: invio fallito`, {uid: owner.uid, codes});
+    // Senza la pulizia quel destinatario non riceve più questa notifica, mai
+    // più, e nulla lo segnala: `successCount` resta a zero in silenzio.
+    await pruneInvalidFcmTokens(
+        owner.uid, owner.tokens, r.value.responses, owner.refsByToken || null,
+    ).catch(() => {});
+  }
+
+  return {successCount, failureCount};
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // DOCUMENTI
 // ─────────────────────────────────────────────────────────────────────────────
@@ -648,6 +706,8 @@ exports.notifyNewDocument = onDocumentCreated(
 
       const docLabel = docData.title || docData.fileName || null;
       const messagesToSend = [];
+      // Destinatario di messagesToSend[i], per la pulizia dei token morti.
+      const notifyTargets = [];
 
       // Preferenze e token di tutti i destinatari in una volta sola, poi i
       // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
@@ -664,9 +724,10 @@ exports.notifyNewDocument = onDocumentCreated(
           {familyId, uids: recipients, field: "documents"});
 
       for (const uid of recipients) {
-        const {tokens, lang} = tokensByUid.get(uid);
+        const {tokens, lang, refsByToken} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
 
+        notifyTargets.push({uid, tokens, refsByToken});
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
           title: tn(lang, "document.title"),
@@ -681,20 +742,8 @@ exports.notifyNewDocument = onDocumentCreated(
         return;
       }
 
-      const results = await Promise.allSettled(
-          messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
-      );
-
-      let totalSuccess = 0;
-      let totalFailure = 0;
-      results.forEach((r) => {
-        if (r.status === "fulfilled") {
-          totalSuccess += r.value.successCount;
-          totalFailure += r.value.failureCount;
-        } else {
-          totalFailure += 1;
-        }
-      });
+      const {successCount: totalSuccess, failureCount: totalFailure} =
+        await sendMulticastAndPrune(messagesToSend, notifyTargets, "notifyNewDocument");
 
       logger.info("notifyNewDocument: send result", {successCount: totalSuccess, failureCount: totalFailure});
     },
@@ -845,6 +894,8 @@ exports.notifyNewChatMessage = onDocumentCreated(
       const mentionedSet = new Set(mentionedUids);
 
       const messagesToSend = [];
+      // Destinatario di messagesToSend[i], per la pulizia dei token morti.
+      const notifyTargets = [];
 
       // Preferenze e token di tutti i destinatari in una volta sola, poi i
       // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
@@ -855,7 +906,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
           {familyId, uids: recipients, field: "chat"});
 
       for (const uid of recipients) {
-        const {tokens, lang} = tokensByUid.get(uid);
+        const {tokens, lang, refsByToken} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
         const isMention = mentionedSet.has(uid);
         const pushType = isMention ? "chat_mention" : "new_chat_message";
@@ -882,6 +933,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
           data.mentionSubtitle = tn(lang, "chat.mentionSubtitle");
         }
 
+        notifyTargets.push({uid, tokens, refsByToken});
         messagesToSend.push({
           tokens,
           // `notification` + `android.notification` restano necessari per l'affidabilità
@@ -921,20 +973,8 @@ exports.notifyNewChatMessage = onDocumentCreated(
         return;
       }
 
-      const results = await Promise.allSettled(
-          messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
-      );
-
-      let totalSuccess = 0;
-      let totalFailure = 0;
-      results.forEach((r) => {
-        if (r.status === "fulfilled") {
-          totalSuccess += r.value.successCount;
-          totalFailure += r.value.failureCount;
-        } else {
-          totalFailure += 1;
-        }
-      });
+      const {successCount: totalSuccess, failureCount: totalFailure} =
+        await sendMulticastAndPrune(messagesToSend, notifyTargets, "notifyNewChatMessage");
 
       logger.info("notifyNewChatMessage: send result", {
         successCount: totalSuccess,
@@ -1172,6 +1212,8 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
       const mode = after.mode || null;
       const expiresAt = after.expiresAt || null;
       const messagesToSend = [];
+      // Destinatario di messagesToSend[i], per la pulizia dei token morti.
+      const notifyTargets = [];
 
       // Preferenze e token di tutti i destinatari in una volta sola, poi i
       // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
@@ -1182,9 +1224,10 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
           {familyId, uids: recipients, field: "location"});
 
       for (const uid of recipients) {
-        const {tokens, lang} = tokensByUid.get(uid);
+        const {tokens, lang, refsByToken} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
 
+        notifyTargets.push({uid, tokens, refsByToken});
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
           title: tn(lang, "location.title"),
@@ -1206,20 +1249,8 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
         return;
       }
 
-      const results = await Promise.allSettled(
-          messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
-      );
-
-      let totalSuccess = 0;
-      let totalFailure = 0;
-      results.forEach((r) => {
-        if (r.status === "fulfilled") {
-          totalSuccess += r.value.successCount;
-          totalFailure += r.value.failureCount;
-        } else {
-          totalFailure += 1;
-        }
-      });
+      const {successCount: totalSuccess, failureCount: totalFailure} =
+        await sendMulticastAndPrune(messagesToSend, notifyTargets, "notifyLocationSharingChanged");
 
       logger.info("notifyLocationSharingChanged: send result", {successCount: totalSuccess, failureCount: totalFailure});
     },
@@ -1786,6 +1817,8 @@ exports.notifyNewNote = onDocumentCreated(
       }
 
       const messagesToSend = [];
+      // Destinatario di messagesToSend[i], per la pulizia dei token morti.
+      const notifyTargets = [];
 
       // Preferenze e token di tutti i destinatari in una volta sola, poi i
       // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
@@ -1796,8 +1829,9 @@ exports.notifyNewNote = onDocumentCreated(
           {familyId, uids: recipients, field: "notes"});
 
       for (const uid of recipients) {
-        const {tokens, lang} = tokensByUid.get(uid);
+        const {tokens, lang, refsByToken} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
+        notifyTargets.push({uid, tokens, refsByToken});
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
           title: tn(lang, "note.title"),
@@ -1811,15 +1845,8 @@ exports.notifyNewNote = onDocumentCreated(
         logger.info("notifyNewNote: no per-user notifications to send"); return;
       }
 
-      const results = await Promise.allSettled(messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)));
-      let totalSuccess = 0; let totalFailure = 0;
-      results.forEach((r) => {
-        if (r.status === "fulfilled") {
-          totalSuccess += r.value.successCount; totalFailure += r.value.failureCount;
-        } else {
-          totalFailure += 1;
-        }
-      });
+      const {successCount: totalSuccess, failureCount: totalFailure} =
+        await sendMulticastAndPrune(messagesToSend, notifyTargets, "notifyNewNote");
       logger.info("notifyNewNote: send result", {successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
     },
 );
@@ -4456,6 +4483,8 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
       const startDate = eventData.startDate?.toDate?.() || null;
 
       const messagesToSend = [];
+      // Destinatario di messagesToSend[i], per la pulizia dei token morti.
+      const notifyTargets = [];
 
       // Preferenze e token di tutti i destinatari in una volta sola, poi i
       // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
@@ -4466,9 +4495,10 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
           {familyId, uids: recipients, field: "calendar"});
 
       for (const uid of recipients) {
-        const {tokens, lang} = tokensByUid.get(uid);
+        const {tokens, lang, refsByToken} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
         const event = eventTitle || tn(lang, "calendar.fallback");
+        notifyTargets.push({uid, tokens, refsByToken});
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
           title: tn(lang, "calendar.title"),
@@ -4486,15 +4516,8 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
         logger.info("notifyNewCalendarEvent: no per-user notifications to send"); return;
       }
 
-      const results = await Promise.allSettled(messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)));
-      let totalSuccess = 0; let totalFailure = 0;
-      results.forEach((r) => {
-        if (r.status === "fulfilled") {
-          totalSuccess += r.value.successCount; totalFailure += r.value.failureCount;
-        } else {
-          totalFailure += 1;
-        }
-      });
+      const {successCount: totalSuccess, failureCount: totalFailure} =
+        await sendMulticastAndPrune(messagesToSend, notifyTargets, "notifyNewCalendarEvent");
       logger.info("notifyNewCalendarEvent: send result", {successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
     },
 );
@@ -4544,6 +4567,8 @@ exports.notifyNewExpense = onDocumentCreated(
       const amount = typeof expenseData.amount === "number" ? expenseData.amount : null;
 
       const messagesToSend = [];
+      // Destinatario di messagesToSend[i], per la pulizia dei token morti.
+      const notifyTargets = [];
 
       // Preferenze e token di tutti i destinatari in una volta sola, poi i
       // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
@@ -4558,9 +4583,10 @@ exports.notifyNewExpense = onDocumentCreated(
           {familyId, uids: recipients, field: "expenses"});
 
       for (const uid of recipients) {
-        const {tokens, lang} = tokensByUid.get(uid);
+        const {tokens, lang, refsByToken} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
         const label = expenseTitle || tn(lang, "expense.fallback");
+        notifyTargets.push({uid, tokens, refsByToken});
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
           title: tn(lang, "expense.title"),
@@ -4576,15 +4602,8 @@ exports.notifyNewExpense = onDocumentCreated(
         logger.info("notifyNewExpense: no per-user notifications to send", {familyId}); return;
       }
 
-      const results = await Promise.allSettled(messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)));
-      let totalSuccess = 0; let totalFailure = 0;
-      results.forEach((r) => {
-        if (r.status === "fulfilled") {
-          totalSuccess += r.value.successCount; totalFailure += r.value.failureCount;
-        } else {
-          totalFailure += 1;
-        }
-      });
+      const {successCount: totalSuccess, failureCount: totalFailure} =
+        await sendMulticastAndPrune(messagesToSend, notifyTargets, "notifyNewExpense");
       logger.info("notifyNewExpense: send result", {familyId, expenseId, successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
     },
 );
@@ -6154,6 +6173,8 @@ exports.notifyNewWalletTicket = onDocumentCreated(
       };
 
       const messagesToSend = [];
+      // Destinatario di messagesToSend[i], per la pulizia dei token morti.
+      const notifyTargets = [];
 
       // Preferenze e token di tutti i destinatari in una volta sola, poi i
       // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
@@ -6168,7 +6189,7 @@ exports.notifyNewWalletTicket = onDocumentCreated(
           {familyId, uids: recipients, field: "wallet"});
 
       for (const uid of recipients) {
-        const {tokens, lang} = tokensByUid.get(uid);
+        const {tokens, lang, refsByToken} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
         const params = {who: creatorName, kind: kindFor(lang)};
         let bodyKey;
@@ -6178,6 +6199,7 @@ exports.notifyNewWalletTicket = onDocumentCreated(
           bodyKey = eventDate ? "wallet.ticketBodyNoWhoWithDate" : "wallet.ticketBodyNoWho";
         }
         if (eventDate) params.date = formatShortDateTime(eventDate, lang);
+        notifyTargets.push({uid, tokens, refsByToken});
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
           title: tn(lang, "wallet.ticketTitle"),
@@ -6191,15 +6213,8 @@ exports.notifyNewWalletTicket = onDocumentCreated(
         logger.info("notifyNewWalletTicket: no per-user notifications to send", {familyId}); return;
       }
 
-      const results = await Promise.allSettled(messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)));
-      let totalSuccess = 0; let totalFailure = 0;
-      results.forEach((r) => {
-        if (r.status === "fulfilled") {
-          totalSuccess += r.value.successCount; totalFailure += r.value.failureCount;
-        } else {
-          totalFailure += 1;
-        }
-      });
+      const {successCount: totalSuccess, failureCount: totalFailure} =
+        await sendMulticastAndPrune(messagesToSend, notifyTargets, "notifyNewWalletTicket");
       logger.info("notifyNewWalletTicket: send result", {familyId, ticketId, successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
     },
 );
@@ -6248,6 +6263,8 @@ exports.notifyNewLoyaltyCard = onDocumentCreated(
       const brandName = (cardData.brandName || "").toString().trim();
 
       const messagesToSend = [];
+      // Destinatario di messagesToSend[i], per la pulizia dei token morti.
+      const notifyTargets = [];
 
       // Preferenze e token di tutti i destinatari in una volta sola, poi i
       // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
@@ -6262,8 +6279,9 @@ exports.notifyNewLoyaltyCard = onDocumentCreated(
           {familyId, uids: recipients, field: "wallet"});
 
       for (const uid of recipients) {
-        const {tokens, lang} = tokensByUid.get(uid);
+        const {tokens, lang, refsByToken} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
+        notifyTargets.push({uid, tokens, refsByToken});
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
           title: tn(lang, "wallet.loyaltyTitle"),
@@ -6277,15 +6295,8 @@ exports.notifyNewLoyaltyCard = onDocumentCreated(
         logger.info("notifyNewLoyaltyCard: no per-user notifications to send", {familyId}); return;
       }
 
-      const results = await Promise.allSettled(messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)));
-      let totalSuccess = 0; let totalFailure = 0;
-      results.forEach((r) => {
-        if (r.status === "fulfilled") {
-          totalSuccess += r.value.successCount; totalFailure += r.value.failureCount;
-        } else {
-          totalFailure += 1;
-        }
-      });
+      const {successCount: totalSuccess, failureCount: totalFailure} =
+        await sendMulticastAndPrune(messagesToSend, notifyTargets, "notifyNewLoyaltyCard");
       logger.info("notifyNewLoyaltyCard: send result", {familyId, cardId, successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
     },
 );
@@ -6437,8 +6448,13 @@ exports.notifyUpcomingWalletTickets = onSchedule(
         const tokensPerMember = await Promise.all(memberUids.map(tokensOf));
 
         const messagesToSend = [];
-        for (const {tokens, lang} of tokensPerMember) {
+        // Destinatario di messagesToSend[i]: qui il ciclo salta chi non ha
+        // token, quindi l'indice NON coincide con quello di memberUids.
+        const notifyTargets = [];
+        for (let mi = 0; mi < memberUids.length; mi++) {
+          const {tokens, lang} = tokensPerMember[mi];
           if (tokens.length === 0) continue;
+          notifyTargets.push({uid: memberUids[mi], tokens});
 
           // NOTA: niente incrementCounterAndGetBadge qui — un reminder non è
           // un nuovo elemento in app, quindi il contatore wallet non cresce.
@@ -6455,17 +6471,9 @@ exports.notifyUpcomingWalletTickets = onSchedule(
         }
 
         if (messagesToSend.length > 0) {
-          const results = await Promise.allSettled(
-              messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
+          const {successCount: ok, failureCount: ko} = await sendMulticastAndPrune(
+              messagesToSend, notifyTargets, "notifyUpcomingWalletTickets",
           );
-          let ok = 0; let ko = 0;
-          results.forEach((r) => {
-            if (r.status === "fulfilled") {
-              ok += r.value.successCount; ko += r.value.failureCount;
-            } else {
-              ko += 1;
-            }
-          });
           logger.info("notifyUpcomingWalletTickets: sent", {familyId, ticketId, window: windowType, ok, ko, targets: messagesToSend.length});
         }
 
@@ -6960,11 +6968,20 @@ exports.notifyCriticalCase = onDocumentCreated(
 
       // Raccogli tutti i FCM token degli admin
       const tokens = [];
+      // I token di più admin finiscono in un invio solo: senza queste due
+      // mappe, a fallimento avvenuto non si saprebbe più di chi è il token
+      // morto — e cancellare quello sbagliato è peggio che non cancellare.
+      const ownerOfToken = new Map();
+      const refsByToken = new Map();
       for (const uid of notifyUids) {
         const tSnap = await db.collection("users").doc(uid)
             .collection("fcmTokens").get();
         tSnap.forEach((t) => {
-          if (t.get("token")) tokens.push(t.get("token"));
+          const tok = t.get("token");
+          if (!tok) return;
+          tokens.push(tok);
+          ownerOfToken.set(tok, uid);
+          refsByToken.set(tok, t.ref);
         });
       }
       if (tokens.length === 0) {
@@ -7003,6 +7020,30 @@ exports.notifyCriticalCase = onDocumentCreated(
       };
 
       const result = await admin.messaging().sendEachForMulticast(payload);
+      if (result.failureCount > 0) {
+        // Raggruppate per admin, tenendo token e risposta allineati: il helper
+        // indicizza le risposte sulla posizione nei token che gli passi.
+        const perOwner = new Map();
+        result.responses.forEach((resp, i) => {
+          if (resp.success) return;
+          const owner = ownerOfToken.get(tokens[i]);
+          if (!owner) return;
+          if (!perOwner.has(owner)) perOwner.set(owner, {tokens: [], responses: []});
+          const bucket = perOwner.get(owner);
+          bucket.tokens.push(tokens[i]);
+          bucket.responses.push(resp);
+        });
+        logger.warn("notifyCriticalCase: invio fallito", {
+          codes: result.responses
+              .filter((resp) => !resp.success)
+              .map((resp) => resp.error?.code || "sconosciuto"),
+        });
+        for (const [owner, bucket] of perOwner) {
+          await pruneInvalidFcmTokens(
+              owner, bucket.tokens, bucket.responses, refsByToken,
+          ).catch(() => {});
+        }
+      }
       logger.info("notifyCriticalCase: push inviata", {
         success: result.successCount,
         failure: result.failureCount,
