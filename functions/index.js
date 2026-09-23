@@ -2265,6 +2265,117 @@ function messagesWithCacheBreakpoint(messages) {
   return out;
 }
 
+/** Riga che chiude un turno dell'assistente lasciato in coda: vedi
+ *  `messagesEndingWithUserTurn`. Breve di proposito, costa pochi token. */
+const ASSISTANT_TURN_CLOSER = "Procedi.";
+
+/**
+ * Garantisce che la conversazione finisca con un turno dell'utente.
+ *
+ * Un messaggio finale dell'assistente non è uno storico: per l'API è un
+ * **prefill**, cioè una risposta che il modello deve continuare. Se quel turno
+ * è già concluso il modello non ha niente da aggiungere e risponde 200 con
+ * `content: []` → "risposta Anthropic senza testo", un 500 in faccia
+ * all'utente e un messaggio di quota bruciato (23/09/2026, e con ogni
+ * probabilità anche il caso non ricostruibile del 04/09).
+ *
+ * Non si rifiuta la richiesta: la compattazione manda **di proposito** la
+ * conversazione intera, con l'istruzione nel system prompt, e finisce quindi
+ * con l'assistente (`compactIfNeeded` su iOS, `summarizeConversation` sul web).
+ * Rifiutare romperebbe la compattazione su ogni build già in mano agli utenti.
+ * Chiudiamo invece il turno con una riga dell'utente: il system prompt —
+ * riassunto o chat che sia — resta l'istruzione vera.
+ * @param {Array<{role: string, content: string|Array<object>}>} messages
+ * @return {Array<object>} l'array originale, o una copia con il turno chiuso
+ */
+function messagesEndingWithUserTurn(messages) {
+  if (!Array.isArray(messages) || messages.length === 0) return messages;
+  const last = messages[messages.length - 1];
+  if (!last || last.role === "user") return messages;
+  return [...messages, {role: "user", content: ASSISTANT_TURN_CLOSER}];
+}
+
+/**
+ * Testo di una risposta Anthropic: concatena **tutti** i blocchi `text`.
+ *
+ * Leggere `content[0].text` regge solo finché il primo blocco è il testo. Basta
+ * un blocco davanti — `thinking` il giorno che si riaccende il ragionamento su
+ * Sonnet (vedi `SONNET_THINKING`, oggi `disabled`), o un blocco tool — e la
+ * risposta buona viene scambiata per vuota: cartella clinica e piano fitness
+ * morirebbero tutti in "risposta Anthropic senza testo".
+ * @param {object} json corpo della risposta /v1/messages
+ * @return {string} testo concatenato, stringa vuota se non ce n'è
+ */
+function anthropicReplyText(json) {
+  const blocks = Array.isArray(json?.content) ? json.content : [];
+  return blocks
+      .filter((b) => b?.type === "text" && typeof b?.text === "string")
+      .map((b) => b.text)
+      .join("")
+      .trim();
+}
+
+/**
+ * Restituisce le unità scalate quando la chiamata fallisce per causa nostra.
+ *
+ * `checkAndIncrementAIUsage` scala PRIMA di chiamare Anthropic — serve a non
+ * far passare due richieste in parallelo oltre quota — quindi un 500 se le
+ * porta via comunque. Sul piano Free sono 5 messaggi **a vita**, che non si
+ * resettano mai: perderne uno per un errore del server è un danno che l'utente
+ * non può recuperare in nessun modo.
+ *
+ * Solo per i fallimenti nostri: un rifiuto legittimo (quota finita, piano
+ * insufficiente) solleva prima dell'incremento e qui non arriva mai.
+ *
+ * Non solleva: un rimborso fallito non deve coprire l'errore originale.
+ * @param {string} familyId
+ * @param {string} uid
+ * @param {{period: "daily"|"lifetime", limit: number}} quota
+ * @param {number} units unità da restituire
+ * @return {Promise<void>}
+ */
+async function refundAIUsage(familyId, uid, quota, units) {
+  const delta = Math.max(1, Math.floor(Number(units) || 1));
+  const isLifetime = quota?.period === "lifetime";
+  const periodKey = isLifetime ? "free" : aiTodayKey();
+  const db = admin.firestore();
+  const familyRef = db
+      .collection("ai_usage").doc(`family_${familyId}`)
+      .collection(isLifetime ? "lifetime" : "daily").doc(periodKey);
+  const userRef = isLifetime ?
+    db.collection("ai_usage").doc(`user_${uid}`).collection("lifetime").doc("free") :
+    null;
+
+  try {
+    await db.runTransaction(async (tx) => {
+      // Niente `increment(-n)` alla cieca: se il contatore è nel frattempo
+      // ripartito (giorno nuovo, documento appena creato) andrebbe sotto zero
+      // e regalerebbe quota. Si legge e si scrive il valore con il pavimento a 0.
+      const familySnap = await tx.get(familyRef);
+      const userSnap = userRef ? await tx.get(userRef) : null;
+      const familyCount = familySnap.exists ? (familySnap.data().count || 0) : 0;
+      tx.set(familyRef, {
+        count: Math.max(0, familyCount - delta),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, {merge: true});
+      if (userRef) {
+        const userCount = userSnap && userSnap.exists ? (userSnap.data().count || 0) : 0;
+        tx.set(userRef, {
+          count: Math.max(0, userCount - delta),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, {merge: true});
+      }
+    });
+    logger.warn("AI usage rimborsata dopo un errore del server", {
+      uid, familyId, units: delta, period: quota?.period ?? null,
+    });
+  } catch (e) {
+    logger.warn("AI usage: rimborso fallito", {
+      uid, familyId, units: delta, error: e.message,
+    });
+  }
+}
+
 /**
  * Checks the period counter and increments it atomically.
  * Il contatore è per famiglia (family_{familyId}) così tutti i membri
@@ -2487,9 +2598,20 @@ exports.askAI = onCall(
         anthropicModel,
       });
 
+      // Uno storico che finisce con l'assistente è un prefill per l'API, non
+      // un contesto: senza chiudere il turno la risposta torna vuota. Il warn
+      // dice quale client lo manda (la compattazione lo fa di proposito).
+      const requestMessages = messagesEndingWithUserTurn(messages);
+      if (requestMessages.length !== messages.length) {
+        logger.warn("askAI: conversazione chiusa da un turno assistente", {
+          uid, familyId, purpose: purpose ?? null, msgCount: messages.length,
+        });
+      }
+
       const apiKey = ANTHROPIC_API_KEY.value();
       if (!apiKey) {
         logger.error("askAI: ANTHROPIC_API_KEY secret non configurato");
+        await refundAIUsage(familyId, uid, quota, messageUnits);
         throw new HttpsError("internal", "Configurazione AI non disponibile.");
       }
 
@@ -2517,8 +2639,8 @@ exports.askAI = onCall(
               effectiveSystemPrompt :
               cacheableSystem(effectiveSystemPrompt),
             messages: oneShotGeneration ?
-              messages.map((m) => ({role: m.role, content: m.content})) :
-              messagesWithCacheBreakpoint(messages),
+              requestMessages.map((m) => ({role: m.role, content: m.content})) :
+              messagesWithCacheBreakpoint(requestMessages),
           }),
         });
 
@@ -2532,7 +2654,7 @@ exports.askAI = onCall(
         }
 
         const json = await res.json();
-        reply = json?.content?.[0]?.text;
+        reply = anthropicReplyText(json);
         if (!reply) {
           // Senza log qui l'allarme arriva su un 500 nudo e non resta traccia
           // del perché: è successo il 04/09/2026 e non è stato ricostruibile.
@@ -2600,6 +2722,10 @@ exports.askAI = onCall(
           model: anthropicModel,
         });
       } catch (e) {
+        // Tutto ciò che arriva qui è successo DOPO l'incremento: sovraccarico,
+        // errore Anthropic, risposta vuota, rete. L'utente non ha ricevuto
+        // niente, quindi le unità tornano indietro.
+        await refundAIUsage(familyId, uid, quota, messageUnits);
         if (e instanceof HttpsError) throw e;
         logger.error("askAI: fetch failed", {error: e.message});
         throw new HttpsError("internal", "Impossibile contattare il servizio AI.");
@@ -3120,6 +3246,7 @@ exports.generateTravelPlan = onCall(
       const apiKey = ANTHROPIC_API_KEY.value();
       if (!apiKey) {
         logger.error("generateTravelPlan: ANTHROPIC_API_KEY secret non configurato");
+        await refundAIUsage(familyId, uid, quota, travelMessageCost);
         throw new HttpsError("internal", "Configurazione AI non disponibile.");
       }
 
@@ -3161,7 +3288,7 @@ exports.generateTravelPlan = onCall(
         }
 
         const json = await res.json();
-        const rawText = json?.content?.[0]?.text ?? "";
+        const rawText = anthropicReplyText(json);
         if (!rawText) {
           logger.error("generateTravelPlan: risposta Anthropic senza testo", {
             uid,
@@ -3185,6 +3312,9 @@ exports.generateTravelPlan = onCall(
             (outputTokens / 1000000) * ANTHROPIC_OUTPUT_USD_PER_1M_HAIKU).toFixed(6),
         });
       } catch (e) {
+        // Un itinerario costa 2 unità ogni 3 giorni di viaggio: bruciarle su un
+        // errore nostro è la perdita più cara delle tre callable AI.
+        await refundAIUsage(familyId, uid, quota, travelMessageCost);
         if (e instanceof HttpsError) throw e;
         logger.error("generateTravelPlan: fetch failed", {error: e.message});
         throw new HttpsError("internal", "Impossibile contattare il servizio AI.");
@@ -3344,6 +3474,7 @@ exports.suggestTravelDestinations = onCall(
       const apiKey = ANTHROPIC_API_KEY.value();
       if (!apiKey) {
         logger.error("suggestTravelDestinations: ANTHROPIC_API_KEY secret non configurato");
+        await refundAIUsage(familyId, uid, quota, 1);
         throw new HttpsError("internal", "Configurazione AI non disponibile.");
       }
 
@@ -3380,7 +3511,7 @@ exports.suggestTravelDestinations = onCall(
         }
 
         const json = await res.json();
-        const rawText = json?.content?.[0]?.text ?? "";
+        const rawText = anthropicReplyText(json);
         const parsed = parseTravelSuggestionsResponse(rawText);
         if (!parsed || !parsed.destinations.length) {
           logger.error("suggestTravelDestinations: risposta non parsabile", {
@@ -3404,6 +3535,7 @@ exports.suggestTravelDestinations = onCall(
           period: quota.period,
         };
       } catch (e) {
+        await refundAIUsage(familyId, uid, quota, 1);
         if (e instanceof HttpsError) throw e;
         logger.error("suggestTravelDestinations failed", {error: e.message});
         throw new HttpsError("internal", "Impossibile contattare il servizio AI.");
