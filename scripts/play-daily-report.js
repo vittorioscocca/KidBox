@@ -26,6 +26,8 @@
  */
 
 const { execFileSync } = require("node:child_process");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const PACKAGE = "it.vittorioscocca.kidbox";
 const BUCKET = "pubsite_prod_rev_00873204915190884037";
@@ -144,6 +146,50 @@ async function reviews(tok) {
 
 // ------------------------------------------------------------ main
 
+
+/**
+ * Serie «Installazioni attive» esportata a mano da Play Console, usata solo
+ * quando è più fresca dell'export automatico. Formato di Play Console: prima
+ * colonna `Data` in italiano («20 set 2026»), seconda colonna la metrica per
+ * «Tutti i paesi». Il file più recente della cartella vince.
+ */
+function readManualActiveInstalls(bucketUpTo) {
+  const dir = path.join(__dirname, "..", "internal", "play-export");
+  let files = [];
+  try {
+    files = fs.readdirSync(dir).filter((f) => f.toLowerCase().endsWith(".csv")).sort();
+  } catch {
+    return null;
+  }
+  if (!files.length) return null;
+
+  const MESI = { gen: "01", feb: "02", mar: "03", apr: "04", mag: "05", giu: "06", lug: "07", ago: "08", set: "09", ott: "10", nov: "11", dic: "12" };
+  const file = files[files.length - 1];
+  let rows;
+  try {
+    rows = fs.readFileSync(path.join(dir, file), "utf8").split(/\r?\n/).filter(Boolean);
+  } catch {
+    return null;
+  }
+  const series = [];
+  for (const line of rows.slice(1)) {
+    // La prima colonna non contiene virgole; le altre possono essere quotate.
+    const comma = line.indexOf(",");
+    if (comma < 0) continue;
+    const [g, m, a] = line.slice(0, comma).trim().split(" ");
+    const mm = MESI[(m || "").toLowerCase().slice(0, 3)];
+    if (!mm || !a) continue;
+    const value = Number((line.slice(comma + 1).split(",")[0] || "").replace(/"/g, "").trim());
+    if (!Number.isFinite(value)) continue;
+    series.push({ date: `${a}-${mm}-${String(g).padStart(2, "0")}`, activeDevices: value });
+  }
+  if (!series.length) return null;
+  series.sort((a, b) => a.date.localeCompare(b.date));
+  const upTo = series[series.length - 1].date;
+  if (bucketUpTo && upTo <= bucketUpTo) return null; // l'export automatico è già avanti
+  return { file, upTo, series: series.slice(-28) };
+}
+
 async function main() {
   const asJson = process.argv.includes("--json");
   const yesterday = shiftDay(romeDate(), -1);
@@ -167,6 +213,12 @@ async function main() {
   out.installsUpTo = out.installs.length ? out.installs[out.installs.length - 1].date : null;
   if (!out.installsUpTo) out.notes.push("Nessun CSV installazioni trovato nel bucket.");
   else if (shiftDay(out.installsUpTo, 8) < yesterday) out.notes.push(`Export installazioni fermo al ${out.installsUpTo}: più indietro del solito (5-7 giorni).`);
+
+  // Ponte per quando l'export del bucket si ferma (dal 13/09/2026 Google non
+  // ci scrive più, mentre in Play Console i dati ci sono e la Reporting API
+  // non espone le installazioni): la base installata si porta a mano da
+  // `internal/play-export/`. Vedi il README lì dentro.
+  out.manualBase = readManualActiveInstalls(out.installsUpTo);
 
   // Paesi: ultimi 7 giorni disponibili.
   const byCountry = await readMonths(utok, "installs", "country", months);
@@ -207,6 +259,14 @@ function print(o) {
   const L = [];
   L.push(`# Google Play KidBox — ieri ${o.yesterday} (${o.package})`);
   L.push("");
+  if (o.manualBase) {
+    const s0 = o.manualBase.series;
+    const first = s0[0], last = s0[s0.length - 1];
+    const week = s0[Math.max(0, s0.length - 8)];
+    L.push(`## Base installata Android (export manuale ${o.manualBase.file}, fino al ${o.manualBase.upTo})`);
+    L.push(`Dispositivi con l'app: ${last.activeDevices} · 7 giorni prima ${week.activeDevices} · ${first.date} ${first.activeDevices}. L'export automatico del bucket è fermo al ${o.installsUpTo || "?"}, quindi installazioni e disinstallazioni giornaliere qui sotto sono vecchie: la base installata è il numero fresco.`);
+    L.push("");
+  }
   L.push(`## Installazioni per giorno (export Play, aggiornato al ${o.installsUpTo || "?"})`);
   L.push(pad("giorno", 12) + pad("install", 9) + pad("disinst", 9) + pad("aggiorn", 9) + pad("device attivi", 15) + "eventi install/update");
   // Giorni di calendario, non righe: l'export di Play ha buchi (agosto 2026
