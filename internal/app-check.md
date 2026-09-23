@@ -147,3 +147,65 @@ L'endpoint Alexa (lo chiama Amazon, non un nostro client: al suo posto valgono
 la firma e altri tre controlli), la landing degli inviti e la chat della landing
 (pagine statiche senza login: lì il tetto è il budget e il rate limit). Non sono
 buchi da tappare accendendo l'enforcement: non passerebbero comunque da lì.
+
+## 23/09/2026 — la guarigione in corso, e la media che la nasconde
+
+Report a 7 giorni: Firestore **40%**, Storage 52%, Auth (`identitytoolkit`)
+**36%**. Letti così sembrano fermi. Letti **giorno per giorno** raccontano il
+contrario — è la coda del fix SHA-256 del 20/09, che si propaga al ritmo con cui
+i device rinnovano il token:
+
+| | 19/09 | 20/09 | 21/09 | 22/09 | 23/09 |
+|---|---|---|---|---|---|
+| Firestore | 14% | 29% | 48% | 70% | **82%** |
+| Auth | 16% | 30% | 42% | 57% | **100%** (17 req) |
+
+**La regola che ne esce, valida oltre questo episodio:** la percentuale mostrata
+in console è una **media della finestra**; dopo un fix resta bassa per giorni
+mentre il dato di oggi è già sano. Prima di aprire un'indagine su una riga
+bassa, guardare l'andamento giornaliero. E attenzione ai volumi: Auth fa decine
+di richieste al giorno contro le decine di migliaia di Firestore, quindi la sua
+percentuale è rumorosa e il 100% di oggi è su 17 richieste. **Il cancello resta
+Firestore.** Verdetto dello script: ancora ⛔️, 0 giorni su 8 sopra soglia.
+
+Tutte e tre le piattaforme compaiono tra le VALID (ios 23.639, android 23.583,
+web 3.191): la seconda condizione del cancello è soddisfatta, manca solo la
+prima. Le INVALID restano su `app_id = UNKNOWN`, come da asimmetria nota.
+
+## 23/09/2026 — «Google Identity for iOS» (0%): catena diversa, lasciato fuori
+
+La riga sotto **Other Google APIs** in console è `oauth2.googleapis.com`: le
+chiamate dell'SDK **GoogleSignIn-iOS** (9.1.0 in SPM). **13 richieste in 7
+giorni, tutte `MISSING_OUTDATED_CLIENT`** — nessun token, non un token
+rifiutato. Non è un guasto e non è un errore di configurazione.
+
+GoogleSignIn-iOS ha una catena App Check **sua, indipendente da Firebase**: il
+provider installato in `AppCheckInstaller.swift` copre gli SDK Firebase e non lo
+tocca. Verificato nel sorgente del checkout SPM: `GIDSignIn.m:822` allega il
+token (come `client_assertion`, *limited use*, da `GIDAppCheck
+appCheckUsingAppAttestProvider`) **solo se** è stato chiamato
+`GIDSignIn.sharedInstance.configure(completion:)` — oppure
+`configureDebugProvider(withAPIKey:completion:)` per debug/simulatore. Nel
+progetto non viene mai chiamato: in `FirebaseGoogleAuthService.swift:53` si
+imposta solo `.configuration`, che è il client ID e un'altra cosa.
+
+**Deciso di NON accenderla**, per tre motivi in ordine di peso:
+
+1. App Check protegge solo **in enforcement**; in monitoraggio quel token
+   sposterebbe un numero in dashboard e basta.
+2. **L'enforcement lì non potrà mai essere completo**: tutto il blocco è dentro
+   `#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST`, quindi la build **Mac Catalyst
+   resta scoperta per costruzione** e quella riga non raggiungerà il 90%.
+3. `configure` mette una chiamata di rete (con loader a tempo) **dentro il
+   login**, cioè nel funnel invito→primo membro. Non rompe nulla — se il token
+   fallisce il flusso prosegue — ma è latenza dove non serve.
+
+**Quando rimetterla in agenda:** se compare traffico anomalo sul client OAuth
+Google (è quello il rischio che copre: usare il client ID per generare sign-in
+da fuori l'app), oppure al momento di accendere l'enforcement, per decidere se
+escluderla in modo definitivo.
+
+⚠️ **All'accensione, escludere questa riga.** E se un giorno si facesse: la
+chiamata va in `AppDelegate` accanto ad `AppCheckInstaller.install()`, doppio
+ramo debug/produzione (in simulatore App Attest non esiste: serve il debug
+provider con la web API key, da xcconfig e non nel sorgente), iOS 14+.

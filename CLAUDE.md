@@ -34,6 +34,7 @@ i suoi commit si vedono solo con `git -C KidBoxAndroid`.
 - `/notifiche` — push, locali, promemoria, lingua e deep link: tre strade diverse con trappole diverse
 - `/letture-firestore` — misurare letture e costi prima di ottimizzare; i tranelli della metrica
 - `/landing-blog` — articoli, generatori, footer e sitemap della landing; regole editoriali
+- `/app-check` — quota di richieste attestate, come si legge (la media a 7 giorni inganna), il cancello per l'enforcement
 - `/alexa` — accoppiamento, nome di invocazione (sei punti), gate di lingua; il backend non si tocca
 - `/cifratura` — la chiave di famiglia: dove vive, come arriva a un membro, cosa il server non può fare
 - `/ai` — purpose, modello, unità scalate e quote; le trappole di copilota, cache e max_tokens
