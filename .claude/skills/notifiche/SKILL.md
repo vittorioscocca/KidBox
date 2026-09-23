@@ -56,6 +56,36 @@ importi seguono la lingua del destinatario, il fuso resta Europe/Rome.
 - **L'anteprima del messaggio di chat resta «Nuovo messaggio» di proposito**:
   iOS decifra nella Notification Service Extension, Android non ha equivalente.
 
+## Token morti: pulirli, e non farli suonare come guasti
+
+Un token FCM muore quando l'utente disinstalla o reinstalla l'app. È
+**funzionamento normale**, non un guasto, e si riconosce da due codici:
+`messaging/registration-token-not-registered` e
+`messaging/invalid-registration-token`.
+
+Due regole, entrambe pagate:
+
+1. **Si logga `warn`, mai `error`.** Un `logger.error` — o un `console.error`,
+   che scrive la stessa severity — fa suonare l'allarme «KidBox — errore
+   applicativo» per una disinstallazione. `notifyTodoAssigned` lo faceva ed era
+   l'unico punto di tutte le functions (corretto il 23/09/2026). La convenzione
+   generale è in `/deploy-functions`: `error` = guasto nostro, `warn` = tutto il
+   resto.
+2. **Il token va cancellato**, con `pruneInvalidFcmTokens(uid, tokens,
+   responses, refsByToken)`. Senza la pulizia quel destinatario **smette di
+   ricevere quel tipo di notifica per sempre**, in silenzio: nessun errore,
+   `successCount` a zero e nessuno che se ne accorge. Passa `refsByToken` se ce
+   l'hai (`getTokensForUsers` lo restituisce); se no il helper rilegge la
+   collezione — una query in più, solo quando c'è davvero un fallimento.
+   Attenzione: `getUserTokensIfEnabled` restituisce **solo** i token e i ref li
+   butta via.
+
+Stato al 23/09/2026: **15 funzioni inviano push, solo 5 puliscono** —
+`notifyDueTodoReminders`, `notifyNewGroceryItem`, `notifyTodoAssigned`,
+`onGeofenceEvent`, `sendBroadcast`. Le altre dieci (chat, calendario, spese,
+note, documenti, wallet, casi critici, posizione…) accumulano token morti. Se
+tocchi una di quelle, la pulizia è due righe: aggiungila.
+
 ## Il motore dei promemoria to-do
 
 `notifyDueTodoReminders` (`functions/index.js`, `europe-west1`, **ogni 5
@@ -106,4 +136,6 @@ automatico non è iniziato, e la decisione architetturale è già presa:
 - Il testo è tradotto in tutte e quattro le lingue? (`/localizzazione`)
 - Se è locale: quale device la arma, e sopravvive a un reboot?
 - Se è push: il destinatario ha un token? il payload è ibrido? il tap dove porta?
+- Se è un invio nuovo: i fallimenti sono `warn` (non `error`) e chiami
+  `pruneInvalidFcmTokens`?
 - Se scrive `remindAt`: c'è il `remindSentAt: null` esplicito?
