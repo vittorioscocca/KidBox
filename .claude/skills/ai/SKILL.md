@@ -64,6 +64,16 @@ negato non consuma il bonus. I tre presidi (server, service, view) sono in
 `/gating-pro`; su iOS il set è `paidOnlyPurposes` in `AIService.swift`
 (`mealPlan`, `fitnessPlan`, `fitnessAdjust`, `fitnessCopilot`).
 
+L'incremento resta **prima** della chiamata ad Anthropic (serve a non far
+passare due richieste in parallelo oltre quota), quindi un guasto nostro
+brucerebbe comunque l'unità: dal 23/09/2026 `refundAIUsage` la restituisce su
+ogni fallimento dopo l'incremento — sovraccarico, errore Anthropic, risposta
+vuota, rete — su `askAI`, `generateTravelPlan` e `suggestTravelDestinations`.
+Rimborsa in transazione col pavimento a zero (mai `increment(-n)` cieco: dopo un
+cambio giorno regalerebbe quota) e non solleva mai, per non coprire l'errore
+vero. **Se aggiungi una callable AI, il rimborso va messo nel suo catch**,
+altrimenti un 500 costa un messaggio a vita a un utente Free.
+
 ## Le trappole già pagate
 
 1. **Modifiche annunciate e non applicate (copilota fitness).** Il client toglie
@@ -91,6 +101,29 @@ negato non consuma il bonus. I tre presidi (server, service, view) sono in
    `ai_costs` (che serve solo a controllare la calibrazione). E i test dello
    sviluppatore dominano: un giorno con cache write alto e pochi utenti attivi
    è quasi sempre lui. → `/report-giornaliero`, regola 12.
+6. **Uno storico che finisce con l'assistente è un prefill, non un contesto.**
+   L'API considera l'ultimo messaggio `assistant` una risposta da *continuare*:
+   se quel turno è già concluso il modello non ha niente da aggiungere e
+   risponde **200 con `content: []`** — non un errore, una risposta vuota. A
+   valle diventa «risposta Anthropic senza testo», un 500 in faccia all'utente e
+   un messaggio di quota bruciato (23/09/2026). I 500 muti del 01/09 e del
+   04/09, dati per non ricostruibili, sono quasi certamente lo stesso caso:
+   stessa firma — ~0,9 s di latenza, nessun log applicativo, tutti da Android
+   (`okhttp`) — ma senza prova diretta, perché il log della risposta vuota è
+   stato aggiunto dopo.
+   La **compattazione lo fa di proposito** — `compactIfNeeded` su iOS e
+   `summarizeConversation` sul web mandano la conversazione intera con
+   l'istruzione nel system prompt — quindi il server **normalizza invece di
+   rifiutare**: `messagesEndingWithUserTurn` chiude il turno con una riga utente
+   («Procedi.») e logga un `warn` con `purpose` e `msgCount`. Un
+   `invalid-argument` secco avrebbe rotto la compattazione su tutte le build già
+   installate: se un giorno la tentazione torna, è questo il motivo per cui non
+   si fa.
+7. **Il testo si legge da tutti i blocchi `text`, non da `content[0]`.**
+   `anthropicReplyText` concatena. Leggere solo il primo blocco regge finché
+   `SONNET_THINKING` è `disabled`: riaccendendo il ragionamento, `content[0]` è
+   un blocco `thinking` e **cartella clinica e piano fitness fallirebbero tutte**
+   con la risposta buona in mano. Vale anche per un blocco tool davanti.
 
 ## Casi particolari
 
