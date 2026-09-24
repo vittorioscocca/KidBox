@@ -86,6 +86,13 @@ passato.
   `TypeError`, `permission`.
 - Per una callable, se possibile una chiamata reale (curl con token
   utente, o dalla console admin) e lettura della risposta.
+- Regressioni per gli utenti dopo rules o function sui membri: i DENY delle
+  rules **non** sono in Cloud Logging, si leggono su Cloud Monitoring
+  (`firestore.googleapis.com/rules/evaluation_count`, `result=DENY`,
+  somma oraria). Riferimento: 0-6 l'ora; il 24/09/2026 è rimasto 1-6 prima e
+  dopo i deploy. Un salto dopo il deploy è una regressione finché non si
+  dimostra il contrario. (La serie torna duplicata dall'API: ogni ora compare
+  due volte con lo stesso valore, non sommarle.)
 - Se hai toccato membri, indice delle famiglie, join, revoca o
   `deleteFamily`: `node scripts/membership-index-audit.js` (sola lettura)
   prima e dopo. Deve restare 0 «attivi senza indice»; gli orfani si
@@ -101,6 +108,20 @@ Committare **per path** (`git add functions/index.js functions/x.js`), mai
 su `main`. Messaggio in italiano, imperativo, che dice cosa cambia per
 l'utente finale; **mai** righe `Co-Authored-By`. Poi ricordare all'utente
 che il push tocca a lui.
+
+## Cancellazioni su Firestore
+
+Mai `firebase firestore:delete` da Claude: il classificatore dei permessi lo
+blocca anche con l'ok in chat, e ammette la ricorsione. La strada è
+`scripts/firestore-delete-doc.js`: solo singoli documenti, mai ricorsivo, mai
+`families/{id}` o `users/{uid}`, mai un membro attivo (con `role` e non
+cancellato: toglierlo è una revoca, si fa dall'app), max 20 per volta,
+`currentDocument.updateTime` come precondizione, log in
+`~/Library/Logs/kidbox-firestore-deletes.log`. Senza `--yes` è una prova:
+lanciala sempre prima e mostra l'elenco all'utente. Se la regola di permesso
+per lo script non è in `.claude/settings.local.json`, il comando lo lancia
+l'utente. Dopo una pulizia dell'indice delle famiglie, l'audit deve tornare a
+zero.
 
 ## Cose da non fare
 

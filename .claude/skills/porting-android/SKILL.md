@@ -83,7 +83,11 @@ Per misurare davvero: il debug dell'SDK è già attivo, `adb logcat` mostra
     `memoryCacheKey` ma taglia diversa (prefetch 400×400, bolla alla misura
     del layout) e Coil scarta la bitmap prefetchata perché più piccola:
     ridecodifica proprio durante lo scroll. Le richieste della chat stanno in
-    `ChatMediaRequests` (taglia esplicita, stessa per tutti e due). **Mai un
+    `ChatMediaRequests` (taglia esplicita, stessa per tutti e due). La taglia
+    esplicita va presa dal **contenitore più grande** in cui l'immagine può
+    finire (bolla con citazione, 80%/360dp), non da quello tipico: Coil non
+    misura più il layout, e un riquadro più grande della bitmap la mostra
+    ingrandita e sfocata. **Mai un
     URL video a Coil**, nemmeno come ripiego: non lo decodifica, ma prima lo
     scarica per intero nella cache immagini. Le miniature video passano da
     `VideoThumbnailLoader` (max 640 px; la galleria a schermo intero chiede
@@ -107,6 +111,10 @@ Per misurare davvero: il debug dell'SDK è già attivo, `adb logcat` mostra
     veniva strappato giù. Ora `followBottom` si spegne quando lo scroll si
     ferma lontano dal fondo e si riaccende al ritorno o all'invio. Non
     reintrodurre `scrollToItem` incondizionati in quell'effetto.
+    **Mai `scrollToItem(i, Int.MAX_VALUE)`** per «fino in fondo all'ultimo
+    item»: `LazyListMeasure` calcola `maxOffset - (-offset)` e l'intero
+    trabocca (verificato sul sorgente di foundation 1.7.6). Si scorre
+    sull'item e poi `scrollBy` di quanto sporge oltre `viewportEndOffset`.
 
 ## Notifiche e deep link
 
