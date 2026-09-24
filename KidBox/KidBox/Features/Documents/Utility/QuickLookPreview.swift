@@ -25,6 +25,10 @@ struct QuickLookPreview: UIViewControllerRepresentable {
     /// (altrimenti la cover si chiude ma lo stato resta "presentato").
     var onFinished: (() -> Void)? = nil
 
+    /// La via d'uscita. Vale anche per i chiamanti che non passano `onFinished`:
+    /// sono la maggioranza, e senza questo resterebbero senza modo di chiudere.
+    @Environment(\.dismiss) private var dismiss
+
     // MARK: - UIViewControllerRepresentable
     
     func makeUIViewController(context: Context) -> UINavigationController {
@@ -39,7 +43,24 @@ struct QuickLookPreview: UIViewControllerRepresentable {
         
         // ✅ Keeps navigation bar (Done/Share) visible in sheet presentation on newer iOS versions
         nav.modalPresentationStyle = .fullScreen
-        
+
+        // Il "Fine" lo mettiamo noi. `QLPreviewController` ne disegna uno da sé
+        // SOLO quando è lui a essere presentato modalmente; qui è il root di una
+        // UINavigationController nostra, quindi non lo aggiunge — e siccome è
+        // root non c'è nemmeno il "indietro". Dentro un `fullScreenCover` non
+        // resta alcuna via d'uscita: il documento si apre e l'app ci resta
+        // dentro (verificato sul simulatore il 24/09/2026: barra con solo
+        // titolo e Condividi).
+        //
+        // `barButtonSystemItem: .done` e non una stringa nostra: il titolo lo
+        // localizza il sistema in tutte le lingue, senza passare dal catalogo.
+        ql.navigationItem.leftBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .done,
+            target: context.coordinator,
+            action: #selector(Coordinator.finish)
+        )
+        context.coordinator.dismiss = { dismiss() }
+
         return nav
     }
     
@@ -49,6 +70,8 @@ struct QuickLookPreview: UIViewControllerRepresentable {
             return
         }
         
+        context.coordinator.dismiss = { dismiss() }
+
         let idx = clampIndex(initialIndex, count: urls.count)
         
         // Avoid redundant `reloadData()` when SwiftUI re-renders with the same URLs — that reload
@@ -86,6 +109,18 @@ struct QuickLookPreview: UIViewControllerRepresentable {
     final class Coordinator: NSObject, QLPreviewControllerDataSource, QLPreviewControllerDelegate {
         var urls: [URL]
         let onFinished: (() -> Void)?
+        /// Impostata dal Representable a ogni update: chiude sheet o cover.
+        var dismiss: (() -> Void)?
+
+        /// "Fine": prima si avvisa chi ci ha presentati (di solito per azzerare
+        /// il binding `item`), poi si chiude comunque. Le due cose convergono
+        /// sullo stesso risultato e chiudere due volte non fa danni, mentre
+        /// fidarsi del solo `onFinished` lascerebbe chiusi dentro i chiamanti
+        /// che non lo passano.
+        @objc func finish() {
+            onFinished?()
+            dismiss?()
+        }
 
         init(urls: [URL], onFinished: (() -> Void)? = nil) {
             self.urls = urls
