@@ -127,6 +127,40 @@ ricetta di ogni alarm armato **localmente**; `BootReceiver` chiama
 Eccezioni storiche con semantica famiglia-wide: veicoli, pagamenti casa,
 password — quelli sì si ripristinano da Room.
 
+## Zone di arrivo e uscita (geofence)
+
+Il server **non** decide niente: l'«entrato/uscito» lo decide il telefono di
+chi si muove (GeofencingClient su Android, region monitoring su iOS), che
+scrive `families/{id}/geofenceEvents`; `onGeofenceEvent` lo inoltra a
+`notifyMembers`. Quello che il telefono manda non è una sequenza pulita di
+attraversamenti — misurato il 24/09/2026 su «Casa genitore» (Famiglia Scocca,
+due Android, giugno-settembre): 484 eventi, **356 che ripetevano il tipo
+precedente** (anche tre nello stesso secondo: coda offline che si svuota,
+ri-registrazione delle zone), e metà delle uscite di Cosimo rientrate in meno
+di 5 minuti (GPS che oscilla sul bordo).
+
+Presidi oggi, da non togliere:
+- **Stato per zona e persona** in `families/{id}/geofenceState/{geofenceId}_{uid}`,
+  aggiornato in transazione: si avvisa solo se il tipo cambia. I filtri
+  `notifyOnArrive`/`notifyOnLeave` vengono **dopo** lo stato, o un'uscita non
+  notificata farebbe sembrare doppione il rientro. `geofenceState` è in
+  `FAMILY_SUBCOLLECTIONS` (cancellata con la famiglia).
+- **Eventi in ritardo**: i client dal 24/09 scrivono `clientAt` (ms); se è più
+  vecchio di 15 minuti lo stato si aggiorna ma non si avvisa. `timestamp` è
+  l'ora d'arrivo al server, non dell'evento: non usarlo per giudicare.
+- **Raggio sempre numerico**: una stringa viene letta come assente e i client
+  ripiegano su 200 m. Attenzione nel leggere i dati via REST: gli interi
+  tornano come `"integerValue": "400"`, fra virgolette — non è una stringa.
+
+Aperto: le uscite lampo (fuori e dentro in pochi minuti) passano ancora. Il
+rimedio è ritardare l'avviso di uscita e annullarlo se il rientro arriva
+prima; sui dati toglie altre ~50 notifiche su 87 per Cosimo, ma ritarda ogni
+uscita vera: è una scelta di prodotto dell'utente.
+
+Per misurare: leggere `geofenceEvents` della famiglia, ordinare per
+`timestamp`, contare tipi ripetuti, raffiche < 2 s e coppie uscita→rientro;
+i log di `onGeofenceEvent` dicono quali eventi sono stati scartati e perché.
+
 ## Broadcast e nudge
 
 Il **broadcast manuale dalla console** è deployato. Il motore di nudge
