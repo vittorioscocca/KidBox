@@ -155,5 +155,7 @@ Per misurare davvero: il debug dell'SDK è già attivo, `adb logcat` mostra
 
 - La stessa funzione esiste su iOS: confronta campi e testi, non a memoria.
 - Compila col JBR; l'utente committa e pubblica (`git -C KidBoxAndroid`).
+- Test unitari: `./gradlew :app:testDebugUnitTest` col JBR, conteggio dagli XML
+  in `app/build/test-results/testDebugUnitTest/` (23 al 24/09/2026).
 - Se hai toccato il manifest: reinstall, non aggiornamento.
 - Aggiorna `FEATURES.md` se la parità cambia.

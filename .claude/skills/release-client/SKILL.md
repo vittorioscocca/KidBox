@@ -18,6 +18,13 @@ può, e preparo. Non tocco mai:
   se la release viene rimossa (il 49 è bruciato così).
 - I commit dei due client.
 
+**Quando l'utente chiede il messaggio di commit, dagli il messaggio e basta**:
+testo semplice in un blocco suo, titolo in prima riga, niente `git commit -F -
+<<'EOF'` attorno. Il 24/09/2026 gli ho dato il comando completo, l'ha incollato
+nel campo del messaggio e il commit Android `c31ff85` è finito su `origin` con
+titolo `cd /Users/… && git add … <<'EOF'`. Se serve anche il comando, va in un
+blocco separato che legge il messaggio da un file, non lo contiene.
+
 ## I testi
 
 Tutto sta in `internal/store-listings/`, sotto controllo di versione apposta per
@@ -84,6 +91,30 @@ Poi tradurre, non inventare quattro testi diversi.
   che nulla lo segnali → `/localizzazione` prima di sottomettere.
 - **Schede store**: `internal/store-listings/README.md` dice quali testi sono
   già applicati e quali no (le versioni Mac restano spesso indietro).
+
+## Prima di dire «nessuna regressione»
+
+Quando l'utente chiede «sicuro che è tutto ok?» su una release, la risposta si
+costruisce con i controlli, non a memoria, e dice **cosa non** è stato provato.
+Il giro del 24/09/2026 (Android 2.3.7):
+
+1. **Test unitari Android**:
+   `JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradlew :app:testDebugUnitTest`.
+   Gradle a successo non stampa il conteggio: leggilo dagli XML in
+   `app/build/test-results/testDebugUnitTest/` (23 test al 24/09/2026; se il
+   numero cala, qualcuno è stato tolto).
+2. **Il diff della release riletto**: `git show <commit>` cercando
+   `Int.MAX_VALUE`, `!!`, `runBlocking`, `GlobalScope`, `Thread.sleep`, e i
+   chiamanti di ogni funzione a cui è cambiata la firma.
+3. **Server, se la release ha un lato server**: warning/errori delle function
+   toccate dal deploy (`gcloud logging read … severity>=WARNING`), DENY delle
+   rules per ora (vedi `/deploy-functions`), audit dell'indice delle famiglie,
+   job pianificati `ENABLED` e senza `status.code`.
+4. **Cosa resta da provare sul telefono**, per nome: l'emulatore è sloggato e
+   le credenziali non le inserisco, quindi la verifica funzionale è dell'utente.
+   Elenca i comportamenti da provare, non «prova l'app».
+5. **I cambi di comportamento voluti** vanno detti anche se non sono bug
+   (esempio: avviso di uscita ritardato di 5 minuti).
 
 ## Dopo la pubblicazione
 

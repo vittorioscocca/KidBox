@@ -162,6 +162,14 @@ Presidi oggi, da non togliere:
   l'esenzione in `firestore.indexes.json` fallisce. Sui dati di giugno-settembre
   Cosimo passava da 363 avvisi a ~47, Maria Pia da 119 a ~35.
 
+Limite noto, accettato il 24/09/2026: se il telefono perde un'uscita (GPS
+spento, zona ri-registrata) e poi manda l'arrivo, il server lo legge come
+doppione e l'arrivo vero **non** si avvisa. Prima si avvisava, al prezzo di
+356 doppioni su 484 eventi. Se arrivano segnalazioni di «non mi ha avvisato
+che è arrivato», i log di `onGeofenceEvent` dicono l'esito di ogni evento
+(`same`, `silent`, `deferred`, `cancelled`): è da lì che si parte, non dal
+togliere il filtro.
+
 Per verificare dal vivo senza avvisare nessuno: famiglia `ZZZ-TEST-GEO`, zona
 con `notifyMembers: ["ZZZ-NESSUNO"]` (arrivare a «no per-user notifications
 to send» vuol dire che l'invio è partito), eventi scritti via REST con token
