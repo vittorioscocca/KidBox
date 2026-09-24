@@ -881,6 +881,8 @@ enum HomeCardID: String, CaseIterable, Codable {
     case passwords
     case location
     case photos
+    /// Non si disegna più in Home (la famiglia sta in Impostazioni): il caso
+    /// resta solo perché gli ordini salvati sul dispositivo lo contengono.
     case family
     case expert
     case pets
@@ -923,8 +925,12 @@ private struct HomeCardGrid: View {
 
     /// L'ordine salvato resta intatto: si filtra solo al momento di disegnare,
     /// così riaccendendo la chat la card torna dov'era.
+    ///
+    /// `.family` non si disegna più — la famiglia si gestisce da Impostazioni —
+    /// ma il caso resta nell'enum: gli ordini già salvati lo contengono, e
+    /// toglierlo farebbe fallire la decodifica dell'intero elenco.
     private var visibleOrder: [HomeCardID] {
-        chatEnabled ? order : order.filter { $0 != .chat }
+        order.filter { $0 != .family && (chatEnabled || $0 != .chat) }
     }
 
     private let columns = [
@@ -1292,7 +1298,7 @@ private struct HomeCardGrid: View {
     
     private func defaultOrder() -> [HomeCardID] {
         // ordine iniziale (puoi cambiarlo quando vuoi)
-        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .wallet, .passwords, .location, .photos, .family, .expert, .travel, .pets, .homeItems, .vehicles]
+        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .wallet, .passwords, .location, .photos, .expert, .travel, .pets, .homeItems, .vehicles]
     }
     
     private func loadOrder() -> [HomeCardID]? {
@@ -1535,7 +1541,7 @@ enum HomeCatalog {
     /// Gruppi tematici (Assistente escluso: ora è il bottone AI flottante).
     static let groups: [(name: LocalizedStringKey, ids: [HomeCardID])] = [
         ("Organizzazione",      [.note, .todo, .shopping, .calendar]),
-        ("Famiglia & Salute",   [.care, .family, .chat]),
+        ("Famiglia & Salute",   [.care, .chat]),
         ("Documenti & Denaro",  [.documents, .expenses, .wallet, .passwords]),
         ("Vita quotidiana",     [.location, .photos, .travel, .pets, .homeItems, .vehicles]),
     ]
@@ -1543,7 +1549,7 @@ enum HomeCatalog {
     /// Priorità di default per le scorciatoie quando l'utilizzo è ancora a zero.
     static let shortcutDefaultPriority: [HomeCardID] = [
         .calendar, .todo, .chat, .documents, .shopping, .note, .expenses,
-        .care, .wallet, .passwords, .location, .photos, .family, .pets, .homeItems, .vehicles, .travel
+        .care, .wallet, .passwords, .location, .photos, .pets, .homeItems, .vehicles, .travel
     ]
 
     /// Ordine "piatto" (senza gruppi) usato come ordine iniziale della vista a griglia:

@@ -12370,24 +12370,24 @@
     },
     "Chi può vedere questo promemoria" : {
       "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Who can see this reminder"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Who can see this reminder"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quién puede ver este recordatorio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui peut voir ce rappel"
+          }
         }
-      },
-      "es" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Quién puede ver este recordatorio"
-        }
-      },
-      "fr" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Qui peut voir ce rappel"
-        }
-      }
       }
     },
     "Chi può vedere questo to-do" : {
@@ -17956,24 +17956,24 @@
     },
     "Data e ora" : {
       "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Date and time"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date and time"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fecha y hora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date et heure"
+          }
         }
-      },
-      "es" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Fecha y hora"
-        }
-      },
-      "fr" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Date et heure"
-        }
-      }
       }
     },
     "DATA E ORA" : {
@@ -20209,46 +20209,46 @@
     },
     "Elenco" : {
       "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "List"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste"
+          }
         }
-      },
-      "es" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Lista"
-        }
-      },
-      "fr" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Liste"
-        }
-      }
       }
     },
     "Elenco non disponibile: riprova." : {
       "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "List unavailable: try again."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List unavailable: try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista no disponible: inténtalo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste indisponible : réessayez."
+          }
         }
-      },
-      "es" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Lista no disponible: inténtalo de nuevo."
-        }
-      },
-      "fr" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Liste indisponible : réessayez."
-        }
-      }
       }
     },
     "Elettrica" : {
@@ -23554,24 +23554,24 @@
     },
     "Eventi" : {
       "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Events"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Events"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eventos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Événements"
+          }
         }
-      },
-      "es" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Eventos"
-        }
-      },
-      "fr" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Événements"
-        }
-      }
       }
     },
     "Eventi e affidamenti" : {
@@ -26111,6 +26111,7 @@
       }
     },
     "Gestisci i membri della famiglia, invita un nuovo genitore con un QR code e tieni sotto controllo chi fa parte del nucleo familiare." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -29025,6 +29026,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réglages IA"
+          }
+        }
+      }
+    },
+    "Impostazioni app" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes de la app"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réglages de l’app"
           }
         }
       }
@@ -32873,24 +32896,24 @@
     },
     "Le sveglie sono state negate a KidBox: il promemoria urgente arriva come notifica. Puoi riattivarle nelle Impostazioni." : {
       "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Alarms are denied for KidBox: an urgent reminder arrives as a notification. You can turn them back on in Settings."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alarms are denied for KidBox: an urgent reminder arrives as a notification. You can turn them back on in Settings."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las alarmas están denegadas para KidBox: un recordatorio urgente llega como notificación. Puedes reactivarlas en Ajustes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les alarmes sont refusées à KidBox : un rappel urgent arrive sous forme de notification. Vous pouvez les réactiver dans Réglages."
+          }
         }
-      },
-      "es" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Las alarmas están denegadas para KidBox: un recordatorio urgente llega como notificación. Puedes reactivarlas en Ajustes."
-        }
-      },
-      "fr" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Les alarmes sont refusées à KidBox : un rappel urgent arrive sous forme de notification. Vous pouvez les réactiver dans Réglages."
-        }
-      }
       }
     },
     "Le tue famiglie" : {
@@ -35668,24 +35691,24 @@
     },
     "Modifica promemoria" : {
       "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Edit reminder"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit reminder"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar recordatorio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier le rappel"
+          }
         }
-      },
-      "es" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Editar recordatorio"
-        }
-      },
-      "fr" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Modifier le rappel"
-        }
-      }
       }
     },
     "Modifica seduta" : {
@@ -38697,24 +38720,24 @@
     },
     "Nome o descrizione del promemoria" : {
       "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Reminder name or description"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder name or description"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre o descripción del recordatorio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nom ou description du rappel"
+          }
         }
-      },
-      "es" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Nombre o descripción del recordatorio"
-        }
-      },
-      "fr" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Nom ou description du rappel"
-        }
-      }
       }
     },
     "Nome prodotto" : {
@@ -38917,24 +38940,24 @@
     },
     "Non c'è ancora un elenco: il promemoria finisce in «Promemoria», creato adesso." : {
       "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "There is no list yet: the reminder goes to “Reminders”, created now."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There is no list yet: the reminder goes to “Reminders”, created now."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todavía no hay ninguna lista: el recordatorio va a «Recordatorios», creada ahora."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il n’y a pas encore de liste : le rappel ira dans « Rappels », créée maintenant."
+          }
         }
-      },
-      "es" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Todavía no hay ninguna lista: el recordatorio va a «Recordatorios», creada ahora."
-        }
-      },
-      "fr" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Il n’y a pas encore de liste : le rappel ira dans « Rappels », créée maintenant."
-        }
-      }
       }
     },
     "Non ci sono ancora dati sanitari registrati, ma puoi farmi domande generali." : {
@@ -41483,24 +41506,24 @@
     },
     "Nuovo promemoria" : {
       "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "New reminder"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New reminder"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo recordatorio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau rappel"
+          }
         }
-      },
-      "es" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Nuevo recordatorio"
-        }
-      },
-      "fr" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Nouveau rappel"
-        }
-      }
       }
     },
     "Nuovo to-do" : {
@@ -46717,24 +46740,24 @@
     },
     "Promemoria salvato, ma la notifica non è stata creata: controlla i permessi." : {
       "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Reminder saved, but the notification was not created: check permissions."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder saved, but the notification was not created: check permissions."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordatorio guardado, pero no se creó la notificación: revisa los permisos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rappel enregistré, mais la notification n’a pas été créée : vérifiez les autorisations."
+          }
         }
-      },
-      "es" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Recordatorio guardado, pero no se creó la notificación: revisa los permisos."
-        }
-      },
-      "fr" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Rappel enregistré, mais la notification n’a pas été créée : vérifiez les autorisations."
-        }
-      }
       }
     },
     "Promemoria vaccino" : {
@@ -55353,24 +55376,24 @@
     },
     "Solo chi ha creato il promemoria può modificare la visibilità." : {
       "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Only whoever created the reminder can change its visibility."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only whoever created the reminder can change its visibility."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo quien ha creado el recordatorio puede cambiar su visibilidad."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seule la personne qui a créé le rappel peut en modifier la visibilité."
+          }
         }
-      },
-      "es" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Solo quien ha creado el recordatorio puede cambiar su visibilidad."
-        }
-      },
-      "fr" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Seule la personne qui a créé le rappel peut en modifier la visibilité."
-        }
-      }
       }
     },
     "Solo chi ha creato il to-do può modificare la visibilità." : {
@@ -56894,6 +56917,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Suggérez-moi un lieu"
+          }
+        }
+      }
+    },
+    "Supporto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soporte"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistance"
           }
         }
       }
@@ -59848,24 +59893,24 @@
     },
     "Un promemoria urgente attiva una sveglia: suona anche se il telefono è silenzioso o se è attiva una full immersion." : {
       "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "An urgent reminder sets off an alarm: it rings even if the phone is silenced or a Focus is on."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An urgent reminder sets off an alarm: it rings even if the phone is silenced or a Focus is on."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un recordatorio urgente activa una alarma: suena aunque el teléfono esté en silencio o haya un modo de concentración activo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un rappel urgent déclenche une alarme : elle sonne même si le téléphone est en silencieux ou si un mode de concentration est actif."
+          }
         }
-      },
-      "es" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Un recordatorio urgente activa una alarma: suena aunque el teléfono esté en silencio o haya un modo de concentración activo."
-        }
-      },
-      "fr" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Un rappel urgent déclenche une alarme : elle sonne même si le téléphone est en silencieux ou si un mode de concentration est actif."
-        }
-      }
       }
     },
     "Un solo orario: una dose ogni %lld giorni." : {
@@ -60046,24 +60091,24 @@
     },
     "Urgente mette in evidenza il promemoria. Su questo dispositivo la sveglia non è disponibile: arriva una notifica." : {
       "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Urgent highlights the reminder. On this device the alarm is not available: a notification arrives instead."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Urgent highlights the reminder. On this device the alarm is not available: a notification arrives instead."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Urgente destaca el recordatorio. En este dispositivo la alarma no está disponible: llega una notificación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Urgent met le rappel en évidence. Sur cet appareil l’alarme n’est pas disponible : une notification arrive à la place."
+          }
         }
-      },
-      "es" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Urgente destaca el recordatorio. En este dispositivo la alarma no está disponible: llega una notificación."
-        }
-      },
-      "fr" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Urgent met le rappel en évidence. Sur cet appareil l’alarme n’est pas disponible : une notification arrive à la place."
-        }
-      }
       }
     },
     "Urologia" : {

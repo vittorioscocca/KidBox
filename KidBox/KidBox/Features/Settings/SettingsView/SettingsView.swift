@@ -48,238 +48,250 @@ struct SettingsView: View {
                     .listRowBackground(cardBackground)
             }
 
-            NavigationLink {
-                AppearanceSettingsView()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: coordinator.appearanceMode.icon)
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Tema")
-                            .foregroundStyle(.primary)
-                        Text(coordinator.appearanceMode.label)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .listRowBackground(cardBackground)
-
-            NavigationLink {
-                LanguageSettingsView()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "globe")
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Lingua")
-                            .foregroundStyle(.primary)
-                        Text(LanguageManager.shared.current.label)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .listRowBackground(cardBackground)
-
-            NavigationLink {
-                MessageSettingsView()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "message.fill")
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    Text("Messaggi")
-                        .foregroundStyle(.primary)
-                }
-            }
-            .listRowBackground(cardBackground)
-            
-            NavigationLink {
-                AISettingsView()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "sparkles")
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    Text("Assistente AI")
-                        .foregroundStyle(.primary)
-                }
-            }
-            .listRowBackground(cardBackground)
-            
-            // La skill esiste solo in italiano: vedi `AlexaAvailability`.
-            if AlexaAvailability.isAvailable {
+            // Le impostazioni vere e proprie: tutto quello che cambia come
+            // l'app si comporta su questo dispositivo.
+            Section {
                 NavigationLink {
-                    AlexaSettingsView()
+                    AppearanceSettingsView()
                 } label: {
                     HStack(spacing: 12) {
-                        Image(systemName: "hifispeaker.fill")
+                        Image(systemName: coordinator.appearanceMode.icon)
                             .foregroundStyle(KBTheme.bubbleTint)
                             .frame(width: 22)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Alexa")
+                            Text("Tema")
                                 .foregroundStyle(.primary)
-                            Text("Spesa e promemoria a voce sugli Echo")
+                            Text(coordinator.appearanceMode.label)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
                 }
                 .listRowBackground(cardBackground)
-            }
 
-            NavigationLink {
-                NotificationSettingsView()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "bell.badge")
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    Text("Notifiche")
-                        .foregroundStyle(.primary)
+                NavigationLink {
+                    LanguageSettingsView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "globe")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Lingua")
+                                .foregroundStyle(.primary)
+                            Text(LanguageManager.shared.current.label)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
-            }
-            .listRowBackground(cardBackground)
+                .listRowBackground(cardBackground)
 
-            NavigationLink {
-                DevicesSettingsView()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "laptopcomputer.and.iphone")
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Dispositivi collegati")
+                NavigationLink {
+                    MessageSettingsView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "message.fill")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        Text("Messaggi")
                             .foregroundStyle(.primary)
-                        Text("Dove hai fatto l'accesso, e come uscirne")
+                    }
+                }
+                .listRowBackground(cardBackground)
+            
+                NavigationLink {
+                    AISettingsView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        Text("Assistente AI")
+                            .foregroundStyle(.primary)
+                    }
+                }
+                .listRowBackground(cardBackground)
+            
+                // La skill esiste solo in italiano: vedi `AlexaAvailability`.
+                if AlexaAvailability.isAvailable {
+                    NavigationLink {
+                        AlexaSettingsView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "hifispeaker.fill")
+                                .foregroundStyle(KBTheme.bubbleTint)
+                                .frame(width: 22)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Alexa")
+                                    .foregroundStyle(.primary)
+                                Text("Spesa e promemoria a voce sugli Echo")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .listRowBackground(cardBackground)
+                }
+
+                NavigationLink {
+                    NotificationSettingsView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "bell.badge")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        Text("Notifiche")
+                            .foregroundStyle(.primary)
+                    }
+                }
+                .listRowBackground(cardBackground)
+
+                NavigationLink {
+                    DevicesSettingsView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "laptopcomputer.and.iphone")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Dispositivi collegati")
+                                .foregroundStyle(.primary)
+                            Text("Dove hai fatto l'accesso, e come uscirne")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .listRowBackground(cardBackground)
+
+                NavigationLink {
+                    PrivacySettingsView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "hand.raised.fill")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Privacy")
+                                .foregroundStyle(.primary)
+                            Text("Report errori e log tecnici")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .listRowBackground(cardBackground)
+
+                NavigationLink {
+                    AutoFillSettingsView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "key.fill")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Password")
+                                .foregroundStyle(.primary)
+                            Text("AutoFill e compilazione automatica")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .listRowBackground(cardBackground)
+
+                NavigationLink {
+                    StorageUsageView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "externaldrive.fill")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        Text("Utilizzo spazio")
+                            .foregroundStyle(.primary)
+                    }
+                }
+                .listRowBackground(cardBackground)
+            } header: {
+                Text("Impostazioni app")
+            }
+
+            // Supporto, guida, sito e recensione: non cambiano niente
+            // dell'app, quindi stanno fuori dall'elenco qui sopra.
+            Section {
+                NavigationLink {
+                    SupportChatView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "lifepreserver.fill")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Assistente & Supporto")
+                                .foregroundStyle(.primary)
+                            Text("Domande, problemi e suggerimenti")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .listRowBackground(cardBackground)
+
+                // Sempre visibile, a differenza del popup di `ReviewPrompter` che
+                // decide il sistema. Chi è scontento ha la voce qui sopra.
+                Link(destination: ReviewPrompter.writeReviewURL) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "star.fill")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Valuta KidBox")
+                                .foregroundStyle(.primary)
+                            Text("Lascia una recensione sull'App Store")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
-            }
-            .listRowBackground(cardBackground)
+                .listRowBackground(cardBackground)
 
-            NavigationLink {
-                PrivacySettingsView()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "hand.raised.fill")
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Privacy")
+                NavigationLink {
+                    UserGuideWebView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "book.fill")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        Text("Guida all'utilizzo")
                             .foregroundStyle(.primary)
-                        Text("Report errori e log tecnici")
+                    }
+                }
+                .listRowBackground(cardBackground)
+
+                // Apex e non www: `www.kidboxapp.com` risponde con un 301 verso
+                // questo indirizzo, quindi si evita il rimbalzo.
+                Link(destination: URL(string: "https://kidboxapp.com")!) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "globe")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        Text("Sito web")
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
+                .listRowBackground(cardBackground)
+            } header: {
+                Text("Supporto")
             }
-            .listRowBackground(cardBackground)
-
-            NavigationLink {
-                AutoFillSettingsView()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "key.fill")
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Password")
-                            .foregroundStyle(.primary)
-                        Text("AutoFill e compilazione automatica")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .listRowBackground(cardBackground)
-
-            NavigationLink {
-                StorageUsageView()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "externaldrive.fill")
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    Text("Utilizzo spazio")
-                        .foregroundStyle(.primary)
-                }
-            }
-            .listRowBackground(cardBackground)
-
-            NavigationLink {
-                SupportChatView()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "lifepreserver.fill")
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Assistente & Supporto")
-                            .foregroundStyle(.primary)
-                        Text("Domande, problemi e suggerimenti")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .listRowBackground(cardBackground)
-
-            // Sempre visibile, a differenza del popup di `ReviewPrompter` che
-            // decide il sistema. Chi è scontento ha la voce qui sopra.
-            Link(destination: ReviewPrompter.writeReviewURL) {
-                HStack(spacing: 12) {
-                    Image(systemName: "star.fill")
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Valuta KidBox")
-                            .foregroundStyle(.primary)
-                        Text("Lascia una recensione sull'App Store")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Image(systemName: "arrow.up.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .listRowBackground(cardBackground)
-
-            NavigationLink {
-                UserGuideWebView()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "book.fill")
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    Text("Guida all'utilizzo")
-                        .foregroundStyle(.primary)
-                }
-            }
-            .listRowBackground(cardBackground)
-
-            // Apex e non www: `www.kidboxapp.com` risponde con un 301 verso
-            // questo indirizzo, quindi si evita il rimbalzo.
-            Link(destination: URL(string: "https://kidboxapp.com")!) {
-                HStack(spacing: 12) {
-                    Image(systemName: "globe")
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    Text("Sito web")
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Image(systemName: "arrow.up.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .listRowBackground(cardBackground)
 
             // Versione/build/test: dentro la List così scorrono con il resto della pagina.
             Section {

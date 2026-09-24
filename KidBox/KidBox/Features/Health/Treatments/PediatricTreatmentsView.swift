@@ -235,10 +235,13 @@ struct PediatricTreatmentsView: View {
     }
     
     private var filtered:    [KBTreatment] { treatments.filter { passesTimeFilter($0) && passesSearch($0) } }
-    private var active:      [KBTreatment] { filtered.filter { lifecycle($0) == .active } }
+    // Le cure a lungo termine hanno una sezione propria, come su Android:
+    // non finiscono mai e in mezzo alle attive nascondono le cure del momento.
+    private var active:      [KBTreatment] { filtered.filter { lifecycle($0) == .active && !$0.isLongTerm } }
+    private var longTerm:    [KBTreatment] { filtered.filter { lifecycle($0) == .active &&  $0.isLongTerm } }
     private var completed:   [KBTreatment] { filtered.filter { lifecycle($0) == .completed } }
     private var inactive:    [KBTreatment] { filtered.filter { lifecycle($0) == .inactive } }
-    private var allFiltered: [KBTreatment] { active + completed + inactive }
+    private var allFiltered: [KBTreatment] { active + longTerm + completed + inactive }
     
     // MARK: - Body
     
@@ -256,6 +259,13 @@ struct PediatricTreatmentsView: View {
                         ForEach(active) { t in rowView(t) }
                     } header: {
                         sectionHeader("Cure Attive", icon: "pills.fill", count: active.count, color: tint)
+                    }
+                }
+                if !longTerm.isEmpty {
+                    Section {
+                        ForEach(longTerm) { t in rowView(t) }
+                    } header: {
+                        sectionHeader("A lungo termine", icon: "infinity", count: longTerm.count, color: .secondary)
                     }
                 }
                 if !completed.isEmpty {

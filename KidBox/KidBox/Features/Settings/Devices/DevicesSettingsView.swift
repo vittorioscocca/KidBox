@@ -11,14 +11,35 @@ import FirebaseAuth
 import FirebaseFirestore
 import FirebaseFunctions
 
-struct KBDeviceSession: Identifiable, Equatable {
+/// Un documento `sessions/{id}` così com'è su Firestore, prima di raggruppare.
+struct KBRawDeviceSession {
     let id: String
     let platform: String
     let deviceName: String
     let osVersion: String
     let lastSeenAt: Date?
+}
 
-    var isCurrent: Bool { id == KBDeviceSessionRegistry.installId }
+/// Una riga dell'elenco: **un dispositivo**, non un documento.
+///
+/// I documenti in `users/{uid}/sessions` sono per *installazione* (vedi
+/// `KBDeviceSessionRegistry.installId`): reinstallando l'app, o svuotandone i
+/// dati, se ne crea uno nuovo e il vecchio resta lì. L'elenco mostrava così lo
+/// stesso telefono due o tre volte, con date diverse. Qui le righe dello stesso
+/// dispositivo diventano una sola, con la data di connessione più recente.
+struct KBDeviceSession: Identifiable, Equatable {
+    /// Tutti i documenti che appartengono a questo dispositivo, dal più recente.
+    /// Servono interi: disconnetterlo deve cancellarli tutti, o il duplicato
+    /// riapparirebbe al caricamento successivo.
+    let sessionIds: [String]
+    let platform: String
+    let deviceName: String
+    let osVersion: String
+    let lastSeenAt: Date?
+
+    var id: String { sessionIds.first ?? deviceName }
+
+    var isCurrent: Bool { sessionIds.contains(KBDeviceSessionRegistry.installId) }
 
     var icon: String {
         switch platform {
@@ -164,6 +185,44 @@ struct DevicesSettingsView: View {
 
     // MARK: - Dati
 
+    /// Raggruppa i documenti per dispositivo: stessa piattaforma e stesso nome
+    /// sono la stessa macchina, e ne resta una riga sola con la connessione più
+    /// recente. La versione di sistema non entra nella chiave: un aggiornamento
+    /// di iOS non cambia il documento (viene riscritto in place), quindi
+    /// tenerla dentro avrebbe solo rischiato di separare i duplicati veri.
+    ///
+    /// Il prezzo è dichiarato: due iPhone identici dello stesso utente
+    /// finiscono in una riga sola. iOS non lascia leggere il nome che l'utente
+    /// ha dato al telefono (vedi `KBDeviceSessionRegistry.deviceName`), quindi
+    /// l'unica alternativa era continuare a mostrare le righe doppie.
+    static func collapse(_ raw: [KBRawDeviceSession]) -> [KBDeviceSession] {
+        var order: [String] = []
+        var groups: [String: [KBRawDeviceSession]] = [:]
+
+        for item in raw {
+            let key = item.platform.lowercased() + "|"
+                + item.deviceName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            if groups[key] == nil { order.append(key) }
+            groups[key, default: []].append(item)
+        }
+
+        return order.compactMap { key -> KBDeviceSession? in
+            guard let items = groups[key] else { return nil }
+            // Dal più recente: la prima riga detta data, versione e id mostrato.
+            let sorted = items.sorted {
+                ($0.lastSeenAt ?? .distantPast) > ($1.lastSeenAt ?? .distantPast)
+            }
+            guard let newest = sorted.first else { return nil }
+            return KBDeviceSession(
+                sessionIds: sorted.map(\.id),
+                platform: newest.platform,
+                deviceName: newest.deviceName,
+                osVersion: newest.osVersion,
+                lastSeenAt: newest.lastSeenAt
+            )
+        }
+    }
+
     private func load() async {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         isLoading = true
@@ -171,8 +230,8 @@ struct DevicesSettingsView: View {
         do {
             let snap = try await Firestore.firestore()
                 .collection("users").document(uid).collection("sessions").getDocuments()
-            let list = snap.documents.map { d -> KBDeviceSession in
-                KBDeviceSession(
+            let raw = snap.documents.map { d in
+                KBRawDeviceSession(
                     id: d.documentID,
                     platform: d.get("platform") as? String ?? "",
                     deviceName: d.get("deviceName") as? String
@@ -182,7 +241,7 @@ struct DevicesSettingsView: View {
                 )
             }
             // Questo dispositivo in cima, poi i più recenti.
-            sessions = list.sorted {
+            sessions = Self.collapse(raw).sorted {
                 if $0.isCurrent != $1.isCurrent { return $0.isCurrent }
                 return ($0.lastSeenAt ?? .distantPast) > ($1.lastSeenAt ?? .distantPast)
             }
@@ -198,9 +257,14 @@ struct DevicesSettingsView: View {
         isWorking = true
         defer { isWorking = false }
         do {
-            try await Firestore.firestore()
-                .collection("users").document(uid)
-                .collection("sessions").document(session.id).delete()
+            // Tutti i documenti del dispositivo, non solo quello mostrato: se ne
+            // restasse indietro uno, la riga tornerebbe al prossimo caricamento
+            // e quell'installazione resterebbe collegata.
+            let sessionsRef = Firestore.firestore()
+                .collection("users").document(uid).collection("sessions")
+            for sessionId in session.sessionIds {
+                try await sessionsRef.document(sessionId).delete()
+            }
 
             if session.isCurrent {
                 // Non si aspetta il proprio listener: il logout locale è già

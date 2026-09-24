@@ -76,8 +76,6 @@ enum HomeTipsCatalog {
               tip: "Condividi la posizione in tempo reale con la famiglia e crea zone (geofence) per essere avvisato quando un bambino entra o esce da un luogo, come scuola o casa."),
         .init(id: "photos", title: "Foto e video", symbol: "photo.stack.fill", tint: .pink,
               tip: "Raccogli le foto e i video importanti della famiglia in album condivisi, organizzati automaticamente per data."),
-        .init(id: "family", title: "Family", symbol: "person.2.fill", tint: .teal,
-              tip: "Gestisci i membri della famiglia, invita un nuovo genitore con un QR code e tieni sotto controllo chi fa parte del nucleo familiare."),
         .init(id: "pets", title: "Animali domestici", symbol: "pawprint.fill", tint: Color(hex: "#FF9500") ?? .orange,
               tip: "Tieni traccia di vaccini, visite veterinarie e promemoria per ogni animale domestico di famiglia."),
         .init(id: "home_items", title: "Casa", symbol: "house.fill", tint: Color(hex: "#8B6914") ?? .brown,
