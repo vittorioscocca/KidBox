@@ -17,8 +17,8 @@ Dalla root del repo:
 
 Il terzo comando carica il modulo ed esegue tutte le definizioni
 `onCall`/`onRequest`/`onSchedule`/trigger: una firma incompatibile esplode
-qui invece che in produzione. Deve risolvere senza errori (85 export al
-23/09/2026: se il numero cambia, dillo).
+qui invece che in produzione. Deve risolvere senza errori (87 export al
+24/09/2026: se il numero cambia, dillo).
 
 Poi:
 
@@ -36,6 +36,24 @@ Poi:
   Due tranelli documentati: `**` nelle LIST non è legato (leggere il capture
   nega ogni query di collezione, e iOS si auto-espelle dalla famiglia);
   `isMember` tollera `isDeleted` assente ma pretende `role`.
+
+### Trigger che copiano i documenti membro
+
+`syncMembershipIndex` tiene `users/{uid}/memberships/{familyId}` allineato a
+`families/{familyId}/members/{memberId}`. Ogni function che decide «è un
+membro?» da un documento membro deve usare **`isActiveMember`** (non
+cancellato **e** con `role`), cioè lo stesso criterio di `isMember` nelle
+rules. Senza il `role` si ricasca nella regressione del 24/09/2026: iOS e web
+si rinominano con `setData({displayName, updatedAt}, merge)`, dopo una revoca
+quella scrittura ricrea il documento con solo nome e data, e la function lo
+contava come membro attivo: riscriveva l'indice a chi era stato tolto, e il
+client si ritrovava in lista una famiglia che non può leggere. Stessa regola
+per il backfill: niente ruolo di ripiego («member» inventato).
+
+Verifica dal vivo di un trigger sui membri (con REST e token Owner, su id
+`ZZZ-TEST-…`): documento senza `role` → **nessun** indice; aggiunto `role` →
+indice. I documenti di prova vanno poi nel comando di cancellazione per
+l'utente.
 
 ## 2. Deploy
 
@@ -68,6 +86,11 @@ passato.
   `TypeError`, `permission`.
 - Per una callable, se possibile una chiamata reale (curl con token
   utente, o dalla console admin) e lettura della risposta.
+- Se hai toccato membri, indice delle famiglie, join, revoca o
+  `deleteFamily`: `node scripts/membership-index-audit.js` (sola lettura)
+  prima e dopo. Deve restare 0 «attivi senza indice»; gli orfani si
+  cancellano solo col comando all'utente. Una backfill parte **sempre** prima
+  con `dryRun: true`.
 - Se la feature richiede anche una build client, dillo esplicitamente: gli
   utenti con la build vecchia vedono il fallback, non la feature.
 

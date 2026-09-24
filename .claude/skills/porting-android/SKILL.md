@@ -30,6 +30,11 @@ JDK: **proporlo, non applicarlo di iniziativa**.
    reali. Deriva gli upsert da `snap.documents` (risultato completo); usa
    `documentChanges` **solo** filtrato su `REMOVED`, che sul delta è affidabile.
    Già corretto in `TodoRemoteStore`; gli altri RemoteStore non sono auditati.
+   Stesso spirito per l'elenco delle famiglie: `users/{uid}/memberships` è una
+   **copia** (la tiene il server da `syncMembershipIndex`), la verità sono i
+   documenti membro. Il fallback `collectionGroup("members")` funziona solo
+   con `whereEqualTo("uid", uid)` esatto (è l'unica forma che le rules
+   ammettono) e scarta i documenti senza `role` o con `isDeleted == true`.
 2. **Le foreign key di Room scartano in silenzio.** `kb_family_members` →
    `kb_families`, `kb_todo_lists.childId`, `kb_todo_items.listId`: se il padre
    non è ancora in Room, il figlio viene scartato (o salvato con `listId = null`
@@ -71,6 +76,37 @@ Per misurare davvero: il debug dell'SDK è già attivo, `adb logcat` mostra
    `addFlags(FLAG_LAYOUT_IN_SCREEN or FLAG_LAYOUT_INSET_DECOR)` in un
    `SideEffect`. Niente `navigationBarsPadding()` in più, o si raddoppia.
    Stesso pattern in PetDetail, Chat, VisibilityPicker.
+
+## Le trappole delle liste di chat (trovate il 24/09/2026)
+
+11. **Coil: prefetch e bolla devono fare la stessa richiesta.** Stessa
+    `memoryCacheKey` ma taglia diversa (prefetch 400×400, bolla alla misura
+    del layout) e Coil scarta la bitmap prefetchata perché più piccola:
+    ridecodifica proprio durante lo scroll. Le richieste della chat stanno in
+    `ChatMediaRequests` (taglia esplicita, stessa per tutti e due). **Mai un
+    URL video a Coil**, nemmeno come ripiego: non lo decodifica, ma prima lo
+    scarica per intero nella cache immagini. Le miniature video passano da
+    `VideoThumbnailLoader` (max 640 px; la galleria a schermo intero chiede
+    `maxSide` pieno).
+12. **Stato iniziale dalla cache, non `null`.** `produceState(initialValue =
+    null)` per anteprime link e miniature: ogni bolla che rientra nel
+    viewport nasce senza card e cresce un frame dopo, e la lista scatta. Si
+    parte da `peek()` sincrono (`LinkPreviewFetcher`, `VideoThumbnailLoader`,
+    `SenderAvatarCache`). Nelle `LazyColumn` eterogenee serve `contentType`.
+13. **Lo stato di scroll non si legge nel corpo della schermata.**
+    `listState.firstVisibleItemIndex` o `layoutInfo` letti nudi (per la FAB
+    «vai in fondo») ricompongono tutta la schermata a ogni frame: si usa
+    `derivedStateOf`. Idem per contatori ad alta frequenza come il tick del
+    typewriter AI: si osservano con `snapshotFlow` dentro l'effetto, non
+    nella composizione. E si ricordano le derivazioni (`messages.reversed()`,
+    `SimpleDateFormat`, parse del markdown), che altrimenti rigirano a ogni
+    tasto premuto nel composer.
+14. **Chat AI: si segue il fondo solo se l'utente ci sta.**
+    `AIChatListScrollEffect` riportava giù in modo incondizionato a ogni tick
+    del typewriter (ogni 120 ms) e a ogni messaggio: chi risaliva a rileggere
+    veniva strappato giù. Ora `followBottom` si spegne quando lo scroll si
+    ferma lontano dal fondo e si riaccende al ritorno o all'invio. Non
+    reintrodurre `scrollToItem` incondizionati in quell'effetto.
 
 ## Notifiche e deep link
 

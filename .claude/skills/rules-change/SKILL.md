@@ -59,6 +59,25 @@ serve deployare per altro prima di allora, si rimette l'`allow create` di
    membro revocato il cui documento venisse ricreato da un `setData(merge)` del
    client (iOS e web riscrivono il nome così) rientrerebbe dalla finestra.
 
+4. **Le query di collection group non passano dalle `match` annidate.**
+   `collectionGroup("members")` ignora `match /families/{familyId}/members/{uid}`:
+   serve una regola sua, `match /{path=**}/members/{memberId}` (oggi ammette
+   solo `list` con `resource.data.get('uid', '') == request.auth.uid`), **e**
+   un'esenzione in `firestore.indexes.json`, altrimenti la query non parte.
+   Mancavano entrambe fino al 24/09/2026, e il fallback di Android per
+   ritrovare le famiglie falliva in silenzio dentro un try/catch. Tre cose da
+   non rompere: la regola vale per **ogni** collezione chiamata `members`,
+   anche future (una `members` fuori da `families/` sarebbe listabile col
+   proprio uid); il client deve filtrare **esattamente** su `uid ==` il
+   proprio, o la query è negata tutta; `.get('uid', '')` e non `.uid`
+   (trappola 3). Nella suite ci sono i tre casi: non toglierli.
+
+   E il rovescio della trappola 3: il criterio «membro = non cancellato **e**
+   con `role`» vale anche fuori dalle rules. La function `syncMembershipIndex`
+   lo aveva dimenticato (vedi `/deploy-functions`); se lo cambi qui, cambialo
+   in `isActiveMember` in `functions/index.js` e in
+   `scripts/membership-index-audit.js`.
+
 ## Prima di scrivere la regola: guarda i dati veri
 
 Una regola che legge un campo vale quanto la presenza di quel campo in
@@ -104,6 +123,9 @@ regola esistente può togliere accesso a dati in produzione e va detto chiaro.
 Dopo:
 
 1. Verifica che il **ruleset attivo coincida col commit** appena fatto.
+   Gli indici hanno un deploy loro: controlla che siano `READY`
+   (`GET …/collectionGroups/{coll}/fields/{campo}` sull'API Firestore Admin).
+   Se hai toccato membri o appartenenza, `node scripts/membership-index-audit.js`.
 2. Guarda `firestore.googleapis.com/rules/evaluation_count` con label
    `result=DENY` su Cloud Monitoring: **i negati delle rules non finiscono in
    Cloud Logging**, si vedono solo lì. Riferimento storico: 0-6 DENY/ora.

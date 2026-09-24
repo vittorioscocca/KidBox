@@ -46,6 +46,8 @@ se combacia, dillo e cita la causa invece di ripartire da zero:
 | testo in italiano su app in altra lingua | `String` invece di `LocalizedStringKey` → `/localizzazione` |
 | feature a pagamento accessibile a un Free | i tre presidi → `/gating-pro` |
 | promemoria to-do che non parte | `remindSentAt: null` esplicito mancante |
+| famiglia sparita dal selettore, o famiglia in lista che dà errore di permesso / «non trovata» | indice `users/{uid}/memberships` disallineato dai documenti membro → `node scripts/membership-index-audit.js` (sola lettura) |
+| chat che scatta scorrendo, o che torna giù da sola | vedi `/porting-android`, trappole 11-13 |
 
 ## Passo 3 — segna i ticket come presi in carico
 
