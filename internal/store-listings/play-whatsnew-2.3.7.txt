@@ -1,0 +1,24 @@
+<it-IT>
+• Chat più fluida: scorri tra foto, video e link senza scatti.
+• Posizione in chat: un tocco la apre nelle mappe.
+• Assistente AI: mentre risponde puoi risalire a rileggere, senza essere riportato in fondo.
+• Zone di arrivo e uscita: avvisi più affidabili, senza doppioni né ritardi.
+</it-IT>
+<en-US>
+• Smoother chat: scroll through photos, videos and links without stutters.
+• Location in chat: one tap opens it in maps.
+• AI assistant: while it answers you can scroll up to reread, without being pulled back down.
+• Arrival and departure zones: more reliable alerts, no duplicates or delays.
+</en-US>
+<es-ES>
+• Chat más fluido: desplázate entre fotos, vídeos y enlaces sin tirones.
+• Ubicación en el chat: un toque la abre en los mapas.
+• Asistente IA: mientras responde puedes subir a releer sin que te lleve de vuelta abajo.
+• Zonas de llegada y salida: avisos más fiables, sin duplicados ni retrasos.
+</es-ES>
+<fr-FR>
+• Chat plus fluide : faites défiler photos, vidéos et liens sans saccades.
+• Position dans le chat : un toucher l'ouvre dans les cartes.
+• Assistant IA : pendant qu'il répond, vous pouvez remonter pour relire sans être ramené en bas.
+• Zones d'arrivée et de départ : alertes plus fiables, sans doublons ni retards.
+</fr-FR>
