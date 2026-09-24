@@ -108,6 +108,8 @@ Formato, in italiano, compatto:
 
 **I tre numeri che contano** (sempre in cima, sempre questi, con il confronto sulla settimana prima): famiglie con 2+ membri **senza le famiglie di prova**, WAU di valore del rollup, fidelizzazione a 7 giorni di Play. Se uno di questi non si è mosso, dillo: è la notizia, anche quando tutto il resto cresce.
 
+La **fidelizzazione a 7 giorni** nessuno script la legge (non è nella Reporting API): prendila dall'ultimo export manuale in `internal/play-export/` se c'è, altrimenti scrivi «n/d, da Play Console» e non inventare un sostituto.
+
 **Sintesi in 3 righe** — come sta andando: utenti attivi ieri e l'altro ieri per piattaforma (iOS / Android / web) contro la media 7gg; nuovi utenti; una frase sul trend a 14 giorni.
 
 **Funnel acquisizione (ieri, e altro ieri tra parentesi)**
