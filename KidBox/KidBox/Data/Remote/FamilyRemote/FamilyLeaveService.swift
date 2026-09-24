@@ -162,6 +162,33 @@ final class FamilyLeaveService {
 
         KBLog.sync.kbInfo("deleteFamily completed familyId=\(familyId)")
     }
+
+    /// Come `deleteFamily`, ma il wipe locale avviene **solo** se il server ha
+    /// confermato la cancellazione.
+    ///
+    /// La differenza conta quando a chiedere la cancellazione non è una persona
+    /// ma il codice: `deleteFamily` lancia la Cloud Function in un `Task` e
+    /// cancella i dati locali senza aspettarne l'esito, così un rifiuto del
+    /// server passa inosservato. Il 23/09/2026 la function ha respinto la
+    /// richiesta della pulizia automatica (`KBLeftoverFamilyCleaner`) perché la
+    /// famiglia aveva cinque membri attivi, e il client ha cancellato lo stesso
+    /// il proprio: la famiglia è sparita dall'app pur essendo intatta su
+    /// Firestore, e senza l'indice `users/{uid}/memberships/{familyId}` non
+    /// c'era più modo di ritrovarla.
+    ///
+    /// Se la function fallisce, l'errore arriva al chiamante e in locale non si
+    /// tocca niente.
+    func deleteFamilyIfServerConfirms(familyId: String) async throws {
+        KBLog.sync.kbInfo("deleteFamilyIfServerConfirms started familyId=\(familyId)")
+
+        let functions = Functions.functions(region: "europe-west1")
+        _ = try await functions.httpsCallable("deleteFamily").call(["familyId": familyId])
+        KBLog.sync.kbInfo("deleteFamilyIfServerConfirms: il server ha cancellato familyId=\(familyId)")
+
+        try wipeFamilyLocalOnly(familyId: familyId)
+
+        KBLog.sync.kbInfo("deleteFamilyIfServerConfirms completed familyId=\(familyId)")
+    }
     
     /// Reazione a un'espulsione **già verificata** (vedi
     /// `SyncCenter.verifyRevocation`).
