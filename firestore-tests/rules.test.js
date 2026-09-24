@@ -203,6 +203,21 @@ async function check(nome, promessa) {
   await check("escrow: NON si LISTA la collezione",
       assertFails(dbMembro.collection(`families/${FAM}/memberKeyBackups`).get()));
 
+  // Il fallback di Android quando l'indice `users/{uid}/memberships` è
+  // incompleto: ritrovare le proprie famiglie dai documenti membro con una
+  // query di collection group. Senza una regola a livello di collection group
+  // — le `match /families/{familyId}/members/{uid}` NON valgono lì — la query
+  // è negata, e nel client sta dentro un try/catch: fallisce in silenzio, e la
+  // rete di sicurezza sembra esserci senza esserci.
+  await check("membro: collection group LIST dei PROPRI documenti membro",
+      assertSucceeds(dbMembro.collectionGroup("members")
+          .where("uid", "==", MEMBRO).get()));
+  await check("estraneo: collection group LIST sull'uid di un ALTRO è negata",
+      assertFails(env.authenticatedContext("curioso1").firestore()
+          .collectionGroup("members").where("uid", "==", MEMBRO).get()));
+  await check("membro: collection group LIST di TUTTI i membri è negata",
+      assertFails(dbMembro.collectionGroup("members").get()));
+
   // ── PASSAGGIO DI PROPRIETÀ ─────────────────────────
   //
   // Regressione vera, trovata il 14/09/2026: iOS e web creano il membro owner

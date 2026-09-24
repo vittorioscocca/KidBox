@@ -192,6 +192,29 @@ service cloud.firestore {
     }
 
     // ── FAMILIES ───────────────────────────────────────────
+    // ── I PROPRI DOCUMENTI MEMBRO, OVUNQUE SIANO ──────────
+    //
+    // Una query di collection group NON passa dalle `match` annidate sotto
+    // `families/{familyId}`: per Firestore è un'altra cosa, e senza una regola
+    // a livello di collection group viene negata e basta.
+    //
+    // Serve a ritrovare le proprie famiglie quando l'indice
+    // `users/{uid}/memberships` è incompleto. Quell'indice è una copia: la
+    // verità su chi è membro di cosa sta nei documenti membro. Android ha
+    // sempre avuto questo fallback nel codice, ma falliva in silenzio dentro un
+    // try/catch — mancavano sia la regola sia l'esenzione di indice.
+    //
+    // Non apre niente: la query è accettata solo se filtra sul proprio uid
+    // (`where("uid", "==", auth.uid)`), quindi restituisce soltanto documenti
+    // che descrivono l'appartenenza di chi la fa; senza quel filtro resta
+    // negata. Il capture `**` non viene letto — leggerlo negherebbe ogni LIST
+    // (vedi la nota sul wildcard delle sottocollezioni). `data.get('uid', '')`
+    // e non `.uid`: un documento senza quel campo darebbe errore di
+    // valutazione, e l'errore nega l'intera query.
+    match /{path=**}/members/{memberId} {
+      allow list: if isSignedIn() && resource.data.get('uid', '') == request.auth.uid;
+    }
+
     match /families/{familyId} {
       // Massimo 2 famiglie create per account.
       // `createsNoPlanField()` impedisce di nascere già Pro/Max: senza quel
