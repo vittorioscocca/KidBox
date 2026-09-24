@@ -1310,6 +1310,9 @@ exports.expireTemporaryLocations = onSchedule(
 // GEOFENCE — arrivo / partenza zona
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Oltre questo ritardo fra evento sul telefono e arrivo al server, niente avviso. */
+const GEOFENCE_STALE_MS = 15 * 60 * 1000;
+
 exports.onGeofenceEvent = onDocumentCreated(
     {
       document: "families/{familyId}/geofenceEvents/{eventId}",
@@ -1360,15 +1363,6 @@ exports.onGeofenceEvent = onDocumentCreated(
         return;
       }
 
-      if (transitionType === "arrive" && geofence.notifyOnArrive === false) {
-        logger.info("onGeofenceEvent: notifyOnArrive disabled", {familyId, geofenceId});
-        return;
-      }
-
-      if (transitionType === "leave" && geofence.notifyOnLeave === false) {
-        logger.info("onGeofenceEvent: notifyOnLeave disabled", {familyId, geofenceId});
-        return;
-      }
 
       // Gate per-utente autoritativo: la zona vale solo per i membri in
       // monitoredMemberIds. Array vuoto/assente = si applica a chiunque (vedi
@@ -1381,6 +1375,64 @@ exports.onGeofenceEvent = onDocumentCreated(
       if (monitoredMemberIds.length > 0 && !monitoredMemberIds.includes(senderUid)) {
         logger.info("onGeofenceEvent: sender not monitored for this geofence",
             {familyId, geofenceId, senderUid});
+        return;
+      }
+
+      // ── Solo i CAMBI di stato diventano notifiche ────────────────────────
+      //
+      // Il telefono di chi si muove non manda solo attraversamenti veri. Sui 484
+      // eventi di «Casa genitore» (Famiglia Scocca, giugno-settembre 2026) 356
+      // ripetevano il tipo precedente: «è arrivato» su «è arrivato», anche tre
+      // nello stesso secondo, quando la coda offline di Firestore si svuota o
+      // Play services ri-registra le zone. Per chi riceve, ognuno era un avviso
+      // falso con la persona ferma a casa. Qui si tiene l'ultimo stato per zona e
+      // persona e si notifica solo se cambia. La transazione serve perché gli
+      // eventi di una raffica arrivano insieme e i trigger girano in parallelo.
+      //
+      // Stesso posto per gli eventi in ritardo: se il client dichiara quando è
+      // successo (`clientAt`, dalle build che lo scrivono) e sono passati più di
+      // GEOFENCE_STALE_MS, lo stato si aggiorna ma l'avviso no — «è uscito»
+      // un'ora dopo, a persona già rientrata, è falso quanto un doppione.
+      const stateRef = admin.firestore()
+          .collection("families").doc(familyId)
+          .collection("geofenceState").doc(`${geofenceId}_${senderUid}`);
+      const clientAtMs = typeof eventData.clientAt === "number" ? eventData.clientAt :
+          (eventData.clientAt?.toMillis ? eventData.clientAt.toMillis() : null);
+      const isStale = clientAtMs !== null && Date.now() - clientAtMs > GEOFENCE_STALE_MS;
+
+      const isChange = await admin.firestore().runTransaction(async (tx) => {
+        const snap = await tx.get(stateRef);
+        const lastType = snap.exists ? snap.data().lastType : null;
+        if (lastType === transitionType) return false;
+        tx.set(stateRef, {
+          geofenceId,
+          uid: senderUid,
+          lastType: transitionType,
+          lastEventId: geofenceEventId,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return true;
+      });
+      if (!isChange) {
+        logger.info("onGeofenceEvent: stesso stato di prima, nessuna notifica",
+            {familyId, geofenceId, senderUid, transitionType});
+        return;
+      }
+      if (isStale) {
+        logger.info("onGeofenceEvent: evento in ritardo, stato aggiornato senza notifica",
+            {familyId, geofenceId, senderUid, transitionType, ritardoMin: Math.round((Date.now() - clientAtMs) / 60000)});
+        return;
+      }
+
+      // I filtri per tipo vengono DOPO lo stato: anche un'uscita che non si notifica
+      // deve registrarsi, o il rientro successivo sembrerebbe un doppione.
+      if (transitionType === "arrive" && geofence.notifyOnArrive === false) {
+        logger.info("onGeofenceEvent: notifyOnArrive disabled", {familyId, geofenceId});
+        return;
+      }
+
+      if (transitionType === "leave" && geofence.notifyOnLeave === false) {
+        logger.info("onGeofenceEvent: notifyOnLeave disabled", {familyId, geofenceId});
         return;
       }
 
@@ -5046,6 +5098,7 @@ const FAMILY_SUBCOLLECTIONS = [
   // ── Zone di arrivo ─────────────────────────────────────────────
   "geofences",
   "geofenceEvents",
+  "geofenceState",
   // ── Backup cifrati della master key, uno per membro ────────────
   // Mancavano: alla cancellazione della famiglia restavano orfani, con
   // dentro la chiave wrappata di ogni membro.

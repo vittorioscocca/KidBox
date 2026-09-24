@@ -424,7 +424,7 @@ function ZoneModal({ zone, onCancel, onSave, onDelete }) {
         max="2000"
         step="25"
         value={radius}
-        onChange={(e) => setRadius(e.target.value)}
+        onChange={(e) => setRadius(Number(e.target.value))}
         className="radius-slider"
       />
 

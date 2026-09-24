@@ -173,7 +173,9 @@ export async function saveGeofence({ familyId, uid, geofence }) {
     emoji: geofence.emoji ?? null,
     latitude: geofence.latitude,
     longitude: geofence.longitude,
-    radius: geofence.radius,
+    // Numero, sempre: lo slider dà stringhe, e iOS/Android leggono una stringa come
+    // raggio assente e ripiegano su 200 m.
+    radius: Number(geofence.radius) || 200,
     notifyOnArrive: geofence.notifyOnArrive ?? true,
     notifyOnLeave: geofence.notifyOnLeave ?? false,
     notifyMembers: geofence.notifyMembers ?? [],
