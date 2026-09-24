@@ -1313,6 +1313,127 @@ exports.expireTemporaryLocations = onSchedule(
 /** Oltre questo ritardo fra evento sul telefono e arrivo al server, niente avviso. */
 const GEOFENCE_STALE_MS = 15 * 60 * 1000;
 
+/** Quanto aspetta l'avviso di uscita, per scartare le uscite lampo (scelta dell'utente, 24/09/2026). */
+const GEOFENCE_LEAVE_DELAY_MS = 5 * 60 * 1000;
+
+/**
+ * Manda l'avviso di arrivo/uscita da una zona ai destinatari configurati.
+ * Condiviso fra onGeofenceEvent (arrivi, subito) e sendDueGeofenceLeaves
+ * (uscite, dopo GEOFENCE_LEAVE_DELAY_MS).
+ *
+ * @param {object} p parametri
+ * @param {string} p.familyId famiglia
+ * @param {string} p.geofenceId zona
+ * @param {object} p.geofence dati della zona
+ * @param {string} p.senderUid chi si è mosso
+ * @param {string} p.displayName nome di chi si è mosso
+ * @param {string} p.transitionType "arrive" | "leave"
+ * @param {string} p.geofenceEventId evento d'origine
+ * @return {Promise<void>}
+ */
+async function sendGeofenceNotification({
+  familyId, geofenceId, geofence, senderUid, displayName, transitionType, geofenceEventId,
+}) {
+  const geofenceName = (geofence.name || "").trim() || "una zona";
+  const notifyMembers = Array.isArray(geofence.notifyMembers) ? geofence.notifyMembers : [];
+
+  let targetUids = [];
+
+  if (notifyMembers.length === 0) {
+    const membersSnap = await admin.firestore()
+        .collection("families").doc(familyId)
+        .collection("members")
+        .get();
+
+    if (membersSnap.empty) {
+      logger.warn("geofence: members subcollection is empty", {familyId});
+      return;
+    }
+
+    targetUids = membersSnap.docs
+        .map((d) => d.id)
+        .filter((uid) => uid && uid !== senderUid);
+  } else {
+    targetUids = notifyMembers.filter((uid) => uid && uid !== senderUid);
+  }
+
+  if (targetUids.length === 0) {
+    logger.info("geofence: no notification targets", {familyId, geofenceId});
+    return;
+  }
+
+  const isArrival = transitionType === "arrive";
+  const titleKey = isArrival ? "geofence.arriveTitle" : "geofence.leaveTitle";
+  const bodyKey = isArrival ? "geofence.arriveBody" : "geofence.leaveBody";
+
+  const messagesToSend = [];
+
+  // Preferenze e token di tutti i destinatari in una volta sola, poi i
+  // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
+  const tokensByUid = await getTokensForUsers(targetUids, null);
+  const recipients = targetUids.filter(
+      (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
+  const badgeByUid = await incrementCountersAndGetBadges(
+      {familyId, uids: recipients, field: "location"});
+
+  for (const uid of recipients) {
+    const {tokens, refsByToken, lang} = tokensByUid.get(uid);
+    const badge = badgeByUid.get(uid) || 0;
+
+    messagesToSend.push({
+      uid,
+      refsByToken,
+      ...buildDataOnlyMessage({
+        tokens,
+        title: tn(lang, titleKey, {name: displayName}),
+        body: tn(lang, bodyKey, {place: geofenceName}),
+        data: {
+          type: "geofenceEvent",
+          familyId,
+          geofenceId,
+          geofenceEventId,
+        },
+        badge,
+      }),
+    });
+  }
+
+  if (messagesToSend.length === 0) {
+    logger.info("geofence: no per-user notifications to send", {familyId, geofenceId});
+    return;
+  }
+
+  let totalSuccess = 0;
+  let totalFailure = 0;
+
+  for (const msg of messagesToSend) {
+    const result = await admin.messaging().sendEachForMulticast({
+      tokens: msg.tokens,
+      notification: msg.notification,
+      data: msg.data,
+      apns: msg.apns,
+      android: msg.android,
+    });
+
+    totalSuccess += result.successCount;
+    totalFailure += result.failureCount;
+
+    // `refsByToken` arriva già da getTokensForUsers: senza, il prune
+    // rileggerebbe la sottocollezione token appena letta.
+    await pruneInvalidFcmTokens(msg.uid, msg.tokens, result.responses, msg.refsByToken);
+  }
+
+  logger.info("geofence: send result", {
+    familyId,
+    geofenceId,
+    geofenceEventId,
+    successCount: totalSuccess,
+    failureCount: totalFailure,
+    userTargets: messagesToSend.length,
+  });
+}
+
+
 exports.onGeofenceEvent = onDocumentCreated(
     {
       document: "families/{familyId}/geofenceEvents/{eventId}",
@@ -1400,139 +1521,132 @@ exports.onGeofenceEvent = onDocumentCreated(
           (eventData.clientAt?.toMillis ? eventData.clientAt.toMillis() : null);
       const isStale = clientAtMs !== null && Date.now() - clientAtMs > GEOFENCE_STALE_MS;
 
-      const isChange = await admin.firestore().runTransaction(async (tx) => {
+      // Chi può ricevere questo tipo di avviso, deciso PRIMA della transazione:
+      // anche un evento che non si notifica deve aggiornare lo stato, o il
+      // successivo sembrerebbe un doppione.
+      const notifiable = !isStale && (transitionType === "arrive" ?
+          geofence.notifyOnArrive !== false : geofence.notifyOnLeave !== false);
+
+      // Esiti: "same" (doppione) · "silent" (cambio senza avviso) · "notify"
+      // (arrivo da avvisare subito) · "deferred" (uscita in attesa) ·
+      // "cancelled" (rientro prima che l'uscita fosse avvisata).
+      //
+      // L'uscita aspetta GEOFENCE_LEAVE_DELAY_MS: metà delle uscite di Cosimo
+      // rientravano in meno di 5 minuti, GPS che oscilla sul bordo con la persona
+      // ferma in casa. Se il rientro arriva prima, per chi riceve non è successo
+      // niente: si annullano tutti e due. Le uscite in attesa le manda
+      // sendDueGeofenceLeaves, ogni minuto.
+      const outcome = await admin.firestore().runTransaction(async (tx) => {
         const snap = await tx.get(stateRef);
-        const lastType = snap.exists ? snap.data().lastType : null;
-        if (lastType === transitionType) return false;
-        tx.set(stateRef, {
+        const state = snap.exists ? snap.data() : {};
+        if (state.lastType === transitionType) return "same";
+        const base = {
+          familyId,
           geofenceId,
           uid: senderUid,
           lastType: transitionType,
           lastEventId: geofenceEventId,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        return true;
+        };
+        if (transitionType === "leave") {
+          tx.set(stateRef, {
+            ...base,
+            pendingLeaveDueAt: notifiable ?
+              admin.firestore.Timestamp.fromMillis(Date.now() + GEOFENCE_LEAVE_DELAY_MS) : null,
+            pendingDisplayName: notifiable ? displayName : null,
+          });
+          return notifiable ? "deferred" : "silent";
+        }
+        tx.set(stateRef, {...base, pendingLeaveDueAt: null, pendingDisplayName: null});
+        if (state.pendingLeaveDueAt) return "cancelled";
+        return notifiable ? "notify" : "silent";
       });
-      if (!isChange) {
+      if (outcome === "same") {
         logger.info("onGeofenceEvent: stesso stato di prima, nessuna notifica",
             {familyId, geofenceId, senderUid, transitionType});
         return;
       }
-      if (isStale) {
-        logger.info("onGeofenceEvent: evento in ritardo, stato aggiornato senza notifica",
-            {familyId, geofenceId, senderUid, transitionType, ritardoMin: Math.round((Date.now() - clientAtMs) / 60000)});
+      if (outcome === "silent") {
+        logger.info("onGeofenceEvent: stato aggiornato senza notifica",
+            {familyId, geofenceId, senderUid, transitionType, isStale,
+              ritardoMin: isStale ? Math.round((Date.now() - clientAtMs) / 60000) : null});
+        return;
+      }
+      if (outcome === "cancelled") {
+        logger.info("onGeofenceEvent: rientro prima dell'avviso di uscita, entrambi annullati",
+            {familyId, geofenceId, senderUid});
+        return;
+      }
+      if (outcome === "deferred") {
+        logger.info("onGeofenceEvent: uscita in attesa, avviso fra 5 minuti se non rientra",
+            {familyId, geofenceId, senderUid});
         return;
       }
 
-      // I filtri per tipo vengono DOPO lo stato: anche un'uscita che non si notifica
-      // deve registrarsi, o il rientro successivo sembrerebbe un doppione.
-      if (transitionType === "arrive" && geofence.notifyOnArrive === false) {
-        logger.info("onGeofenceEvent: notifyOnArrive disabled", {familyId, geofenceId});
-        return;
-      }
-
-      if (transitionType === "leave" && geofence.notifyOnLeave === false) {
-        logger.info("onGeofenceEvent: notifyOnLeave disabled", {familyId, geofenceId});
-        return;
-      }
-
-      const geofenceName = (geofence.name || "").trim() || "una zona";
-      const notifyMembers = Array.isArray(geofence.notifyMembers) ? geofence.notifyMembers : [];
-
-      let targetUids = [];
-
-      if (notifyMembers.length === 0) {
-        const membersSnap = await admin.firestore()
-            .collection("families").doc(familyId)
-            .collection("members")
-            .get();
-
-        if (membersSnap.empty) {
-          logger.warn("onGeofenceEvent: members subcollection is empty", {familyId});
-          return;
-        }
-
-        targetUids = membersSnap.docs
-            .map((d) => d.id)
-            .filter((uid) => uid && uid !== senderUid);
-      } else {
-        targetUids = notifyMembers.filter((uid) => uid && uid !== senderUid);
-      }
-
-      if (targetUids.length === 0) {
-        logger.info("onGeofenceEvent: no notification targets", {familyId, geofenceId});
-        return;
-      }
-
-      const isArrival = transitionType === "arrive";
-      const titleKey = isArrival ? "geofence.arriveTitle" : "geofence.leaveTitle";
-      const bodyKey = isArrival ? "geofence.arriveBody" : "geofence.leaveBody";
-
-      const messagesToSend = [];
-
-      // Preferenze e token di tutti i destinatari in una volta sola, poi i
-      // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
-      const tokensByUid = await getTokensForUsers(targetUids, null);
-      const recipients = targetUids.filter(
-          (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
-      const badgeByUid = await incrementCountersAndGetBadges(
-          {familyId, uids: recipients, field: "location"});
-
-      for (const uid of recipients) {
-        const {tokens, refsByToken, lang} = tokensByUid.get(uid);
-        const badge = badgeByUid.get(uid) || 0;
-
-        messagesToSend.push({
-          uid,
-          refsByToken,
-          ...buildDataOnlyMessage({
-            tokens,
-            title: tn(lang, titleKey, {name: displayName}),
-            body: tn(lang, bodyKey, {place: geofenceName}),
-            data: {
-              type: "geofenceEvent",
-              familyId,
-              geofenceId,
-              geofenceEventId,
-            },
-            badge,
-          }),
-        });
-      }
-
-      if (messagesToSend.length === 0) {
-        logger.info("onGeofenceEvent: no per-user notifications to send", {familyId, geofenceId});
-        return;
-      }
-
-      let totalSuccess = 0;
-      let totalFailure = 0;
-
-      for (const msg of messagesToSend) {
-        const result = await admin.messaging().sendEachForMulticast({
-          tokens: msg.tokens,
-          notification: msg.notification,
-          data: msg.data,
-          apns: msg.apns,
-          android: msg.android,
-        });
-
-        totalSuccess += result.successCount;
-        totalFailure += result.failureCount;
-
-        // `refsByToken` arriva già da getTokensForUsers: senza, il prune
-        // rileggerebbe la sottocollezione token appena letta.
-        await pruneInvalidFcmTokens(msg.uid, msg.tokens, result.responses, msg.refsByToken);
-      }
-
-      logger.info("onGeofenceEvent: send result", {
-        familyId,
-        geofenceId,
-        geofenceEventId,
-        successCount: totalSuccess,
-        failureCount: totalFailure,
-        userTargets: messagesToSend.length,
+      await sendGeofenceNotification({
+        familyId, geofenceId, geofence, senderUid, displayName, transitionType, geofenceEventId,
       });
+    },
+);
+
+/**
+ * Manda gli avvisi di uscita la cui attesa è scaduta senza un rientro.
+ *
+ * Ogni minuto, quindi l'avviso arriva fra 5 e 6 minuti dopo l'uscita. La query
+ * restituisce solo gli stati con un'uscita in attesa (quasi sempre nessuno:
+ * costa una lettura a giro). Ogni stato si riverifica in transazione, perché
+ * un rientro può essere arrivato fra la query e l'invio; e la zona si rilegge,
+ * perché nel frattempo può essere stata spenta o modificata.
+ */
+exports.sendDueGeofenceLeaves = onSchedule(
+    {schedule: "every 1 minutes", region: "europe-west1", timeoutSeconds: 120, maxInstances: 1},
+    async () => {
+      const db = admin.firestore();
+      const now = admin.firestore.Timestamp.now();
+      const due = await db.collectionGroup("geofenceState")
+          .where("pendingLeaveDueAt", "<=", now)
+          .limit(50)
+          .get();
+      if (due.empty) return;
+
+      for (const doc of due.docs) {
+        const claimed = await db.runTransaction(async (tx) => {
+          const snap = await tx.get(doc.ref);
+          const state = snap.exists ? snap.data() : null;
+          if (!state || state.lastType !== "leave" || !state.pendingLeaveDueAt ||
+              state.pendingLeaveDueAt.toMillis() > Date.now()) {
+            return null;
+          }
+          tx.update(doc.ref, {pendingLeaveDueAt: null, pendingDisplayName: null});
+          return state;
+        });
+        if (!claimed) continue;
+
+        const familyId = doc.ref.parent.parent.id;
+        const {geofenceId, uid: senderUid, lastEventId} = claimed;
+        const geofenceSnap = await db.collection("families").doc(familyId)
+            .collection("geofences").doc(geofenceId).get();
+        const geofence = geofenceSnap.exists ? geofenceSnap.data() : null;
+        if (!geofence || geofence.isDeleted === true || geofence.isActive === false ||
+            geofence.notifyOnLeave === false) {
+          logger.info("sendDueGeofenceLeaves: zona spenta o cambiata, uscita non avvisata",
+              {familyId, geofenceId, senderUid});
+          continue;
+        }
+        try {
+          await sendGeofenceNotification({
+            familyId,
+            geofenceId,
+            geofence,
+            senderUid,
+            displayName: (claimed.pendingDisplayName || "").trim() || "Qualcuno",
+            transitionType: "leave",
+            geofenceEventId: lastEventId || "",
+          });
+        } catch (err) {
+          logger.error("sendDueGeofenceLeaves: invio fallito", {familyId, geofenceId, err: String(err)});
+        }
+      }
     },
 );
 

@@ -152,10 +152,25 @@ Presidi oggi, da non togliere:
   ripiegano su 200 m. Attenzione nel leggere i dati via REST: gli interi
   tornano come `"integerValue": "400"`, fra virgolette — non è una stringa.
 
-Aperto: le uscite lampo (fuori e dentro in pochi minuti) passano ancora. Il
-rimedio è ritardare l'avviso di uscita e annullarlo se il rientro arriva
-prima; sui dati toglie altre ~50 notifiche su 87 per Cosimo, ma ritarda ogni
-uscita vera: è una scelta di prodotto dell'utente.
+- **Uscite rimandate di 5 minuti** (scelta dell'utente del 24/09/2026, 5 e non
+  10): l'uscita scrive `pendingLeaveDueAt` sullo stato invece di avvisare; un
+  rientro prima della scadenza annulla **tutti e due** gli avvisi (per chi
+  riceve non è successo niente); `sendDueGeofenceLeaves`, ogni minuto, manda
+  le uscite scadute riverificando stato e zona in transazione. L'avviso arriva
+  quindi 5-6 minuti dopo l'uscita; gli arrivi restano immediati. La query del
+  job è una collection group su `geofenceState.pendingLeaveDueAt`: senza
+  l'esenzione in `firestore.indexes.json` fallisce. Sui dati di giugno-settembre
+  Cosimo passava da 363 avvisi a ~47, Maria Pia da 119 a ~35.
+
+Per verificare dal vivo senza avvisare nessuno: famiglia `ZZZ-TEST-GEO`, zona
+con `notifyMembers: ["ZZZ-NESSUNO"]` (arrivare a «no per-user notifications
+to send» vuol dire che l'invio è partito), eventi scritti via REST con token
+Owner e `clientAt` attuale. Casi: doppione → «stesso stato»; uscita + rientro
+entro 5 min → «entrambi annullati»; uscita sola → dopo ~5-6 min log di
+`sendduegeofenceleaves`; `clientAt` vecchio di 30 min → «stato aggiornato
+senza notifica». L'attesa si fa con un Bash in background, non con `sleep` in
+primo piano. Poi pulizia con `scripts/firestore-delete-doc.js` (zona, eventi e
+stati `geofenceState`). Il 24/09/2026 tutti e cinque i casi sono passati.
 
 Per misurare: leggere `geofenceEvents` della famiglia, ordinare per
 `timestamp`, contare tipi ripetuti, raffiche < 2 s e coppie uscita→rientro;

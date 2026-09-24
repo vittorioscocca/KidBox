@@ -118,7 +118,9 @@ blocca anche con l'ok in chat, e ammette la ricorsione. La strada è
 `families/{id}` o `users/{uid}`, mai un membro attivo (con `role` e non
 cancellato: toglierlo è una revoca, si fa dall'app), max 20 per volta,
 `currentDocument.updateTime` come precondizione, log in
-`~/Library/Logs/kidbox-firestore-deletes.log`. Senza `--yes` è una prova:
+`~/Library/Logs/kidbox-firestore-deletes.log`. I path vanno scritti uno per uno:
+la shell è zsh, e `$P` con dentro più path arriva come un argomento solo
+(lo script lo rifiuta come «non è un documento»). Senza `--yes` è una prova:
 lanciala sempre prima e mostra l'elenco all'utente. Se la regola di permesso
 per lo script non è in `.claude/settings.local.json`, il comando lo lancia
 l'utente. Dopo una pulizia dell'indice delle famiglie, l'audit deve tornare a
