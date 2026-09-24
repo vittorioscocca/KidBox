@@ -5715,6 +5715,184 @@ exports.onFamilyDeletedQuota = onDocumentDeleted(
     },
 );
 
+// ─────────────────────────────────────────────────────────────────────────────
+// INDICE DELLE MEMBERSHIP — users/{uid}/memberships/{familyId}
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Deriva l'uid del membro dal documento `families/{familyId}/members/{memberId}`.
+ *
+ * L'id del documento è l'uid ovunque tranne che nelle righe legacy
+ * `{familyId}_{uid}` scritte dalle prime versioni di iOS: lì l'id non è un uid e
+ * indovinarlo scriverebbe l'indice sotto un account inesistente. Se i campi non
+ * bastano a saperlo, meglio non fare niente.
+ *
+ * @param {object|null} data dati del documento membro
+ * @param {string} memberId id del documento membro
+ * @param {string} familyId id della famiglia
+ * @return {string|null} uid del membro, o null se non è determinabile
+ */
+function memberUidFrom(data, memberId, familyId) {
+  for (const candidato of [data?.uid, data?.userId]) {
+    if (typeof candidato === "string" && candidato.trim()) return candidato.trim();
+  }
+  if (memberId.startsWith(`${familyId}_`)) return null;
+  return memberId;
+}
+
+/**
+ * Tiene `users/{uid}/memberships/{familyId}` allineato al documento membro.
+ *
+ * Quell'indice è l'unica mappa che i client hanno delle proprie famiglie: iOS,
+ * Android e web partono tutti da lì, e una famiglia che non vi compare per loro
+ * non esiste — non hanno modo di scoprirla. Finora lo scrivevano i client
+ * stessi, best-effort (un `try?` dopo la creazione della famiglia, un `set`
+ * dopo il join): bastava una scrittura persa e la famiglia diventava invisibile
+ * per sempre, pur restando `families/{familyId}/members/{uid}` al suo posto —
+ * che è la verità su cui si basano le rules.
+ *
+ * Non è un'ipotesi: il 23/09/2026 una famiglia con cinque membri, documenti e
+ * note è sparita dal selettore di iOS per questo motivo, ed è tornata solo
+ * ricreando a mano il documento indice.
+ *
+ * La verità resta il documento membro; qui se ne tiene la copia. Nessuna
+ * ricorsione possibile: sotto `users/` non c'è nessun trigger.
+ */
+exports.syncMembershipIndex = onDocumentWritten(
+    {
+      document: "families/{familyId}/members/{memberId}",
+      region: "europe-west1",
+      maxInstances: 20,
+    },
+    async (event) => {
+      const {familyId, memberId} = event.params;
+      const before = event.data?.before?.exists ? event.data.before.data() : null;
+      const after = event.data?.after?.exists ? event.data.after.data() : null;
+      if (!before && !after) return;
+
+      const uid = memberUidFrom(after || before, memberId, familyId);
+      if (!uid) {
+        logger.warn("syncMembershipIndex: uid non determinabile", {familyId, memberId});
+        return;
+      }
+
+      // Un membro attivo deve avere l'indice; uno cancellato (hard o soft) no.
+      const attivoPrima = !!before && before.isDeleted !== true;
+      const attivoDopo = !!after && after.isDeleted !== true;
+
+      // Rinomi e cambi di foto non toccano l'indice: senza questo filtro ogni
+      // aggiornamento del profilo membro diventerebbe una scrittura in più.
+      if (attivoPrima === attivoDopo && before?.role === after?.role) return;
+
+      const ref = admin.firestore()
+          .collection("users").doc(uid)
+          .collection("memberships").doc(familyId);
+
+      if (!attivoDopo) {
+        await ref.delete().catch((err) => {
+          logger.warn("syncMembershipIndex: delete fallita", {familyId, uid, err: String(err)});
+        });
+        logger.info("syncMembershipIndex: indice rimosso", {familyId, uid});
+        return;
+      }
+
+      const payload = {
+        familyId,
+        role: typeof after.role === "string" && after.role ? after.role : "member",
+      };
+      // `createdAt` segue il documento membro quando c'è: l'indice non ha una
+      // storia sua da raccontare.
+      if (after.createdAt) payload.createdAt = after.createdAt;
+
+      await ref.set(payload, {merge: true}).catch((err) => {
+        logger.warn("syncMembershipIndex: set fallito", {familyId, uid, err: String(err)});
+      });
+      logger.info("syncMembershipIndex: indice allineato", {familyId, uid, role: payload.role});
+    },
+);
+
+/**
+ * Ricostruisce gli indici `users/{uid}/memberships` mancanti.
+ *
+ * Il trigger qui sopra tiene allineato ciò che cambia da ora in poi, ma non sa
+ * niente degli indici già persi. Questa passata li ritrova: legge i membri di
+ * ogni famiglia e scrive l'indice a chi non ce l'ha. Non cancella niente — un
+ * indice che punta a una famiglia in cui non si è più membri è un problema
+ * diverso, e cancellare dati non è mai un effetto collaterale di un backfill.
+ */
+exports.backfillMembershipIndex = onCall(
+    {region: "europe-west1", maxInstances: 20, invoker: "public", timeoutSeconds: 540, memory: "512MiB"},
+    async (request) => {
+      const callerUid = request.auth?.uid;
+      if (!callerUid) throw new HttpsError("unauthenticated", "Login richiesto.");
+      if (!ADMIN_UIDS.includes(callerUid)) {
+        throw new HttpsError("permission-denied", "Non autorizzato.");
+      }
+
+      const dryRun = request.data?.dryRun === true;
+      const db = admin.firestore();
+
+      const famiglie = await db.collection("families").select().get();
+
+      let membriAttivi = 0;
+      let uidNonDeterminabili = 0;
+      const mancanti = [];
+
+      for (const famiglia of famiglie.docs) {
+        const familyId = famiglia.id;
+        const membri = await db.collection("families").doc(familyId).collection("members").get();
+
+        for (const membro of membri.docs) {
+          const data = membro.data();
+          if (data?.isDeleted === true) continue;
+          membriAttivi += 1;
+
+          const uid = memberUidFrom(data, membro.id, familyId);
+          if (!uid) {
+            uidNonDeterminabili += 1;
+            continue;
+          }
+
+          const indice = await db.collection("users").doc(uid)
+              .collection("memberships").doc(familyId).get();
+          if (indice.exists) continue;
+
+          mancanti.push({uid, familyId, role: typeof data?.role === "string" ? data.role : "member", createdAt: data?.createdAt || null});
+        }
+      }
+
+      let scritti = 0;
+      if (!dryRun) {
+        for (let i = 0; i < mancanti.length; i += 400) {
+          const batch = db.batch();
+          for (const m of mancanti.slice(i, i + 400)) {
+            const payload = {familyId: m.familyId, role: m.role};
+            payload.createdAt = m.createdAt || admin.firestore.FieldValue.serverTimestamp();
+            batch.set(
+                db.collection("users").doc(m.uid).collection("memberships").doc(m.familyId),
+                payload,
+                {merge: true},
+            );
+          }
+          await batch.commit();
+          scritti += Math.min(400, mancanti.length - i);
+        }
+      }
+
+      const esito = {
+        dryRun,
+        famiglie: famiglie.size,
+        membriAttivi,
+        uidNonDeterminabili,
+        indiciMancanti: mancanti.length,
+        indiciScritti: scritti,
+        esempi: mancanti.slice(0, 20),
+      };
+      logger.info("backfillMembershipIndex", esito);
+      return esito;
+    },
+);
+
 exports.setFamilyPlanOverride = onCall(
     {region: "europe-west1", maxInstances: 20, invoker: "public"},
     async (request) => {
