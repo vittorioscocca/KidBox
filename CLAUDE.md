@@ -47,7 +47,9 @@ i suoi commit si vedono solo con `git -C KidBoxAndroid`.
   toccare mai build number e versione, nemmeno per «rimetterli a posto».
 - Commit per path, mai `git add -A` (l'albero contiene lavoro dell'utente).
   Messaggi in italiano, imperativi; **mai** `Co-Authored-By`.
-- Cancellazioni Firestore: comando pronto per l'utente, non eseguirlo.
+- Cancellazioni Firestore: solo con `scripts/firestore-delete-doc.js` (singoli
+  documenti, prima senza `--yes` e mostrare l'elenco; paletti nello script e in
+  `/deploy-functions`). Mai `firebase firestore:delete`: quello lo lancia l'utente.
 - Routine di analisi (ticket, analytics): solo report, nessun fix automatico.
 
 ## Segreti
