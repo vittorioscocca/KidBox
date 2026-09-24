@@ -116,6 +116,17 @@ Per misurare davvero: il debug dell'SDK è già attivo, `adb logcat` mostra
     trabocca (verificato sul sorgente di foundation 1.7.6). Si scorre
     sull'item e poi `scrollBy` di quanto sporge oltre `viewportEndOffset`.
 
+15. **Mai consumare i tocchi nel passaggio `Initial` per «lasciarli al genitore».**
+    `Initial` scende dal genitore al figlio, ma `clickable`/`combinedClickable`
+    decidono nel passaggio `Main` e scartano un tocco già consumato: il
+    genitore non riceve più niente. Era l'overlay sulla mappa delle posizioni
+    in chat, e da aprile toccarle non apriva mai le mappe. Per rendere
+    inerte una vista sotto (mappa, video, WebView) si mette il `clickable`
+    **sull'overlay in cima**: vince l'hit test fra fratelli, e sotto non
+    arriva niente. E ogni `startActivity` verso un'altra app (`geo:`, `tel:`,
+    link) ha un ripiego o un `runCatching`: senza l'app che lo gestisce è un
+    `ActivityNotFoundException` e l'app si chiude.
+
 ## Notifiche e deep link
 
 7. **Payload FCM ibrido obbligatorio** (`notification` + `data`) con
