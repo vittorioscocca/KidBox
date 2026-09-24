@@ -5720,6 +5720,26 @@ exports.onFamilyDeletedQuota = onDocumentDeleted(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Un documento membro vale come appartenenza solo se non è cancellato E ha un
+ * `role`: lo stesso criterio di `isMember` nelle rules.
+ *
+ * Il `role` non è un dettaglio. iOS e web aggiornano il nome con
+ * `setData({displayName, updatedAt}, merge)` sul documento membro, e se nel
+ * frattempo il membro era stato revocato cancellandone il documento quella
+ * scrittura lo RICREA con solo nome e data. Contarlo come attivo riscriveva
+ * l'indice a chi era stato tolto (o in famiglie ormai cancellate: al
+ * 24/09/2026 due documenti così su famiglie inesistenti), e il client si
+ * ritrovava in lista una famiglia che le rules non gli fanno leggere.
+ *
+ * @param {object|null} data dati del documento membro
+ * @return {boolean} true se il documento descrive un membro attivo
+ */
+function isActiveMember(data) {
+  return !!data && data.isDeleted !== true &&
+    typeof data.role === "string" && data.role.trim() !== "";
+}
+
+/**
  * Deriva l'uid del membro dal documento `families/{familyId}/members/{memberId}`.
  *
  * L'id del documento è l'uid ovunque tranne che nelle righe legacy
@@ -5776,9 +5796,10 @@ exports.syncMembershipIndex = onDocumentWritten(
         return;
       }
 
-      // Un membro attivo deve avere l'indice; uno cancellato (hard o soft) no.
-      const attivoPrima = !!before && before.isDeleted !== true;
-      const attivoDopo = !!after && after.isDeleted !== true;
+      // Un membro attivo deve avere l'indice; uno cancellato (hard o soft) o
+      // senza ruolo no — vedi isActiveMember.
+      const attivoPrima = isActiveMember(before);
+      const attivoDopo = isActiveMember(after);
 
       // Rinomi e cambi di foto non toccano l'indice: senza questo filtro ogni
       // aggiornamento del profilo membro diventerebbe una scrittura in più.
@@ -5796,10 +5817,7 @@ exports.syncMembershipIndex = onDocumentWritten(
         return;
       }
 
-      const payload = {
-        familyId,
-        role: typeof after.role === "string" && after.role ? after.role : "member",
-      };
+      const payload = {familyId, role: after.role};
       // `createdAt` segue il documento membro quando c'è: l'indice non ha una
       // storia sua da raccontare.
       if (after.createdAt) payload.createdAt = after.createdAt;
@@ -5844,7 +5862,7 @@ exports.backfillMembershipIndex = onCall(
 
         for (const membro of membri.docs) {
           const data = membro.data();
-          if (data?.isDeleted === true) continue;
+          if (!isActiveMember(data)) continue;
           membriAttivi += 1;
 
           const uid = memberUidFrom(data, membro.id, familyId);
@@ -5857,7 +5875,7 @@ exports.backfillMembershipIndex = onCall(
               .collection("memberships").doc(familyId).get();
           if (indice.exists) continue;
 
-          mancanti.push({uid, familyId, role: typeof data?.role === "string" ? data.role : "member", createdAt: data?.createdAt || null});
+          mancanti.push({uid, familyId, role: data.role, createdAt: data?.createdAt || null});
         }
       }
 
