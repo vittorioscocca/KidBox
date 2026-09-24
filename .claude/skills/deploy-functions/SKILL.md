@@ -76,6 +76,7 @@ Redeploy completo (`--only functions`, senza nome) solo per un bump dell'SDK
 `firebase-functions`: dopo, verifica che i job Cloud Scheduler siano ancora
 `ENABLED` con le schedule intatte — è la cosa che è già andata storta in
 passato.
+(`gcloud scheduler jobs list --location=europe-west1 --format='value(name.basename(),state,schedule)'`).
 
 ## 3. Dopo il deploy
 
@@ -122,6 +123,25 @@ lanciala sempre prima e mostra l'elenco all'utente. Se la regola di permesso
 per lo script non è in `.claude/settings.local.json`, il comando lo lancia
 l'utente. Dopo una pulizia dell'indice delle famiglie, l'audit deve tornare a
 zero.
+
+## Permessi di Claude Code su questo repo
+
+Scelta dell'utente del 24/09/2026, in `.claude/settings.local.json` (personale,
+fuori da git): i permessi automatici **non** coprono nessuna operazione
+distruttiva sulla produzione.
+
+- **Tolti**, e da non rimettere: `Bash(npx firebase-tools *)` (ammetteva
+  `firestore:delete -r` su intere famiglie) e `Bash(gcloud firestore *)`
+  (ammetteva `bulk-delete` e la cancellazione del database).
+- **Ristretto** alla lettura: `gcloud scheduler` solo `jobs list` e
+  `jobs describe`. Pausa, ripresa e cancellazione dei job chiedono conferma.
+- **Concesso**: `Bash(node scripts/firestore-delete-doc.js *)`, l'unica
+  cancellazione automatica, con i paletti dentro lo script (sezione sopra).
+
+Se un comando chiede conferma, non si allarga il permesso per comodità: si
+propone all'utente una regola **stretta** (un comando, uno script con paletti),
+spiegando prima a cosa serve e cosa escluderebbe. Quando noti in quel file una
+regola larga che tocca la produzione, dillo.
 
 ## Cose da non fare
 
