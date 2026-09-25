@@ -10,6 +10,7 @@ import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "../firebase";
 import { decryptString } from "../services/noteCrypto";
 import Modal from "./Modal";
+import { videoPreviewSrc } from "./chatFormat";
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
 
@@ -94,7 +95,7 @@ export default function ChatMediaGallery({ familyId, familyKey, labels, onClose,
           {current.map((item, i) => (
             <button key={`${item.id}-${i}`} onClick={() => onGoToMessage(item.id)}>
               {item.type === "video" ? (
-                <video src={item.url} preload="metadata" />
+                <video src={videoPreviewSrc(item.url)} muted playsInline preload="metadata" />
               ) : (
                 <img src={item.url} alt="" />
               )}

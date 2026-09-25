@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { REACTION_EMOJIS } from "../services/chat";
 import ChatAudioPlayer from "./ChatAudioPlayer";
-import { formatBytes, formatDuration } from "./chatFormat";
+import { formatBytes, formatDuration, videoPreviewSrc } from "./chatFormat";
 
 export { formatBytes, formatDuration };
 
@@ -203,8 +203,9 @@ export default function ChatBubble({
           <video
             className={mediaBox ? "chat-media sized" : "chat-media"}
             style={mediaBox || undefined}
-            src={message.mediaURL}
+            src={videoPreviewSrc(message.mediaURL)}
             controls
+            playsInline
             preload="metadata"
           />
         );
@@ -225,7 +226,7 @@ export default function ChatBubble({
           <div className={`chat-group items-${Math.min(message.mediaGroupURLs.length, 4)}`}>
             {message.mediaGroupURLs.map((url, i) =>
               message.mediaGroupTypes[i] === "video" ? (
-                <video key={url} src={url} controls preload="metadata" />
+                <video key={url} src={videoPreviewSrc(url)} controls playsInline preload="metadata" />
               ) : (
                 <img
                   key={url}
@@ -436,7 +437,7 @@ export function ChatUploadBubble({ upload, locale, labels, onCancel }) {
           <div className="chat-upload-media chat-media-wrap" style={box}>
             {upload.previewURL &&
               (upload.previewType === "video" ? (
-                <video src={upload.previewURL} muted playsInline preload="metadata" />
+                <video src={videoPreviewSrc(upload.previewURL)} muted playsInline preload="metadata" />
               ) : (
                 <img src={upload.previewURL} alt="" />
               ))}
