@@ -1,0 +1,24 @@
+<it-IT>
+• Chat: mentre invii, la bolla mostra un anello con l'avanzamento. Toccalo per fermare l'invio.
+• Foto e video compaiono nel loro formato, verticale o orizzontale.
+• L'invio continua anche se esci dalla chat o dall'app: per i video lunghi segui l'avanzamento in una notifica.
+• Le foto scattate dalla chat arrivano a piena risoluzione, non più come miniatura.
+</it-IT>
+<en-US>
+• Chat: while sending, the bubble shows a progress ring. Tap it to stop the upload.
+• Photos and videos appear in their own shape, portrait or landscape.
+• Sending carries on even if you leave the chat or the app: for long videos you can follow the progress in a notification.
+• Photos taken from the chat are sent at full resolution, no longer as a thumbnail.
+</en-US>
+<es-ES>
+• Chat: mientras envías, la burbuja muestra un anillo con el progreso. Tócalo para detener el envío.
+• Las fotos y los vídeos aparecen en su formato, vertical u horizontal.
+• El envío continúa aunque salgas del chat o de la app: en los vídeos largos sigues el progreso en una notificación.
+• Las fotos hechas desde el chat se envían a resolución completa, ya no como miniatura.
+</es-ES>
+<fr-FR>
+• Chat : pendant l'envoi, la bulle affiche un anneau de progression. Touchez-le pour arrêter l'envoi.
+• Les photos et vidéos s'affichent dans leur format, portrait ou paysage.
+• L'envoi continue même si vous quittez le chat ou l'app : pour les longues vidéos, suivez la progression dans une notification.
+• Les photos prises depuis le chat sont envoyées en pleine résolution, et non plus en miniature.
+</fr-FR>
