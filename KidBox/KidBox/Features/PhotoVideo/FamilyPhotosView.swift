@@ -35,31 +35,16 @@ struct VideoTransferable: Transferable {
 
 // MARK: - VideoCompressor
 enum VideoCompressor {
+    /// Ricodifica a 1080p (profilo album di KBVideoEncoder). Prima il preset
+    /// Medium riduceva i video dell'album a 320×568: troppo per un archivio di ricordi.
     static func compress(url: URL) async -> URL? {
-        let asset = AVURLAsset(url: url)
-        let compatiblePresets = AVAssetExportSession.exportPresets(compatibleWith: asset)
-        let preset: String
-        if compatiblePresets.contains(AVAssetExportPresetMediumQuality) {
-            preset = AVAssetExportPresetMediumQuality
-        } else if compatiblePresets.contains(AVAssetExportPresetLowQuality) {
-            preset = AVAssetExportPresetLowQuality
-        } else {
-            KBLog.sync.kbError("VideoCompressor: no compatible export preset for \(url.lastPathComponent)")
-            return nil
-        }
-        let output = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension("mp4")
-        KBLog.sync.kbDebug("VideoCompressor: export start preset=\(preset) output=\(output.lastPathComponent)")
         do {
-            let session = AVAssetExportSession(asset: asset, presetName: preset)
-            try await session?.export(to: output, as: .mp4)
+            let output = try await KBVideoEncoder.compress(url, profile: .album)
             let size = (try? output.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-            KBLog.sync.kbInfo("VideoCompressor: export OK bytes=\(size) preset=\(preset)")
+            KBLog.sync.kbInfo("VideoCompressor: encode OK bytes=\(size) profile=album")
             return output
         } catch {
-            KBLog.sync.kbError("VideoCompressor: export FAILED err=\(error.localizedDescription)")
-            try? FileManager.default.removeItem(at: output)
+            KBLog.sync.kbError("VideoCompressor: encode FAILED err=\(error.localizedDescription)")
             return nil
         }
     }

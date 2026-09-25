@@ -144,8 +144,36 @@ struct ChatBubble: View {
     }
     
     private enum ChatMediaStyle {
-        static let size = CGSize(width: 220, height: 160)
         static let corner: CGFloat = 14
+        
+        /// Formato della bubble come WhatsApp: gli orizzontali occupano tutta la
+        /// larghezza, i verticali crescono in altezza fino a un tetto e poi si
+        /// restringono. Senza dimensioni note si usa un 4:3 orizzontale.
+        static func size(width: Int?, height: Int?) -> CGSize {
+            let maxW = min(270, ChatBubble.screenWidth * 0.7)
+            let maxH = maxW * 1.2
+            guard let width, let height, width > 0, height > 0 else {
+                return CGSize(width: maxW, height: (maxW * 0.75).rounded())
+            }
+            let aspect = CGFloat(height) / CGFloat(width)
+            var w = maxW, h = maxW * aspect
+            if h > maxH { h = maxH; w = max(maxH / aspect, maxW * 0.55) }
+            h = max(h, maxW * 0.45)
+            return CGSize(width: w.rounded(), height: h.rounded())
+        }
+    }
+    
+    private var mediaSize: CGSize {
+        ChatMediaStyle.size(width: message.mediaWidth, height: message.mediaHeight)
+    }
+    
+    /// Messaggi senza dimensioni (precedenti al campo o da altri client): le
+    /// misuriamo al primo caricamento e le teniamo in locale, così la bubble
+    /// prende il formato giusto e non salta più.
+    private func recordMeasuredSize(_ size: CGSize) {
+        guard message.mediaWidth == nil, size.width > 0, size.height > 0 else { return }
+        message.mediaWidth  = Int(size.width.rounded())
+        message.mediaHeight = Int(size.height.rounded())
     }
     
     private var isHighlighted: Bool { highlightedMessageId == message.id }
@@ -403,11 +431,15 @@ struct ChatBubble: View {
             
             // NUOVO ↓
         case .mediaGroup:
-            ChatMediaGroupBubble(
-                message: message,
-                isOwn: isOwn,
-                timeAndChecksOverlay: AnyView(timeAndChecksOverlayOnMedia)
-            )
+            if message.mediaGroupURLs.isEmpty {
+                mediaLoadingPlaceholder
+            } else {
+                ChatMediaGroupBubble(
+                    message: message,
+                    isOwn: isOwn,
+                    timeAndChecksOverlay: AnyView(timeAndChecksOverlayOnMedia)
+                )
+            }
         case .contact:
             contactContent
         }
@@ -629,16 +661,19 @@ struct ChatBubble: View {
         Group {
             if let urlString = message.mediaURL, let remoteURL = URL(string: urlString) {
                 ZStack(alignment: .bottomTrailing) {
-                    CachedAsyncImage(url: remoteURL, contentMode: .fill)
-                        .frame(width: ChatMediaStyle.size.width, height: ChatMediaStyle.size.height)
+                    CachedAsyncImage(url: remoteURL, contentMode: .fill, onImageSize: recordMeasuredSize)
+                        .frame(width: mediaSize.width, height: mediaSize.height)
                         .overlay(highlightOverlay)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     
                     if isDownloadingMedia {
                         Color.black.opacity(0.35).clipShape(RoundedRectangle(cornerRadius: 10))
                         ProgressView().tint(.white)
-                            .frame(width: ChatMediaStyle.size.width, height: ChatMediaStyle.size.height)
+                            .frame(width: mediaSize.width, height: mediaSize.height)
                     }
+                    
+                    ChatUploadRing(messageId: message.id)
+                        .frame(width: mediaSize.width, height: mediaSize.height)
                     
                     timeAndChecksOverlayOnMedia
                         .padding(.horizontal, 7).padding(.vertical, 5)
@@ -662,8 +697,9 @@ struct ChatBubble: View {
         Group {
             if let urlString = message.mediaURL, let remoteURL = URL(string: urlString) {
                 ZStack {
-                    VideoThumbnailView(videoURL: remoteURL, cacheKey: videoCacheKey(urlString: urlString))
-                        .frame(width: ChatMediaStyle.size.width, height: ChatMediaStyle.size.height)
+                    VideoThumbnailView(videoURL: remoteURL, cacheKey: videoCacheKey(urlString: urlString),
+                                       onImageSize: recordMeasuredSize)
+                        .frame(width: mediaSize.width, height: mediaSize.height)
                         .clipped()
                         .overlay(highlightOverlay)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -672,10 +708,12 @@ struct ChatBubble: View {
                         Color.black.opacity(0.35).clipShape(RoundedRectangle(cornerRadius: 10))
                         ProgressView().tint(.white)
                     } else {
-                        Image(systemName: "play.circle.fill")
-                            .font(.system(size: 44))
-                            .foregroundStyle(.white)
-                            .shadow(radius: 6)
+                        ChatUploadIndicator(messageId: message.id) {
+                            Image(systemName: "play.circle.fill")
+                                .font(.system(size: 44))
+                                .foregroundStyle(.white)
+                                .shadow(radius: 6)
+                        }
                     }
                     
                     VStack(alignment: .trailing) {
@@ -690,7 +728,7 @@ struct ChatBubble: View {
                         }
                     }
                 }
-                .frame(width: ChatMediaStyle.size.width, height: ChatMediaStyle.size.height)
+                .frame(width: mediaSize.width, height: mediaSize.height)
                 .contentShape(Rectangle())
                 .onTapGesture {
                     guard !isDownloadingMedia else { return }
@@ -852,7 +890,11 @@ struct ChatBubble: View {
                 }
             } else {
                 HStack(spacing: 12) {
-                    ProgressView().tint(isOwn ? .white : .accentColor).frame(width: 36)
+                    ChatUploadIndicator(messageId: message.id, diameter: 36,
+                                        tint: isOwn ? .white : .accentColor,
+                                        backdrop: (isOwn ? Color.white : Color.accentColor).opacity(0.15)) {
+                        ProgressView().tint(isOwn ? .white : .accentColor).frame(width: 36)
+                    }
                     Text(message.text ?? "Documento")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(isOwn ? .white : .primary)
@@ -933,14 +975,19 @@ struct ChatBubble: View {
     
     private var audioContent: some View {
         HStack(alignment: .center, spacing: AudioBubble.spacing) {
-            Button { toggleAudio() } label: {
-                Image(systemName: isPlayingAudio ? "pause.circle.fill" : "play.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(isOwn ? .white : .accentColor)
+            // Durante l'invio l'anello prende il posto del tasto play, come su WhatsApp.
+            ChatUploadIndicator(messageId: message.id, diameter: AudioBubble.playW,
+                                tint: isOwn ? .white : .accentColor,
+                                backdrop: (isOwn ? Color.white : Color.accentColor).opacity(0.15)) {
+                Button { toggleAudio() } label: {
+                    Image(systemName: isPlayingAudio ? "pause.circle.fill" : "play.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(isOwn ? .white : .accentColor)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isPlayingAudio ? "Pausa audio" : "Riproduci audio")
             }
-            .buttonStyle(.plain)
             .frame(width: AudioBubble.playW, height: AudioBubble.playW)
-            .accessibilityLabel(isPlayingAudio ? "Pausa audio" : "Riproduci audio")
             
             scrubbableWaveform
                 .frame(height: 24)
@@ -1165,12 +1212,19 @@ struct ChatBubble: View {
     
     // MARK: - Placeholder
     
+    /// Media non ancora caricato: se l'invio è nostro e in corso mostriamo
+    /// l'anteprima locale con l'anello di avanzamento, altrimenti lo spinner.
     private var mediaLoadingPlaceholder: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 10).fill(Color(.tertiarySystemBackground))
-                .frame(width: ChatMediaStyle.size.width, height: ChatMediaStyle.size.height)
-            ProgressView()
-        }
+        ChatPendingMediaView(
+            messageId: message.id,
+            size: mediaSize,
+            timeOverlay: AnyView(
+                timeAndChecksOverlayOnMedia
+                    .padding(.horizontal, 7).padding(.vertical, 5)
+                    .background(.black.opacity(0.55), in: Capsule())
+                    .padding(6)
+            )
+        )
     }
     
     // MARK: - Static helpers

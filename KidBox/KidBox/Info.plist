@@ -5,6 +5,7 @@
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>it.vittorioscocca.kidbox.password-security-refresh</string>
+		<string>it.vittorioscocca.KidBox.chat-upload.*</string>
 	</array>
 	<key>CFBundleAllowMixedLocalizations</key>
 	<true/>

@@ -52,6 +52,13 @@ final class KBChatMessage {
     /// nil per messaggi di testo o messaggi media anteriori a questo campo.
     var mediaFileSize: Int64?
     
+    /// Dimensioni in pixel di foto/video, già ruotate come si vedono. Servono a
+    /// dare alla bubble il formato giusto (verticale/orizzontale) prima che il
+    /// media sia scaricato. nil per messaggi precedenti: la bubble le misura al
+    /// primo caricamento e le salva solo in locale.
+    var mediaWidth: Int?
+    var mediaHeight: Int?
+    
     // MARK: - Media Group (nuovo)
     
     /// JSON array di download URL — usato solo quando type == .mediaGroup.

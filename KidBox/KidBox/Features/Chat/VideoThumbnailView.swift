@@ -12,6 +12,7 @@ import UIKit
 struct VideoThumbnailView: View {
     let videoURL: URL
     let cacheKey: String
+    var onImageSize: ((CGSize) -> Void)? = nil
     
     @State private var image: UIImage?
     
@@ -35,6 +36,7 @@ struct VideoThumbnailView: View {
     private func load() async {
         if let cached = VideoThumbnailCache.shared.get(cacheKey) {
             self.image = cached
+            onImageSize?(cached.size)
             return
         }
         
@@ -62,6 +64,7 @@ struct VideoThumbnailView: View {
         if let img {
             VideoThumbnailCache.shared.set(img, key: cacheKey)
             self.image = img
+            onImageSize?(img.size)
         }
     }
 }

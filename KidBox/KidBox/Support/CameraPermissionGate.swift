@@ -34,6 +34,13 @@ final class CameraPermissionGateViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        // Torno visibile dopo aver presentato il picker = il picker si è chiuso da
+        // solo (picker.dismiss nel delegate). Senza questo resterebbe il mio fondo
+        // nero finché l'utente non abbassa lo sheet a mano.
+        if didAttemptPresent, presentedViewController == nil, !isBeingDismissed {
+            presentingViewController?.dismiss(animated: true)
+            return
+        }
         guard !didAttemptPresent else { return }
         didAttemptPresent = true
         resolvePermissionThenPresent()

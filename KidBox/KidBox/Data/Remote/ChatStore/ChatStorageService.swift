@@ -50,6 +50,7 @@ final class ChatStorageService {
         messageId: String,
         fileName: String,
         mimeType: String,
+        registerCancel: ((@escaping () -> Void) -> Void)? = nil,
         progressHandler: ((Double) -> Void)? = nil
     ) async throws -> (storagePath: String, downloadURL: String) {
         
@@ -75,6 +76,9 @@ final class ChatStorageService {
         let url: URL = try await withCheckedThrowingContinuation { cont in
             var done = false
             let task = ref.putData(data, metadata: metadata)
+            // Il chiamante riceve come annullare questo task (tasto stop in chat):
+            // arriva .failure con errore di annullamento.
+            registerCancel? { task.cancel() }
             
             task.observe(.progress) { snap in
                 guard let p = snap.progress, p.totalUnitCount > 0 else { return }

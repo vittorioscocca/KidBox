@@ -532,8 +532,6 @@ private struct ChatConversationView: View {
     
     // Camera
     @State private var showCamera = false
-    @State private var cameraImage: UIImage?
-    @State private var cameraVideoURL: URL?
     
     // Document picker
     @State private var showDocumentPicker    = false
@@ -631,7 +629,6 @@ private struct ChatConversationView: View {
             }
             
             errorBanner
-            uploadProgress
             typingBanner
             
             if viewModel.isEditing { editingBar }
@@ -1756,33 +1753,6 @@ private struct ChatConversationView: View {
     }
     
     @ViewBuilder
-    private var uploadProgress: some View {
-        if viewModel.isCompressingMedia {
-            HStack(spacing: 8) {
-                ProgressView().controlSize(.small)
-                Text("Compressione in corso…")
-                    .font(.caption).foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(.horizontal, 16).padding(.vertical, 6)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-        } else if viewModel.isUploadingMedia {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack {
-                    Text("Invio in corso…")
-                        .font(.caption).foregroundStyle(.secondary)
-                    Spacer()
-                    Text("\(Int(viewModel.uploadProgress * 100))%")
-                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                }
-                ProgressView(value: viewModel.uploadProgress).tint(.accentColor)
-            }
-            .padding(.horizontal, 16).padding(.vertical, 6)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-        }
-    }
-    
-    @ViewBuilder
     private var typingBanner: some View {
         if !viewModel.typingUsers.isEmpty {
             HStack(spacing: 6) {
@@ -1984,20 +1954,21 @@ private struct ChatConversationView: View {
         showDeleteBar = false
     }
     
+    // L'invio parte appena si tocca «Usa foto/video» e lo sheet si chiude tutto
+    // insieme: prima il picker chiudeva solo sé stesso e lasciava a schermo il
+    // fondo nero del gate permessi, e l'upload partiva solo abbassandolo a mano.
     private var cameraSheet: some View {
-        CameraPicker(image: $cameraImage, videoURL: $cameraVideoURL)
-            .ignoresSafeArea()
-            .onDisappear {
-                if let img = cameraImage,
-                   let data = img.fixedOrientation().jpegData(compressionQuality: 0.85) {
-                    viewModel.sendMedia(data: data, type: .photo)
-                } else if let url = cameraVideoURL,
-                          let data = try? Data(contentsOf: url) {
-                    viewModel.sendMedia(data: data, type: .video)
+        CameraPicker(
+            onPick: { media in
+                showCamera = false
+                switch media {
+                case .photo(let data): viewModel.sendMedia(data: data, type: .photo)
+                case .video(let data): viewModel.sendMedia(data: data, type: .video)
                 }
-                cameraImage = nil
-                cameraVideoURL = nil
-            }
+            },
+            onCancel: { showCamera = false }
+        )
+        .ignoresSafeArea()
     }
 }
 
@@ -2138,8 +2109,10 @@ private struct ChatDaySeparator: View {
 // MARK: - CameraPicker
 
 private struct CameraPicker: UIViewControllerRepresentable {
-    @Binding var image: UIImage?
-    @Binding var videoURL: URL?
+    enum Media { case photo(Data), video(Data) }
+    
+    let onPick: (Media) -> Void
+    let onCancel: () -> Void
     
     func makeUIViewController(context: Context) -> UIViewController {
         CameraPermissionGateViewController(makePicker: {
@@ -2157,21 +2130,27 @@ private struct CameraPicker: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     
+    // Nessun picker.dismiss: lo chiude SwiftUI togliendo lo sheet (onPick/onCancel
+    // portano showCamera a false), così sparisce anche il gate che lo ospita.
     final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
         let parent: CameraPicker
         init(_ parent: CameraPicker) { self.parent = parent }
         
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            picker.dismiss(animated: true)
+            parent.onCancel()
         }
         func imagePickerController(_ picker: UIImagePickerController,
                                    didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-            if let img = info[.originalImage] as? UIImage {
-                parent.image = img
-            } else if let url = info[.mediaURL] as? URL {
-                parent.videoURL = url
+            // Letto subito: il file temporaneo del video può sparire alla chiusura del picker.
+            if let img = info[.originalImage] as? UIImage,
+               let data = img.fixedOrientation().jpegData(compressionQuality: 0.85) {
+                parent.onPick(.photo(data))
+            } else if let url = info[.mediaURL] as? URL,
+                      let data = try? Data(contentsOf: url) {
+                parent.onPick(.video(data))
+            } else {
+                parent.onCancel()
             }
-            picker.dismiss(animated: true)
         }
     }
 }

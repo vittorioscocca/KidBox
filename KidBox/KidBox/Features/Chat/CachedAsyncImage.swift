@@ -21,6 +21,7 @@ extension UIImage {
 struct CachedAsyncImage: View {
     let url: URL
     var contentMode: ContentMode = .fill
+    var onImageSize: ((CGSize) -> Void)? = nil
     
     @State private var image: UIImage?
     @State private var isLoading = false
@@ -50,6 +51,7 @@ struct CachedAsyncImage: View {
         
         if let cached = ImageMemoryCache.shared.get(url) {
             self.image = cached
+            onImageSize?(cached.size)
             return
         }
         
@@ -63,6 +65,7 @@ struct CachedAsyncImage: View {
                 print("orientation:", ui.imageOrientation.rawValue)// <-- QUI
                 ImageMemoryCache.shared.set(fixed, for: url) // <-- cache del fixed
                 self.image = fixed
+                onImageSize?(fixed.size)
             }
         } catch {
             // placeholder

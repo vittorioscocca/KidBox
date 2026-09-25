@@ -42,6 +42,8 @@ struct RemoteChatMessageDTO {
     let contactPayloadJSON: String?
     /// JSON array `[{"uid":"...","displayName":"..."}]` con i membri citati nel testo.
     let mentionsJSON: String?
+    var mediaWidth: Int? = nil
+    var mediaHeight: Int? = nil
     
     /// Decodifica readByJSON → array di UID
     var readBy: [String] {
@@ -110,6 +112,9 @@ final class ChatRemoteStore {
         if let latitude = dto.latitude                 { data["latitude"] = latitude }
         if let longitude = dto.longitude               { data["longitude"] = longitude }
         if let size = dto.mediaFileSize, size > 0      { data["mediaFileSize"] = size }
+        if let w = dto.mediaWidth, let h = dto.mediaHeight, w > 0, h > 0 {
+            data["mediaWidth"] = w; data["mediaHeight"] = h
+        }
         // NUOVO ↓
         if let grpURLs  = dto.mediaGroupURLsJSON       { data["mediaGroupURLsJSON"]  = grpURLs }
         if let grpTypes = dto.mediaGroupTypesJSON      { data["mediaGroupTypesJSON"] = grpTypes }
@@ -315,7 +320,9 @@ final class ChatRemoteStore {
                 mediaGroupURLsJSON:   data["mediaGroupURLsJSON"]   as? String,
                 mediaGroupTypesJSON:  data["mediaGroupTypesJSON"]  as? String,
                 contactPayloadJSON:   data["contactPayloadJSON"]   as? String,
-                mentionsJSON:         mentionsJSON
+                mentionsJSON:         mentionsJSON,
+                mediaWidth:           (data["mediaWidth"]  as? NSNumber)?.intValue,
+                mediaHeight:          (data["mediaHeight"] as? NSNumber)?.intValue
             )
         }
         
@@ -404,7 +411,9 @@ final class ChatRemoteStore {
                             mediaGroupURLsJSON:   data["mediaGroupURLsJSON"]  as? String,
                             mediaGroupTypesJSON:  data["mediaGroupTypesJSON"] as? String,
                             contactPayloadJSON:   data["contactPayloadJSON"]  as? String,
-                            mentionsJSON:         mentionsJSON
+                            mentionsJSON:         mentionsJSON,
+                            mediaWidth:           (data["mediaWidth"]  as? NSNumber)?.intValue,
+                            mediaHeight:          (data["mediaHeight"] as? NSNumber)?.intValue
                         )
                         return .upsert(dto)
                     }

@@ -50,7 +50,9 @@ struct CameraCaptureView: UIViewControllerRepresentable {
                 let picker = UIImagePickerController()
                 picker.sourceType = .camera
                 picker.mediaTypes = self.mediaTypes
-                picker.videoQuality = .typeMedium      // equivale a AVAssetExportPresetMediumQuality
+                // Registrazione in alta qualità: la riduzione a 1080p la fa KBVideoEncoder
+                // all'invio. Con .typeMedium il video nasceva già a bassa risoluzione.
+                picker.videoQuality = .typeHigh
                 picker.videoMaximumDuration = 300      // max 5 minuti
                 picker.allowsEditing = false
                 picker.delegate = context.coordinator

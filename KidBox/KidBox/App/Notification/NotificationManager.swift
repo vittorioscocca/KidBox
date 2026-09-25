@@ -111,6 +111,8 @@ final class NotificationManager: NSObject, ObservableObject {
         /// Non ha una destinazione dentro l'app né una famiglia di riferimento:
         /// il contenuto *è* il messaggio, e viaggia dentro il link stesso.
         case broadcast(id: String, title: String, body: String)
+        /// Notifica di un tipo senza destinazione nota: si passa solo alla sua famiglia.
+        case family(familyId: String)
     }
 
     // MARK: - Auth / FCM token ownership
@@ -188,7 +190,11 @@ final class NotificationManager: NSObject, ObservableObject {
             let messageId = userInfo["messageId"] as? String
             pendingDeepLink = .chat(familyId: familyId, messageId: messageId)
             
-        } else if type == "location_sharing_started" || type == "location_sharing_stopped" {
+        } else if type == "location_sharing_started" || type == "location_sharing_stopped"
+                    || type == "geofenceEvent" {
+            // Anche gli avvisi di zona (arrivo/uscita) aprono la mappa della loro
+            // famiglia: prima `geofenceEvent` non era gestito e il tap apriva
+            // l'app sulla famiglia attiva, anche se l'avviso era di un'altra.
             guard let familyId = userInfo["familyId"] as? String else {
                 KBLog.auth.kbError("Invalid location payload (missing familyId)")
                 return
@@ -440,6 +446,13 @@ final class NotificationManager: NSObject, ObservableObject {
             pendingDeepLink = .nudge(
                 campaignId: campaignId, title: title, body: body, destination: destination)
             KBLog.auth.kbInfo("DeepLink set for nudge campaignId=\(campaignId)")
+
+        } else if let familyId = userInfo["familyId"] as? String, !familyId.isEmpty {
+            // Tipo che questa versione non conosce (aggiunto dopo sul server) ma
+            // che dice di quale famiglia parla: almeno si apre quella famiglia,
+            // invece di restare su quella attiva.
+            pendingDeepLink = .family(familyId: familyId)
+            KBLog.auth.kbInfo("DeepLink fallback: family switch only type=\(type ?? "nil") familyId=\(familyId)")
         }
     }
     

@@ -492,6 +492,11 @@ struct KidBoxApp: App {
                             broadcastMessage = BroadcastMessage(id: id, title: title, body: body)
                             NotificationManager.shared.consumeDeepLink()
 
+                        case .family(let familyId):
+                            KBLog.navigation.kbInfo("Deep link -> family switch only familyId=\(familyId)")
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {}
+                            NotificationManager.shared.consumeDeepLink()
+
                         case .nudge(let campaignId, let title, let body, let destination):
                             KBLog.navigation.kbInfo("Deep link -> nudge campaignId=\(campaignId)")
                             // Stessa sheet del broadcast, con in più la

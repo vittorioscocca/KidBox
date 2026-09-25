@@ -35,7 +35,11 @@ final class GeofenceRemoteEvent {
             "uid": uid,
             "displayName": displayName,
             "type": type.rawValue,
-            "timestamp": FieldValue.serverTimestamp()
+            "timestamp": FieldValue.serverTimestamp(),
+            // Quando è successo DAVVERO, in millisecondi. `timestamp` è l'ora d'arrivo
+            // al server: offline gli eventi si accodano e arrivano insieme, anche
+            // un'ora dopo. onGeofenceEvent non avvisa per eventi più vecchi di 15 minuti.
+            "clientAt": Int64(Date().timeIntervalSince1970 * 1000)
         ]
 
         do {

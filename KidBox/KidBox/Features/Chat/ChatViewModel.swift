@@ -193,6 +193,9 @@ final class ChatViewModel: NSObject, ObservableObject {
         isCompressingMedia = true
         uploadProgress    = 0
         errorText         = nil
+        let progressStore = ChatUploadProgressStore.shared
+        progressStore.begin(messageId, longRunning: true)
+        defer { progressStore.end(messageId) }
         
         // Inserisci subito il messaggio placeholder in SwiftData
         let msg = KBChatMessage(
@@ -200,15 +203,26 @@ final class ChatViewModel: NSObject, ObservableObject {
             senderId: uid, senderName: senderName,
             type: .video, createdAt: now
         )
+        if let size = await ChatUploadProgressStore.videoDimensions(from: url) {
+            msg.mediaWidth = size.width; msg.mediaHeight = size.height
+        }
         msg.syncState = .pendingUpsert
         modelContext.insert(msg)
         try? modelContext.save()
         reloadLocal()
+        progressStore.setPreview(await ChatUploadProgressStore.videoPreview(from: url), for: messageId)
         
         do {
             // Comprimi il video prima dell'upload
             let compressedURL = try await compressVideoURL(url)
             isCompressingMedia = false
+            if progressStore.isCancelled(messageId) {
+                try? FileManager.default.removeItem(at: compressedURL)
+                discardCancelledUpload(msg)
+                isUploadingMedia = false; uploadProgress = 0
+                return
+            }
+            progressStore.update(messageId, 0)
             
             let compressedData = try Data(contentsOf: compressedURL)
             defer { try? FileManager.default.removeItem(at: compressedURL) }
@@ -221,11 +235,20 @@ final class ChatViewModel: NSObject, ObservableObject {
                 messageId: messageId,
                 fileName: "video.mp4",
                 mimeType: "video/mp4",
+                registerCancel: { cancel in Task { @MainActor in progressStore.setCancelHandler(messageId, cancel) } },
                 progressHandler: { [weak self] p in
-                    Task { @MainActor in self?.uploadProgress = p }
+                    Task { @MainActor in
+                        self?.uploadProgress = p
+                        progressStore.update(messageId, p)
+                    }
                 }
             )
             
+            if progressStore.isCancelled(messageId) {
+                discardCancelledUpload(msg, storagePath: storagePath)
+                isUploadingMedia = false; uploadProgress = 0
+                return
+            }
             msg.mediaStoragePath = storagePath
             msg.mediaURL         = downloadURL
             msg.mediaFileSize    = Int64(compressedData.count)
@@ -246,6 +269,11 @@ final class ChatViewModel: NSObject, ObservableObject {
             
         } catch {
             isCompressingMedia = false
+            if progressStore.isCancelled(messageId) {
+                discardCancelledUpload(msg)
+                isUploadingMedia = false; uploadProgress = 0
+                return
+            }
             msg.syncState        = .error
             msg.lastSyncError    = error.localizedDescription
             try? modelContext.save()
@@ -259,26 +287,13 @@ final class ChatViewModel: NSObject, ObservableObject {
     
     /// Comprime un video da un URL locale senza caricarlo interamente in RAM.
     private func compressVideoURL(_ sourceURL: URL) async throws -> URL {
-        return  await Task.detached(priority: .userInitiated) {
-            let asset = AVURLAsset(url: sourceURL)
-            guard let session = AVAssetExportSession(
-                asset: asset,
-                presetName: AVAssetExportPresetMediumQuality
-            ) else {
-                // Se non riusciamo a comprimere, usiamo l'originale
-                return sourceURL
-            }
-            let outputURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent(UUID().uuidString + ".mp4")
-            do {
-                try await session.export(to: outputURL, as: .mp4, isolation: .none)
-                return outputURL
-            } catch {
-                // Fallback: usa il file originale non compresso
-                await KBLog.data.kbError("compressVideoURL fallback to original: \(error.localizedDescription)")
-                return sourceURL
-            }
-        }.value
+        do {
+            return try await KBVideoEncoder.compress(sourceURL, profile: .chat)
+        } catch {
+            // Se non riusciamo a comprimere, usiamo l'originale
+            KBLog.data.kbError("compressVideoURL fallback to original: \(error.localizedDescription)")
+            return sourceURL
+        }
     }
     
     private func scheduleTypingUpdate(_ names: [String]) {
@@ -438,6 +453,7 @@ final class ChatViewModel: NSObject, ObservableObject {
             existing.replyToId     = dto.replyToId
             existing.latitude      = dto.latitude; existing.longitude = dto.longitude
             if let size = dto.mediaFileSize, size > 0 { existing.mediaFileSize = size }
+            if let w = dto.mediaWidth, let h = dto.mediaHeight { existing.mediaWidth = w; existing.mediaHeight = h }
             if existing.type == .audio, existing.senderId != myUID,
                existing.mediaURL != nil, existing.transcriptStatus == .none {
                 startTranscriptIfNeeded(for: existing, modelContext: modelContext)
@@ -470,6 +486,7 @@ final class ChatViewModel: NSObject, ObservableObject {
             msg.latitude = dto.latitude;
             msg.longitude = dto.longitude
             if let size = dto.mediaFileSize, size > 0 { msg.mediaFileSize = size }
+            msg.mediaWidth = dto.mediaWidth; msg.mediaHeight = dto.mediaHeight
             modelContext.insert(msg)
             if msg.type == .audio, msg.senderId != myUID,
                msg.mediaURL != nil, msg.transcriptStatus == .none {
@@ -670,6 +687,21 @@ final class ChatViewModel: NSObject, ObservableObject {
         KBLog.data.kbInfo("ChatVM resetUploadStateIfStuck called")
     }
     
+    /// Stop premuto nell'anello: il messaggio non è mai arrivato su Firestore, quindi
+    /// sparisce dalla chat; se il file era già salito su Storage lo si cancella.
+    private func discardCancelledUpload(_ msg: KBChatMessage, storagePath: String? = nil) {
+        KBLog.data.kbInfo("ChatVM upload cancelled by user messageId=\(msg.id)")
+        if let storagePath {
+            Task { try? await storageService.delete(storagePath: storagePath) }
+        }
+        if let local = msg.mediaLocalPath { try? FileManager.default.removeItem(atPath: local) }
+        modelContext?.delete(msg); try? modelContext?.save(); reloadLocal()
+    }
+    
+    /// Oltre questa taglia l'invio può superare i ~30 s di background: si chiede
+    /// al sistema di lasciarlo continuare (vedi ChatUploadProgressStore).
+    static let longUploadBytes = 8 * 1024 * 1024
+    
     func sendMedia(data: Data, type: KBChatMessageType) {
         guard !isUploadingMedia else { return }
         Task { await uploadAndSend(data: data, type: type) }
@@ -681,34 +713,61 @@ final class ChatViewModel: NSObject, ObservableObject {
         let senderName = senderDisplayName()
         let messageId  = UUID().uuidString; let now = Date()
         let (fileName, mimeType) = ChatStorageService.fileInfo(for: type)
+        let progressStore = ChatUploadProgressStore.shared
         errorText = nil
+        isUploadingMedia = true; uploadProgress = 0
+        defer { isUploadingMedia = false; uploadProgress = 0; progressStore.end(messageId) }
+        // La bubble compare subito, con l'anello indeterminato durante la compressione.
+        progressStore.begin(messageId, longRunning: type == .video || data.count > Self.longUploadBytes)
+        let msg = KBChatMessage(id: messageId, familyId: familyId, senderId: uid, senderName: senderName, type: type, createdAt: now)
+        if type == .photo, let size = ChatUploadProgressStore.photoDimensions(from: data) {
+            msg.mediaWidth = size.width; msg.mediaHeight = size.height
+        }
+        msg.syncState = .pendingUpsert; modelContext.insert(msg); try? modelContext.save(); reloadLocal()
         let uploadData: Data
         do {
             switch type {
             case .photo:
-                isCompressingMedia = true; uploadData = await compressPhoto(data: data); isCompressingMedia = false
+                uploadData = await compressPhoto(data: data)
+                progressStore.setPreview(await ChatUploadProgressStore.photoPreview(from: uploadData), for: messageId)
             case .video:
-                isCompressingMedia = true; uploadData = try await compressVideo(data: data); isCompressingMedia = false
+                uploadData = try await compressVideo(data: data)
+                if let size = await ChatUploadProgressStore.videoDimensions(from: uploadData) {
+                    msg.mediaWidth = size.width; msg.mediaHeight = size.height; try? modelContext.save()
+                }
+                progressStore.setPreview(await ChatUploadProgressStore.videoPreview(from: uploadData), for: messageId)
             default: uploadData = data
             }
-        } catch { isCompressingMedia = false; errorText = "Compressione fallita: \(error.localizedDescription)"; return }
-        isUploadingMedia = true; uploadProgress = 0
-        let msg = KBChatMessage(id: messageId, familyId: familyId, senderId: uid, senderName: senderName, type: type, createdAt: now)
-        msg.syncState = .pendingUpsert; modelContext.insert(msg); try? modelContext.save(); reloadLocal()
+        } catch {
+            if progressStore.isCancelled(messageId) { discardCancelledUpload(msg); return }
+            msg.syncState = .error; msg.lastSyncError = error.localizedDescription
+            try? modelContext.save(); errorText = "Compressione fallita: \(error.localizedDescription)"; return
+        }
+        if progressStore.isCancelled(messageId) { discardCancelledUpload(msg); return }
+        progressStore.update(messageId, 0)
         do {
             let (storagePath, downloadURL) = try await storageService.upload(
                 data: uploadData, familyId: familyId, messageId: messageId, fileName: fileName, mimeType: mimeType,
-                progressHandler: { [weak self] p in Task { @MainActor in self?.uploadProgress = p } })
+                registerCancel: { cancel in Task { @MainActor in progressStore.setCancelHandler(messageId, cancel) } },
+                progressHandler: { [weak self] p in Task { @MainActor in
+                    self?.uploadProgress = p
+                    progressStore.update(messageId, p)
+                } })
+            // L'anteprima locale diventa la cache dell'URL remoto: niente ricaricamento a fine invio.
+            if type == .photo, let preview = progressStore.previews[messageId], let url = URL(string: downloadURL) {
+                ImageMemoryCache.shared.set(preview, for: url)
+            }
+            if progressStore.isCancelled(messageId) { discardCancelledUpload(msg, storagePath: storagePath); return }
             msg.mediaStoragePath = storagePath; msg.mediaURL = downloadURL
             msg.mediaFileSize    = Int64(uploadData.count)
             msg.syncState = .pendingUpsert; try? modelContext.save(); reloadLocal()
             let dto = makeDTO(from: msg); try await remoteStore.upsert(dto: dto)
             msg.syncState = .synced; msg.lastSyncError = nil; try? modelContext.save()
         } catch {
+            if progressStore.isCancelled(messageId) { discardCancelledUpload(msg); return }
             msg.syncState = .error; msg.lastSyncError = error.localizedDescription
             try? modelContext.save(); errorText = "Invio media fallito: \(error.localizedDescription)"
         }
-        isUploadingMedia = false; uploadProgress = 0
     }
     
     // MARK: - Compression
@@ -756,14 +815,16 @@ final class ChatViewModel: NSObject, ObservableObject {
     }
     
     private func compressVideo(data: Data) async throws -> Data {
-        let inputURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
+        let inputURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mov")
         try data.write(to: inputURL); defer { try? FileManager.default.removeItem(at: inputURL) }
-        let asset = AVURLAsset(url: inputURL)
-        guard let session = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetMediumQuality) else { return data }
-        let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
-        defer { try? FileManager.default.removeItem(at: outputURL) }
-        do { try await session.export(to: outputURL, as: .mp4, isolation: .none) } catch { return data }
-        return (try? Data(contentsOf: outputURL)) ?? data
+        do {
+            let outputURL = try await KBVideoEncoder.compress(inputURL, profile: .chat)
+            defer { try? FileManager.default.removeItem(at: outputURL) }
+            return (try? Data(contentsOf: outputURL)) ?? data
+        } catch {
+            KBLog.data.kbError("compressVideo fallback to original: \(error.localizedDescription)")
+            return data
+        }
     }
     
     // MARK: - Send audio – AVAudioEngine recording
@@ -1137,6 +1198,9 @@ final class ChatViewModel: NSObject, ObservableObject {
         let messageId  = UUID().uuidString; let now = Date()
         logAudio("uploadAndSendAudio BEGIN messageId=\(messageId) duration=\(duration) data.count=\(data.count)")
         isUploadingMedia = true; uploadProgress = 0
+        let progressStore = ChatUploadProgressStore.shared
+        progressStore.begin(messageId)
+        defer { progressStore.end(messageId) }
         let localAudioURL: URL
         do {
             let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -1175,9 +1239,18 @@ final class ChatViewModel: NSObject, ObservableObject {
             let (storagePath, downloadURL) = try await storageService.upload(
                 data: data, familyId: familyId, messageId: messageId,
                 fileName: "audio.m4a", mimeType: "audio/mp4",
-                progressHandler: { [weak self] p in Task { @MainActor in self?.uploadProgress = p } })
+                registerCancel: { cancel in Task { @MainActor in progressStore.setCancelHandler(messageId, cancel) } },
+                progressHandler: { [weak self] p in Task { @MainActor in
+                    self?.uploadProgress = p
+                    progressStore.update(messageId, p)
+                } })
             logAudio("uploadAndSendAudio upload OK storagePath=\(storagePath)")
             logAudio("uploadAndSendAudio upload OK downloadURL=\(downloadURL)")
+            if progressStore.isCancelled(messageId) {
+                discardCancelledUpload(msg, storagePath: storagePath)
+                isUploadingMedia = false; uploadProgress = 0
+                return
+            }
             msg.mediaStoragePath = storagePath; msg.mediaURL = downloadURL
             msg.mediaFileSize = Int64(data.count)
             msg.mediaDurationSeconds = duration; msg.syncState = .pendingUpsert
@@ -1186,6 +1259,11 @@ final class ChatViewModel: NSObject, ObservableObject {
             logAudio("uploadAndSendAudio remote upsert OK messageId=\(messageId)")
             msg.syncState = .synced; msg.lastSyncError = nil; try? modelContext.save()
         } catch {
+            if progressStore.isCancelled(messageId) {
+                discardCancelledUpload(msg)
+                isUploadingMedia = false; uploadProgress = 0
+                return
+            }
             logAudio("uploadAndSendAudio ERROR=\(error.localizedDescription)")
             msg.syncState = .error; msg.lastSyncError = error.localizedDescription
             try? modelContext.save(); errorText = "Invio audio fallito: \(error.localizedDescription)"
@@ -1203,6 +1281,10 @@ final class ChatViewModel: NSObject, ObservableObject {
         let messageId = UUID().uuidString; let now = Date()
         let fileName = url.lastPathComponent; let mimeType = url.mimeType()
         isUploadingMedia = true; uploadProgress = 0; errorText = nil
+        let progressStore = ChatUploadProgressStore.shared
+        let fileBytes = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+        progressStore.begin(messageId, longRunning: fileBytes > Self.longUploadBytes)
+        defer { progressStore.end(messageId) }
         let msg = KBChatMessage(id: messageId, familyId: familyId, senderId: uid, senderName: senderName,
                                 type: .document, text: fileName, createdAt: now)
         msg.syncState = .pendingUpsert; modelContext.insert(msg); try? modelContext.save(); reloadLocal()
@@ -1210,13 +1292,27 @@ final class ChatViewModel: NSObject, ObservableObject {
             let data = try Data(contentsOf: url)
             let (storagePath, downloadURL) = try await storageService.upload(
                 data: data, familyId: familyId, messageId: messageId, fileName: fileName, mimeType: mimeType,
-                progressHandler: { [weak self] p in Task { @MainActor in self?.uploadProgress = p } })
+                registerCancel: { cancel in Task { @MainActor in progressStore.setCancelHandler(messageId, cancel) } },
+                progressHandler: { [weak self] p in Task { @MainActor in
+                    self?.uploadProgress = p
+                    progressStore.update(messageId, p)
+                } })
+            if progressStore.isCancelled(messageId) {
+                discardCancelledUpload(msg, storagePath: storagePath)
+                isUploadingMedia = false; uploadProgress = 0
+                return
+            }
             msg.mediaStoragePath = storagePath; msg.mediaURL = downloadURL
             msg.mediaFileSize    = Int64(data.count)
             msg.syncState = .pendingUpsert; try? modelContext.save()
             let dto = makeDTO(from: msg); try await remoteStore.upsert(dto: dto)
             msg.syncState = .synced; msg.lastSyncError = nil; try? modelContext.save()
         } catch {
+            if progressStore.isCancelled(messageId) {
+                discardCancelledUpload(msg)
+                isUploadingMedia = false; uploadProgress = 0
+                return
+            }
             msg.syncState = .error; msg.lastSyncError = error.localizedDescription
             try? modelContext.save(); errorText = "Invio documento fallito: \(error.localizedDescription)"
         }
@@ -1671,7 +1767,9 @@ final class ChatViewModel: NSObject, ObservableObject {
             mediaGroupURLsJSON:  msg.mediaGroupURLsJSON,
             mediaGroupTypesJSON: msg.mediaGroupTypesJSON,
             contactPayloadJSON:  msg.contactPayloadJSON,
-            mentionsJSON:        msg.mentionsJSON
+            mentionsJSON:        msg.mentionsJSON,
+            mediaWidth:          msg.mediaWidth,
+            mediaHeight:         msg.mediaHeight
         )
     }
     
@@ -1713,6 +1811,8 @@ final class ChatViewModel: NSObject, ObservableObject {
         
         Task {
             for msg in failed {
+                // In invio adesso (o appena annullato dallo stop): lo gestisce il suo percorso d'invio.
+                if ChatUploadProgressStore.shared.isActive(msg.id) { continue }
                 // I messaggi media (foto/video/audio) con mediaURL nil
                 // hanno fallito anche l'upload su Storage — non possiamo
                 // ritentare solo Firestore, saltiamo per ora.
@@ -1803,6 +1903,12 @@ private extension ChatViewModel {
         isCompressingMedia = false
         uploadProgress    = 0
         errorText         = nil
+        let progressStore = ChatUploadProgressStore.shared
+        progressStore.begin(
+            messageId,
+            longRunning: items.contains { $0.type == .video } || items.reduce(0) { $0 + $1.data.count } > Self.longUploadBytes
+        )
+        defer { progressStore.end(messageId) }
         
         // Placeholder locale visibile subito
         let msg = KBChatMessage(
@@ -1817,6 +1923,13 @@ private extension ChatViewModel {
         
         do {
             var downloadURLs: [String] = []
+            var uploadedPaths: [String] = []
+            defer {
+                // Stop durante il gruppo: via anche i file già saliti.
+                if progressStore.isCancelled(messageId) {
+                    for path in uploadedPaths { Task { try? await storageService.delete(storagePath: path) } }
+                }
+            }
             var typeLabels:   [String] = []
             
             let totalEstimated = items.reduce(0) { $0 + $1.data.count }
@@ -1830,10 +1943,16 @@ private extension ChatViewModel {
                     isCompressingMedia = true
                     uploadData = await compressPhoto(data: item.data)
                     isCompressingMedia = false
+                    if index == 0 {
+                        progressStore.setPreview(await ChatUploadProgressStore.photoPreview(from: uploadData), for: messageId)
+                    }
                 case .video:
                     isCompressingMedia = true
                     uploadData = try await compressVideo(data: item.data)
                     isCompressingMedia = false
+                    if index == 0 {
+                        progressStore.setPreview(await ChatUploadProgressStore.videoPreview(from: uploadData), for: messageId)
+                    }
                 default:
                     uploadData = item.data
                 }
@@ -1844,27 +1963,32 @@ private extension ChatViewModel {
                 let fileName  = "group_\(index).\(ext)"
                 let itemStart = uploadedBytes
                 
-                let (_, downloadURL) = try await storageService.upload(
+                if progressStore.isCancelled(messageId) { throw CancellationError() }
+                let (storagePath, downloadURL) = try await storageService.upload(
                     data: uploadData,
                     familyId: familyId,
                     messageId: "\(messageId)_\(index)",
                     fileName: fileName,
                     mimeType: mime,
+                    registerCancel: { cancel in Task { @MainActor in progressStore.setCancelHandler(messageId, cancel) } },
                     progressHandler: { [weak self] p in
                         guard let self else { return }
                         Task { @MainActor in
                             let base  = Double(itemStart) / Double(max(totalEstimated, 1))
                             let chunk = Double(uploadData.count) / Double(max(totalEstimated, 1))
                             self.uploadProgress = base + chunk * p
+                            progressStore.update(messageId, base + chunk * p)
                         }
                     }
                 )
                 
                 downloadURLs.append(downloadURL)
+                uploadedPaths.append(storagePath)
                 typeLabels.append(isVideo ? "video" : "photo")
                 uploadedBytes += uploadData.count
             }
             
+            if progressStore.isCancelled(messageId) { throw CancellationError() }
             // Aggiorna il messaggio con gli URL caricati
             msg.mediaGroupURLs  = downloadURLs
             msg.mediaGroupTypes = typeLabels
@@ -1879,10 +2003,14 @@ private extension ChatViewModel {
             try? modelContext.save()
             
         } catch {
-            msg.syncState     = .error
-            msg.lastSyncError = error.localizedDescription
-            try? modelContext.save()
-            errorText = "Invio gruppo fallito: \(error.localizedDescription)"
+            if progressStore.isCancelled(messageId) {
+                discardCancelledUpload(msg)
+            } else {
+                msg.syncState     = .error
+                msg.lastSyncError = error.localizedDescription
+                try? modelContext.save()
+                errorText = "Invio gruppo fallito: \(error.localizedDescription)"
+            }
         }
         
         isUploadingMedia   = false

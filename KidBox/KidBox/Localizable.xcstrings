@@ -14305,6 +14305,7 @@
       }
     },
     "Compressione in corso…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
