@@ -14,7 +14,9 @@ import SwiftUI
 import UIKit
 import AVFoundation
 import Combine
+#if !targetEnvironment(macCatalyst)
 import BackgroundTasks
+#endif
 
 @MainActor
 final class ChatUploadProgressStore: ObservableObject {
@@ -87,9 +89,11 @@ final class ChatUploadProgressStore: ObservableObject {
     //    BGContinuedProcessingTask (iOS 26): il sistema lo lascia continuare
     //    oltre i 30 s e mostra l'avanzamento, con uno stop che equivale allo stop
     //    nell'anello. Se il sistema non lo concede (strategia .fail) resta il 1.
+    //
+    // Su Mac (Catalyst) il 2 non esiste — BGContinuedProcessingTask non è
+    // disponibile — e non serve: il Mac non sospende l'app in background.
 
     private var backgroundTaskIds: [String: UIBackgroundTaskIdentifier] = [:]
-    private var continuedTasks: [String: BGContinuedProcessingTask] = [:]
     private var heartbeats: [String: Task<Void, Never>] = [:]
 
     /// Deve iniziare col bundle id; il prefisso con `*` è in BGTaskSchedulerPermittedIdentifiers.
@@ -106,13 +110,18 @@ final class ChatUploadProgressStore: ObservableObject {
             }
             if id != .invalid { backgroundTaskIds[messageId] = id }
         }
+        #if !targetEnvironment(macCatalyst)
         if longRunning { submitContinuedTask(messageId) }
+        #endif
     }
 
     private func endBackgroundTask(_ messageId: String) {
         guard let id = backgroundTaskIds.removeValue(forKey: messageId) else { return }
         UIApplication.shared.endBackgroundTask(id)
     }
+
+    #if !targetEnvironment(macCatalyst)
+    private var continuedTasks: [String: BGContinuedProcessingTask] = [:]
 
     private func submitContinuedTask(_ messageId: String) {
         let identifier = Self.continuedPrefix + messageId
@@ -187,13 +196,18 @@ final class ChatUploadProgressStore: ObservableObject {
         let upload = Self.totalUnits - Self.preparationUnits
         task.progress.completedUnitCount = Self.preparationUnits + Int64(Double(upload) * value)
     }
+    #else
+    private func reportContinuedProgress(_ messageId: String, _ value: Double) {}
+    #endif
 
     private func stopBackgroundProtection(_ messageId: String, success: Bool) {
         heartbeats.removeValue(forKey: messageId)?.cancel()
+        #if !targetEnvironment(macCatalyst)
         if let task = continuedTasks.removeValue(forKey: messageId) {
             if success { task.progress.completedUnitCount = Self.totalUnits }
             task.setTaskCompleted(success: success)
         }
+        #endif
         endBackgroundTask(messageId)
     }
 

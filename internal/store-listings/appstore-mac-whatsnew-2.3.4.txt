@@ -1,0 +1,43 @@
+# Novità Mac 2.3.4 — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. La versione Mac in preparazione portava già le note della 2.3.3 (non uscita su Mac): restano identiche in testa, e le novità della 2.3.4 si aggiungono in coda (25/09/2026). Escluse le voci solo iPhone: fotocamera e invio in background.
+
+## it
+
+• Cure: le terapie a lungo termine hanno una sezione tutta loro e non nascondono più quelle del momento.
+• Dispositivi collegati: ogni telefono compare una volta sola. Prima, reinstallando l'app, lo stesso dispositivo appariva due o tre volte con date diverse; ora disconnetterlo lo rimuove davvero.
+• Impostazioni riordinate in sezioni: quello che serve si trova prima.
+• Chat: mentre invii, la bolla mostra un anello con l'avanzamento: cliccalo per fermare l'invio.
+• Foto e video compaiono nel loro formato, verticale o orizzontale, come li hai girati.
+• Video più nitidi: in chat a 720p, nell'album Foto e video a 1080p.
+• Se clicchi l'avviso di una zona di un'altra famiglia, KidBox passa a quella famiglia e apre la mappa.
+
+## en-GB
+
+• Treatments: long-term therapies now have their own section and no longer hide the ones you're following right now.
+• Connected devices: each phone appears only once. Reinstalling the app used to show the same device two or three times with different dates; now disconnecting it really removes it.
+• Settings reorganised into sections, so what you need is easier to find.
+• Chat: while sending, the bubble shows a progress ring: click it to stop the upload.
+• Photos and videos appear in their own shape, portrait or landscape, just as you shot them.
+• Sharper videos: 720p in chat, 1080p in the Photos & Videos album.
+• Clicking a zone alert from another family switches KidBox to that family and opens the map.
+
+## es-ES
+
+• Tratamientos: las terapias de larga duración tienen ahora su propia sección y ya no ocultan las del momento.
+• Dispositivos conectados: cada teléfono aparece una sola vez. Antes, al reinstalar la app, el mismo dispositivo salía dos o tres veces con fechas distintas; ahora desconectarlo lo elimina de verdad.
+• Ajustes reorganizados por secciones: lo que necesitas se encuentra antes.
+• Chat: mientras envías, la burbuja muestra un anillo con el progreso: haz clic en él para detener el envío.
+• Las fotos y los vídeos aparecen en su formato, vertical u horizontal, tal como los grabaste.
+• Vídeos más nítidos: 720p en el chat, 1080p en el álbum Fotos y vídeos.
+• Si haces clic en el aviso de una zona de otra familia, KidBox cambia a esa familia y abre el mapa.
+
+## fr-FR
+
+• Soins : les traitements de longue durée ont désormais leur propre section et ne masquent plus ceux du moment.
+• Appareils connectés : chaque téléphone n'apparaît qu'une seule fois. Réinstaller l'app faisait apparaître le même appareil deux ou trois fois avec des dates différentes ; maintenant, le déconnecter le supprime vraiment.
+• Réglages réorganisés en sections : on trouve plus vite ce qu'on cherche.
+• Discussion : pendant l'envoi, la bulle affiche un anneau de progression : cliquez dessus pour arrêter l'envoi.
+• Les photos et vidéos s'affichent dans leur format, portrait ou paysage, comme vous les avez filmées.
+• Vidéos plus nettes : 720p dans la discussion, 1080p dans l'album Photos et vidéos.
+• Si vous cliquez sur l'alerte d'une zone d'une autre famille, KidBox passe à cette famille et ouvre la carte.

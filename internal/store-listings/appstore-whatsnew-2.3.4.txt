@@ -1,0 +1,39 @@
+# Novità iOS 2.3.4 — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 25/09/2026 sulle modifiche della 2.3.4 (build uscita dopo la 2.3.3 build 137): fotocamera in chat senza schermo nero, anello d'invio con stop, formato verticale/orizzontale di foto e video, invio che continua in background, video più nitidi (chat 720p, album 1080p), tap sull'avviso di zona di un'altra famiglia.
+
+## it
+
+• Chat: la foto o il video scattati con la fotocamera partono appena tocchi «Usa», senza più lo schermo nero.
+• Mentre invii, la bolla mostra un anello con l'avanzamento: toccalo per fermare l'invio.
+• Foto e video compaiono nel loro formato, verticale o orizzontale, come li hai girati.
+• L'invio continua anche se esci dall'app: i video lunghi finiscono in background e ne segui l'avanzamento in una notifica.
+• Video più nitidi: in chat a 720p, nell'album Foto e video a 1080p.
+• Se tocchi l'avviso di una zona di un'altra famiglia, KidBox passa a quella famiglia e apre la mappa.
+
+## en-GB
+
+• Chat: photos and videos taken with the camera are sent as soon as you tap "Use", with no more black screen.
+• While sending, the bubble shows a progress ring: tap it to stop the upload.
+• Photos and videos appear in their own shape, portrait or landscape, just as you shot them.
+• Sending carries on even if you leave the app: long videos finish in the background and you can follow the progress in a notification.
+• Sharper videos: 720p in chat, 1080p in the Photos & Videos album.
+• Tapping a zone alert from another family switches KidBox to that family and opens the map.
+
+## es-ES
+
+• Chat: las fotos y los vídeos hechos con la cámara se envían en cuanto tocas «Usar», sin la pantalla negra.
+• Mientras envías, la burbuja muestra un anillo con el progreso: tócalo para detener el envío.
+• Las fotos y los vídeos aparecen en su formato, vertical u horizontal, tal como los grabaste.
+• El envío continúa aunque salgas de la app: los vídeos largos terminan en segundo plano y sigues el progreso en una notificación.
+• Vídeos más nítidos: 720p en el chat, 1080p en el álbum Fotos y vídeos.
+• Si tocas el aviso de una zona de otra familia, KidBox cambia a esa familia y abre el mapa.
+
+## fr-FR
+
+• Discussion : les photos et vidéos prises avec l'appareil photo partent dès que vous touchez « Utiliser », sans plus d'écran noir.
+• Pendant l'envoi, la bulle affiche un anneau de progression : touchez-le pour arrêter l'envoi.
+• Les photos et vidéos s'affichent dans leur format, portrait ou paysage, comme vous les avez filmées.
+• L'envoi continue même si vous quittez l'app : les longues vidéos se terminent en arrière-plan et vous suivez la progression dans une notification.
+• Vidéos plus nettes : 720p dans la discussion, 1080p dans l'album Photos et vidéos.
+• Si vous touchez l'alerte d'une zone d'une autre famille, KidBox passe à cette famille et ouvre la carte.
