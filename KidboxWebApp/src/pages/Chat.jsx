@@ -18,7 +18,7 @@ import { useFamily } from "../FamilyContext";
 import { useFamilyMembers } from "../hooks/useFamilyMembers";
 import { useTranslation } from "../i18n/LocaleContext";
 import { db } from "../firebase";
-import { loadFamilyKey } from "../services/familyKey";
+import { MissingFamilyKeyError, loadFamilyKey } from "../services/familyKey";
 import ChatBubble, { ChatUploadBubble } from "../components/ChatBubble";
 import { formatDuration } from "../components/chatFormat";
 import ChatMediaGallery from "../components/ChatMediaGallery";
@@ -251,12 +251,40 @@ export default function Chat() {
 
   /* ── Caricamenti iniziali ─────────────────────────────────────────────── */
 
+  // La chiave si ricarica a ogni cambio di famiglia. Un tentativo superato (cambio
+  // famiglia nel frattempo) non tocca più lo stato; un errore di rete si riprova
+  // prima di dirlo; e quando la chiave arriva l'avviso di un tentativo fallito
+  // sparisce. Prima qualunque errore diventava «chiave non disponibile» e restava
+  // a schermo anche con la chiave caricata e i messaggi leggibili.
   useEffect(() => {
-    if (!currentFamilyId || !uid) return;
-    loadFamilyKey({ familyId: currentFamilyId, userId: uid })
-      .then(setFamilyKey)
-      .catch(() => setError(c.keyMissing));
-  }, [currentFamilyId, uid, c.keyMissing]);
+    if (!currentFamilyId || !uid) return undefined;
+    let cancelled = false;
+    let retryTimer = null;
+    setFamilyKey(null);
+    const keyErrors = [c.keyMissing, c.keyLoadFailed];
+    const attempt = async (retriesLeft) => {
+      try {
+        const key = await loadFamilyKey({ familyId: currentFamilyId, userId: uid });
+        if (cancelled) return;
+        setFamilyKey(key);
+        setError((prev) => (keyErrors.includes(prev) ? null : prev));
+      } catch (err) {
+        if (cancelled) return;
+        console.warn("[Chat] chiave di famiglia non caricata:", err);
+        const missing = err instanceof MissingFamilyKeyError;
+        if (!missing && retriesLeft > 0) {
+          retryTimer = setTimeout(() => attempt(retriesLeft - 1), 1500);
+          return;
+        }
+        setError(missing ? c.keyMissing : c.keyLoadFailed);
+      }
+    };
+    attempt(2);
+    return () => {
+      cancelled = true;
+      clearTimeout(retryTimer);
+    };
+  }, [currentFamilyId, uid, c.keyMissing, c.keyLoadFailed]);
 
   useEffect(() => {
     if (!uid) return;

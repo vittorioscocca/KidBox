@@ -1,5 +1,12 @@
 export const translations = {
   it: {
+    logoutConfirm: {
+      button: "Esci",
+      title: "Esci dall'account?",
+      message: "Verrai reindirizzato alla schermata di accesso.",
+      confirm: "Esci",
+      cancel: "Annulla",
+    },
     onboarding: {
       skip: "Salta",
       back: "Indietro",
@@ -136,6 +143,7 @@ export const translations = {
       deletedMessage: "Messaggio eliminato",
       disabled: "La chat di famiglia è disattivata nelle tue impostazioni. Riattivala da Impostazioni → Messaggi.",
       keyMissing: "Chiave di famiglia non disponibile: i messaggi cifrati non possono essere letti da questo browser.",
+      keyLoadFailed: "Non riesco a recuperare la chiave di famiglia. Controlla la connessione e ricarica la pagina.",
       micDenied: "Microfono non disponibile o permesso negato.",
       locationDenied: "Posizione non disponibile o permesso negato.",
 
@@ -1503,6 +1511,13 @@ export const translations = {
     },
   },
   en: {
+    logoutConfirm: {
+      button: "Sign out",
+      title: "Sign out of the account?",
+      message: "You'll be redirected to the login screen.",
+      confirm: "Sign out",
+      cancel: "Cancel",
+    },
     onboarding: {
       skip: "Skip",
       back: "Back",
@@ -1639,6 +1654,7 @@ export const translations = {
       deletedMessage: "Message deleted",
       disabled: "The family chat is turned off in your settings. Turn it back on in Settings → Messages.",
       keyMissing: "Family key unavailable: encrypted messages cannot be read from this browser.",
+      keyLoadFailed: "Couldn’t load the family key. Check your connection and reload the page.",
       micDenied: "Microphone unavailable or permission denied.",
       locationDenied: "Location unavailable or permission denied.",
 
@@ -3006,6 +3022,13 @@ export const translations = {
     },
   },
   fr: {
+    logoutConfirm: {
+      button: "Se déconnecter",
+      title: "Se déconnecter du compte ?",
+      message: "Vous serez redirigé vers l'écran de connexion.",
+      confirm: "Se déconnecter",
+      cancel: "Annuler",
+    },
     onboarding: {
       skip: "Passer",
       back: "Retour",
@@ -3142,6 +3165,7 @@ export const translations = {
       deletedMessage: "Message supprimé",
       disabled: "Le chat de famille est désactivé dans vos paramètres. Réactivez-le depuis Paramètres → Messages.",
       keyMissing: "Clé de famille indisponible : les messages chiffrés ne peuvent pas être lus depuis ce navigateur.",
+      keyLoadFailed: "Impossible de récupérer la clé de famille. Vérifiez la connexion et rechargez la page.",
       micDenied: "Micro indisponible ou autorisation refusée.",
       locationDenied: "Position indisponible ou autorisation refusée.",
       search: "Rechercher",
@@ -4453,6 +4477,13 @@ export const translations = {
     },
   },
   es: {
+    logoutConfirm: {
+      button: "Cerrar sesión",
+      title: "¿Cerrar sesión de la cuenta?",
+      message: "Serás redirigido a la pantalla de inicio de sesión.",
+      confirm: "Cerrar sesión",
+      cancel: "Cancelar",
+    },
     onboarding: {
       skip: "Omitir",
       back: "Atrás",
@@ -4589,6 +4620,7 @@ export const translations = {
       deletedMessage: "Mensaje eliminado",
       disabled: "El chat de familia está desactivado en tus ajustes. Reactívalo desde Ajustes → Mensajes.",
       keyMissing: "Clave de familia no disponible: los mensajes cifrados no se pueden leer desde este navegador.",
+      keyLoadFailed: "No se pudo recuperar la clave de familia. Comprueba la conexión y recarga la página.",
       micDenied: "Micrófono no disponible o permiso denegado.",
       locationDenied: "Ubicación no disponible o permiso denegado.",
       search: "Buscar",

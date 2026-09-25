@@ -98,9 +98,16 @@ export function FamilyProvider({ children }) {
     [families, currentFamilyId]
   );
 
+  // Alle pagine arriva solo una famiglia verificata. L'id salvato nel browser può
+  // essere di un altro account passato di qui o di una famiglia da cui si è
+  // usciti: per il render che precede la correzione qui sopra, le pagine
+  // chiedevano la chiave di quella famiglia, ricevevano un rifiuto e mostravano
+  // «chiave non disponibile» anche dopo aver caricato quella giusta.
+  const validFamilyId = currentFamily ? currentFamilyId : null;
+
   return (
     <FamilyContext.Provider
-      value={{ families, error, currentFamily, currentFamilyId, selectFamily, reload }}
+      value={{ families, error, currentFamily, currentFamilyId: validFamilyId, selectFamily, reload }}
     >
       {children}
     </FamilyContext.Provider>
