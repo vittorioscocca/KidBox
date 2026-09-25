@@ -277,3 +277,43 @@
     margin-left: 8px;
   }
 }
+
+/* ── Conferma di uscita ─────────────────────────────────────────────────── */
+
+.logout-confirm h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+.logout-confirm p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.logout-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.logout-confirm-actions button {
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.logout-confirm-actions .btn-secondary {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.logout-confirm-actions .btn-danger {
+  border: 1px solid #c0392b;
+  background: #c0392b;
+  color: #fff;
+}

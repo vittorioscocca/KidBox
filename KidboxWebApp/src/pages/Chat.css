@@ -149,6 +149,63 @@
   border-color: color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
+/* Media senza citazione: niente cornice né fondo, il media è la bolla (come iOS). */
+.chat-bubble.media-only,
+.chat-row.mine .chat-bubble.media-only {
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.chat-row.highlighted .chat-bubble.media-only {
+  outline-offset: 2px;
+  border-radius: 16px;
+}
+
+.chat-media-wrap {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.chat-media-wrap .chat-media,
+.chat-media-wrap .chat-group {
+  border-radius: 0;
+}
+
+/* Orario e spunte in una pillola sopra l'immagine. */
+.chat-media-wrap .chat-meta {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  line-height: 1.2;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+/* Sul video i controlli nativi compaiono al passaggio del mouse e stanno in basso:
+   la pillola si fa da parte. */
+.chat-media-wrap.video:hover .chat-meta {
+  opacity: 0;
+}
+
+.chat-bubble.media-only .chat-menu-btn {
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+}
+
+.chat-bubble.media-only .chat-reactions {
+  margin-top: 4px;
+}
+
 .chat-bubble.deleted {
   color: var(--muted);
   font-size: 0.85rem;

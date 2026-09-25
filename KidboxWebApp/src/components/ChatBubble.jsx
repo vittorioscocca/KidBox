@@ -170,6 +170,9 @@ export default function ChatBubble({
   // messaggi miei — sugli altrui non direbbe niente di utile.
   const readByOthers = message.readBy.filter((id) => id !== message.senderId).length;
   const allRead = memberCount > 1 && readByOthers >= memberCount - 1;
+  // Foto, video e gruppi senza citazione: il media È la bolla, senza cornice né
+  // fondo, e l'orario sta sopra l'immagine (come iOS e Android).
+  const mediaOnly = ["photo", "video", "mediaGroup"].includes(message.type) && !repliedTo;
 
   if (message.isDeleted) {
     return (
@@ -253,13 +256,21 @@ export default function ChatBubble({
     }
   };
 
+  const meta = (
+    <div className="chat-meta">
+      {message.editedAt && <span>{labels.edited}</span>}
+      <span>{timeOf(message.createdAt, locale)}</span>
+      {isMine && <span className="chat-ticks">{allRead ? "✓✓" : "✓"}</span>}
+    </div>
+  );
+
   return (
     <div
       className={`chat-row${isMine ? " mine" : ""}${highlighted ? " highlighted" : ""}`}
       id={`msg-${message.id}`}
       ref={wrapRef}
     >
-      <div className="chat-bubble">
+      <div className={mediaOnly ? "chat-bubble media-only" : "chat-bubble"}>
         {!isMine && <span className="chat-sender">{message.senderName}</span>}
 
         {repliedTo && (
@@ -269,13 +280,17 @@ export default function ChatBubble({
           </button>
         )}
 
-        {body()}
-
-        <div className="chat-meta">
-          {message.editedAt && <span>{labels.edited}</span>}
-          <span>{timeOf(message.createdAt, locale)}</span>
-          {isMine && <span className="chat-ticks">{allRead ? "✓✓" : "✓"}</span>}
-        </div>
+        {mediaOnly ? (
+          <div className={`chat-media-wrap ${message.type}`}>
+            {body()}
+            {meta}
+          </div>
+        ) : (
+          <>
+            {body()}
+            {meta}
+          </>
+        )}
 
         {Object.keys(message.reactions).length > 0 && (
           <div className="chat-reactions">
@@ -416,9 +431,9 @@ export function ChatUploadBubble({ upload, locale, labels, onCancel }) {
   const box = mediaBoxSize(upload.width, upload.height) || { width: 270, height: 202 };
   return (
     <div className="chat-row mine">
-      <div className="chat-bubble">
+      <div className={isVisual ? "chat-bubble media-only" : "chat-bubble"}>
         {isVisual ? (
-          <div className="chat-upload-media" style={box}>
+          <div className="chat-upload-media chat-media-wrap" style={box}>
             {upload.previewURL &&
               (upload.previewType === "video" ? (
                 <video src={upload.previewURL} muted playsInline preload="metadata" />
@@ -426,6 +441,10 @@ export function ChatUploadBubble({ upload, locale, labels, onCancel }) {
                 <img src={upload.previewURL} alt="" />
               ))}
             <UploadRing progress={upload.progress} onCancel={onCancel} label={labels.cancelUpload} />
+            <div className="chat-meta">
+              <span>{timeOf(upload.createdAt, locale)}</span>
+              <span className="chat-ticks">🕓</span>
+            </div>
           </div>
         ) : (
           <div className="chat-upload-file">
@@ -439,10 +458,12 @@ export function ChatUploadBubble({ upload, locale, labels, onCancel }) {
             <span>{upload.fileName || labels.uploading}</span>
           </div>
         )}
-        <div className="chat-meta">
-          <span>{timeOf(upload.createdAt, locale)}</span>
-          <span className="chat-ticks">🕓</span>
-        </div>
+        {!isVisual && (
+          <div className="chat-meta">
+            <span>{timeOf(upload.createdAt, locale)}</span>
+            <span className="chat-ticks">🕓</span>
+          </div>
+        )}
       </div>
     </div>
   );

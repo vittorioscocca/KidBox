@@ -3,10 +3,17 @@ import { useState } from "react";
 import { useAuth } from "../AuthContext";
 import { useFamily } from "../FamilyContext";
 import { NAV_SECTIONS, ACCOUNT_SECTIONS } from "../nav";
+import { useTranslation } from "../i18n/LocaleContext";
+import Modal from "./Modal";
 import "./Sidebar.css";
 
 export default function Sidebar() {
   const { logout } = useAuth();
+  const { t } = useTranslation();
+  const l = t.logoutConfirm;
+  // Come iOS: uscire chiede conferma, un clic sbagliato nella barra non deve
+  // riportare alla schermata di accesso.
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const { families, currentFamily, selectFamily } = useFamily();
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(
@@ -106,11 +113,33 @@ export default function Sidebar() {
             {!collapsed && item.label}
           </NavLink>
         ))}
-        <button className="nav-item logout-item" onClick={logout} title="Esci">
+        <button className="nav-item logout-item" onClick={() => setConfirmLogout(true)} title={l.button}>
           <span className="nav-icon">🚪</span>
-          {!collapsed && "Esci"}
+          {!collapsed && l.button}
         </button>
       </div>
+      {confirmLogout && (
+        <Modal onClose={() => setConfirmLogout(false)}>
+          <div className="logout-confirm">
+            <h3>{l.title}</h3>
+            <p>{l.message}</p>
+            <div className="logout-confirm-actions">
+              <button className="btn-secondary" onClick={() => setConfirmLogout(false)} autoFocus>
+                {l.cancel}
+              </button>
+              <button
+                className="btn-danger"
+                onClick={() => {
+                  setConfirmLogout(false);
+                  logout();
+                }}
+              >
+                {l.confirm}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </aside>
   );
 }
