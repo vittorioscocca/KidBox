@@ -228,6 +228,14 @@
   cursor: pointer;
 }
 
+/* Dimensioni note: riquadro fisso già prima del caricamento, niente salti. */
+.chat-media.sized {
+  display: block;
+  max-height: none;
+  object-fit: cover;
+  background: var(--border);
+}
+
 .chat-group {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

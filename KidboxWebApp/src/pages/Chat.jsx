@@ -91,8 +91,13 @@ const audioExtension = (mime) => (mime.includes("mp4") ? "m4a" : "webm");
 const MIN_RECORDING_SECONDS = 0.6;
 
 /** Foto ridotta prima dell'invio, come fa `compressPhoto` su iOS. */
+/**
+ * Foto ridimensionata per l'invio, con le dimensioni finali. createImageBitmap
+ * applica già l'orientamento EXIF, quindi larghezza e altezza sono quelle che
+ * si vedono.
+ */
 async function compressPhoto(file) {
-  if (!file.type.startsWith("image/")) return file;
+  if (!file.type.startsWith("image/")) return { blob: file, width: null, height: null };
   try {
     const bitmap = await createImageBitmap(file);
     const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
@@ -103,11 +108,28 @@ async function compressPhoto(file) {
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     bitmap.close();
     const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.82));
-    return blob || file;
+    return { blob: blob || file, width: canvas.width, height: canvas.height };
   } catch {
     // Formato che il browser non sa decodificare: si manda l'originale.
-    return file;
+    return { blob: file, width: null, height: null };
   }
+}
+
+/** Dimensioni di un video letto dai metadati (il browser applica già la rotazione). */
+function videoDimensions(file) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    const done = (dims) => {
+      URL.revokeObjectURL(url);
+      resolve(dims);
+    };
+    video.preload = "metadata";
+    video.onloadedmetadata = () =>
+      done({ width: video.videoWidth || null, height: video.videoHeight || null });
+    video.onerror = () => done({ width: null, height: null });
+    video.src = url;
+  });
 }
 
 /**
@@ -489,10 +511,11 @@ export default function Chat() {
       if (!list.length) return;
 
       const prepared = await Promise.all(
-        list.map(async (file) => ({
-          blob: file.type.startsWith("video/") ? file : await compressPhoto(file),
-          type: file.type.startsWith("video/") ? "video" : "photo",
-        }))
+        list.map(async (file) =>
+          file.type.startsWith("video/")
+            ? { blob: file, type: "video", ...(await videoDimensions(file)) }
+            : { type: "photo", ...(await compressPhoto(file)) }
+        )
       );
 
       if (prepared.length === 1) {
@@ -503,6 +526,8 @@ export default function Chat() {
           senderName: displayName,
           type: prepared[0].type,
           blob: prepared[0].blob,
+          width: prepared[0].width,
+          height: prepared[0].height,
           replyToId: replyTo?.id || null,
           onProgress: setProgress,
         });

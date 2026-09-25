@@ -99,6 +99,10 @@ async function mapMessage(snap, familyKey) {
     mediaThumbnailURL: d.mediaThumbnailURL || null,
     mediaDurationSeconds: d.mediaDurationSeconds ?? null,
     mediaFileSize: d.mediaFileSize ?? null,
+    // Pixel di foto/video come si vedono: danno alla bolla il formato
+    // verticale/orizzontale prima che il file arrivi (come iOS e Android).
+    mediaWidth: typeof d.mediaWidth === "number" ? d.mediaWidth : null,
+    mediaHeight: typeof d.mediaHeight === "number" ? d.mediaHeight : null,
     mediaGroupURLs: parseJSON(d.mediaGroupURLsJSON, []),
     mediaGroupTypes: parseJSON(d.mediaGroupTypesJSON, []),
     contact: parseJSON(d.contactPayloadJSON, null),
@@ -246,6 +250,8 @@ export async function sendMedia({
   fileName,
   durationSeconds = null,
   replyToId = null,
+  width = null,
+  height = null,
   onProgress,
 }) {
   const id = crypto.randomUUID();
@@ -279,6 +285,10 @@ export async function sendMedia({
     mediaFileSize: blob.size,
   };
   if (durationSeconds != null) data.mediaDurationSeconds = Math.round(durationSeconds);
+  if (width > 0 && height > 0) {
+    data.mediaWidth = Math.round(width);
+    data.mediaHeight = Math.round(height);
+  }
   if (replyToId) data.replyToId = replyToId;
 
   // Il documento porta il nome del file nel testo: è ciò che la bolla mostra.

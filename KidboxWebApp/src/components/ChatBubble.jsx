@@ -181,19 +181,30 @@ export default function ChatBubble({
     );
   }
 
+  const mediaBox = mediaBoxSize(message.mediaWidth, message.mediaHeight);
+
   const body = () => {
     switch (message.type) {
       case "photo":
         return (
           <img
-            className="chat-media"
+            className={mediaBox ? "chat-media sized" : "chat-media"}
+            style={mediaBox || undefined}
             src={message.mediaURL}
             alt=""
             onClick={() => onOpenMedia({ url: message.mediaURL, type: "photo", message, index: 0 })}
           />
         );
       case "video":
-        return <video className="chat-media" src={message.mediaURL} controls preload="metadata" />;
+        return (
+          <video
+            className={mediaBox ? "chat-media sized" : "chat-media"}
+            style={mediaBox || undefined}
+            src={message.mediaURL}
+            controls
+            preload="metadata"
+          />
+        );
       case "audio":
         return <ChatAudioPlayer url={message.mediaURL} duration={message.mediaDurationSeconds} />;
       case "document":
@@ -334,4 +345,25 @@ export default function ChatBubble({
       </div>
     </div>
   );
+}
+
+/**
+ * Riquadro di foto/video come WhatsApp, iOS e Android: gli orizzontali prendono
+ * tutta la larghezza, i verticali crescono fino a un tetto e poi si restringono.
+ * Senza dimensioni (messaggi vecchi) null: il browser usa le proporzioni vere
+ * appena l'immagine arriva.
+ */
+function mediaBoxSize(width, height) {
+  if (!(width > 0 && height > 0)) return null;
+  const maxW = 270;
+  const maxH = maxW * 1.2;
+  const aspect = height / width;
+  let w = maxW;
+  let h = maxW * aspect;
+  if (h > maxH) {
+    h = maxH;
+    w = Math.max(maxH / aspect, maxW * 0.55);
+  }
+  h = Math.max(h, maxW * 0.45);
+  return { width: Math.round(w), height: Math.round(h) };
 }
