@@ -19,7 +19,8 @@ import { useFamilyMembers } from "../hooks/useFamilyMembers";
 import { useTranslation } from "../i18n/LocaleContext";
 import { db } from "../firebase";
 import { loadFamilyKey } from "../services/familyKey";
-import ChatBubble from "../components/ChatBubble";
+import ChatBubble, { ChatUploadBubble } from "../components/ChatBubble";
+import { formatDuration } from "../components/chatFormat";
 import ChatMediaGallery from "../components/ChatMediaGallery";
 import RecordingWave from "../components/RecordingWave";
 import Modal from "../components/Modal";
@@ -31,6 +32,7 @@ import {
   deleteForMe,
   editMessage,
   fetchOlderMessages,
+  isUploadCancelled,
   listenMessages,
   listenTyping,
   markAsRead,
@@ -203,7 +205,9 @@ export default function Chat() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(null);
 
-  const [progress, setProgress] = useState(null);
+  // Invii in corso, mostrati come bolle locali con anello e stop finché il
+  // messaggio vero non arriva dal listener.
+  const [pendingUploads, setPendingUploads] = useState([]);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -325,7 +329,7 @@ export default function Chat() {
     // Non si trascina in fondo chi sta leggendo indietro: interromperebbe la
     // lettura a ogni messaggio nuovo.
     if (atBottom) bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [messages.length, atBottom]);
+  }, [messages.length, pendingUploads.length, atBottom]);
 
   /* ── Dati derivati ────────────────────────────────────────────────────── */
 
@@ -338,6 +342,15 @@ export default function Chat() {
   );
 
   const byId = useMemo(() => new Map(messages.map((m) => [m.id, m])), [messages]);
+
+  // La bolla locale lascia il posto al messaggio vero appena il listener lo porta:
+  // toglierla prima farebbe sparire il media per un attimo.
+  useEffect(() => {
+    const arrived = pendingUploads.filter((u) => u.done && byId.has(u.id));
+    if (!arrived.length) return;
+    arrived.forEach((u) => u.previewURL && URL.revokeObjectURL(u.previewURL));
+    setPendingUploads((prev) => prev.filter((u) => !arrived.some((a) => a.id === u.id)));
+  }, [pendingUploads, byId]);
 
   const previewOf = useCallback(
     (message) => {
@@ -377,11 +390,37 @@ export default function Chat() {
       await action();
       return true;
     } catch (err) {
+      // Stop premuto nell'anello: è una scelta, non un errore.
+      if (isUploadCancelled(err)) return true;
       setError(err.message);
       return false;
     } finally {
       setBusy(false);
-      setProgress(null);
+    }
+  };
+
+  /**
+   * Avvia un invio con la sua bolla locale. `run` riceve id del messaggio,
+   * segnale di annullamento e callback di progresso; la bolla sparisce quando
+   * il messaggio vero è arrivato, o subito se l'invio è fermato o fallisce.
+   */
+  const startUpload = async ({ previewBlob, ...meta }, run) => {
+    const id = crypto.randomUUID();
+    const controller = new AbortController();
+    const previewURL = previewBlob ? URL.createObjectURL(previewBlob) : null;
+    setPendingUploads((prev) => [
+      ...prev,
+      { ...meta, id, previewURL, progress: null, controller, createdAt: new Date(), done: false },
+    ]);
+    const patch = (changes) =>
+      setPendingUploads((prev) => prev.map((u) => (u.id === id ? { ...u, ...changes } : u)));
+    try {
+      await run({ id, signal: controller.signal, onProgress: (p) => patch({ progress: p }) });
+      patch({ done: true });
+    } catch (err) {
+      if (previewURL) URL.revokeObjectURL(previewURL);
+      setPendingUploads((prev) => prev.filter((u) => u.id !== id));
+      throw err;
     }
   };
 
@@ -518,47 +557,67 @@ export default function Chat() {
         )
       );
 
-      if (prepared.length === 1) {
-        await sendMedia({
-          familyId: currentFamilyId,
-          familyKey,
-          uid,
-          senderName: displayName,
-          type: prepared[0].type,
-          blob: prepared[0].blob,
-          width: prepared[0].width,
-          height: prepared[0].height,
-          replyToId: replyTo?.id || null,
-          onProgress: setProgress,
-        });
-      } else {
-        await sendMediaGroup({
-          familyId: currentFamilyId,
-          familyKey,
-          uid,
-          senderName: displayName,
-          items: prepared,
-          replyToId: replyTo?.id || null,
-          onProgress: setProgress,
-        });
-      }
+      const replyToId = replyTo?.id || null;
       setReplyTo(null);
+      const first = prepared[0];
+      const single = prepared.length === 1;
+      await startUpload(
+        {
+          type: single ? first.type : "mediaGroup",
+          previewBlob: first.blob,
+          previewType: first.type,
+          width: single ? first.width : null,
+          height: single ? first.height : null,
+        },
+        ({ id, signal, onProgress }) =>
+          single
+            ? sendMedia({
+                familyId: currentFamilyId,
+                familyKey,
+                uid,
+                senderName: displayName,
+                type: first.type,
+                blob: first.blob,
+                width: first.width,
+                height: first.height,
+                replyToId,
+                id,
+                signal,
+                onProgress,
+              })
+            : sendMediaGroup({
+                familyId: currentFamilyId,
+                familyKey,
+                uid,
+                senderName: displayName,
+                items: prepared,
+                replyToId,
+                id,
+                signal,
+                onProgress,
+              })
+      );
     });
 
   const sendDocumentFile = (file) =>
     guard(async () => {
-      await sendMedia({
-        familyId: currentFamilyId,
-        familyKey,
-        uid,
-        senderName: displayName,
-        type: "document",
-        blob: file,
-        fileName: file.name,
-        replyToId: replyTo?.id || null,
-        onProgress: setProgress,
-      });
+      const replyToId = replyTo?.id || null;
       setReplyTo(null);
+      await startUpload({ type: "document", fileName: file.name }, ({ id, signal, onProgress }) =>
+        sendMedia({
+          familyId: currentFamilyId,
+          familyKey,
+          uid,
+          senderName: displayName,
+          type: "document",
+          blob: file,
+          fileName: file.name,
+          replyToId,
+          id,
+          signal,
+          onProgress,
+        })
+      );
     });
 
   const shareLocation = () =>
@@ -616,21 +675,26 @@ export default function Chat() {
           setError(c.recordingTooShort);
           return;
         }
-        await guard(() =>
-          sendMedia({
-            familyId: currentFamilyId,
-            familyKey,
-            uid,
-            senderName: displayName,
-            type: "audio",
-            blob,
-            fileName: `audio.${audioExtension(mime)}`,
-            durationSeconds: seconds,
-            replyToId: replyTo?.id || null,
-            onProgress: setProgress,
-          })
-        );
+        const replyToId = replyTo?.id || null;
         setReplyTo(null);
+        await guard(() =>
+          startUpload({ type: "audio", fileName: `🎤 ${formatDuration(seconds)}` }, ({ id, signal, onProgress }) =>
+            sendMedia({
+              familyId: currentFamilyId,
+              familyKey,
+              uid,
+              senderName: displayName,
+              type: "audio",
+              blob,
+              fileName: `audio.${audioExtension(mime)}`,
+              durationSeconds: seconds,
+              replyToId,
+              id,
+              signal,
+              onProgress,
+            })
+          )
+        );
       };
 
       recordingCancelled.current = false;
@@ -818,9 +882,6 @@ export default function Chat() {
           <button className="link-btn" onClick={() => setNotice(null)}>✕</button>
         </p>
       )}
-      {progress !== null && (
-        <p className="docs-busy">{c.uploading} {Math.round(progress * 100)}%</p>
-      )}
 
       <div
         className={`chat-list${dragOver ? " drag-over" : ""}`}
@@ -919,6 +980,18 @@ export default function Chat() {
             </Fragment>
           );
         })}
+        {pendingUploads
+          .filter((u) => !byId.has(u.id))
+          .map((u) => (
+            <div className="chat-item" key={`upload-${u.id}`}>
+              <ChatUploadBubble
+                upload={u}
+                locale={locale}
+                labels={c}
+                onCancel={() => u.controller.abort()}
+              />
+            </div>
+          ))}
         <div ref={bottomRef} />
       </div>
 

@@ -217,10 +217,24 @@ export async function sendContact({ familyId, familyKey, uid, senderName, contac
   return id;
 }
 
-/** Carica un file nella cartella del messaggio e ne restituisce path e URL. */
-function uploadMedia({ familyId, messageId, fileName, blob, contentType, onProgress }) {
+/** Errore che segnala lo stop premuto nell'anello: non va mostrato come errore. */
+export function isUploadCancelled(err) {
+  return err?.name === "AbortError" || err?.code === "storage/canceled";
+}
+
+function abortError() {
+  return new DOMException("Invio annullato", "AbortError");
+}
+
+/**
+ * Carica un file nella cartella del messaggio e ne restituisce path e URL.
+ * `signal` (AbortController) ferma il caricamento: tasto stop nella bolla.
+ */
+function uploadMedia({ familyId, messageId, fileName, blob, contentType, onProgress, signal }) {
+  if (signal?.aborted) return Promise.reject(abortError());
   const path = `families/${familyId}/chat/${messageId}/${fileName}`;
   const task = uploadBytesResumable(storageRef(storage, path), blob, { contentType });
+  signal?.addEventListener("abort", () => task.cancel(), { once: true });
   return new Promise((resolve, reject) => {
     task.on(
       "state_changed",
@@ -229,6 +243,13 @@ function uploadMedia({ familyId, messageId, fileName, blob, contentType, onProgr
       async () => resolve({ path, url: await getDownloadURL(task.snapshot.ref) })
     );
   });
+}
+
+/** Stop arrivato a file già caricati: si tolgono da Storage prima di rinunciare. */
+async function throwIfAborted(signal, paths) {
+  if (!signal?.aborted) return;
+  await Promise.all(paths.map((p) => deleteObject(storageRef(storage, p)).catch(() => {})));
+  throw abortError();
 }
 
 const MEDIA_FILE = {
@@ -252,9 +273,10 @@ export async function sendMedia({
   replyToId = null,
   width = null,
   height = null,
+  id = crypto.randomUUID(),
+  signal,
   onProgress,
 }) {
-  const id = crypto.randomUUID();
   const isDocument = type === "document";
   const info = MEDIA_FILE[type];
   // I vocali dichiarano il formato che hanno davvero. Prima il nome passato
@@ -274,7 +296,9 @@ export async function sendMedia({
     blob,
     contentType: mime,
     onProgress,
+    signal,
   });
+  await throwIfAborted(signal, [path]);
 
   const data = {
     senderId: uid,
@@ -311,11 +335,13 @@ export async function sendMediaGroup({
   senderName,
   items,
   replyToId = null,
+  id = crypto.randomUUID(),
+  signal,
   onProgress,
 }) {
   const capped = items.slice(0, MAX_GROUP_ITEMS);
-  const id = crypto.randomUUID();
   const urls = [];
+  const paths = [];
   const types = [];
   let uploadedBytes = 0;
   const totalBytes = capped.reduce((sum, item) => sum + item.blob.size, 0) || 1;
@@ -324,16 +350,26 @@ export async function sendMediaGroup({
     const item = capped[index];
     const isVideo = item.type === "video";
     const start = uploadedBytes;
-    const { url } = await uploadMedia({
-      // Ogni elemento ha la sua cartella `{messageId}_{index}`, esattamente
-      // come li scrive iOS: altrimenti il secondo file sovrascriverebbe il primo.
-      familyId,
-      messageId: `${id}_${index}`,
-      fileName: `group_${index}.${isVideo ? "mp4" : "jpg"}`,
-      blob: item.blob,
-      contentType: isVideo ? "video/mp4" : "image/jpeg",
-      onProgress: (p) => onProgress?.((start + item.blob.size * p) / totalBytes),
-    });
+    let uploaded;
+    try {
+      uploaded = await uploadMedia({
+        // Ogni elemento ha la sua cartella `{messageId}_{index}`, esattamente
+        // come li scrive iOS: altrimenti il secondo file sovrascriverebbe il primo.
+        familyId,
+        messageId: `${id}_${index}`,
+        fileName: `group_${index}.${isVideo ? "mp4" : "jpg"}`,
+        blob: item.blob,
+        contentType: isVideo ? "video/mp4" : "image/jpeg",
+        onProgress: (p) => onProgress?.((start + item.blob.size * p) / totalBytes),
+        signal,
+      });
+    } catch (err) {
+      // Stop a metà gruppo: via anche i file già saliti.
+      if (isUploadCancelled(err)) await throwIfAborted(signal, paths);
+      throw err;
+    }
+    const { url, path } = uploaded;
+    paths.push(path);
     urls.push(url);
     types.push(isVideo ? "video" : "photo");
     uploadedBytes += item.blob.size;
@@ -348,6 +384,7 @@ export async function sendMediaGroup({
     mediaFileSize: uploadedBytes,
   };
   if (replyToId) data.replyToId = replyToId;
+  await throwIfAborted(signal, paths);
   await writeMessage({ familyId, familyKey, uid, id, data });
   return id;
 }

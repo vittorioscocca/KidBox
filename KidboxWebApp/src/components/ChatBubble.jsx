@@ -353,7 +353,7 @@ export default function ChatBubble({
  * Senza dimensioni (messaggi vecchi) null: il browser usa le proporzioni vere
  * appena l'immagine arriva.
  */
-function mediaBoxSize(width, height) {
+export function mediaBoxSize(width, height) {
   if (!(width > 0 && height > 0)) return null;
   const maxW = 270;
   const maxH = maxW * 1.2;
@@ -366,4 +366,84 @@ function mediaBoxSize(width, height) {
   }
   h = Math.max(h, maxW * 0.45);
   return { width: Math.round(w), height: Math.round(h) };
+}
+
+/**
+ * Anello d'invio con lo stop al centro, come WhatsApp, iOS e Android: gira
+ * finché non arriva il primo progresso, poi si riempie. Il tocco annulla.
+ */
+export function UploadRing({ progress, onCancel, label, size = 46, variant = "media" }) {
+  const stroke = Math.max(2.5, size * 0.075);
+  const r = size / 2 - stroke * 2;
+  const circumference = 2 * Math.PI * r;
+  const determinate = typeof progress === "number";
+  const filled = determinate ? Math.max(progress, 0.03) : 0.25;
+  return (
+    <button
+      type="button"
+      className={`chat-upload-ring ${variant}${determinate ? "" : " spinning"}`}
+      style={{ width: size, height: size }}
+      onClick={onCancel}
+      aria-label={label}
+      title={label}
+    >
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle className="track" cx={size / 2} cy={size / 2} r={r} strokeWidth={stroke} fill="none" />
+        <circle
+          className="arc"
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          strokeWidth={stroke}
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={`${circumference * filled} ${circumference}`}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </svg>
+      <span className="stop" style={{ width: size * 0.2, height: size * 0.2 }} />
+    </button>
+  );
+}
+
+/**
+ * Bolla locale di un invio in corso. Sul web non c'è un database locale: finché
+ * il messaggio vero non arriva da Firestore si mostra questa, con l'anteprima
+ * del file, l'anello e lo stop.
+ */
+export function ChatUploadBubble({ upload, locale, labels, onCancel }) {
+  const isVisual = upload.type === "photo" || upload.type === "video" || upload.type === "mediaGroup";
+  const box = mediaBoxSize(upload.width, upload.height) || { width: 270, height: 202 };
+  return (
+    <div className="chat-row mine">
+      <div className="chat-bubble">
+        {isVisual ? (
+          <div className="chat-upload-media" style={box}>
+            {upload.previewURL &&
+              (upload.previewType === "video" ? (
+                <video src={upload.previewURL} muted playsInline preload="metadata" />
+              ) : (
+                <img src={upload.previewURL} alt="" />
+              ))}
+            <UploadRing progress={upload.progress} onCancel={onCancel} label={labels.cancelUpload} />
+          </div>
+        ) : (
+          <div className="chat-upload-file">
+            <UploadRing
+              progress={upload.progress}
+              onCancel={onCancel}
+              label={labels.cancelUpload}
+              size={36}
+              variant="inline"
+            />
+            <span>{upload.fileName || labels.uploading}</span>
+          </div>
+        )}
+        <div className="chat-meta">
+          <span>{timeOf(upload.createdAt, locale)}</span>
+          <span className="chat-ticks">🕓</span>
+        </div>
+      </div>
+    </div>
+  );
 }
