@@ -82,3 +82,11 @@ Una diagnosi di costo regge solo se dice **quanto** e **contro cosa**: «2.057
 letture/ora contro 151/ora di base, misurate su 54 ore contro 47 di pari
 attività» è una diagnosi; «sembra che legga troppo» no. Se non hai un gruppo di
 controllo o il protocollo sul filo, dillo e chiamala ipotesi.
+
+## Scelte di forma già fatte per non pagare letture
+
+- **Calendari iscritti** (`calendarFeeds`, 26/09/2026): le occorrenze stanno
+  *dentro* il documento del feed, non in una sottocollezione. Ogni client
+  paga una lettura per feed invece che una per evento, e il refresh ogni 6
+  ore (`collectionGroup`) una per feed. Tetto: ~850 KB di eventi, poi si
+  tolgono le note e si accorcia la coda. Vedi `/calendario`.

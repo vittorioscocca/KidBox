@@ -72,7 +72,8 @@ Per misurare davvero: il debug dell'SDK è già attivo, `adb logcat` mostra
    va tolto un millisecondo. E i calendari locali di Xiaomi/MIUI hanno come
    nome una **chiave** (`calendar_displayname_local`, `..._birthday`,
    `account_name_local`) che solo l'app Calendario di sistema traduce:
-   mostrata così sembra un errore (`readableName`).
+   mostrata così sembra un errore (`readableName`). Il quadro completo del
+   calendario è in `/calendario`.
 
 ## Le trappole della UI
 

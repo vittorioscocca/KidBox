@@ -133,6 +133,17 @@ Dopo:
    resta aperto rendere non distruttiva la reazione del client — oggi su iOS è
    ancora quella della trappola 1.
 
+## Le collezioni escluse dal wildcard
+
+Il wildcard `{coll}/{docId}/{subpath=**}` dà lettura e scrittura ai membri su
+**ogni** sottocollezione, anche future. Le eccezioni sono elencate lì:
+`memberKeyBackups` (né lettura né scrittura: ha una regola sua), `geofences`,
+`geofenceEvents` e `calendarFeeds` (solo lettura: le scrive una function).
+Una collezione nuova che deve scrivere solo il server va **aggiunta a
+quell'elenco**: una `match` sua con `allow write: if false` non basta, le rules
+sono in OR e il wildcard la scavalca. Test prima, e che fallisca sulle regole
+di oggi (vedi `calendarFeeds` nella suite).
+
 ## Resta aperto (non è una svista, è una scelta)
 
 I membri già dentro possono scrivere gli inviti tramite il wildcard

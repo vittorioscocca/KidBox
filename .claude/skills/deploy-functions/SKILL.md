@@ -17,7 +17,7 @@ Dalla root del repo:
 
 Il terzo comando carica il modulo ed esegue tutte le definizioni
 `onCall`/`onRequest`/`onSchedule`/trigger: una firma incompatibile esplode
-qui invece che in produzione. Deve risolvere senza errori (91 export al 26/09/2026, dopo i tre dei calendari
+qui invece che in produzione. Deve risolvere senza errori (92 export al 26/09/2026, dopo le quattro dei calendari
 iscritti: se il numero cambia, dillo).
 
 Poi:

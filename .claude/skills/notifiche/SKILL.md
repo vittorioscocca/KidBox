@@ -147,7 +147,8 @@ arma sempre la **prossima** ripetizione, con due strategie diverse:
 
 In entrambi il riarmo parte solo da ciò che **questo** device aveva armato,
 ma legge l'evento locale: per una serie le modifiche fatte altrove (orario,
-avviso tolto, evento cancellato) arrivano anche qui.
+avviso tolto, evento cancellato) arrivano anche qui. Il resto del calendario
+(ricorrenze, calendari del telefono e iscritti) è in `/calendario`.
 
 ## Zone di arrivo e uscita (geofence)
 

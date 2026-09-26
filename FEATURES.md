@@ -17,7 +17,7 @@
 | `KidBox/` | App iOS (SwiftUI, SwiftData) — il client di riferimento | l'utente |
 | `KidBoxAndroid/` | App Android (Compose, Room) — porting a parità di funzioni | l'utente |
 | `KidboxWebApp/` | Web app React su `app.kidboxapp.com` | Claude |
-| `functions/` | Backend Firebase (64 function, `europe-west1`) | Claude |
+| `functions/` | Backend Firebase (92 function, `europe-west1`) | Claude |
 | `KidboxConsole/` | Console admin (piani, broadcast, casi, analytics) | Claude |
 | `KidboxLanding/` | Sito vetrina `kidboxapp.com` + pagine legali | Claude |
 
@@ -74,7 +74,7 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 ### Organizzazione
 | Funzione | Cosa fa | Piano |
 |---|---|---|
-| Calendario | Eventi di famiglia e **promemoria** (to-do con scadenza); viste Mese, **Giorno e Settimana** con griglia oraria, vista ricordata fra un'apertura e l'altra; eventi **ricorrenti** (giornaliero/settimanale/mensile/annuale) mostrati in ogni ripetizione, con il promemoria che si riarma per la successiva; su iOS e Android anche i **calendari del telefono** (Google, iCloud, Outlook, Exchange) in sola lettura, con «Copia in KidBox» (`DeviceCalendarStore` su EventKit, `DeviceCalendarRepository` su CalendarContract); non sul web; **calendari iscritti da link** (feed ICS di scuola, squadra, festività, Google Calendar) per tutta la famiglia su iOS, Android e web, scaricati dal server ogni 6 ore (`functions/calendarFeeds.js`); «Collega Google / Outlook» guidato (account aggiunto al telefono, niente OAuth) e «Come trovo il link?» per l'indirizzo iCal | F |
+| Calendario | Eventi di famiglia e **promemoria** (to-do con scadenza); viste Giorno, Settimana, Mese e Anno, ricordate fra un'apertura e l'altra. Eventi **ricorrenti** (ogni giorno/settimana/mese/anno) mostrati in ogni ripetizione. **Calendari del telefono** in sola lettura, solo per chi li guarda (iOS e Android, non web), con «Collega Google / Outlook» guidato. **Calendari iscritti da link** (ICS di scuola, squadra, festività, Google, Outlook) per tutta la famiglia su tutti e tre i client. Da entrambi: «Copia in KidBox» | F |
 | To-do | Liste e cose da fare **di famiglia**, assegnabili, con promemoria; quelli **urgenti** suonano come una sveglia | F |
 | Lista della spesa | Condivisa in tempo reale, con «aggiunto da … e quando»; dettabile ad Alexa | F |
 | Note | Note condivise, cifrate | F |
@@ -150,7 +150,19 @@ verrebbe da pensare. Ognuna è costata almeno una volta.
   suona niente: la sveglia è del telefono.
 - **Il promemoria di un evento non è mai esistito fino al 22/09/2026**:
   l'interruttore scriveva `reminderMinutes` e nessun client lo leggeva. Ora lo
-  arma il dispositivo che salva l'evento.
+  arma il dispositivo che salva l'evento; su una serie arma la **prossima**
+  ripetizione e si riarma da solo (iOS al rientro in app, Android quando suona).
+- **Le ricorrenze non si vedevano fino al 26/09/2026**: `recurrenceRaw` si
+  salvava e nessun client lo espandeva. Quando hanno cominciato a vedersi, 9
+  eventi su 189 sono comparsi *ogni giorno*: «Giornaliera» era stata letta come
+  «dura tutta la giornata». Dati corretti, etichette ora «Ogni giorno…». Le
+  serie non hanno eccezioni: si modificano e si cancellano tutte insieme.
+- **Calendari del telefono ≠ calendari iscritti.** I primi li vede solo chi ha
+  quel telefono e non escono dal dispositivo; i secondi li vede tutta la
+  famiglia, anche sul web. Google e Outlook entrano nei primi aggiungendo
+  l'account al telefono (niente OAuth), nei secondi col link iCal.
+- **Google Calendar respinge le Cloud Functions** (429): i link Google li
+  scarica il telefono e li manda al server. Dal web non si possono aggiungere.
 - **Le notifiche si congelano nella lingua della schedulazione**: su iOS non
   c'è un hook alla consegna.
 - **La posizione è divisa in due**: `locations/{uid}` è lo stato, le coordinate
@@ -163,7 +175,7 @@ verrebbe da pensare. Ognuna è costata almeno una volta.
 
 ## 5. Backend, in breve
 
-- **66 function**, tutte in `europe-west1`. Tre sole HTTP: `alexaSkill`,
+- **92 function**, tutte in `europe-west1`. Tre sole HTTP: `alexaSkill`,
   `inviteLandingPing` (contatore anonimo della pagina d'invito `/join`, il
   passaggio del funnel che GA4 non vede perché parte solo dopo il consenso) e
   `landingChat` (la chat «Chiedi a KidBox» della landing, dietro il rewrite
@@ -173,8 +185,8 @@ verrebbe da pensare. Ognuna è costata almeno una volta.
   `fitnessCopilot`, …). Due modelli: Sonnet per il ragionamento, Haiku dove
   basta. Il consumo si conta in «messaggi», contatore condiviso dalla famiglia.
 - **Scheduler**: posizioni temporanee scadute e promemoria to-do ogni 5 minuti,
-  biglietti in scadenza ogni ora, allineamento piani e garbage collection di
-  notte.
+  biglietti in scadenza ogni ora, calendari iscritti ogni 6 ore, allineamento
+  piani e garbage collection di notte.
 - **Notifiche**: un trigger per tipo (documento, chat, foto, visita, evento,
   spesa, to-do assegnato, spesa, articolo spesa, nota, biglietto, carta fedeltà).
 - **App Check** su tutti e quattro i client; enforcement ancora spento finché

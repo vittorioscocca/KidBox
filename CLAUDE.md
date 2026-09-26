@@ -36,6 +36,7 @@ i suoi commit si vedono solo con `git -C KidBoxAndroid`.
 - `/landing-blog` — articoli, generatori, footer e sitemap della landing; regole editoriali
 - `/app-check` — quota di richieste attestate, come si legge (la media a 7 giorni inganna), il cancello per l'enforcement
 - `/alexa` — accoppiamento, nome di invocazione (sei punti), gate di lingua; il backend non si tocca
+- `/calendario` — ricorrenze, promemoria degli eventi, calendari del telefono e iscritti da link, Google e Outlook senza OAuth
 - `/cifratura` — la chiave di famiglia: dove vive, come arriva a un membro, cosa il server non può fare
 - `/ai` — purpose, modello, unità scalate e quote; le trappole di copilota, cache e max_tokens
 
