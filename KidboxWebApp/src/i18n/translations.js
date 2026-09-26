@@ -1153,6 +1153,13 @@ export const translations = {
     },
     calendar: {
       feeds: {
+        help: {
+          title: "Come trovo il link?",
+          google: "Google Calendar, dal computer: calendar.google.com › Impostazioni › scegli il calendario a sinistra › «Integra calendario» › copia «Indirizzo segreto in formato iCal».",
+          outlook: "Outlook, dal computer: outlook.com › Impostazioni › Calendario › Calendari condivisi › «Pubblica un calendario» › scegli il calendario e «Può visualizzare tutti i dettagli» › Pubblica › copia il link ICS.",
+          other: "Scuola, squadra o palestra: sul loro sito cerca «iCal», «ICS», «webcal» o «Aggiungi al calendario».",
+          privacy: "Il link lo vede tutta la famiglia: chi ce l'ha può leggere quel calendario.",
+        },
         title: "Calendari iscritti",
         addTitle: "Iscriviti a un calendario",
         add: "Aggiungi da link",
@@ -2702,6 +2709,13 @@ export const translations = {
     },
     calendar: {
       feeds: {
+        help: {
+          title: "How do I find the link?",
+          google: "Google Calendar, on a computer: calendar.google.com › Settings › pick the calendar on the left › “Integrate calendar” › copy the “Secret address in iCal format”.",
+          outlook: "Outlook, on a computer: outlook.com › Settings › Calendar › Shared calendars › “Publish a calendar” › pick the calendar and “Can view all details” › Publish › copy the ICS link.",
+          other: "School, team or gym: look on their website for “iCal”, “ICS”, “webcal” or “Add to calendar”.",
+          privacy: "The whole family sees the link: anyone who has it can read that calendar.",
+        },
         title: "Subscribed calendars",
         addTitle: "Subscribe to a calendar",
         add: "Add from link",
@@ -4196,6 +4210,13 @@ export const translations = {
     },
     calendar: {
       feeds: {
+        help: {
+          title: "Comment trouver le lien ?",
+          google: "Google Agenda, depuis un ordinateur : calendar.google.com › Paramètres › choisissez l'agenda à gauche › « Intégrer l'agenda » › copiez l'« Adresse secrète au format iCal ».",
+          outlook: "Outlook, depuis un ordinateur : outlook.com › Paramètres › Calendrier › Calendriers partagés › « Publier un calendrier » › choisissez le calendrier et « Peut afficher tous les détails » › Publier › copiez le lien ICS.",
+          other: "École, équipe ou salle de sport : cherchez sur leur site « iCal », « ICS », « webcal » ou « Ajouter au calendrier ».",
+          privacy: "Toute la famille voit le lien : quiconque l'a peut lire ce calendrier.",
+        },
         title: "Calendriers abonnés",
         addTitle: "S'abonner à un calendrier",
         add: "Ajouter depuis un lien",
@@ -5689,6 +5710,13 @@ export const translations = {
     },
     calendar: {
       feeds: {
+        help: {
+          title: "¿Cómo encuentro el enlace?",
+          google: "Google Calendar, desde un ordenador: calendar.google.com › Configuración › elige el calendario a la izquierda › «Integrar el calendario» › copia la «Dirección secreta en formato iCal».",
+          outlook: "Outlook, desde un ordenador: outlook.com › Configuración › Calendario › Calendarios compartidos › «Publicar un calendario» › elige el calendario y «Puede ver todos los detalles» › Publicar › copia el enlace ICS.",
+          other: "Colegio, equipo o gimnasio: busca en su web «iCal», «ICS», «webcal» o «Añadir al calendario».",
+          privacy: "Toda la familia ve el enlace: quien lo tenga puede leer ese calendario.",
+        },
         title: "Calendarios suscritos",
         addTitle: "Suscribirse a un calendario",
         add: "Añadir desde enlace",

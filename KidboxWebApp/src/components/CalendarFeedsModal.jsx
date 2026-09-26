@@ -118,6 +118,13 @@ export default function CalendarFeedsModal({ familyId, feeds, onClose }) {
           </div>
           {busy && <p className="modal-hint">{tf.loading}</p>}
           <p className="modal-hint">{tf.footer}</p>
+          <details className="feed-help">
+            <summary>{tf.help.title}</summary>
+            <p>{tf.help.google}</p>
+            <p>{tf.help.outlook}</p>
+            <p>{tf.help.other}</p>
+            <p className="feed-help-privacy">{tf.help.privacy}</p>
+          </details>
         </>
       ) : (
         <>
