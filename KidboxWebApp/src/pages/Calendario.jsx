@@ -11,6 +11,9 @@ import {
 import { db } from "../firebase";
 import { useFamily } from "../FamilyContext";
 import { useAuth } from "../AuthContext";
+import { useCalendarFeeds } from "../hooks/useCalendarFeeds";
+import CalendarFeedsModal from "../components/CalendarFeedsModal";
+import FeedEventModal from "../components/FeedEventModal";
 import { useTranslation } from "../i18n/LocaleContext";
 import EventEditModal from "../components/EventEditModal";
 import ReminderEditModal from "../components/ReminderEditModal";
@@ -65,6 +68,11 @@ function HourGutter() {
   );
 }
 
+/** Colore di un evento: la categoria per quelli KidBox, il feed per quelli iscritti. */
+function eventColor(e) {
+  return e._feed?.colorHex ?? categoryInfo(e.categoryRaw).color;
+}
+
 function DayColumn({ day, events, onSelectEvent, onCreateAt }) {
   const { locale } = useTranslation();
   const timed = events.filter((e) => !e.isAllDay && eventOccursOnDay(e, day));
@@ -87,7 +95,7 @@ function DayColumn({ day, events, onSelectEvent, onCreateAt }) {
       ))}
 
       {laid.map(({ event, box, column, columns }) => {
-        const cat = categoryInfo(event.categoryRaw);
+        const color = eventColor(event);
         const width = 100 / (columns || 1);
         const start = event.startDate?.toDate?.();
         const end = event.endDate?.toDate?.();
@@ -100,15 +108,17 @@ function DayColumn({ day, events, onSelectEvent, onCreateAt }) {
               height: box.height,
               left: `calc(${column * width}% + 2px)`,
               width: `calc(${width}% - 4px)`,
-              background: `color-mix(in srgb, ${cat.color} 26%, transparent)`,
-              borderLeftColor: cat.color,
+              // Quelli dei calendari iscritti sono pieni solo a metà: si
+              // distinguono senza leggere l'etichetta.
+              background: `color-mix(in srgb, ${color} ${event._feed ? 12 : 26}%, transparent)`,
+              borderLeftColor: color,
             }}
             onClick={(e) => {
               e.stopPropagation();
               onSelectEvent(event);
             }}
           >
-            <span className="timed-title" style={{ color: cat.color }}>
+            <span className="timed-title" style={{ color }}>
               {event.title}
             </span>
             {box.height > 32 && start && (
@@ -134,12 +144,16 @@ function AllDayRow({ days, events, onSelectEvent, label }) {
             {events
               .filter((e) => e.isAllDay && eventOccursOnDay(e, day))
               .map((e) => {
-                const cat = categoryInfo(e.categoryRaw);
+                const color = eventColor(e);
                 return (
                   <button
                     key={e.id}
                     className="allday-chip"
-                    style={{ background: cat.color }}
+                    style={
+                      e._feed
+                        ? { background: `color-mix(in srgb, ${color} 18%, transparent)`, color }
+                        : { background: color }
+                    }
                     onClick={() => onSelectEvent(e)}
                   >
                     {e.title}
@@ -281,7 +295,7 @@ function MonthView({ anchor, events, remindersOn, selectedDate, onSelectDay, onS
               </div>
               <div className="mv-events">
                 {dayEvents.slice(0, 4).map((e) => {
-                  const cat = categoryInfo(e.categoryRaw);
+                  const color = eventColor(e);
                   const start = e.startDate?.toDate?.();
                   return (
                     <button
@@ -293,7 +307,7 @@ function MonthView({ anchor, events, remindersOn, selectedDate, onSelectDay, onS
                       }}
                       onDoubleClick={(ev) => ev.stopPropagation()}
                     >
-                      <span className="mv-dot" style={{ background: cat.color }} />
+                      <span className="mv-dot" style={{ background: color }} />
                       <span className="mv-title">{e.title}</span>
                       {!e.isAllDay && start && (
                         <span className="mv-time">{timeLabel(start, locale)}</span>
@@ -408,6 +422,12 @@ export default function Calendario() {
   const [anchor, setAnchor] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [events, setEvents] = useState([]);
+  // Calendari iscritti da link: sul web l'unico modo di vedere scuola,
+  // squadra o festività accanto agli eventi di famiglia.
+  const { feeds, events: feedEvents } = useCalendarFeeds(currentFamilyId);
+  const [showFeeds, setShowFeeds] = useState(false);
+  const [openedFeedEvent, setOpenedFeedEvent] = useState(null);
+  const [copyPrefill, setCopyPrefill] = useState(null);
   const [error, setError] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
   const [addDate, setAddDate] = useState(null);
@@ -469,17 +489,26 @@ export default function Calendario() {
   // modifica la serie (`_series`).
   const displayEvents = useMemo(() => {
     const [from, to] = occurrenceWindow(anchor, selectedDate);
-    return expandEvents(events, from, to);
-  }, [events, anchor, selectedDate]);
+    const own = expandEvents(events, from, to);
+    // Quelli già copiati in KidBox non si disegnano due volte: vince la copia.
+    const key = (e) =>
+      `${(e.title || "").trim().toLowerCase()}|${Math.round((e.startDate?.toMillis?.() ?? 0) / 60000)}|${Boolean(e.isAllDay)}`;
+    const copied = new Set(own.map(key));
+    return [...own, ...feedEvents.filter((e) => !copied.has(key(e)))];
+  }, [events, feedEvents, anchor, selectedDate]);
   const anchorYear = anchor.getFullYear();
   const marked = useMemo(
     () =>
-      daysWithEvents(
-        expandEvents(events, new Date(anchorYear, 0, 1), new Date(anchorYear + 1, 0, 1))
-      ),
-    [events, anchorYear]
+      daysWithEvents([
+        ...expandEvents(events, new Date(anchorYear, 0, 1), new Date(anchorYear + 1, 0, 1)),
+        ...feedEvents,
+      ]),
+    [events, feedEvents, anchorYear]
   );
-  const openEvent = (e) => setEditingEvent(e?._series ?? e);
+  const openEvent = (e) => {
+    if (e?._feed) setOpenedFeedEvent(e);
+    else setEditingEvent(e?._series ?? e);
+  };
 
   const shift = (delta) => {
     setAnchor((prev) => {
@@ -506,6 +535,7 @@ export default function Calendario() {
     setShowAdd(false);
     setAddDate(null);
     setEditingEvent(null);
+    setCopyPrefill(null);
     setNewItemKind("event");
   };
 
@@ -545,6 +575,9 @@ export default function Calendario() {
       <div className="cal-toolbar">
         <button className="cal-add" onClick={() => openCreate()} title={t.calendar.newEvent}>
           +
+        </button>
+        <button className="cal-feeds-btn" onClick={() => setShowFeeds(true)} title={t.calendar.feeds.title}>
+          🔗 {t.calendar.feeds.title}
         </button>
         <div className="seg-control">
           {VIEWS.map((v) => (
@@ -652,6 +685,7 @@ export default function Calendario() {
               familyId={currentFamilyId}
               initialDate={addDate ?? selectedDate}
               event={editingEvent}
+              prefill={editingEvent ? null : copyPrefill}
               onDelete={editingEvent ? () => deleteEvent(editingEvent) : null}
               kindSelector={
                 showAdd && !editingEvent ? (
@@ -662,6 +696,37 @@ export default function Calendario() {
             />
           )}
         </>
+      )}
+
+      {showFeeds && (
+        <CalendarFeedsModal
+          familyId={currentFamilyId}
+          feeds={feeds}
+          onClose={() => setShowFeeds(false)}
+        />
+      )}
+
+      {openedFeedEvent && (
+        <FeedEventModal
+          event={openedFeedEvent}
+          onClose={() => setOpenedFeedEvent(null)}
+          onCopy={() => {
+            const ev = openedFeedEvent;
+            // Fine inclusa per il modulo: un tutto-il-giorno resta sul suo giorno.
+            setCopyPrefill({
+              title: ev.title,
+              notes: ev.notes,
+              location: ev.location,
+              start: ev.startDate.toMillis(),
+              end: ev.endDate.toMillis(),
+              isAllDay: ev.isAllDay,
+            });
+            setOpenedFeedEvent(null);
+            setAddDate(ev.startDate.toDate());
+            setNewItemKind("event");
+            setShowAdd(true);
+          }}
+        />
       )}
 
       {editingReminder && (

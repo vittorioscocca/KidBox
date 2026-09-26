@@ -21,6 +21,11 @@ export default function EventEditModal({
   onClose,
   /** La barra `Evento | Promemoria`, passata solo in creazione. */
   kindSelector = null,
+  /**
+   * «Copia in KidBox» da un calendario iscritto: titolo, date, luogo e note
+   * già scritti; categoria, visibilità e promemoria li sceglie l'utente.
+   */
+  prefill = null,
 }) {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -33,6 +38,9 @@ export default function EventEditModal({
     !isEdit || !(event?.createdBy || "").trim() || event.createdBy === user.uid;
 
   const defaults = () => {
+    if (!event && prefill) {
+      return { start: new Date(prefill.start), end: new Date(prefill.end) };
+    }
     if (event) {
       const s = event.startDate?.toDate?.() ?? new Date(initialDate);
       const e = event.endDate?.toDate?.() ?? new Date(s.getTime() + 60 * 60 * 1000);
@@ -44,17 +52,17 @@ export default function EventEditModal({
   };
   const initial = defaults();
 
-  const [title, setTitle] = useState(event?.title ?? "");
+  const [title, setTitle] = useState(event?.title ?? prefill?.title ?? "");
   const [category, setCategory] = useState(event?.categoryRaw ?? "family");
-  const [isAllDay, setIsAllDay] = useState(event?.isAllDay ?? false);
+  const [isAllDay, setIsAllDay] = useState(event?.isAllDay ?? prefill?.isAllDay ?? false);
   const [startAt, setStartAt] = useState(toLocalInputValue(initial.start));
   const [endAt, setEndAt] = useState(toLocalInputValue(initial.end));
-  const [location, setLocation] = useState(event?.location ?? "");
+  const [location, setLocation] = useState(event?.location ?? prefill?.location ?? "");
   // La ricorrenza prima si conservava e basta: dal web non si poteva scegliere.
   const [recurrence, setRecurrence] = useState(
     RECURRENCES.includes(event?.recurrenceRaw) ? event.recurrenceRaw : "none"
   );
-  const [notes, setNotes] = useState(event?.notes ?? "");
+  const [notes, setNotes] = useState(event?.notes ?? prefill?.notes ?? "");
   // `reminderMinutes` esisteva già ma non armava niente: da oggi lo leggono
   // iOS e Android, che al momento giusto avvisano davvero.
   const [hasReminder, setHasReminder] = useState((event?.reminderMinutes ?? 0) > 0);

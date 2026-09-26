@@ -32,6 +32,24 @@
   border-color: var(--accent);
 }
 
+/* Calendari iscritti da link: accanto al «+». */
+.cal-feeds-btn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 92%, var(--text) 8%);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cal-feeds-btn:hover {
+  border-color: var(--accent);
+}
+
 .seg-control {
   display: inline-flex;
   gap: 2px;

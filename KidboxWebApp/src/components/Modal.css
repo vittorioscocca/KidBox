@@ -224,3 +224,71 @@ textarea.modal-field {
 .modal-delete-btn:hover {
   background: color-mix(in srgb, #c0392b 22%, transparent);
 }
+
+/* ── Calendari iscritti (CalendarFeedsModal, FeedEventModal) ─────────── */
+.feed-palette {
+  display: flex;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.feed-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.feed-swatch.selected {
+  border-color: var(--text);
+  transform: scale(1.12);
+}
+
+.feed-row-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.feed-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.feed-name {
+  display: block;
+}
+
+.feed-status {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.feed-status.error {
+  color: #d32f2f;
+}
+
+.feed-remove {
+  border: none;
+  background: transparent;
+  color: #d32f2f;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.feed-copy-btn {
+  width: 100%;
+  margin: 12px 0 4px;
+}
+
+.feed-notes {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+}
