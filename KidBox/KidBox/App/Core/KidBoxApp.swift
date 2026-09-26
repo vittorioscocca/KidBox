@@ -596,6 +596,9 @@ struct KidBoxApp: App {
                         KBLog.sync.kbDebug("Treatment notifications rescheduled on foreground")
                         await HousePaymentReminderService.shared.rescheduleAllActive(modelContext: context)
                         await VehicleReminderService.shared.rescheduleAllActive(modelContext: context)
+                        // Eventi ricorrenti: le ripetizioni già suonate si
+                        // rimpiazzano con le successive.
+                        await CalendarEventReminderService.rescheduleArmed(modelContext: context)
                         // Dopo i refresh: la coda è al completo, e se nel
                         // frattempo è cambiata la lingua di sistema va riscritta
                         // — chi la cambia da lì non passa dal selettore in-app.

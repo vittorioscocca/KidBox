@@ -41,6 +41,51 @@ struct ChatMediaGridItem: Identifiable {
         if var c = URLComponents(string: urlString) { c.query = nil; return c.string ?? urlString }
         return urlString
     }
+
+    /// Foto, video e singoli elementi dei gruppi, nell'ordine dei messaggi.
+    /// La usano la galleria e il tocco su un media in chat, che apre lo stesso visore.
+    static func items(from messages: [KBChatMessage]) -> [ChatMediaGridItem] {
+        var items: [ChatMediaGridItem] = []
+        for msg in messages {
+            switch msg.type {
+            case .photo:
+                guard let url = msg.mediaURL else { continue }
+                items.append(.init(id: msg.id, message: msg,
+                                   urlString: url, isVideo: false, duration: nil))
+            case .video:
+                guard let url = msg.mediaURL else { continue }
+                items.append(.init(id: msg.id, message: msg,
+                                   urlString: url, isVideo: true,
+                                   duration: msg.mediaDurationSeconds))
+            case .mediaGroup:
+                let urls  = msg.mediaGroupURLs
+                let types = msg.mediaGroupTypes
+                for (i, url) in urls.enumerated() {
+                    let isVid = (types.indices.contains(i) ? types[i] : "photo") == "video"
+                    items.append(.init(id: "\(msg.id)_\(i)", message: msg,
+                                       urlString: url, isVideo: isVid, duration: nil))
+                }
+            default: continue
+            }
+        }
+        return items
+    }
+}
+
+// MARK: - Apertura di un media dalla chat
+
+/// Il tocco su una foto o un video in chat chiede a ChatView di aprire il visore
+/// della galleria sull'elemento (id del messaggio, o "id_indice" nei gruppi).
+/// Restituisce false se l'elemento non è fra i media: la bolla ripiega su QuickLook.
+private struct OpenChatMediaKey: EnvironmentKey {
+    static let defaultValue: ((String) -> Bool)? = nil
+}
+
+extension EnvironmentValues {
+    var openChatMedia: ((String) -> Bool)? {
+        get { self[OpenChatMediaKey.self] }
+        set { self[OpenChatMediaKey.self] = newValue }
+    }
 }
 
 // MARK: - ChatMediaGalleryView
@@ -99,33 +144,8 @@ struct ChatMediaGalleryView: View {
     
     // MARK: - Media items
     
-    var allMediaItems: [ChatMediaGridItem] {
-        var items: [ChatMediaGridItem] = []
-        for msg in allMessages {
-            switch msg.type {
-            case .photo:
-                guard let url = msg.mediaURL else { continue }
-                items.append(.init(id: msg.id, message: msg,
-                                   urlString: url, isVideo: false, duration: nil))
-            case .video:
-                guard let url = msg.mediaURL else { continue }
-                items.append(.init(id: msg.id, message: msg,
-                                   urlString: url, isVideo: true,
-                                   duration: msg.mediaDurationSeconds))
-            case .mediaGroup:
-                let urls  = msg.mediaGroupURLs
-                let types = msg.mediaGroupTypes
-                for (i, url) in urls.enumerated() {
-                    let isVid = (types.indices.contains(i) ? types[i] : "photo") == "video"
-                    items.append(.init(id: "\(msg.id)_\(i)", message: msg,
-                                       urlString: url, isVideo: isVid, duration: nil))
-                }
-            default: continue
-            }
-        }
-        return items
-    }
-    
+    var allMediaItems: [ChatMediaGridItem] { ChatMediaGridItem.items(from: allMessages) }
+
     private var filteredMediaItems: [ChatMediaGridItem] {
         let q = searchMedia.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return allMediaItems }
@@ -619,7 +639,8 @@ struct ChatMediaFullscreenView: View {
     @State private var playerCache:  [String: AVPlayer] = [:]
     @State private var showChrome:   Bool    = true
     @State private var dragOffset:   CGFloat = 0
-    
+    @State private var stripPosition = ScrollPosition(idType: Int.self)
+
     @State private var shareItems:        [Any]  = []
     @State private var showShare:         Bool   = false
     @State private var showDeleteConfirm: Bool   = false
@@ -719,19 +740,24 @@ struct ChatMediaFullscreenView: View {
                     
                     VStack(spacing: 0) {
                         if localItems.count > 1 {
-                            ScrollViewReader { proxy in
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 3) {
-                                        ForEach(Array(localItems.enumerated()), id: \.element.id) { idx, item in
-                                            thumbStrip(item: item, idx: idx, proxy: proxy)
-                                        }
+                            // La miniatura corrente resta al centro: la striscia segue
+                            // la pagina. La posizione vive nello stato del visore, e la
+                            // striscia si ricentra quando ricompare (tocco che nasconde e
+                            // rimostra i controlli) e all'apertura.
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 3) {
+                                    ForEach(localItems.indices, id: \.self) { idx in
+                                        thumbStrip(item: localItems[idx], idx: idx)
                                     }
-                                    .padding(.horizontal, 8).padding(.vertical, 6)
                                 }
-                                .onChange(of: currentIndex) { _, newIdx in
-                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                        proxy.scrollTo("thumb_\(newIdx)", anchor: .center)
-                                    }
+                                .scrollTargetLayout()
+                                .padding(.horizontal, 8).padding(.vertical, 6)
+                            }
+                            .scrollPosition($stripPosition, anchor: .center)
+                            .onAppear { stripPosition.scrollTo(id: currentIndex, anchor: .center) }
+                            .onChange(of: currentIndex) { _, newIdx in
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    stripPosition.scrollTo(id: newIdx, anchor: .center)
                                 }
                             }
                         }
@@ -800,9 +826,19 @@ struct ChatMediaFullscreenView: View {
             }
             Button("Annulla", role: .cancel) {}
         } message: {
-            Text(canDeleteForEveryone
-                 ? "Scegli se eliminare il media solo per te o per tutti i membri."
-                 : "Il media verrà rimosso dalla tua chat.")
+            // Un elemento di un gruppo: «per me» nasconde l'intero messaggio (non
+            // esiste un «nascosto per me» del singolo elemento), «per tutti» toglie
+            // solo questo. Va detto prima, non scoperto dopo.
+            let groupCount = localItems.filter { $0.message.id == current.message.id }.count
+            if groupCount > 1 && canDeleteForEveryone {
+                Text("Con «Elimina per tutti» sparisce solo questo media; con «Elimina per me» spariscono dalla tua chat tutti i \(groupCount) media del messaggio.")
+            } else if groupCount > 1 {
+                Text("Fa parte di un messaggio con \(groupCount) media: verranno rimossi tutti dalla tua chat.")
+            } else if canDeleteForEveryone {
+                Text("Scegli se eliminare il media solo per te o per tutti i membri.")
+            } else {
+                Text("Il media verrà rimosso dalla tua chat.")
+            }
         }
     }
     
@@ -812,7 +848,22 @@ struct ChatMediaFullscreenView: View {
         guard localItems.indices.contains(currentIndex) else { return }
         let itemToDelete = current
         let removedIndex = currentIndex
-        
+
+        // «Per me» su un elemento di gruppo nasconde l'intero messaggio: dal visore
+        // spariscono tutti i suoi elementi, non solo quello mostrato.
+        let msgId = itemToDelete.message.id
+        if !forEveryone, localItems.filter({ $0.message.id == msgId }).count > 1 {
+            onDelete?(itemToDelete, false)
+            let remaining = localItems.filter { $0.message.id != msgId }
+            guard !remaining.isEmpty else { onDismiss(); return }
+            let keptBefore = localItems[..<currentIndex].filter { $0.message.id != msgId }.count
+            withAnimation(.easeInOut(duration: 0.2)) {
+                localItems = remaining
+                currentIndex = min(keptBefore, remaining.count - 1)
+            }
+            return
+        }
+
         if localItems.count == 1 {
             onDelete?(itemToDelete, forEveryone)
             onDismiss()
@@ -839,8 +890,7 @@ struct ChatMediaFullscreenView: View {
     
     @ViewBuilder
     private func thumbStrip(item: ChatMediaGridItem,
-                            idx: Int,
-                            proxy: ScrollViewProxy) -> some View {
+                            idx: Int) -> some View {
         let isSelected = idx == currentIndex
         ZStack {
             if item.isVideo, let url = URL(string: item.urlString) {
@@ -867,7 +917,6 @@ struct ChatMediaFullscreenView: View {
                 .strokeBorder(isSelected ? Color.white : Color.clear, lineWidth: 2)
         )
         .opacity(isSelected ? 1 : 0.55)
-        .id("thumb_\(idx)")
         .onTapGesture {
             withAnimation(.easeInOut(duration: 0.15)) { currentIndex = idx }
         }

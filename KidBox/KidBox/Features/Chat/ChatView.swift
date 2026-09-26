@@ -24,6 +24,12 @@ struct GalleryDeleteRequest: Identifiable, Equatable {
     }
 }
 
+private struct ChatMediaViewerRequest: Identifiable {
+    let id = UUID()
+    let items: [ChatMediaGridItem]
+    let startIndex: Int
+}
+
 private struct SelectedContactDraft: Identifiable {
     let id = UUID()
     let payload: ContactPayload
@@ -50,7 +56,8 @@ struct ChatView: View {
     @State private var galleryGoToMessageId: String? = nil
     @State private var galleryReplyMessage: KBChatMessage? = nil
     @State private var galleryDeleteRequest: GalleryDeleteRequest? = nil
-    
+    @State private var mediaViewer: ChatMediaViewerRequest? = nil
+
     private var activeFamily: KBFamily? {
         ActiveFamilyResolver.family(from: families, activeFamilyId: coordinator.activeFamilyId)
     }
@@ -75,6 +82,7 @@ struct ChatView: View {
                     replyFromGallery: $galleryReplyMessage,
                     deleteFromGallery: $galleryDeleteRequest
                 )
+                .environment(\.openChatMedia, openChatMedia)
                 .id(activeFamilyId)
             }
         }
@@ -138,16 +146,7 @@ struct ChatView: View {
                     showMediaGallery = false
                     galleryReplyMessage = msg
                 },
-                onDelete: { item, forEveryone in
-                    let itemIndex: Int? = item.message.type == .mediaGroup
-                    ? Int(item.id.split(separator: "_").last ?? "")
-                    : nil
-                    galleryDeleteRequest = GalleryDeleteRequest(
-                        message: item.message,
-                        itemIndex: itemIndex,
-                        forEveryone: forEveryone
-                    )
-                },
+                onDelete: requestGalleryDelete,
                 onClose: { showMediaGallery = false }
             )
             .environment(\.modelContext, modelContext)
@@ -155,6 +154,52 @@ struct ChatView: View {
             .frame(minWidth: 640, minHeight: 520)
 #endif
         }
+        // Tocco su una foto o un video in chat: lo stesso visore della galleria,
+        // su tutti i media della chat, con le stesse azioni.
+        .fullScreenCover(item: $mediaViewer) { req in
+            ChatMediaFullscreenView(
+                items: req.items,
+                startIndex: req.startIndex,
+                onDismiss: { mediaViewer = nil },
+                onGoToMessage: { msgId in
+                    mediaViewer = nil
+                    galleryGoToMessageId = msgId
+                },
+                onReply: { msg in
+                    mediaViewer = nil
+                    galleryReplyMessage = msg
+                },
+                onDelete: requestGalleryDelete
+            )
+        }
+    }
+
+    private func requestGalleryDelete(_ item: ChatMediaGridItem, _ forEveryone: Bool) {
+        let itemIndex: Int? = item.message.type == .mediaGroup
+        ? Int(item.id.split(separator: "_").last ?? "")
+        : nil
+        galleryDeleteRequest = GalleryDeleteRequest(
+            message: item.message,
+            itemIndex: itemIndex,
+            forEveryone: forEveryone
+        )
+    }
+
+    /// Apre il visore sull'elemento toccato. Legge tutti i media della chat come la
+    /// galleria (non solo la pagina caricata) e li congela: un messaggio in arrivo
+    /// non sposta l'elemento mostrato.
+    private func openChatMedia(_ itemId: String) -> Bool {
+        let familyId = activeFamilyId
+        guard !familyId.isEmpty else { return false }
+        let descriptor = FetchDescriptor<KBChatMessage>(
+            predicate: #Predicate { $0.familyId == familyId && $0.isDeleted == false },
+            sortBy: [SortDescriptor(\KBChatMessage.createdAt, order: .reverse)]
+        )
+        guard let messages = try? modelContext.fetch(descriptor) else { return false }
+        let items = ChatMediaGridItem.items(from: messages)
+        guard let index = items.firstIndex(where: { $0.id == itemId }) else { return false }
+        mediaViewer = ChatMediaViewerRequest(items: items, startIndex: index)
+        return true
     }
     
     private var emptyNoFamily: some View {

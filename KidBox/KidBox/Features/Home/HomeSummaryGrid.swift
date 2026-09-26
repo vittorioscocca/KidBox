@@ -395,9 +395,13 @@ struct HomeSummaryGrid: View {
     private func calendarContent() -> SummaryTileContent {
         let now = Date()
         let uid = currentUid
-        let upcoming = events.filter {
-            $0.endDate >= now && $0.startDate <= Self.inSevenDays && $0.isVisible(to: uid)
-        }
+        // Le ricorrenze contano: un evento settimanale iniziato mesi fa è
+        // comunque «in agenda» questa settimana.
+        let window = DateInterval(start: now, end: max(now, Self.inSevenDays))
+        let upcoming = events
+            .filter { $0.isVisible(to: uid) }
+            .flatMap { $0.occurrences(in: window) }
+            .sorted { $0.startDate < $1.startDate }
         guard let next = upcoming.first else {
             return empty(.calendar, String(localized: "Niente in agenda"))
         }
@@ -405,7 +409,7 @@ struct HomeSummaryGrid: View {
             id: .calendar,
             value: "\(upcoming.count)",
             thumbnails: nil,
-            subtitle: "\(next.title), \(Self.dayLabel(next.startDate, allDay: next.isAllDay))",
+            subtitle: "\(next.event.title), \(Self.dayLabel(next.startDate, allDay: next.event.isAllDay))",
             isEmpty: false,
             band: band(for: next.startDate, badge: badge.calendar)
         )

@@ -28,6 +28,7 @@ enum KBDeviceReminderLedger {
     static func treatment(_ id: String) -> String { "treatment:\(id)" }
     static func vehicle(_ id: String) -> String { "vehicle:\(id)" }
     static func housePayment(_ id: String) -> String { "housePayment:\(id)" }
+    // Gli eventi del calendario usano `CalendarEventReminderService.ledgerKey`.
 
     // MARK: - API
 
@@ -45,6 +46,12 @@ enum KBDeviceReminderLedger {
 
     static func contains(_ key: String) -> Bool {
         stored().contains(key)
+    }
+
+    /// Le chiavi di un tipo di entità, per i refresh che partono dal registro
+    /// invece che dallo store.
+    static func keys(withPrefix prefix: String) -> [String] {
+        stored().filter { $0.hasPrefix(prefix) }.sorted()
     }
 
     /// Svuota il registro. Al logout non resta traccia del profilo precedente.

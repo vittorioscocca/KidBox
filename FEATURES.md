@@ -74,7 +74,7 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 ### Organizzazione
 | Funzione | Cosa fa | Piano |
 |---|---|---|
-| Calendario | Eventi di famiglia e **promemoria** (to-do con scadenza); viste Mese, **Giorno e Settimana** con griglia oraria, vista ricordata fra un'apertura e l'altra | F |
+| Calendario | Eventi di famiglia e **promemoria** (to-do con scadenza); viste Mese, **Giorno e Settimana** con griglia oraria, vista ricordata fra un'apertura e l'altra; eventi **ricorrenti** (giornaliero/settimanale/mensile/annuale) mostrati in ogni ripetizione, con il promemoria che si riarma per la successiva; su iOS e Android anche i **calendari del telefono** (Google, iCloud, Outlook, Exchange) in sola lettura, con «Copia in KidBox» (`DeviceCalendarStore` su EventKit, `DeviceCalendarRepository` su CalendarContract); non sul web; **calendari iscritti da link** (feed ICS di scuola, squadra, festività, Google Calendar) per tutta la famiglia su iOS, Android e web, scaricati dal server ogni 6 ore (`functions/calendarFeeds.js`); «Collega Google / Outlook» guidato (account aggiunto al telefono, niente OAuth) e «Come trovo il link?» per l'indirizzo iCal | F |
 | To-do | Liste e cose da fare **di famiglia**, assegnabili, con promemoria; quelli **urgenti** suonano come una sveglia | F |
 | Lista della spesa | Condivisa in tempo reale, con «aggiunto da … e quando»; dettabile ad Alexa | F |
 | Note | Note condivise, cifrate | F |

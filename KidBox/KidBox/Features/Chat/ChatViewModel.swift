@@ -1446,6 +1446,14 @@ final class ChatViewModel: NSObject, ObservableObject {
     /// Se non rimane nessun item, elimina il messaggio completamente.
     func removeMediaFromGroup(message: KBChatMessage, itemIndex: Int, forEveryone: Bool) {
         guard let modelContext else { return }
+        // «Per me» non può toccare il messaggio condiviso: togliere l'elemento dal
+        // gruppo lo toglieva a tutti i membri. Non esiste un «nascosto per me» del
+        // singolo elemento, quindi si nasconde l'intero messaggio solo per me (come
+        // su Android; la conferma lo dice).
+        guard forEveryone else {
+            deleteMessagesLocally(ids: [message.id])
+            return
+        }
         var urls  = message.mediaGroupURLs
         var types = message.mediaGroupTypes
         guard urls.indices.contains(itemIndex) else { return }

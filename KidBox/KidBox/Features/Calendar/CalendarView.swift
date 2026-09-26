@@ -71,12 +71,45 @@ struct CalendarView: View {
         }
     }
     
+    /// Il giorno attorno a cui si espandono le ricorrenze: segue il giorno
+    /// selezionato e il mese sfogliato con le frecce.
+    @State private var occurrenceAnchor = Date()
+
+    /// Gli eventi espansi nelle loro ripetizioni, per tutto quello che si
+    /// disegna. Una serie senza fine non si può espandere tutta: si prende
+    /// l'anno del giorno guardato con un margine, come per il telefono.
+    private var occurrences: [KBEventOccurrence] {
+        let window = occurrenceWindow(around: occurrenceAnchor)
+        return events
+            .flatMap { $0.occurrences(in: window) }
+            .sorted { $0.startDate < $1.startDate }
+    }
+
+    /// Gli eventi dei calendari del telefono, in sola lettura. Quelli già
+    /// copiati in KidBox non si disegnano due volte: vince la copia, che è
+    /// quella che vede la famiglia.
+    private var deviceEvents: [DeviceCalendarEvent] {
+        // Telefono (solo se acceso) e calendari iscritti da link (sempre: sono
+        // della famiglia). Stesso trattamento a schermo, sola lettura.
+        let external = (deviceCalendars.isShowing ? deviceCalendars.events : []) + feedStore.events
+        guard !external.isEmpty else { return [] }
+        let copied = Set(occurrences.map {
+            DeviceCalendarEvent.dedupKey(title: $0.event.title, startDate: $0.startDate, isAllDay: $0.event.isAllDay)
+        })
+        return external.filter { !copied.contains($0.dedupKey) }
+    }
+
     private var datesWithEvents: Set<DateComponents> {
         var comps = Set(
-            events.flatMap { event in
-                calendarDayComponentsCoveredByEvent(event)
+            occurrences.flatMap { occ in
+                calendarDayComponentsCovered(start: occ.startDate, end: occ.endDate)
             }
         )
+        for event in deviceEvents {
+            // Fine esclusa, come in `deviceEventOccursOnDay`.
+            let end = event.endDate > event.startDate ? event.endDate.addingTimeInterval(-1) : event.endDate
+            comps.formUnion(calendarDayComponentsCovered(start: event.startDate, end: end))
+        }
         // Anche i promemoria accendono il pallino del giorno: un calendario
         // che dice «niente» su un giorno con un promemoria sta mentendo.
         for reminder in reminders {
@@ -86,10 +119,45 @@ struct CalendarView: View {
         return comps
     }
     
+    /// I pallini di un anno qualsiasi della vista Anno. Quello che è già
+    /// calcolato (finestra attorno al giorno guardato, telefono, promemoria)
+    /// più le ripetizioni delle serie in quell'anno: la vista scorre su
+    /// ottant'anni, e una serie senza fine non si può espandere tutta in una
+    /// volta. Ogni anno si calcola solo quando la sua sezione compare.
+    private func yearDatesProvider() -> (Int) -> Set<DateComponents> {
+        let base = datesWithEvents
+        let series = events.filter { $0.recurrence != .none }
+        return { year in
+            let cal = Calendar.current
+            guard !series.isEmpty,
+                  let start = cal.date(from: DateComponents(year: year, month: 1, day: 1)),
+                  let interval = cal.dateInterval(of: .year, for: start) else { return base }
+            var result = base
+            for occ in series.flatMap({ $0.occurrences(in: interval) }) {
+                result.formUnion(calendarDayComponentsCovered(start: occ.startDate, end: occ.endDate))
+            }
+            return result
+        }
+    }
+
     @State private var selectedDate = Date()
     @State private var addSheetDate: AddSheetDate?
     @State private var editingEvent: KBCalendarEvent?
     @State private var editingReminder: KBTodoItem?
+    @State private var pendingSeriesDelete: KBCalendarEvent?
+
+    @ObservedObject private var deviceCalendars = DeviceCalendarStore.shared
+    @ObservedObject private var feedStore = CalendarFeedStore.shared
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var openedDeviceEvent: DeviceCalendarEvent?
+    @State private var copyPrefill: CalendarEventPrefill?
+    @State private var isDeviceCalendarSettingsPresented = false
+    /// L'invito a collegare i calendari si chiude una volta per sempre.
+    @AppStorage("kb.calendar.device.promptDismissed") private var devicePromptDismissed = false
+
+    private var showsDevicePrompt: Bool {
+        !devicePromptDismissed && deviceCalendars.isUndetermined
+    }
     /// La vista scelta sopravvive alla chiusura dell'app: chi lavora a
     /// settimana non deve rimetterla a ogni apertura. È una preferenza del
     /// dispositivo, non della famiglia, quindi resta in `UserDefaults`.
@@ -139,16 +207,18 @@ struct CalendarView: View {
             DayWeekView(
                 selectedDate: $selectedDate,
                 isWeek:       viewMode == .week,
-                events:       events,
+                events:       occurrences,
+                deviceEvents: deviceEvents,
                 reminders:    reminders,
                 onEditEvent:  { editingEvent = $0 },
+                onOpenDeviceEvent: { openedDeviceEvent = $0 },
                 onEditReminder: { editingReminder = $0 },
                 onAddEvent:   { addSheetDate = AddSheetDate(date: $0) }
             )
         case .year:
             YearOverviewView(
                 year:            Calendar.current.component(.year, from: selectedDate),
-                datesWithEvents: datesWithEvents,
+                datesForYear:    yearDatesProvider(),
                 selectedDate:    $selectedDate,
                 onSelectDate: { date in
                     selectedDate = date
@@ -159,12 +229,26 @@ struct CalendarView: View {
             MonthDetailView(
                 selectedDate:    $selectedDate,
                 datesWithEvents: datesWithEvents,
-                events:          events,
+                events:          occurrences,
+                deviceEvents:    deviceEvents,
                 reminders:       reminders,
                 cardBackground:  cardBackground,
                 familyId:        familyId,
                 onEditEvent:     { editingEvent = $0 },
-                onDeleteEvent:   { deleteEvent($0) },
+                onOpenDeviceEvent: { openedDeviceEvent = $0 },
+                onVisibleMonthChange: { month in
+                    deviceCalendars.show(around: month)
+                    occurrenceAnchor = month
+                },
+                onDeleteEvent:   { event in
+                    // Non ci sono eccezioni per singola ripetizione: su una
+                    // serie l'eliminazione le toglie tutte, e va detto prima.
+                    if event.recurrence == .none {
+                        deleteEvent(event)
+                    } else {
+                        pendingSeriesDelete = event
+                    }
+                },
                 onEditReminder:  { editingReminder = $0 },
                 onToggleReminder: { toggleReminderDone($0) },
                 onDeleteReminder: { deleteReminder($0) },
@@ -179,6 +263,15 @@ struct CalendarView: View {
             
             VStack(spacing: 0) {
                 modePicker
+                if showsDevicePrompt {
+                    DeviceCalendarPromptCard(
+                        onConnect: {
+                            Task { await deviceCalendars.requestAccess() }
+                            deviceCalendars.show(around: selectedDate)
+                        },
+                        onDismiss: { devicePromptDismissed = true }
+                    )
+                }
                 Divider()
                 currentModeView
             }
@@ -195,11 +288,67 @@ struct CalendarView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
+                    isDeviceCalendarSettingsPresented = true
+                } label: {
+                    Image(systemName: (deviceCalendars.isShowing || !feedStore.feeds.isEmpty) ? "calendar.badge.checkmark" : "calendar.badge.plus")
+                }
+                .accessibilityLabel("Calendari collegati")
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
                     addSheetDate = AddSheetDate(date: sharePrefillDate ?? selectedDate)
                 } label: {
                     Image(systemName: "plus")
                 }
             }
+        }
+        .confirmationDialog(
+            "Eliminare l'evento ricorrente?",
+            isPresented: Binding(
+                get: { pendingSeriesDelete != nil },
+                set: { if !$0 { pendingSeriesDelete = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: pendingSeriesDelete
+        ) { event in
+            Button("Elimina tutte le ripetizioni", role: .destructive) {
+                deleteEvent(event)
+                pendingSeriesDelete = nil
+            }
+            Button("Annulla", role: .cancel) { pendingSeriesDelete = nil }
+        } message: { _ in
+            Text("Si cancellano tutte le date della serie, passate e future.")
+        }
+        .sheet(isPresented: $isDeviceCalendarSettingsPresented) {
+            DeviceCalendarSettingsView(familyId: familyId)
+        }
+        .sheet(item: $openedDeviceEvent) { event in
+            DeviceCalendarEventSheet(event: event) {
+                // Prima si chiude la scheda, poi si apre «Nuovo evento»: due
+                // sheet non si presentano nello stesso giro.
+                let prefill = CalendarEventPrefill(event)
+                openedDeviceEvent = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    copyPrefill = prefill
+                }
+            }
+        }
+        .sheet(item: $copyPrefill) { prefill in
+            CalendarEventFormView(
+                familyId: familyId,
+                initialDate: prefill.startDate,
+                event: nil,
+                prefill: prefill
+            )
+            .environment(\.modelContext, modelContext)
+        }
+        .onChange(of: selectedDate) { _, newDate in
+            deviceCalendars.show(around: newDate)
+            occurrenceAnchor = newDate
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // L'accesso può essere stato dato o tolto da Impostazioni.
+            if phase == .active { deviceCalendars.refreshAuthorization() }
         }
         .sheet(item: $addSheetDate) { wrapper in
             CalendarNewItemSheet(
@@ -274,6 +423,9 @@ struct CalendarView: View {
         }
         .onAppear {
             KBLog.sync.kbInfo("CalendarView.onAppear familyId=\(familyId)")
+            deviceCalendars.refreshAuthorization()
+            deviceCalendars.show(around: selectedDate)
+            feedStore.start(familyId: familyId)
             Task {
                 BadgeManager.shared.clearCalendar()
                 await CountersService.shared.reset(familyId: familyId, field: .calendar)
@@ -307,7 +459,15 @@ struct CalendarView: View {
         guard let match = events.first(where: { $0.id == eid }) else { return }
         openedPushEventId = eid
         isWaitingForPushEvent = false
-        selectedDate = match.startDate
+        // Per una serie la notifica parla della ripetizione in arrivo, non
+        // della prima: si va sul giorno più vicino da ieri in avanti.
+        if match.recurrence != .none {
+            let from = Date().addingTimeInterval(-86_400)
+            selectedDate = match.occurrences(in: DateInterval(start: from, duration: 86_400 * 800))
+                .first?.startDate ?? match.startDate
+        } else {
+            selectedDate = match.startDate
+        }
         // La sheet non si presenta durante la transizione di push: aspetta che
         // sia finita, come già fa qui sotto il draft condiviso.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
@@ -342,7 +502,7 @@ struct CalendarView: View {
             )
         }
         // L'evento sparisce: il suo avviso non deve sopravvivergli.
-        CalendarEventReminderService.cancel(eventId: eventId)
+        CalendarEventReminderService.forget(eventId: eventId)
         event.isDeleted = true
         event.updatedAt = Date()
         event.updatedBy = uid
@@ -422,7 +582,7 @@ private enum CalendarViewMode: String, CaseIterable, Identifiable {
 private struct YearOverviewView: View {
     
     let year:            Int
-    let datesWithEvents: Set<DateComponents>
+    let datesForYear:    (Int) -> Set<DateComponents>
     @Binding var selectedDate: Date
     let onSelectDate: (Date) -> Void
     
@@ -440,12 +600,13 @@ private struct YearOverviewView: View {
                 LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
                     ForEach(firstYear...lastYear, id: \.self) { y in
                         Section {
+                            let yearDates = datesForYear(y)
                             LazyVGrid(columns: columns, spacing: 12) {
                                 ForEach(1...12, id: \.self) { month in
                                     MiniMonthView(
                                         year:            y,
                                         month:           month,
-                                        datesWithEvents: datesWithEvents,
+                                        datesWithEvents: yearDates,
                                         selectedDate:    selectedDate,
                                         onSelectDate:    onSelectDate
                                     )
@@ -593,11 +754,16 @@ private struct MonthDetailView: View {
     
     @Binding var selectedDate:   Date
     let datesWithEvents:         Set<DateComponents>
-    let events:                  [KBCalendarEvent]
+    let events:                  [KBEventOccurrence]
+    let deviceEvents:            [DeviceCalendarEvent]
     let reminders:               [KBTodoItem]
     let cardBackground:          Color
     let familyId:                String
     let onEditEvent:             (KBCalendarEvent) -> Void
+    let onOpenDeviceEvent:       (DeviceCalendarEvent) -> Void
+    /// Le frecce del mese spostano la griglia senza cambiare il giorno
+    /// selezionato: il calendario del telefono deve saperlo per leggere.
+    let onVisibleMonthChange:    (Date) -> Void
     let onDeleteEvent:           (KBCalendarEvent) -> Void
     let onEditReminder:          (KBTodoItem) -> Void
     let onToggleReminder:        (KBTodoItem) -> Void
@@ -606,8 +772,17 @@ private struct MonthDetailView: View {
     
     @State private var displayedMonth = Date()
     
-    private var eventsOnSelectedDate: [KBCalendarEvent] {
+    private var eventsOnSelectedDate: [KBEventOccurrence] {
         events.filter { eventOccursOnDay($0, day: selectedDate) }
+    }
+
+    private var deviceEventsOnSelectedDate: [DeviceCalendarEvent] {
+        deviceEvents
+            .filter { deviceEventOccursOnDay($0, day: selectedDate) }
+            .sorted { lhs, rhs in
+                if lhs.isAllDay != rhs.isAllDay { return lhs.isAllDay }
+                return lhs.startDate < rhs.startDate
+            }
     }
 
     private var remindersOnSelectedDate: [KBTodoItem] {
@@ -642,6 +817,7 @@ private struct MonthDetailView: View {
             dayEventsList
         }
         .onAppear { displayedMonth = selectedDate }
+        .onChange(of: displayedMonth) { _, month in onVisibleMonthChange(month) }
         .onChange(of: selectedDate) { _, newVal in
             let selComps = Calendar.current.dateComponents([.year, .month], from: newVal)
             let curComps = Calendar.current.dateComponents([.year, .month], from: displayedMonth)
@@ -723,7 +899,7 @@ private struct MonthDetailView: View {
     
     private var dayEventsList: some View {
         Group {
-            if eventsOnSelectedDate.isEmpty && remindersOnSelectedDate.isEmpty {
+            if eventsOnSelectedDate.isEmpty && remindersOnSelectedDate.isEmpty && deviceEventsOnSelectedDate.isEmpty {
                 KBEmptyStateView(
                     systemImage: "calendar",
                     title: "Nessun evento",
@@ -736,14 +912,14 @@ private struct MonthDetailView: View {
                 List {
                     if !eventsOnSelectedDate.isEmpty {
                         Section("Eventi") {
-                            ForEach(eventsOnSelectedDate) { event in
-                                CalendarEventRow(event: event)
+                            ForEach(eventsOnSelectedDate) { occurrence in
+                                CalendarEventRow(occurrence: occurrence)
                                     .contentShape(Rectangle())
-                                    .onTapGesture { onEditEvent(event) }
+                                    .onTapGesture { onEditEvent(occurrence.event) }
                                     .listRowBackground(cardBackground)
                             }
                             .onDelete { indexSet in
-                                for idx in indexSet { onDeleteEvent(eventsOnSelectedDate[idx]) }
+                                for idx in indexSet { onDeleteEvent(eventsOnSelectedDate[idx].event) }
                             }
                         }
                     }
@@ -763,6 +939,30 @@ private struct MonthDetailView: View {
                             }
                         }
                     }
+                    // In fondo e senza «elimina»: sono del telefono, e da qui
+                    // non si toccano.
+                    let fromPhone = deviceEventsOnSelectedDate.filter { $0.feedId == nil }
+                    let fromFeeds = deviceEventsOnSelectedDate.filter { $0.feedId != nil }
+                    if !fromPhone.isEmpty {
+                        Section("Dal tuo telefono") {
+                            ForEach(fromPhone) { event in
+                                DeviceCalendarEventRow(event: event)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { onOpenDeviceEvent(event) }
+                                    .listRowBackground(cardBackground)
+                            }
+                        }
+                    }
+                    if !fromFeeds.isEmpty {
+                        Section("Calendari iscritti") {
+                            ForEach(fromFeeds) { event in
+                                DeviceCalendarEventRow(event: event)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { onOpenDeviceEvent(event) }
+                                    .listRowBackground(cardBackground)
+                            }
+                        }
+                    }
                 }
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
@@ -779,9 +979,11 @@ private struct DayWeekView: View {
 
     @Binding var selectedDate: Date
     let isWeek:      Bool
-    let events:      [KBCalendarEvent]
+    let events:      [KBEventOccurrence]
+    let deviceEvents: [DeviceCalendarEvent]
     let reminders:   [KBTodoItem]
     let onEditEvent: (KBCalendarEvent) -> Void
+    let onOpenDeviceEvent: (DeviceCalendarEvent) -> Void
     let onEditReminder: (KBTodoItem) -> Void
     let onAddEvent:  (Date) -> Void
 
@@ -801,10 +1003,15 @@ private struct DayWeekView: View {
 
             TimeGridView(
                 days:          days,
-                events:        events,
+                entries:       events.map(CalendarGridEntry.kidbox) + deviceEvents.map(CalendarGridEntry.device),
                 reminders:     reminders,
                 showsDayHeader: isWeek,
-                onSelectEvent: onEditEvent,
+                onSelectEvent: { entry in
+                    switch entry {
+                    case .kidbox(let occurrence): onEditEvent(occurrence.event)
+                    case .device(let event): onOpenDeviceEvent(event)
+                    }
+                },
                 onSelectReminder: onEditReminder,
                 onCreateAt:    onAddEvent
             )
@@ -881,10 +1088,10 @@ private struct DayWeekView: View {
 private struct TimeGridView: View {
 
     let days:           [Date]
-    let events:         [KBCalendarEvent]
+    let entries:        [CalendarGridEntry]
     let reminders:      [KBTodoItem]
     let showsDayHeader: Bool
-    let onSelectEvent:  (KBCalendarEvent) -> Void
+    let onSelectEvent:  (CalendarGridEntry) -> Void
     let onSelectReminder: (KBTodoItem) -> Void
     let onCreateAt:     (Date) -> Void
 
@@ -969,19 +1176,21 @@ private struct TimeGridView: View {
                 HStack(alignment: .top, spacing: 1) {
                     ForEach(days, id: \.self) { day in
                         VStack(spacing: 2) {
-                            ForEach(allDayEvents(on: day)) { event in
-                                Text(event.title)
+                            ForEach(allDayEvents(on: day)) { entry in
+                                // Quelli del telefono sono pieni solo a metà:
+                                // si distinguono senza leggere l'etichetta.
+                                Text(entry.title)
                                     .font(.caption2)
                                     .lineLimit(1)
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(entry.isDevice ? entry.color : .white)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 3)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .background(
-                                        kbCategoryColor(event.category),
+                                        entry.color.opacity(entry.isDevice ? 0.18 : 1),
                                         in: RoundedRectangle(cornerRadius: 6, style: .continuous)
                                     )
-                                    .onTapGesture { onSelectEvent(event) }
+                                    .onTapGesture { onSelectEvent(entry) }
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .top)
@@ -1106,12 +1315,18 @@ private struct TimeGridView: View {
 
     @ViewBuilder
     private func eventBlock(_ item: TimedEventLayout) -> some View {
-        let color = kbCategoryColor(item.event.category)
+        let color = item.event.color
         VStack(alignment: .leading, spacing: 1) {
-            Text(item.event.title)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(color)
-                .lineLimit(item.height > 32 ? 2 : 1)
+            HStack(spacing: 3) {
+                if item.event.isDevice {
+                    Image(systemName: "iphone")
+                        .font(.system(size: 8))
+                }
+                Text(item.event.title)
+                    .font(.caption2.weight(.semibold))
+                    .lineLimit(item.height > 32 ? 2 : 1)
+            }
+            .foregroundStyle(color)
             if item.height > 32 {
                 Text("\(item.event.startDate.formatted(date: .omitted, time: .shortened)) - \(item.event.endDate.formatted(date: .omitted, time: .shortened))")
                     .font(.system(size: 9))
@@ -1123,21 +1338,21 @@ private struct TimeGridView: View {
         .padding(.horizontal, 4)
         .padding(.vertical, 2)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(color.opacity(0.26))
+        .background(color.opacity(item.event.isDevice ? 0.12 : 0.26))
         .overlay(alignment: .leading) {
-            Rectangle().fill(color).frame(width: 3)
+            Rectangle().fill(color.opacity(item.event.isDevice ? 0.6 : 1)).frame(width: 3)
         }
         .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
         .contentShape(Rectangle())
         .onTapGesture { onSelectEvent(item.event) }
     }
 
-    private func timedEvents(on day: Date) -> [KBCalendarEvent] {
-        events.filter { !$0.isAllDay && eventOccursOnDay($0, day: day) }
+    private func timedEvents(on day: Date) -> [CalendarGridEntry] {
+        entries.filter { !$0.isAllDay && $0.occurs(on: day) }
     }
 
-    private func allDayEvents(on day: Date) -> [KBCalendarEvent] {
-        events.filter { $0.isAllDay && eventOccursOnDay($0, day: day) }
+    private func allDayEvents(on day: Date) -> [CalendarGridEntry] {
+        entries.filter { $0.isAllDay && $0.occurs(on: day) }
     }
 
     private func shortWeekdayLabel(_ date: Date) -> String {
@@ -1155,8 +1370,63 @@ private struct TimeGridView: View {
 fileprivate let kbHourHeight: CGFloat = 52
 fileprivate let kbHourGutterWidth: CGFloat = 42
 
+/// Un blocco della griglia oraria: un evento KidBox o uno del telefono.
+/// La griglia li impagina insieme (si affiancano se si sovrappongono) ma al
+/// tocco aprono schede diverse.
+fileprivate enum CalendarGridEntry: Identifiable {
+    case kidbox(KBEventOccurrence)
+    case device(DeviceCalendarEvent)
+
+    var id: String {
+        switch self {
+        case .kidbox(let e): return "kb-\(e.id)"
+        case .device(let e): return "dev-\(e.id)"
+        }
+    }
+    var title: String {
+        switch self {
+        case .kidbox(let e): return e.event.title
+        case .device(let e): return e.title
+        }
+    }
+    var startDate: Date {
+        switch self {
+        case .kidbox(let e): return e.startDate
+        case .device(let e): return e.startDate
+        }
+    }
+    var endDate: Date {
+        switch self {
+        case .kidbox(let e): return e.endDate
+        case .device(let e): return e.endDate
+        }
+    }
+    var isAllDay: Bool {
+        switch self {
+        case .kidbox(let e): return e.event.isAllDay
+        case .device(let e): return e.isAllDay
+        }
+    }
+    var isDevice: Bool {
+        if case .device = self { return true }
+        return false
+    }
+    var color: Color {
+        switch self {
+        case .kidbox(let e): return kbCategoryColor(e.event.category)
+        case .device(let e): return e.color
+        }
+    }
+    func occurs(on day: Date) -> Bool {
+        switch self {
+        case .kidbox(let e): return eventOccursOnDay(e, day: day)
+        case .device(let e): return deviceEventOccursOnDay(e, day: day)
+        }
+    }
+}
+
 fileprivate struct TimedEventLayout: Identifiable {
-    let event:   KBCalendarEvent
+    let event:   CalendarGridEntry
     let top:     CGFloat
     let height:  CGFloat
     let column:  Int
@@ -1167,9 +1437,9 @@ fileprivate struct TimedEventLayout: Identifiable {
 /// Posizione, altezza e colonna di ogni evento a orario dentro un giorno.
 /// Porting di `layoutOverlaps` (calendarUtils.js): gli eventi che si
 /// sovrappongono si dividono la larghezza invece di coprirsi.
-fileprivate func layoutTimedEvents(_ events: [KBCalendarEvent], day: Date) -> [TimedEventLayout] {
+fileprivate func layoutTimedEvents(_ events: [CalendarGridEntry], day: Date) -> [TimedEventLayout] {
     struct Box {
-        let event:  KBCalendarEvent
+        let event:  CalendarGridEntry
         let top:    CGFloat
         let height: CGFloat
     }
@@ -1272,10 +1542,10 @@ fileprivate func orderedWeekdayInitials() -> [String] {
         .map { String($0.prefix(1)).uppercased(with: appLocale()) }
 }
 
-fileprivate func calendarDayComponentsCoveredByEvent(_ event: KBCalendarEvent) -> [DateComponents] {
+fileprivate func calendarDayComponentsCovered(start: Date, end: Date) -> [DateComponents] {
     let calendar = Calendar.current
-    let startDay = calendar.startOfDay(for: min(event.startDate, event.endDate))
-    let endDay = calendar.startOfDay(for: max(event.startDate, event.endDate))
+    let startDay = calendar.startOfDay(for: min(start, end))
+    let endDay = calendar.startOfDay(for: max(start, end))
 
     var result: [DateComponents] = []
     var cursor = startDay
@@ -1287,13 +1557,42 @@ fileprivate func calendarDayComponentsCoveredByEvent(_ event: KBCalendarEvent) -
     return result
 }
 
-fileprivate func eventOccursOnDay(_ event: KBCalendarEvent, day: Date) -> Bool {
+fileprivate func eventOccursOnDay(_ occurrence: KBEventOccurrence, day: Date) -> Bool {
+    intervalOccursOnDay(start: occurrence.startDate, end: occurrence.endDate, day: day)
+}
+
+/// La finestra in cui si espandono le ricorrenze: l'anno del giorno guardato,
+/// allargato di qualche mese perché sfogliare dicembre mostri già gennaio.
+fileprivate func occurrenceWindow(around date: Date) -> DateInterval {
+    let cal = Calendar.current
+    let year = cal.dateInterval(of: .year, for: date)
+        ?? DateInterval(start: date, duration: 86_400 * 365)
+    let start = min(year.start, cal.date(byAdding: .month, value: -3, to: date) ?? year.start)
+    let end   = max(year.end,   cal.date(byAdding: .month, value: 4, to: date) ?? year.end)
+    return DateInterval(start: start, end: end)
+}
+
+/// Gli eventi del telefono finiscono esattamente alla mezzanotte seguente
+/// quando durano fino a fine giornata: `>=` li farebbe comparire anche il
+/// giorno dopo, per cui qui la fine è esclusa (tranne per gli eventi a durata
+/// zero, che altrimenti non cadrebbero in nessun giorno).
+fileprivate func deviceEventOccursOnDay(_ event: DeviceCalendarEvent, day: Date) -> Bool {
+    let calendar = Calendar.current
+    let dayStart = calendar.startOfDay(for: day)
+    guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else { return false }
+    let start = min(event.startDate, event.endDate)
+    let end   = max(event.startDate, event.endDate)
+    if start == end { return start >= dayStart && start < dayEnd }
+    return start < dayEnd && end > dayStart
+}
+
+fileprivate func intervalOccursOnDay(start: Date, end: Date, day: Date) -> Bool {
     let calendar = Calendar.current
     let dayStart = calendar.startOfDay(for: day)
     guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else { return false }
 
-    let eventStart = min(event.startDate, event.endDate)
-    let eventEnd = max(event.startDate, event.endDate)
+    let eventStart = min(start, end)
+    let eventEnd = max(start, end)
     return eventStart < dayEnd && eventEnd >= dayStart
 }
 
@@ -1323,7 +1622,8 @@ fileprivate func calendarDays(for month: Date) -> [Date?] {
 // MARK: - CalendarEventRow
 
 private struct CalendarEventRow: View {
-    let event: KBCalendarEvent
+    let occurrence: KBEventOccurrence
+    private var event: KBCalendarEvent { occurrence.event }
     
     var body: some View {
         HStack(spacing: 12) {
@@ -1338,9 +1638,14 @@ private struct CalendarEventRow: View {
                     if event.isAllDay {
                         Text("Tutto il giorno").foregroundStyle(.secondary)
                     } else {
-                        Text(event.startDate, style: .time)
+                        // Gli orari dell'occorrenza, non quelli del primo
+                        // evento della serie.
+                        Text(occurrence.startDate, style: .time)
                         Text("–")
-                        Text(event.endDate, style: .time)
+                        Text(occurrence.endDate, style: .time)
+                    }
+                    if occurrence.isRecurring {
+                        Label(event.recurrence.label, systemImage: "repeat")
                     }
                 }
                 .font(.caption)
@@ -1489,7 +1794,10 @@ struct CalendarEventFormView: View {
     /// Falso quando la scheda vive dentro il selettore Evento/Promemoria,
     /// che la barra di navigazione ce l'ha già sua.
     var showsNavigationChrome: Bool = true
-    
+    /// «Copia in KidBox» da un evento del telefono: titolo, date, luogo e
+    /// note arrivano già scritti, il resto lo sceglie l'utente.
+    var prefill: CalendarEventPrefill? = nil
+
     @Query private var members: [KBFamilyMember]
     
     @State private var title         = ""
@@ -1540,13 +1848,15 @@ struct CalendarEventFormView: View {
         initialDate: Date,
         event: KBCalendarEvent? = nil,
         prefillTitle: String = "",
-        showsNavigationChrome: Bool = true
+        showsNavigationChrome: Bool = true,
+        prefill: CalendarEventPrefill? = nil
     ) {
         self.familyId = familyId
         self.initialDate = initialDate
         self.event = event
         self.prefillTitle = prefillTitle
         self.showsNavigationChrome = showsNavigationChrome
+        self.prefill = prefill
         let fid = familyId
         _members = Query(
             filter: #Predicate<KBFamilyMember> { $0.familyId == fid && !$0.isDeleted },
@@ -1945,6 +2255,19 @@ struct CalendarEventFormView: View {
                 reminderIndex = reminderOptions.firstIndex(where: { $0.minutes == mins }) ?? 1
             }
             isUrgent = e.isUrgent
+        } else if let p = prefill {
+            title     = p.title
+            notes     = p.notes    ?? ""
+            location  = p.location ?? ""
+            isAllDay  = p.isAllDay
+            startDate = p.startDate
+            // EventKit chiude i tutto-il-giorno alle 23:59:59 (o alla
+            // mezzanotte dopo): KidBox li vuole sul giorno stesso.
+            endDate   = p.isAllDay && p.endDate > p.startDate
+                ? p.endDate.addingTimeInterval(-1)
+                : p.endDate
+            selectedVisibilityScope = KBVisibilityScope.family
+            selectedVisibilityMemberIds = []
         } else {
             startDate = Calendar.current.startOfDay(for: initialDate)
             endDate   = startDate.addingTimeInterval(3600)
@@ -1967,9 +2290,9 @@ struct CalendarEventFormView: View {
         // all'inizio, ma qui si chiude comunque la porta a un evento salvato
         // con le date invertite.
         let safeEndDate = max(endDate, startDate)
-        // L'id dell'evento appena creato, per armarne il promemoria: `event`
-        // resta nil in creazione.
-        var savedEventId: String? = nil
+        // L'evento appena creato, per armarne il promemoria: `event` resta
+        // nil in creazione.
+        var savedNewEvent: KBCalendarEvent? = nil
 
         if let e = event {
             e.title           = title.trimmingCharacters(in: .whitespaces)
@@ -2019,7 +2342,7 @@ struct CalendarEventFormView: View {
                 createdBy:       uid
             )
             newEvent.syncState = .pendingUpsert
-            savedEventId = newEvent.id
+            savedNewEvent = newEvent
             modelContext.insert(newEvent)
             SyncCenter.shared.enqueueCalendarUpsert(
                 eventId: newEvent.id, familyId: familyId, modelContext: modelContext)
@@ -2032,20 +2355,10 @@ struct CalendarEventFormView: View {
         try? modelContext.save()
 
         // Fino a oggi `reminderMinutes` veniva salvato e basta: nessuno lo
-        // leggeva, su nessun client. Qui l'avviso viene armato davvero.
-        let reminderEventId = event?.id ?? savedEventId
-        let reminderTitle = title.trimmingCharacters(in: .whitespaces)
-        let fireAt = mins.map { startDate.addingTimeInterval(-Double($0) * 60) }
-        if let reminderEventId {
-            Task {
-                await CalendarEventReminderService.sync(
-                    eventId: reminderEventId,
-                    familyId: familyId,
-                    title: reminderTitle,
-                    fireAt: fireAt,
-                    isUrgent: urgent
-                )
-            }
+        // leggeva, su nessun client. Qui l'avviso viene armato davvero; su
+        // una serie sono le prossime ripetizioni, non la prima.
+        if let saved = event ?? savedNewEvent {
+            Task { await CalendarEventReminderService.sync(event: saved) }
         }
 
         Task { @MainActor in

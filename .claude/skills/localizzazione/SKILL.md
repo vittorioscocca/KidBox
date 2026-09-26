@@ -50,6 +50,12 @@ quando le sue stringhe sono nel catalogo con en/fr/es.
    `i18n_skeleton.py show/save`. Dopo `translate_html.py` **rilanciare
    `build_tools.py`** (footer, menu, canonical, hreflang).
 
+**Anche su Android esiste il buco invisibile**, quando l'italiano è un
+letterale Kotlin invece di una risorsa: le etichette della ricorrenza nel
+modulo evento erano `"none" to "Nessuna"` in un `listOf` (le risorse
+`calendar_recurrence_*` esistevano, tradotte, e nessuno le usava). Cercare
+letterali italiani nei `.kt` prima di dare una schermata per tradotta.
+
 ## Regole di lingua
 
 - **Francese**: spazio non separabile (U+00A0) prima di `: ; ? ! »` e dopo `«`.

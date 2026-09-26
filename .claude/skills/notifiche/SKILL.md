@@ -127,6 +127,28 @@ ricetta di ogni alarm armato **localmente**; `BootReceiver` chiama
 Eccezioni storiche con semantica famiglia-wide: veicoli, pagamenti casa,
 password — quelli sì si ripristinano da Room.
 
+### Eventi ricorrenti del calendario (dal 26/09/2026)
+
+`recurrenceRaw` non lo espandeva nessun client, e il promemoria armava la
+**prima** data della serie: su una serie già iniziata non suonava mai. Ora si
+arma sempre la **prossima** ripetizione, con due strategie diverse:
+
+- **iOS** (`CalendarEventReminderService`): le prossime 3 ripetizioni come
+  notifiche singole (`calendar.reminder.<id>`, `.1`, `.2`; la sveglia AlarmKit
+  solo la prossima: ne tiene una per elemento), iscrizione a
+  `KBDeviceReminderLedger` con chiave `calendarEvent:<id>`, e
+  `rescheduleArmed` nella manutenzione al rientro in app (`KidBoxApp`). Niente
+  trigger `repeats: true`: seguono il calendario, non la serie (il mensile del
+  31 salterebbe i mesi corti) e resterebbero in coda per sempre.
+- **Android** (`CalendarEventReminderScheduler`): una sola ripetizione; quando
+  suona, `CalendarEventReminderReceiver`/`UrgentAlarmReceiver` chiamano
+  `rearmAfterFire`, che rilegge Room e arma la successiva. La catena si regge
+  ad app chiusa e il reboot la riprende dal registro.
+
+In entrambi il riarmo parte solo da ciò che **questo** device aveva armato,
+ma legge l'evento locale: per una serie le modifiche fatte altrove (orario,
+avviso tolto, evento cancellato) arrivano anche qui.
+
 ## Zone di arrivo e uscita (geofence)
 
 Il server **non** decide niente: l'«entrato/uscito» lo decide il telefono di

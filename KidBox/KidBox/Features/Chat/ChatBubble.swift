@@ -38,7 +38,8 @@ struct ChatBubble: View {
     let searchText: String
     
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    
+    @Environment(\.openChatMedia) private var openChatMedia
+
     @State private var isPlayingAudio = false
     @State private var audioPlayer: AVAudioPlayer?
     @State private var proximityRouter = ProximityAudioRouter()
@@ -684,6 +685,7 @@ struct ChatBubble: View {
                 .contentShape(Rectangle())
                 .onTapGesture {
                     guard !isDownloadingMedia else { return }
+                    if openChatMedia?(message.id) == true { return }
                     Task { await downloadAndPreviewMedia(remoteURL: remoteURL, fileName: "immagine.jpg") }
                 }
                 .mediaQuickLookSheet(url: $downloadedMediaURL, isPresented: $showMediaQuickLook, error: $mediaDownloadError)
@@ -732,6 +734,7 @@ struct ChatBubble: View {
                 .contentShape(Rectangle())
                 .onTapGesture {
                     guard !isDownloadingMedia else { return }
+                    if openChatMedia?(message.id) == true { return }
                     let ext = remoteURL.pathExtension.isEmpty ? "mp4" : remoteURL.pathExtension
                     Task { await downloadAndPreviewMedia(remoteURL: remoteURL, fileName: "video.\(ext)") }
                 }
@@ -1455,6 +1458,8 @@ struct ChatMediaGroupBubble: View {
 #endif
     }
     
+    @Environment(\.openChatMedia) private var openChatMedia
+
     // MARK: - Download / preview state
     @State private var downloadingIndex: Int? = nil
     @State private var previewURLs: [URL] = []
@@ -1572,6 +1577,7 @@ struct ChatMediaGroupBubble: View {
         .contentShape(Rectangle())
         .onTapGesture {
             guard downloadingIndex == nil else { return }
+            if openChatMedia?("\(message.id)_\(index)") == true { return }
             Task { await openMedia(at: index) }
         }
     }

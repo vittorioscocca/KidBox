@@ -57,6 +57,23 @@ Per misurare davvero: il debug dell'SDK è già attivo, `adb logcat` mostra
 `document_change`, `target_change` e gli existence filter (`filter { count: N }`
 = set invariato, non ritrasmetto). È una misura **per dispositivo**.
 
+4b. **Le ripetizioni sono copie con lo stesso id.** `occurrencesIn`
+   (`domain/calendar/EventRecurrence.kt`) restituisce copie dell'evento con le
+   date spostate: vanno bene per disegnare, **mai** per salvare o cancellare
+   (si scriverebbero le date di una ripetizione sulla serie). Da un tocco in
+   griglia si torna all'originale con `state.events.seriesOf(it)`.
+   `uiState.events` sono le serie, `uiState.displayEvents` le ripetizioni.
+
+4c. **`CalendarContract` (calendari del telefono, `DeviceCalendarRepository`).**
+   Gli eventi tutto-il-giorno sono salvati a mezzanotte **UTC**: letti così
+   come sono cadono all'una di notte in Italia e il giorno prima in America,
+   vanno riportati alla mezzanotte locale della stessa data. La fine è
+   **esclusa** (mezzanotte dopo): nelle mappe per giorno, che la includono,
+   va tolto un millisecondo. E i calendari locali di Xiaomi/MIUI hanno come
+   nome una **chiave** (`calendar_displayname_local`, `..._birthday`,
+   `account_name_local`) che solo l'app Calendario di sistema traduce:
+   mostrata così sembra un errore (`readableName`).
+
 ## Le trappole della UI
 
 5. **Dark mode: `contentColor`.** Material3 deriva il contentColor solo dai
@@ -156,6 +173,6 @@ Per misurare davvero: il debug dell'SDK è già attivo, `adb logcat` mostra
 - La stessa funzione esiste su iOS: confronta campi e testi, non a memoria.
 - Compila col JBR; l'utente committa e pubblica (`git -C KidBoxAndroid`).
 - Test unitari: `./gradlew :app:testDebugUnitTest` col JBR, conteggio dagli XML
-  in `app/build/test-results/testDebugUnitTest/` (23 al 24/09/2026).
+  in `app/build/test-results/testDebugUnitTest/` (30 al 26/09/2026, 7 sono `EventRecurrenceTest`).
 - Se hai toccato il manifest: reinstall, non aggiornamento.
 - Aggiorna `FEATURES.md` se la parità cambia.

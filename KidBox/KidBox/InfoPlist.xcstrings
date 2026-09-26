@@ -43,6 +43,35 @@
         }
       }
     },
+    "NSCalendarsFullAccessUsageDescription": {
+      "comment": "Privacy - Calendars Full Access Usage Description",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KidBox shows events from this device's calendars (Google, iCloud, Outlook) in its own calendar. They stay on the device: your family only sees the ones you copy to KidBox."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KidBox muestra en su calendario los eventos de los calendarios de este dispositivo (Google, iCloud, Outlook). Se quedan en el dispositivo: tu familia solo ve los que copias a KidBox."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KidBox affiche dans son calendrier les événements des calendriers de cet appareil (Google, iCloud, Outlook). Ils restent sur l'appareil : votre famille ne voit que ceux que vous copiez dans KidBox."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KidBox mostra nel suo calendario gli eventi dei calendari di questo dispositivo (Google, iCloud, Outlook). Restano sul dispositivo: la famiglia vede solo quelli che copi in KidBox."
+          }
+        }
+      }
+    },
     "NSCameraUsageDescription": {
       "comment": "Privacy - Camera Usage Description",
       "localizations": {

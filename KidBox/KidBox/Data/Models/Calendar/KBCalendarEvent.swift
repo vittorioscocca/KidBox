@@ -169,6 +169,10 @@ enum KBEventCategory: String, CaseIterable, Identifiable {
     
     var id: String { rawValue }
     
+    /// «Ogni giorno», non «Giornaliera»: la seconda veniva letta come «dura
+    /// tutta la giornata», e nove eventi (Pasqua, pranzi, un esame) si sono
+    /// ritrovati ripetuti ogni giorno quando le ricorrenze hanno iniziato a
+    /// vedersi (corretti il 26/09/2026).
     /// `String` (non `LocalizedStringKey`): interpolato in stringhe di contesto
     /// (es. `PlanningContextBuilder`), quindi passa da NSLocalizedString.
     var label: String {
@@ -218,11 +222,11 @@ enum KBEventRecurrence: String, CaseIterable, Identifiable {
     /// (es. `PlanningContextBuilder`), quindi passa da NSLocalizedString.
     var label: String {
         switch self {
-        case .none:    return NSLocalizedString("Nessuna", comment: "Event recurrence: none")
-        case .daily:   return NSLocalizedString("Giornaliera", comment: "Event recurrence: daily")
-        case .weekly:  return NSLocalizedString("Settimanale", comment: "Event recurrence: weekly")
-        case .monthly: return NSLocalizedString("Mensile", comment: "Event recurrence: monthly")
-        case .yearly:  return NSLocalizedString("Annuale", comment: "Event recurrence: yearly")
+        case .none:    return NSLocalizedString("Non si ripete", comment: "Event recurrence: none")
+        case .daily:   return NSLocalizedString("Ogni giorno", comment: "Event recurrence: daily")
+        case .weekly:  return NSLocalizedString("Ogni settimana", comment: "Event recurrence: weekly")
+        case .monthly: return NSLocalizedString("Ogni mese", comment: "Event recurrence: monthly")
+        case .yearly:  return NSLocalizedString("Ogni anno", comment: "Event recurrence: yearly")
         }
     }
 }
