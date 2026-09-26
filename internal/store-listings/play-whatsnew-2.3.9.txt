@@ -1,0 +1,24 @@
+<it-IT>
+• Calendario: gli eventi di Google e Outlook del telefono accanto a quelli di famiglia, visibili solo a te. Aggiungi l'account da «Collega un account».
+• Calendari iscritti: incolla il link di scuola, squadra o festività e lo vede tutta la famiglia.
+• Gli eventi ricorrenti compaiono in ogni ripetizione, con il promemoria per la prossima.
+• Chat: nuova fotocamera per foto e video, e visore a schermo intero con miniature, condividi ed elimina.
+</it-IT>
+<en-US>
+• Calendar: Google and Outlook events from your phone next to your family's, visible only to you. Add the account from "Connect an account".
+• Subscribed calendars: paste your school's, team's or holiday calendar link and the whole family sees it.
+• Repeating events show up on every occurrence, with the reminder for the next one.
+• Chat: new camera for photos and videos, and a full-screen viewer with thumbnails, share and delete.
+</en-US>
+<es-ES>
+• Calendario: los eventos de Google y Outlook del teléfono junto a los de la familia, visibles solo para ti. Añade la cuenta desde «Conectar una cuenta».
+• Calendarios suscritos: pega el enlace del colegio, del equipo o de los festivos y lo ve toda la familia.
+• Los eventos que se repiten aparecen en cada repetición, con el recordatorio para la próxima.
+• Chat: nueva cámara para fotos y vídeos, y visor a pantalla completa con miniaturas, compartir y eliminar.
+</es-ES>
+<fr-FR>
+• Calendrier : les événements Google et Outlook du téléphone à côté de ceux de la famille, visibles par vous seul. Ajoutez le compte depuis « Associer un compte ».
+• Calendriers abonnés : collez le lien de l'école, de l'équipe ou des jours fériés et toute la famille le voit.
+• Les événements récurrents apparaissent à chaque occurrence, avec le rappel pour la prochaine.
+• Chat : nouvel appareil photo pour photos et vidéos, et visionneuse plein écran avec miniatures, partager et supprimer.
+</fr-FR>

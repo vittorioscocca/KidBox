@@ -1,0 +1,39 @@
+# Novità iOS 2.3.5 — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 26/09/2026 sulle modifiche della 2.3.5: calendari del telefono (Google, iCloud, Outlook) in sola lettura con «Copia in KidBox» e «Collega un account», calendari iscritti da link per tutta la famiglia, eventi ricorrenti visibili in ogni ripetizione con il promemoria sulla prossima, etichette «Ogni giorno…»; in chat il tocco su un media apre il visore a schermo intero con le miniature, ed «Elimina per me» su un elemento di un gruppo non lo toglie più agli altri.
+
+## it
+
+• Calendario: accanto agli eventi di famiglia vedi quelli di Google Calendar, iCloud e Outlook già presenti sull'iPhone. Restano tuoi: la famiglia vede solo quelli che copi in KidBox.
+• «Collega un account» ti guida ad aggiungere Google o Outlook all'iPhone.
+• Calendari iscritti: incolla il link del calendario della scuola, della squadra o delle festività e lo vede tutta la famiglia, sempre aggiornato.
+• Gli eventi che si ripetono compaiono in ogni ripetizione, e il promemoria suona per la prossima, non solo per la prima. La ricorrenza ora si sceglie tra «Ogni giorno», «Ogni settimana», «Ogni mese» e «Ogni anno».
+• Chat: tocca una foto o un video per aprirlo a schermo intero e scorrere tutti i media della chat, con le miniature sotto.
+• Eliminare «per me» una foto di un gruppo non la toglie più agli altri membri.
+
+## en-GB
+
+• Calendar: next to your family's events you can see the ones from Google Calendar, iCloud and Outlook already on your iPhone. They stay yours: the family only sees the ones you copy to KidBox.
+• "Connect an account" guides you through adding Google or Outlook to your iPhone.
+• Subscribed calendars: paste the link to your school's, team's or holiday calendar and the whole family sees it, always up to date.
+• Repeating events show up on every occurrence, and the reminder goes off for the next one, not just the first. Repeat options are now "Every day", "Every week", "Every month" and "Every year".
+• Chat: tap a photo or video to open it full screen and swipe through all the chat's media, with thumbnails underneath.
+• Deleting a photo from a group "for me" no longer removes it for the other members.
+
+## es-ES
+
+• Calendario: junto a los eventos de la familia ves los de Google Calendar, iCloud y Outlook que ya tienes en el iPhone. Siguen siendo tuyos: la familia solo ve los que copias a KidBox.
+• «Conectar una cuenta» te guía para añadir Google u Outlook al iPhone.
+• Calendarios suscritos: pega el enlace del calendario del colegio, del equipo o de los festivos y lo ve toda la familia, siempre actualizado.
+• Los eventos que se repiten aparecen en cada repetición, y el recordatorio suena para la próxima, no solo para la primera. La repetición ahora se elige entre «Cada día», «Cada semana», «Cada mes» y «Cada año».
+• Chat: toca una foto o un vídeo para abrirlo a pantalla completa y recorrer todos los archivos del chat, con las miniaturas debajo.
+• Eliminar «para mí» una foto de un grupo ya no la quita a los demás miembros.
+
+## fr-FR
+
+• Calendrier : à côté des événements de la famille, vous voyez ceux de Google Agenda, iCloud et Outlook déjà présents sur l'iPhone. Ils restent à vous : la famille ne voit que ceux que vous copiez dans KidBox.
+• « Associer un compte » vous guide pour ajouter Google ou Outlook à l'iPhone.
+• Calendriers abonnés : collez le lien du calendrier de l'école, de l'équipe ou des jours fériés et toute la famille le voit, toujours à jour.
+• Les événements qui se répètent apparaissent à chaque occurrence, et le rappel sonne pour la prochaine, pas seulement pour la première. La récurrence se choisit maintenant entre « Tous les jours », « Toutes les semaines », « Tous les mois » et « Tous les ans ».
+• Chat : touchez une photo ou une vidéo pour l'ouvrir en plein écran et parcourir tous les médias du chat, avec les miniatures en dessous.
+• Supprimer « pour moi » une photo d'un groupe ne la retire plus aux autres membres.
