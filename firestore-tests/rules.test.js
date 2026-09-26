@@ -163,6 +163,33 @@ async function check(nome, promessa) {
   await check("attacco: ma da membro NON si arriva alla chiave di famiglia",
       assertFails(dbEstraneo.doc(`families/${FAM}/memberKeyBackups/${UID}`).get()));
 
+  // ── CALENDARI ISCRITTI (feed ICS) ──────────────────
+  //
+  // `families/{familyId}/calendarFeeds/{feedId}` lo scrive SOLO la function
+  // `saveCalendarFeed`: l'URL va validato (niente indirizzi interni) e gli
+  // eventi vengono dal download. Un client che scrivesse lui il documento
+  // potrebbe iniettare eventi finti nel calendario di tutta la famiglia o
+  // puntare il refresh del server verso un indirizzo qualunque.
+  console.log("\n── CALENDARI ISCRITTI (feed ICS) ──────────────────");
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc(`families/${FAM}/calendarFeeds/f1`)
+        .set({name: "Scuola", url: "https://example.com/a.ics", events: []});
+  });
+  await check("feed: il membro lo legge",
+      assertSucceeds(dbMembro.doc(`families/${FAM}/calendarFeeds/f1`).get()));
+  await check("feed: il membro li elenca (LIST)",
+      assertSucceeds(dbMembro.collection(`families/${FAM}/calendarFeeds`).get()));
+  await check("feed: il membro NON lo crea dal client",
+      assertFails(dbMembro.doc(`families/${FAM}/calendarFeeds/f2`)
+          .set({name: "X", url: "http://169.254.169.254/", events: []})));
+  await check("feed: il membro NON riscrive gli eventi",
+      assertFails(dbMembro.doc(`families/${FAM}/calendarFeeds/f1`).update({events: [{t: "finto"}]})));
+  await check("feed: nemmeno l'owner lo cancella dal client",
+      assertFails(db.doc(`families/${FAM}/calendarFeeds/f1`).delete()));
+  await check("feed: chi è fuori dalla famiglia NON lo legge",
+      assertFails(env.authenticatedContext("fuori").firestore()
+          .doc(`families/${FAM}/calendarFeeds/f1`).get()));
+
   console.log("\n── ESCROW: l'uso legittimo dei client ─────────────");
   await check("escrow: si legge il PROPRIO (recovery dopo reinstallazione)",
       assertSucceeds(dbMembro.doc(`families/${FAM}/memberKeyBackups/${MEMBRO}`).get()));

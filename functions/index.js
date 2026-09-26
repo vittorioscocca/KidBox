@@ -5176,6 +5176,7 @@ const FAMILY_SUBCOLLECTIONS = [
   "groceries",
   // ── Calendario ─────────────────────────────────────────────────
   "calendarEvents",
+  "calendarFeeds",
   // ── Spese ──────────────────────────────────────────────────────
   "expenses",
   // ── Salute ─────────────────────────────────────────────────────
@@ -7801,3 +7802,9 @@ exports.unlinkAlexa = alexa.unlinkAlexa;
 // Contatore del traffico della landing, indipendente dal consenso GA4. Il
 // perché in `landingTraffic.js`.
 exports.landingPing = require("./landingTraffic").landingPing;
+
+// Calendari iscritti (feed ICS da URL): vedi calendarFeeds.js.
+const calendarFeeds = require("./calendarFeeds");
+exports.saveCalendarFeed = calendarFeeds.saveCalendarFeed;
+exports.deleteCalendarFeed = calendarFeeds.deleteCalendarFeed;
+exports.refreshCalendarFeeds = calendarFeeds.refreshCalendarFeeds;

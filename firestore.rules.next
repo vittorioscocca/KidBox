@@ -456,10 +456,13 @@ service cloud.firestore {
         // rules in OR la renderebbero inutile.
         allow read: if isMemberOrOwner(familyId)
           && coll != 'memberKeyBackups';
+        // `calendarFeeds` lo scrive solo la function `saveCalendarFeed`: URL
+        // validato lato server ed eventi presi dal download, non dal client.
         allow write: if isMemberOrOwner(familyId)
           && coll != 'geofences'
           && coll != 'geofenceEvents'
-          && coll != 'memberKeyBackups';
+          && coll != 'memberKeyBackups'
+          && coll != 'calendarFeeds';
       }
     }
 
