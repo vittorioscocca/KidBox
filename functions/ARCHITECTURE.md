@@ -34,6 +34,7 @@ npm run lint      # eslint
 | `generateTravelPlan` | Itinerario di viaggio AI (Sonnet). |
 | `suggestTravelDestinations` / `searchTravelDestinations` | Suggerimento/ricerca destinazioni. |
 | `getTravelPlaceDetails` | Dettagli + foto via Google Places API. |
+| `saveCalendarFeed` / `deleteCalendarFeed` | Calendari iscritti da link (feed ICS): scarica subito il link (niente indirizzi interni, 5 MB, 15 s), espande le ripetizioni con `ical.js` e salva le occorrenze dentro `families/{fid}/calendarFeeds/{feedId}`; le rules lasciano la collezione solo in lettura ai membri. Codice in `calendarFeeds.js`. |
 | `getStorageUsage` | `{usedBytes, quotaBytes, breakdown}` (auth + membership). |
 | `initStorageUsage` / `initStorageUsageAdmin` | Ricalcola da zero `families/{fid}/stats/storage`. |
 | `deleteAccount` | Wipe completo account: membership, famiglie senza altri membri, FCM token, `users/{uid}`, blob Storage `users/{uid}/`, contatori AI, `Auth.deleteUser`. |
@@ -57,6 +58,7 @@ npm run lint      # eslint
 
 | Funzione | Cadenza | Scopo |
 |---|---|---|
+| `refreshCalendarFeeds` | ogni 6 ore | Rilegge tutti i feed ICS (`collectionGroup("calendarFeeds")`) con ETag/Last-Modified; un errore finisce in `lastError` senza svuotare gli eventi. |
 | `expireTemporaryLocations` | ogni 5 min | `collectionGroup("locations")`, scade `mode == "temporary"` con `expiresAt <= now`. |
 | `garbageCollectDeleted` | `0 3 */5 * *` (540 s, 512 MiB) | Hard-delete `isDeleted == true` in `documents`, `chatMessages`, `photos`, `walletTickets` + blob Storage. Una `collectionGroup` per collection, paginata a 450 doc, con deadline interna a 480 s: il lavoro non finito passa al giro dopo. |
 | `notifyUpcomingWalletTickets` | ogni 60 min | Promemoria wallet T-24h / T-2h (flag idempotenti). |

@@ -7808,3 +7808,4 @@ const calendarFeeds = require("./calendarFeeds");
 exports.saveCalendarFeed = calendarFeeds.saveCalendarFeed;
 exports.deleteCalendarFeed = calendarFeeds.deleteCalendarFeed;
 exports.refreshCalendarFeeds = calendarFeeds.refreshCalendarFeeds;
+exports.uploadCalendarFeedContent = calendarFeeds.uploadCalendarFeedContent;

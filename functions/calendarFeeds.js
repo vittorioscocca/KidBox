@@ -170,21 +170,18 @@ async function download(startUrl, cache = {}) {
     };
     if (cache.etag) headers["If-None-Match"] = cache.etag;
     if (cache.lastModified) headers["If-Modified-Since"] = cache.lastModified;
-    let res;
-    try {
-      res = await fetch(url, {
-        headers,
-        redirect: "manual",
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      });
-    } catch (e) {
-      throw new FeedError(ERR.UNREACHABLE, e.message);
-    }
+    const res = await fetchWithRetry(url, headers);
     if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
       url = normalizeUrl(new URL(res.headers.get("location"), url).toString());
       continue;
     }
     if (res.status === 304) return {notModified: true};
+    // 429 e 5xx sono «riprova più tardi», non «link sbagliato»: Google
+    // Calendar risponde 429 agli indirizzi dei data center (26/09/2026, dal
+    // primo feed provato), e dirlo come «link privato» mandava fuori strada.
+    if (res.status === 429 || res.status >= 500) {
+      throw new FeedError(ERR.UNREACHABLE, `HTTP ${res.status}`);
+    }
     if (!res.ok) throw new FeedError(ERR.HTTP_ERROR, `HTTP ${res.status}`);
     const declared = Number(res.headers.get("content-length") || 0);
     if (declared > MAX_BYTES) throw new FeedError(ERR.TOO_LARGE, `${declared} byte`);
@@ -210,6 +207,38 @@ async function download(startUrl, cache = {}) {
     };
   }
   throw new FeedError(ERR.UNREACHABLE, "troppi redirect");
+}
+
+/**
+ * Una richiesta, ripetuta fino a due volte su 429/5xx con attesa crescente
+ * (rispettando `Retry-After` se breve). Resta dentro il timeout della callable.
+ * @param {URL} url destinazione
+ * @param {object} headers intestazioni
+ * @return {Promise<Response>} ultima risposta
+ */
+async function fetchWithRetry(url, headers) {
+  let res;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      res = await fetch(url, {
+        headers,
+        redirect: "manual",
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
+    } catch (e) {
+      if (attempt === 2) throw new FeedError(ERR.UNREACHABLE, e.message);
+      await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+      continue;
+    }
+    if (res.status !== 429 && res.status < 500) return res;
+    if (attempt === 2) return res;
+    const retryAfter = Number(res.headers.get("retry-after"));
+    const wait = Number.isFinite(retryAfter) && retryAfter > 0 && retryAfter <= 8 ?
+      retryAfter * 1000 : 2000 * (attempt + 1);
+    res.body?.cancel().catch(() => {});
+    await new Promise((r) => setTimeout(r, wait));
+  }
+  return res;
 }
 
 // ── Parsing ──────────────────────────────────────────────────────────────────
@@ -471,7 +500,7 @@ exports.saveCalendarFeed = onCall(
     async (request) => {
       const uid = request.auth?.uid;
       if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
-      const {familyId, feedId, name, url, colorHex} = request.data || {};
+      const {familyId, feedId, name, url, colorHex, icsText} = request.data || {};
       if (!familyId || typeof familyId !== "string") {
         throw new HttpsError("invalid-argument", "familyId richiesto.");
       }
@@ -504,11 +533,19 @@ exports.saveCalendarFeed = onCall(
         throw new HttpsError("resource-exhausted", "Troppi calendari.", {reason: ERR.TOO_MANY});
       }
 
-      let res;
+      let res = {};
       let parsed;
       try {
-        res = await download(normalized);
-        parsed = parseIcs(res.text);
+        if (typeof icsText === "string" && icsText.length) {
+          // Scaricato dal telefono: Google Calendar risponde 429 agli
+          // indirizzi d'uscita delle Cloud Functions (26/09/2026), non ai
+          // telefoni. Il client ci ha già provato qui, e ripiega così.
+          if (Buffer.byteLength(icsText) > MAX_BYTES) throw new FeedError(ERR.TOO_LARGE, "testo dal client");
+          parsed = parseIcs(icsText);
+        } else {
+          res = await download(normalized);
+          parsed = parseIcs(res.text);
+        }
       } catch (e) {
         const reason = e instanceof FeedError ? e.code : ERR.UNREACHABLE;
         logger.info("saveCalendarFeed: feed rifiutato", {familyId, reason, err: e.message});
@@ -533,6 +570,49 @@ exports.saveCalendarFeed = onCall(
       });
       logger.info("saveCalendarFeed: iscritto", {familyId, feedId: ref.id, events: parsed.events.length});
       return {feedId: ref.id, eventCount: parsed.events.length};
+    },
+);
+
+/**
+ * Aggiorna un feed col contenuto scaricato da un telefono della famiglia.
+ * È il ripiego per i siti che respingono il server (Google Calendar, 429):
+ * all'apertura del calendario le app rinfrescano da sé i feed rimasti
+ * indietro. data: {familyId, feedId, icsText}
+ */
+exports.uploadCalendarFeedContent = onCall(
+    {region: REGION, maxInstances: 10, invoker: "public", timeoutSeconds: 60, memory: "512MiB"},
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+      const {familyId, feedId, icsText} = request.data || {};
+      if (!familyId || !feedId || typeof familyId !== "string" || typeof feedId !== "string" ||
+          typeof icsText !== "string" || !icsText.length) {
+        throw new HttpsError("invalid-argument", "familyId, feedId e icsText richiesti.");
+      }
+      await assertMember(familyId, uid);
+      if (Buffer.byteLength(icsText) > MAX_BYTES) {
+        throw new HttpsError("failed-precondition", "Calendario troppo grande.", {reason: ERR.TOO_LARGE});
+      }
+      const ref = admin.firestore().collection("families").doc(familyId)
+          .collection("calendarFeeds").doc(feedId);
+      const snap = await ref.get();
+      if (!snap.exists) throw new HttpsError("not-found", "Calendario non trovato.");
+      let parsed;
+      try {
+        parsed = parseIcs(icsText);
+      } catch (e) {
+        const reason = e instanceof FeedError ? e.code : ERR.NOT_ICS;
+        throw new HttpsError("failed-precondition", "Calendario non leggibile.", {reason});
+      }
+      await ref.update({
+        events: parsed.events,
+        eventCount: parsed.events.length,
+        truncated: parsed.truncated,
+        lastFetchAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastError: null,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return {feedId, eventCount: parsed.events.length};
     },
 );
 
