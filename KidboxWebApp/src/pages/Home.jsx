@@ -9,7 +9,7 @@ import { loadFamilyKey } from "../services/familyKey";
 import { readField } from "../services/noteCrypto";
 import { noteHtmlToText } from "../services/noteHtml";
 import { categoryFromId, formatAmount } from "../expenseCategories";
-import { categoryInfo } from "../calendarUtils";
+import { categoryInfo, expandEvents } from "../calendarUtils";
 import { isVisibleTo } from "../visibility";
 import { listenSharedLocations } from "../services/location";
 import {
@@ -105,12 +105,17 @@ export default function Home() {
 
   // Eventi e to-do «Solo io» o «Membri selezionati» di altri restano fuori
   // anche dai widget della home, come su iOS (HomeSummaryGrid).
+  // Le ricorrenze contano: un evento settimanale iniziato mesi fa è comunque
+  // in agenda. Un anno di orizzonte basta a trovare i prossimi quattro.
   const upcoming = useMemo(() => {
-    const now = Date.now();
-    return events
-      .filter((e) => isVisibleTo(e, user?.uid))
-      .filter((e) => (e.endDate?.toMillis?.() ?? e.startDate?.toMillis?.() ?? 0) >= now)
-      .sort((a, b) => (a.startDate?.toMillis?.() ?? 0) - (b.startDate?.toMillis?.() ?? 0))
+    const now = new Date();
+    const horizon = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+    return expandEvents(
+      events.filter((e) => !e.isDeleted && isVisibleTo(e, user?.uid)),
+      now,
+      horizon
+    )
+      .filter((e) => (e.endDate?.toMillis?.() ?? e.startDate?.toMillis?.() ?? 0) >= now.getTime())
       .slice(0, 4);
   }, [events, user?.uid]);
 
@@ -289,7 +294,7 @@ export default function Home() {
             {upcoming.map((e) => {
               const cat = categoryInfo(e.categoryRaw);
               return (
-                <li key={e.id}>
+                <li key={`${e.id}-${e.startDate?.toMillis?.()}`}>
                   <span className="w-dot" style={{ background: cat.color }} />
                   <span className="w-main">{e.title}</span>
                   <span className="w-meta">{fmtDay(e.startDate?.toDate?.())}</span>

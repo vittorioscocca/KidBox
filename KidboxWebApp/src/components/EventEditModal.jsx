@@ -4,7 +4,7 @@ import { db } from "../firebase";
 import { useAuth } from "../AuthContext";
 import { useFamilyMembers } from "../hooks/useFamilyMembers";
 import { useTranslation } from "../i18n/LocaleContext";
-import { CATEGORIES, toLocalInputValue } from "../calendarUtils";
+import { CATEGORIES, RECURRENCES, isRecurring, toLocalInputValue } from "../calendarUtils";
 import { VISIBILITY_MEMBERS, normalizedVisibilityScope } from "../visibility";
 import Modal from "./Modal";
 import VisibilityPickerModal, { visibilityChipLabel } from "./VisibilityPickerModal";
@@ -50,6 +50,10 @@ export default function EventEditModal({
   const [startAt, setStartAt] = useState(toLocalInputValue(initial.start));
   const [endAt, setEndAt] = useState(toLocalInputValue(initial.end));
   const [location, setLocation] = useState(event?.location ?? "");
+  // La ricorrenza prima si conservava e basta: dal web non si poteva scegliere.
+  const [recurrence, setRecurrence] = useState(
+    RECURRENCES.includes(event?.recurrenceRaw) ? event.recurrenceRaw : "none"
+  );
   const [notes, setNotes] = useState(event?.notes ?? "");
   // `reminderMinutes` esisteva già ma non armava niente: da oggi lo leggono
   // iOS e Android, che al momento giusto avvisano davvero.
@@ -79,7 +83,7 @@ export default function EventEditModal({
       title: trimmed,
       isAllDay,
       categoryRaw: category,
-      recurrenceRaw: event?.recurrenceRaw ?? "none",
+      recurrenceRaw: recurrence,
       isDeleted: false,
       startDate: Timestamp.fromDate(startDate),
       endDate: Timestamp.fromDate(endDate >= startDate ? endDate : startDate),
@@ -209,6 +213,19 @@ export default function EventEditModal({
         </div>
       </div>
 
+      <div className="modal-section">
+        <div className="modal-row">
+          <span>{t.calendar.recurrence}</span>
+          <select value={recurrence} onChange={(e) => setRecurrence(e.target.value)}>
+            {RECURRENCES.map((r) => (
+              <option key={r} value={r}>
+                {t.calendar.recurrences[r]}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className="modal-label">{t.calendar.reminderLabel}</div>
       <div className="modal-section">
         <div className="modal-row clickable" onClick={() => setHasReminder((v) => !v)}>
@@ -241,6 +258,11 @@ export default function EventEditModal({
         <button
           className="modal-delete-btn"
           onClick={() => {
+            // Non ci sono eccezioni per singola data: su una serie si
+            // cancellano tutte le ripetizioni, e va detto prima.
+            if (isRecurring(event?.recurrenceRaw) && !window.confirm(t.calendar.deleteSeriesConfirm)) {
+              return;
+            }
             onDelete();
             onClose();
           }}

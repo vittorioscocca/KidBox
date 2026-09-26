@@ -26,6 +26,8 @@ import {
   dayTitle,
   daysWithEvents,
   eventOccursOnDay,
+  expandEvents,
+  occurrenceWindow,
   firstWeekday,
   isEventVisibleTo,
   isSameDay,
@@ -462,7 +464,22 @@ export default function Calendario() {
   }, [currentFamilyId, user?.uid]);
 
   const weekStart = firstWeekday(locale);
-  const marked = useMemo(() => daysWithEvents(events), [events]);
+  // Le serie si espandono nelle ripetizioni attorno alle date guardate: una
+  // serie senza fine non si può espandere tutta. Si disegnano le copie, si
+  // modifica la serie (`_series`).
+  const displayEvents = useMemo(() => {
+    const [from, to] = occurrenceWindow(anchor, selectedDate);
+    return expandEvents(events, from, to);
+  }, [events, anchor, selectedDate]);
+  const anchorYear = anchor.getFullYear();
+  const marked = useMemo(
+    () =>
+      daysWithEvents(
+        expandEvents(events, new Date(anchorYear, 0, 1), new Date(anchorYear + 1, 0, 1))
+      ),
+    [events, anchorYear]
+  );
+  const openEvent = (e) => setEditingEvent(e?._series ?? e);
 
   const shift = (delta) => {
     setAnchor((prev) => {
@@ -561,9 +578,9 @@ export default function Calendario() {
       {view === "day" && (
         <TimeGridView
           days={[anchor]}
-          events={events}
+          events={displayEvents}
           remindersOn={remindersOn}
-          onSelectEvent={setEditingEvent}
+          onSelectEvent={openEvent}
           onSelectReminder={setEditingReminder}
           onCreateAt={openCreate}
           allDayLabel={t.calendar.allDayShort}
@@ -575,9 +592,9 @@ export default function Calendario() {
       {view === "week" && (
         <TimeGridView
           days={weekDays(anchor, weekStart)}
-          events={events}
+          events={displayEvents}
           remindersOn={remindersOn}
-          onSelectEvent={setEditingEvent}
+          onSelectEvent={openEvent}
           onSelectReminder={setEditingReminder}
           onCreateAt={openCreate}
           allDayLabel={t.calendar.allDayShort}
@@ -589,11 +606,11 @@ export default function Calendario() {
       {view === "month" && (
         <MonthView
           anchor={anchor}
-          events={events}
+          events={displayEvents}
           remindersOn={remindersOn}
           selectedDate={selectedDate}
           onSelectDay={setSelectedDate}
-          onSelectEvent={setEditingEvent}
+          onSelectEvent={openEvent}
           onSelectReminder={setEditingReminder}
           onCreateAt={(d) => {
             setSelectedDate(d);

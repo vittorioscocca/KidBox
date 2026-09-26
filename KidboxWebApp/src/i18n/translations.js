@@ -1152,6 +1152,15 @@ export const translations = {
 
     },
     calendar: {
+      recurrence: "Ricorrenza",
+      recurrences: {
+        none: "Nessuna",
+        daily: "Giornaliera",
+        weekly: "Settimanale",
+        monthly: "Mensile",
+        yearly: "Annuale",
+      },
+      deleteSeriesConfirm: "È un evento ricorrente: si eliminano tutte le date della serie, passate e future. Continuare?",
       kindEvent: "Evento",
       kindReminder: "Promemoria",
       newReminder: "Nuovo promemoria",
@@ -2663,6 +2672,15 @@ export const translations = {
 
     },
     calendar: {
+      recurrence: "Recurrence",
+      recurrences: {
+        none: "None",
+        daily: "Daily",
+        weekly: "Weekly",
+        monthly: "Monthly",
+        yearly: "Yearly",
+      },
+      deleteSeriesConfirm: "This is a recurring event: all dates in the series are deleted, past and future. Continue?",
       kindEvent: "Event",
       kindReminder: "Reminder",
       newReminder: "New reminder",
@@ -4119,6 +4137,15 @@ export const translations = {
       },
     },
     calendar: {
+      recurrence: "Récurrence",
+      recurrences: {
+        none: "Aucune",
+        daily: "Quotidienne",
+        weekly: "Hebdomadaire",
+        monthly: "Mensuelle",
+        yearly: "Annuelle",
+      },
+      deleteSeriesConfirm: "C'est un événement récurrent : toutes les dates de la série sont supprimées, passées et à venir. Continuer ?",
       kindEvent: "Événement",
       kindReminder: "Rappel",
       newReminder: "Nouveau rappel",
@@ -5574,6 +5601,15 @@ export const translations = {
       },
     },
     calendar: {
+      recurrence: "Recurrencia",
+      recurrences: {
+        none: "Ninguna",
+        daily: "Diaria",
+        weekly: "Semanal",
+        monthly: "Mensual",
+        yearly: "Anual",
+      },
+      deleteSeriesConfirm: "Es un evento recurrente: se eliminan todas las fechas de la serie, pasadas y futuras. ¿Continuar?",
       kindEvent: "Evento",
       kindReminder: "Recordatorio",
       newReminder: "Nuevo recordatorio",

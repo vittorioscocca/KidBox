@@ -1,6 +1,8 @@
 // Porting delle funzioni di CalendarView.swift (iOS) / CalendarScreen.kt (Android).
 // I nomi rispecchiano gli originali per rendere evidente la corrispondenza.
 
+import { Timestamp } from "firebase/firestore";
+
 /** Categorie e colori sono gli stessi di KBEventCategory (KBCalendarEvent.swift). */
 export const CATEGORIES = [
   { value: "children", icon: "👶", color: "#F1C40F" },
@@ -67,9 +69,9 @@ export function weekdayInitials(locale, weekStart) {
 }
 
 /**
- * Un evento occupa un giorno se il suo intervallo lo interseca. Come su iOS, le
- * ricorrenze NON vengono espanse qui: `recurrenceRaw` esiste sul modello ma la
- * vista mese dei client nativi mostra solo l'intervallo start→end.
+ * Un evento occupa un giorno se il suo intervallo lo interseca. Le ricorrenze
+ * non si guardano qui: chi disegna passa già le occorrenze espanse da
+ * `expandEvents`, ognuna con le sue date.
  */
 export function eventOccursOnDay(event, day) {
   const start = event.startDate?.toDate?.();
@@ -247,3 +249,142 @@ export {
 } from "./visibility";
 /** `KBCalendarEvent.isVisible(to:)`. */
 export { isVisibleTo as isEventVisibleTo } from "./visibility";
+
+/* ── Ricorrenze ─────────────────────────────────────────────────────────
+ * Gemelle di `KBEventOccurrence.swift` (iOS) ed `EventRecurrence.kt`
+ * (Android). `recurrenceRaw` si scriveva da sempre ma nessun client lo
+ * espandeva: un evento «settimanale» compariva solo il primo giorno.
+ *
+ * - ogni occorrenza si calcola dall'inizio originale (inizio + n × passo),
+ *   mai dalla precedente, così il 31 non scivola al 30 e poi al 28 per sempre;
+ * - l'orario è quello «da orologio» (l'ora legale non lo sposta);
+ * - un mensile del 31 cade l'ultimo giorno dei mesi più corti, un annuale del
+ *   29 febbraio il 28 negli anni non bisestili.
+ * La serie non ha fine né eccezioni: si modifica e si cancella tutta insieme.
+ */
+
+export const RECURRENCES = ["none", "daily", "weekly", "monthly", "yearly"];
+
+const RECURRENCE_STEPS = {
+  daily: ["day", 1],
+  weekly: ["day", 7],
+  monthly: ["month", 1],
+  yearly: ["month", 12],
+};
+
+/** Tetto di sicurezza: un giornaliero su due anni sono ~730 occorrenze. */
+const MAX_OCCURRENCES = 2000;
+
+export function isRecurring(raw) {
+  return Boolean(RECURRENCE_STEPS[raw]);
+}
+
+/** `start` spostato di `n` passi, a orologio fermo e con il giorno limitato alla fine del mese. */
+function addSteps(start, unit, n) {
+  if (unit === "day") {
+    return new Date(
+      start.getFullYear(), start.getMonth(), start.getDate() + n,
+      start.getHours(), start.getMinutes(), start.getSeconds(), start.getMilliseconds()
+    );
+  }
+  const monthIndex = start.getMonth() + n;
+  const lastDay = new Date(start.getFullYear(), monthIndex + 1, 0).getDate();
+  return new Date(
+    start.getFullYear(), monthIndex, Math.min(start.getDate(), lastDay),
+    start.getHours(), start.getMinutes(), start.getSeconds(), start.getMilliseconds()
+  );
+}
+
+/** Quanti passi interi separano `start` da `to` (per difetto, mai negativo). */
+function stepsBetween(start, to, unit, amount) {
+  if (to <= start) return 0;
+  if (unit === "day") {
+    const days = Math.floor(
+      (Date.UTC(to.getFullYear(), to.getMonth(), to.getDate()) -
+        Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) / 86400000
+    );
+    return Math.floor(days / amount);
+  }
+  const months = (to.getFullYear() - start.getFullYear()) * 12 + (to.getMonth() - start.getMonth());
+  return Math.floor(months / amount);
+}
+
+/**
+ * Gli inizi (in ms) delle occorrenze che toccano `[windowStart, windowEnd]`.
+ * Un evento singolo ne ha al massimo uno.
+ */
+export function occurrenceStarts(startMs, durationMs, raw, windowStartMs, windowEndMs) {
+  const duration = Math.max(durationMs, 0);
+  const step = RECURRENCE_STEPS[raw];
+  if (!step) {
+    return startMs <= windowEndMs && startMs + duration >= windowStartMs ? [startMs] : [];
+  }
+  if (startMs > windowEndMs) return [];
+  const [unit, amount] = step;
+  const start = new Date(startMs);
+  // Salta direttamente vicino alla finestra invece di contare da un evento
+  // magari di tre anni fa, con un passo di margine per le occorrenze lunghe.
+  const skipped = Math.max(
+    stepsBetween(start, new Date(windowStartMs - duration), unit, amount) - 1,
+    0
+  );
+  const result = [];
+  for (let n = skipped; n < skipped + MAX_OCCURRENCES; n += 1) {
+    const occ = addSteps(start, unit, n * amount).getTime();
+    if (occ > windowEndMs) break;
+    if (occ + duration >= windowStartMs) result.push(occ);
+  }
+  return result;
+}
+
+/**
+ * Gli eventi espansi nelle ripetizioni dentro la finestra. Ogni occorrenza è
+ * una copia con le date spostate, lo stesso `id` e il riferimento alla serie
+ * in `_series`: per modificare o cancellare si usa quello, mai la copia.
+ */
+export function expandEvents(events, windowStart, windowEnd) {
+  const from = windowStart.getTime();
+  const to = windowEnd.getTime();
+  const out = [];
+  events.forEach((event) => {
+    const startMs = event.startDate?.toMillis?.();
+    if (startMs == null) return;
+    const endMs = event.endDate?.toMillis?.() ?? startMs;
+    const duration = Math.max(endMs - startMs, 0);
+    occurrenceStarts(startMs, duration, event.recurrenceRaw, from, to).forEach((s) => {
+      out.push(
+        s === startMs
+          ? { ...event, _series: event }
+          : {
+              ...event,
+              startDate: Timestamp.fromMillis(s),
+              endDate: Timestamp.fromMillis(s + duration),
+              _series: event,
+            }
+      );
+    });
+  });
+  return out.sort((a, b) => a.startDate.toMillis() - b.startDate.toMillis());
+}
+
+/**
+ * La finestra in cui il calendario espande le ricorrenze: l'anno delle date
+ * guardate, allargato di qualche mese. Stessa finestra di iOS e Android.
+ */
+export function occurrenceWindow(...dates) {
+  let start = null;
+  let end = null;
+  dates.forEach((d) => {
+    const s = new Date(Math.min(
+      new Date(d.getFullYear(), 0, 1).getTime(),
+      new Date(d.getFullYear(), d.getMonth() - 3, d.getDate()).getTime()
+    ));
+    const e = new Date(Math.max(
+      new Date(d.getFullYear() + 1, 0, 1).getTime(),
+      new Date(d.getFullYear(), d.getMonth() + 4, d.getDate()).getTime()
+    ));
+    if (!start || s < start) start = s;
+    if (!end || e > end) end = e;
+  });
+  return [start, end];
+}
