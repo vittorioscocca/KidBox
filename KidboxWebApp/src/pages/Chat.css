@@ -823,6 +823,7 @@
   font-size: 0.95rem;
   line-height: 1.35;
   resize: none;
+  overflow-y: auto;
 }
 
 .chat-input:focus {

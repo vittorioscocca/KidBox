@@ -11,7 +11,7 @@
  * `reactionsJSON`, letture in `readBy` via arrayUnion, «sta scrivendo» nella
  * sottocollezione `typing`.
  */
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { useAuth } from "../AuthContext";
 import { useFamily } from "../FamilyContext";
@@ -244,6 +244,15 @@ export default function Chat() {
   const attachRef = useRef(null);
   const headerMenuRef = useRef(null);
   const emojiRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // La barra cresce con le righe del testo fino al max-height del CSS, poi scorre.
+  useLayoutEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input, recorder]);
   const docInput = useRef(null);
   const vcardInput = useRef(null);
   const typingTimer = useRef(null);
@@ -1189,6 +1198,7 @@ export default function Chat() {
         {!recorder && (
         <div className="chat-field">
           <textarea
+            ref={inputRef}
             className="chat-input"
             rows={1}
             placeholder={c.placeholder}
