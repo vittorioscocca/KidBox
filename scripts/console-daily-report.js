@@ -55,6 +55,22 @@ function shiftDay(iso, n) {
   return d.toISOString().slice(0, 10);
 }
 // Mezzanotte di Rome di un giorno YYYY-MM-DD, come istante ISO (UTC).
+/** Millisecondi da un valore Firestore REST (timestamp, intero o double). */
+function tsMillis(v) {
+  if (!v) return null;
+  if (v.timestampValue) return Date.parse(v.timestampValue);
+  if (v.integerValue) return Number(v.integerValue);
+  if (v.doubleValue) return Number(v.doubleValue);
+  return null;
+}
+
+/** Lunedì della settimana di una data ISO (YYYY-MM-DD). */
+function mondayOf(iso) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
+}
+
 function romeMidnight(iso) {
   const probe = new Date(`${iso}T00:00:00Z`);
   const offsetMin = (new Date(probe.toLocaleString("en-US", { timeZone: TZ })) - probe) / 60000;
@@ -183,7 +199,7 @@ async function main() {
   const memberRows = await call(tok, `${FS}:runQuery`, {
     structuredQuery: {
       from: [{ collectionId: "members", allDescendants: true }],
-      select: { fields: [{ fieldPath: "__name__" }] },
+      select: { fields: [{ fieldPath: "joinedAt" }, { fieldPath: "createdAt" }] },
     },
   });
   // Per famiglia: quanti membri e se c'è dentro un account di test dello
@@ -198,9 +214,11 @@ async function main() {
     const fid = name.split("/families/")[1]?.split("/")[0];
     if (!fid) continue;
     const memberId = name.split("/").pop();
-    const f = (perFamily[fid] = perFamily[fid] || { n: 0, internal: false });
+    const f = (perFamily[fid] = perFamily[fid] || { n: 0, internal: false, joins: [] });
     f.n += 1;
     if (internalUids.has(memberId)) f.internal = true;
+    const t = tsMillis(r.document.fields?.joinedAt) || tsMillis(r.document.fields?.createdAt);
+    if (t) f.joins.push(t);
   }
   const sizes = Object.values(perFamily).map((f) => f.n);
   const external = Object.values(perFamily).filter((f) => !f.internal);
@@ -217,6 +235,41 @@ async function main() {
     with3plusExternal: external.filter((f) => f.n >= 3).length,
     paying: { pro: famPro, max: famMax, overridePro: ovPro, overrideMax: ovMax },
   };
+
+  // 2-bis. Coorti settimanali: delle famiglie nate in una settimana, quante
+  // hanno trovato un secondo membro, e dopo quanti giorni. È la misura che
+  // separa l'effetto dei cambiamenti all'invito e all'onboarding dal rumore
+  // quotidiano e dalla spesa pubblicitaria (che cambia quante famiglie nascono,
+  // non quante ne crescono). Settimane dal lunedì, ultime 6; famiglie di prova
+  // e famiglie senza membri fuori. Il 27/09/2026: settimana del 14/09 1 su 29
+  // (3%), settimana del 21/09 4 su 36 (11%) dopo wizard a 2 pagine, invito a 7
+  // giorni e recupero dell'invito dopo l'installazione.
+  const cohortFrom = shiftDay(mondayOf(yesterday), -35);
+  const famCreated = await call(tok, `${FS}:runQuery`, {
+    structuredQuery: {
+      from: [{ collectionId: "families" }],
+      where: { fieldFilter: { field: { fieldPath: "createdAt" }, op: "GREATER_THAN_OR_EQUAL", value: { timestampValue: new Date(romeMidnight(cohortFrom)).toISOString() } } },
+      select: { fields: [{ fieldPath: "createdAt" }] },
+    },
+  });
+  const cohorts = {};
+  for (const r of famCreated) {
+    const d = r.document;
+    if (!d) continue;
+    const fid = d.name.split("/").pop();
+    const created = tsMillis(d.fields?.createdAt);
+    const fam = perFamily[fid];
+    if (!created || !fam || fam.internal) continue;
+    const week = mondayOf(new Date(created).toLocaleDateString("sv-SE", { timeZone: TZ }));
+    const c = (cohorts[week] = cohorts[week] || { week, families: 0, grown: 0, daysToSecond: [] });
+    c.families += 1;
+    if (fam.n >= 2) {
+      c.grown += 1;
+      const second = [...fam.joins].sort((a, b) => a - b)[1];
+      if (second) c.daysToSecond.push(Math.max(0, (second - created) / 86400000));
+    }
+  }
+  out.cohorts = Object.values(cohorts).sort((a, b) => a.week.localeCompare(b.week));
 
   // 3. Rollup metrics (14 giorni): il rollup delle 03:15 chiude il giorno prima.
   const days = [];
@@ -371,6 +424,17 @@ function print(o) {
   L.push(`Totali ${f.total} · create ieri ${f.createdYesterday} · create 7gg ${f.created7d} · membri totali ${f.membersTotal}`);
   L.push(`Funnel struttura: con ≥1 membro ${f.withMembers} → con 2+ membri ${f.with2plus} (${pct(f.with2plus / (f.withMembers || 1))}) → con 3+ ${f.with3plus}`);
   L.push(`Senza le famiglie di prova (con dentro un account dello sviluppatore): 2+ membri ${f.with2plusExternal}, 3+ ${f.with3plusExternal}. È QUESTO il numero da seguire: ogni prova di invito crea una famiglia a 2 membri che non è un utente vero.`);
+  if (o.cohorts?.length) {
+    L.push("");
+    L.push("## Coorti settimanali: famiglie nate → con un secondo membro (senza le famiglie di prova)");
+    L.push(pad("settimana dal", 15) + pad("nate", 7) + pad("con 2+", 9) + pad("%", 7) + "giorni fino al 2° membro (mediana)");
+    for (const c of o.cohorts) {
+      const ds = [...c.daysToSecond].sort((a, b) => a - b);
+      const med = ds.length ? ds[Math.floor(ds.length / 2)].toFixed(1) : "—";
+      L.push(pad(c.week, 15) + pad(c.families, 7) + pad(c.grown, 9) + pad(pct(c.families ? c.grown / c.families : null), 7) + med);
+    }
+    L.push("L'ultima settimana è incompleta e le coorti recenti maturano ancora: confronta ogni settimana con le precedenti ALLA STESSA ETÀ, non con il valore finale.");
+  }
   L.push(`A pagamento: pro ${f.paying.pro} · max ${f.paying.max} · override console pro/max ${f.paying.overridePro}/${f.paying.overrideMax}`);
   L.push("");
 

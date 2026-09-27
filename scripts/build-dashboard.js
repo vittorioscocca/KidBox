@@ -475,6 +475,12 @@ footer { font-size: 12.5px; color: var(--ink-3); display: grid; gap: 4px; }
   <section>
     <div class="section-head"><h2>Funnel a 28 giorni, per utenti unici</h2><span class="hint">${G ? `${itDate(G.funnelUsers.d28.start)} → ${itDate(G.funnelUsers.d28.end)} · GA4` : "GA4 non disponibile"}${C ? ` · pagina /join negli ultimi 7 gg: ${fmt(joinShown7)} viste → ${fmt(joinStore7)} tap store` : ""}</span></div>
     <div class="card">${funnelChart(funnelSteps)}</div>
+    <div class="card"><h3>Famiglie che trovano un secondo membro <small>coorti per settimana di nascita · senza le famiglie di prova</small></h3>
+      ${C?.cohorts?.length ? `<div class="tablewrap"><table><tr><th>settimana dal</th><th class="n">nate</th><th class="n">con 2+ membri</th><th></th><th class="n">giorni fino al 2°</th></tr>
+      ${C.cohorts.map((c) => { const r = c.families ? c.grown / c.families : 0; const ds = [...c.daysToSecond].sort((a, b) => a - b); const med = ds.length ? fmt(ds[Math.floor(ds.length / 2)], 1) : "—"; return `<tr><td>${itDate(c.week)}</td><td class="n">${fmt(c.families)}</td><td class="n">${fmt(c.grown)} <span class="muted">${pct(r)}</span></td><td><div class="fbar" style="height:8px;min-width:90px"><div class="ffill" style="width:${Math.min(100, Math.round(r * 400))}%"></div></div></td><td class="n muted">${med}</td></tr>`; }).join("")}
+      </table></div>
+      <p class="muted">È la stella polare vista per coorte: separa l'effetto dell'invito e dell'onboarding dal rumore del giorno e dal budget pubblicitario. L'ultima settimana è incompleta e le coorti recenti maturano ancora: confronta alla stessa età, non con il valore finale. La barra è in scala 0-25%.</p>` : `<p class="muted">${C ? "coorti non disponibili" : esc(results.console.error || "")}</p>`}
+    </div>
     <div class="card"><h3>Landing: chi arriva e cosa fa <small>contatore nostro senza cookie, ultimi 7 gg · dal 16/09/2026</small></h3>
       ${C ? (lt7.views ? `<div class="tablewrap"><table><tr><th>sorgente</th><th class="n">aperture</th><th class="n">restati 10 s</th><th class="n">tap store</th><th class="n">store ÷ aperture</th></tr>
       ${Object.entries(lt7.src).filter(([, v]) => v.views || v.store).sort((a, b) => b[1].views - a[1].views).map(([k, v]) => `<tr><td>${esc(LT_SRC_LABEL[k] || k)}</td><td class="n">${fmt(v.views)}</td><td class="n">${fmt(v.engaged)} <span class="muted">${v.views ? pct(v.engaged / v.views) : ""}</span></td><td class="n">${fmt(v.store)}</td><td class="n">${v.views ? pct(v.store / v.views) : "—"}</td></tr>`).join("")}

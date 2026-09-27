@@ -112,6 +112,8 @@ Formato, in italiano, compatto:
 
 La **fidelizzazione a 7 giorni** nessuno script la legge (non è nella Reporting API): prendila dall'ultimo export manuale in `internal/play-export/` se c'è, altrimenti scrivi «n/d, da Play Console» e non inventare un sostituto.
 
+**Coorti settimanali** (sezione dello script console, card nel cruscotto): delle famiglie nate in una settimana, quante hanno trovato un secondo membro e dopo quanti giorni. È il modo di sapere se la stella polare cresce per merito dell'invito e dell'onboarding e non per la spesa pubblicitaria (che cambia quante famiglie nascono, non quante ne crescono). Riportala sempre come tabella corta, e confronta la settimana in corso con le precedenti **alla stessa età**: una coorte di tre giorni non si confronta con una di cinque settimane. Riferimenti al 27/09/2026 (coorti mature): settimana del 17/08 3%, del 24/08 9%, del 14/09 3%; la settimana del 21/09 era all'11% dopo pochi giorni. Nei giorni fino al 2° membro, 0 vuol dire «entrati insieme» (QR o link aperto subito): se la mediana resta a 0, l'invito a distanza non sta ancora funzionando.
+
 **Sintesi in 3 righe** — come sta andando: utenti attivi ieri e l'altro ieri per piattaforma (iOS / Android / web) contro la media 7gg; nuovi utenti; una frase sul trend a 14 giorni.
 
 **Funnel acquisizione (ieri, e altro ieri tra parentesi)**
