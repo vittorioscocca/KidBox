@@ -169,6 +169,29 @@ Per misurare davvero: il debug dell'SDK è già attivo, `adb logcat` mostra
     Stato vuoto esplicito («—»), riga visibile anche in Free, e dichiarazione
     per-tipo in Play Console e nella privacy. Vale per ogni nuovo tipo di dato.
 
+## Servizi in primo piano (trovata il 27/09/2026)
+
+11. **`startForeground` da background uccide l'app, e l'eccezione nasce
+    dentro il servizio.** Da Android 12 un servizio in primo piano non può
+    partire mentre l'app è in background (`ForegroundServiceStartNotAllowedException`);
+    da Android 14 un servizio di tipo `location` vuole anche il permesso
+    posizione utilizzabile *in quel momento* (`SecurityException`, tipico con
+    «solo mentre usi l'app» e l'app chiusa). I percorsi da background sono
+    tre e sembrano innocui: il **riavvio del sistema** con
+    `START_REDELIVER_INTENT`/`START_STICKY`, un **worker di WorkManager**, un
+    **`BOOT_COMPLETED`** (che per il tipo `location` NON è esente, qualunque
+    cosa dicano i commenti). Un `runCatching` attorno a
+    `startForegroundService()` non basta: la chiamata riesce e l'eccezione
+    arriva dopo, in `onStartCommand`. Regola: permesso controllato **prima**,
+    `startForeground` dentro un try che cattura `SecurityException` e
+    `IllegalStateException` (superclasse dell'altra, che esiste solo da API
+    31), servizio fermato senza toccare lo stato persistito, e ripresa in
+    `onResume` dell'Activity. Riferimento: `LocationSharingService`, 19 crash
+    su 30 a settembre 2026, corretto in 2.4.0.
+    Per leggere gli stack: `GET …/v1beta1/apps/{app}/errorIssues:search` ed
+    `errorReports:search` della Play Developer Reporting API (GET, con
+    `interval.startTime.*` come query); `errorCountMetricSet` conta soltanto.
+
 ## Prima di dire «fatto»
 
 - La stessa funzione esiste su iOS: confronta campi e testi, non a memoria.
