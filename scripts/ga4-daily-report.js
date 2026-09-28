@@ -62,6 +62,9 @@ const KEY_EVENTS = [
   "ai_message_sent",
   "ai_paywall_shown",
   "paywall_shown",
+  "purchase_started",
+  "purchase_cancelled",
+  "purchase_failed",
   "subscription_started",
   "review_prompt_requested",
   // landing
@@ -84,6 +87,8 @@ const BREAKDOWNS = [
   ["family_join_failed", "reason"],
   ["feature_first_use", "feature"],
   ["paywall_shown", "trigger_feature"],
+  ["purchase_started", "trigger_feature"],
+  ["purchase_failed", "reason"],
   ["ai_message_sent", "agent_type"],
   ["landing_chat_question", "source"],
   ["onboarding_step_shown", "step_name"],
