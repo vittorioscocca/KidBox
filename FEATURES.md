@@ -69,7 +69,8 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 | Account | Accesso Apple, Google, Facebook o email+password; email non verificata rifiutata ovunque; «Password dimenticata» e, dal profilo, «Cambia password» solo per gli account email (iOS e Android) | F |
 | Inviti | Link di invito + QR affiancato; la chiave di famiglia viaggia avvolta nell'invito | F |
 | Onboarding | Wizard di creazione famiglia; checklist «Per iniziare» in Home | F |
-| Abbonamento | Free / Pro / Max, per famiglia; acquisto da App Store o Play, ricevute validate lato server | — |
+| Abbonamento | Free / Pro / Max, per famiglia, mensile o annuale (`….yearly`, stesso gruppo su App Store); acquisto da App Store o Play, ricevute validate lato server | — |
+| Prova Pro | Ogni famiglia nuova parte in Pro per 14 giorni senza carta, una volta per persona (`trials/{uid}`, solo server); AI con tetto suo (50 in tutto, `period: "trial"`); job orario di scadenza con push; interruttore `config/trial.enabled` | `functions/proTrial.js` |
 
 ### Organizzazione
 | Funzione | Cosa fa | Piano |
@@ -92,7 +93,7 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 | Cartella clinica | Documento riepilogativo da mostrare al medico | F |
 | Apple Health / Health Connect | Passi, battito, pressione, SpO₂, calorie attive, allenamenti, distanza | F |
 | Piano Alimentare | Menù settimanale AI da età, peso, obiettivi, referti, allergie | € |
-| Piano Fitness | Allenamenti AI, calendario, promemoria, sedute chiuse da Health, storico e report settimanale | € |
+| Piano Fitness | Allenamenti AI, calendario, promemoria, sedute chiuse da Health, storico e report settimanale; a fine mese consuntivo e «mese successivo» generato sui risultati (storico in `previousCycles`; il web lo conserva ma non genera ancora la continuazione) | € |
 | Analisi mensile | Pattern sulla storia sanitaria dei figli, ad app chiusa | € |
 
 ### Casa, veicoli, animali

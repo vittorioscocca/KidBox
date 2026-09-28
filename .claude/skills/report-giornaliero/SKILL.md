@@ -125,6 +125,10 @@ pre_signup_screen_shown → login_attempted → signup_completed → onboarding_
 
 **Uso (GA4)**: content_created e content_shared_read (per utente attivo), ai_message_sent, paywall_shown / subscription_started.
 
+**Funnel d'acquisto (dal 28/09/2026, client da pubblicare)**: paywall_shown → purchase_started → subscription_started, con le uscite purchase_cancelled e purchase_failed (`reason`). Tutti portano `trigger_feature`; `plan` vale `pro`/`max` o `pro_yearly`/`max_yearly`. `not_owner` = ha toccato «Abbonati» un membro che non ha creato la famiglia: se pesa, il blocco al proprietario costa vendite. Con meno di 20 paywall nella finestra niente percentuali, solo conteggi.
+
+**Prova Pro (dal 28/09/2026)**: la riga «Prova Pro» della console dice in corso / concesse / finite / convertite. La conversione si legge SOLO sulle prove finite (una prova in corso non ha ancora avuto l'occasione di convertire) e, sotto le 20 prove finite, come conteggio e non come percentuale. Le famiglie in prova hanno `plan: "pro"` ma NON sono paganti: il report le toglie già da «A pagamento». Se `config/trial.enabled` è spento, «concesse ieri» deve essere 0: se non lo è, qualcosa concede prove a interruttore spento ed è un'anomalia.
+
 **Web**: le 5 pagine più viste, le sorgenti principali, gli store_click della landing.
 
 **Chat della landing** (regola 23): aperture, risposte per fonte, costo 7 gg; le domande più frequenti e le candidate a FAQ.
