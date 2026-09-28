@@ -19,6 +19,10 @@ struct FitnessPlanSetupView: View {
         case onboarding
         /// Revisione delle scelte su un piano esistente: modulo unico + ricalcolo.
         case settings
+        /// Mese successivo a un piano concluso: lo stesso modulo, già compilato
+        /// con le scelte del mese finito, e nessun ricalcolo «distruttivo» da
+        /// confermare — il piano vecchio è finito, non si perde niente.
+        case continuation
     }
 
     let mode: Mode
@@ -80,7 +84,11 @@ struct FitnessPlanSetupView: View {
                         goalSection
                         scheduleSection
                         detailsSection
-                        recalcSection
+                        if mode == .continuation {
+                            continuationSection
+                        } else {
+                            recalcSection
+                        }
                         if let plan {
                             if !plan.safetyNotes.isEmpty {
                                 safetyNotesSection(plan)
@@ -93,7 +101,7 @@ struct FitnessPlanSetupView: View {
                 .padding(.vertical, 12)
             }
             .background(KBTheme.background(colorScheme).ignoresSafeArea())
-            .navigationTitle(mode == .onboarding ? "Configura il piano" : "Impostazioni piano")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -425,6 +433,47 @@ struct FitnessPlanSetupView: View {
             Label("L'AI legge referti, patologie e terapie già presenti in Salute per evitare esercizi controindicati.", systemImage: "cross.case")
                 .font(.caption)
                 .foregroundStyle(KBTheme.secondaryText(colorScheme))
+        }
+        .fitnessCard()
+    }
+
+    private var navigationTitle: LocalizedStringKey {
+        switch mode {
+        case .onboarding:   return "Configura il piano"
+        case .settings:     return "Impostazioni piano"
+        case .continuation: return "Mese successivo"
+        }
+    }
+
+    private var continuationSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(
+                String(
+                    format: NSLocalizedString(
+                        "Generare il piano costa circa %d messaggi AI",
+                        comment: "Fitness plan AI cost"
+                    ),
+                    estimatedUnits
+                ),
+                systemImage: "sparkles"
+            )
+            .font(.subheadline.bold())
+            .foregroundStyle(KBTheme.primaryText(colorScheme))
+
+            Text("Controlla obiettivo e giorni: il nuovo mese parte da oggi e tiene conto di com'è andato quello concluso.")
+                .font(.caption)
+                .foregroundStyle(KBTheme.secondaryText(colorScheme))
+
+            Button {
+                confirm()
+            } label: {
+                Text("Genera il mese successivo")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 4)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(tint)
+            .disabled(!input.isComplete)
         }
         .fitnessCard()
     }

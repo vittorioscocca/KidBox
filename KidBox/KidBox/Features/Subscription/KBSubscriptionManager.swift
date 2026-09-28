@@ -8,9 +8,9 @@
 //  - Gestisce l'acquisto via StoreKit 2
 //  - Aggiorna il piano su Firestore dopo l'acquisto (via Cloud Function)
 //
-//  Product IDs (configurare in App Store Connect):
-//    it.vittorioscocca.kidbox.pro.monthly
-//    it.vittorioscocca.kidbox.max.monthly
+//  Product IDs (configurare in App Store Connect, stesso gruppo di abbonamento):
+//    it.vittorioscocca.kidbox.pro.monthly   it.vittorioscocca.kidbox.pro.yearly
+//    it.vittorioscocca.kidbox.max.monthly   it.vittorioscocca.kidbox.max.yearly
 //
 //  Il piano è per famiglia: un solo acquisto copre tutti i membri.
 //  Storage e messaggi AI sono entrambi di famiglia, condivisi tra tutti i membri.
@@ -31,6 +31,8 @@ import Combine
 enum AIQuotaPeriod: String {
     case daily
     case lifetime
+    /// Prova Pro: un totale per tutta la durata della prova, non si resetta.
+    case trial
 }
 
 // MARK: - Plan
@@ -102,6 +104,21 @@ enum KBPlan: String, CaseIterable {
     
     /// Product ID App Store Connect
     var productId: String? { spec.productId }
+
+    /// Product ID dell'abbonamento annuale. Ricavato dal mensile invece che dal
+    /// catalogo: `config/plans` su Firestore può non avere ancora il campo, e i
+    /// due id devono restare accoppiati comunque (vedi functions/purchases.js).
+    var productIdYearly: String? {
+        productId?.replacingOccurrences(of: ".monthly", with: ".yearly")
+    }
+
+    /// Tutti i product id del piano, mensile e annuale.
+    var allProductIds: [String] { [productId, productIdYearly].compactMap { $0 } }
+
+    /// Piano di un product id dello store, mensile o annuale.
+    static func plan(forProductId productId: String) -> KBPlan? {
+        allCases.first { $0.allProductIds.contains(productId) }
+    }
     
     /// `String` (non `LocalizedStringKey`): confrontato con `.isEmpty`, quindi passa da NSLocalizedString.
     var badge: String {
@@ -155,6 +172,22 @@ final class KBSubscriptionManager: ObservableObject {
     /// true = abbonamento attivo ma cancellato (non si rinnoverà)
     var isCancelledButActive: Bool {
         currentPlan != .free && !subscriptionWillRenew && subscriptionExpirationDate != nil
+    }
+
+    /// Fine della prova Pro, se la famiglia è in prova adesso (nil altrimenti).
+    /// Il piano della prova lo concede il server (functions/proTrial.js)
+    /// scrivendo `planSource: "trial"` e `planExpiresAt` sulla famiglia.
+    @Published private(set) var trialEndsAt: Date? = nil
+
+    /// true = la famiglia ha avuto la prova Pro ed è finita senza abbonamento.
+    @Published private(set) var trialEnded: Bool = false
+
+    /// Giorni interi rimasti di prova (1 nell'ultimo giorno), nil se non in prova.
+    var trialDaysLeft: Int? {
+        guard let end = trialEndsAt else { return nil }
+        let seconds = end.timeIntervalSinceNow
+        guard seconds > 0 else { return nil }
+        return max(1, Int((seconds / 86_400).rounded(.up)))
     }
 
     /// Impostato da AppCoordinator al momento del login / cambio famiglia.
@@ -230,10 +263,17 @@ final class KBSubscriptionManager: ObservableObject {
     private func syncPlanFromFirestore(uid: String, familyId: String) async {
         do {
             var plan = "free"
+            var trialEnd: Date? = nil
+            var hadTrial = false
             
             if !familyId.isEmpty {
                 let familySnap = try await db.collection("families").document(familyId).getDocument()
                 let data = familySnap.data()
+                let source = data?["planSource"] as? String
+                if source == "trial", let end = (data?["planExpiresAt"] as? Timestamp)?.dateValue() {
+                    trialEnd = end
+                }
+                hadTrial = source == "trial_ended"
                 let overrideRaw = (data?["planOverride"] as? String)?
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                     .lowercased() ?? ""
@@ -246,12 +286,22 @@ final class KBSubscriptionManager: ObservableObject {
                 }
             }
             
+            // Prova scaduta ma non ancora riportata al Free dal job orario del
+            // server: per le quote il server la considera già finita, e così la UI.
+            if let end = trialEnd, end <= Date() {
+                plan = "free"
+                trialEnd = nil
+                hadTrial = true
+            }
+            
             if plan == "free" {
                 let userSnap = try await db.collection("users").document(uid).getDocument()
                 plan = userSnap.data()?["plan"] as? String ?? "free"
             }
             
             currentPlan = KBPlan(rawValue: plan) ?? .free
+            trialEndsAt = currentPlan == .free ? nil : trialEnd
+            trialEnded = currentPlan == .free && hadTrial
             KBLog.app.kbInfo("SubscriptionManager: plan loaded plan=\(currentPlan.rawValue) familyId=\(familyId)")
         } catch {
             KBLog.app.kbError("SubscriptionManager: loadPlan failed \(error.localizedDescription)")
@@ -322,7 +372,7 @@ final class KBSubscriptionManager: ObservableObject {
     // MARK: - Load StoreKit products
     
     func loadProducts() async {
-        let ids = KBPlan.allCases.compactMap(\.productId)
+        let ids = KBPlan.allCases.flatMap(\.allProductIds)
         guard !ids.isEmpty else { return }
         
         do {
@@ -336,36 +386,52 @@ final class KBSubscriptionManager: ObservableObject {
     
     // MARK: - Purchase
     
-    func purchase(_ plan: KBPlan) async {
-        guard let productId = plan.productId else { return }
+    /// - Parameter triggerFeature: la schermata che ha aperto il paywall, per
+    ///   legare ogni passo del funnel d'acquisto alla sua origine.
+    /// - Parameter yearly: abbonamento annuale invece del mensile.
+    func purchase(_ plan: KBPlan, yearly: Bool = false, triggerFeature: String = "unknown") async {
+        guard let productId = yearly ? plan.productIdYearly : plan.productId else { return }
+        // Nel funnel l'annuale si distingue dal mensile: "pro" / "pro_yearly".
+        let planLabel = yearly ? "\(plan.rawValue)_yearly" : plan.rawValue
+        AppAnalytics.purchaseStarted(plan: planLabel, triggerFeature: triggerFeature)
         guard let product   = products.first(where: { $0.id == productId }) else {
             purchaseError = "Prodotto non disponibile. Riprova tra qualche istante."
+            AppAnalytics.purchaseFailed(plan: planLabel, triggerFeature: triggerFeature, reason: "product_unavailable")
             return
         }
-        
+
         isPurchasing  = true
         purchaseError = nil
         defer { isPurchasing = false }
-        
+        // Distingue nel catch la firma Apple non valida da un errore dello store.
+        var failureReason = "error"
+
         do {
             let result = try await product.purchase()
             switch result {
             case .success(let verification):
+                failureReason = "verification"
                 let transaction = try checkVerified(verification)
-                AppAnalytics.subscriptionStarted(plan: plan.rawValue, trial: transaction.offerType == .introductory)
+                AppAnalytics.subscriptionStarted(
+                    plan: planLabel,
+                    trial: transaction.offerType == .introductory,
+                    triggerFeature: triggerFeature
+                )
                 // Alla Cloud Function serve la ricevuta FIRMATA, non l'id transazione:
                 // è la firma di Apple a rendere la prova d'acquisto non falsificabile.
                 await syncPlanWithServer(jwsRepresentation: verification.jwsRepresentation)
                 await transaction.finish()
             case .userCancelled:
-                break
+                AppAnalytics.purchaseCancelled(plan: planLabel, triggerFeature: triggerFeature)
             case .pending:
                 purchaseError = "Acquisto in attesa di approvazione."
+                AppAnalytics.purchaseFailed(plan: planLabel, triggerFeature: triggerFeature, reason: "pending")
             @unknown default:
                 break
             }
         } catch {
             purchaseError = "Acquisto non completato: \(error.localizedDescription)"
+            AppAnalytics.purchaseFailed(plan: planLabel, triggerFeature: triggerFeature, reason: failureReason)
             KBLog.app.kbError("SubscriptionManager: purchase failed \(error.localizedDescription)")
         }
     }
@@ -394,8 +460,22 @@ final class KBSubscriptionManager: ObservableObject {
     
     // MARK: - Product for plan
     
-    func storeProduct(for plan: KBPlan) -> Product? {
-        guard let pid = plan.productId else { return nil }
+    /// Risparmio dell'annuale sul mensile ×12, in percentuale intera, dai prezzi
+    /// dello store. Nil se uno dei due prodotti non è caricato.
+    func yearlySavingPercent(for plan: KBPlan = .pro) -> Int? {
+        guard let m = storeProduct(for: plan)?.price,
+              let y = storeProduct(for: plan, yearly: true)?.price,
+              m > 0 else { return nil }
+        let full = NSDecimalNumber(decimal: m * 12).doubleValue
+        let pct = Int(((1 - NSDecimalNumber(decimal: y).doubleValue / full) * 100).rounded())
+        return pct > 0 ? pct : nil
+    }
+
+    /// true se lo store offre gli annuali (prodotti configurati e caricati).
+    var hasYearlyProducts: Bool { storeProduct(for: .pro, yearly: true) != nil }
+
+    func storeProduct(for plan: KBPlan, yearly: Bool = false) -> Product? {
+        guard let pid = yearly ? plan.productIdYearly : plan.productId else { return nil }
         return products.first(where: { $0.id == pid })
     }
     
@@ -575,10 +655,9 @@ final class KBSubscriptionManager: ObservableObject {
             if let revoked = tx.revocationDate, revoked <= Date() { continue }
             if let expiry  = tx.expirationDate,  expiry  <= Date() { continue }
             
-            let planRaw = tx.productID
-                .replacingOccurrences(of: "it.vittorioscocca.kidbox.", with: "")
-                .replacingOccurrences(of: ".monthly", with: "")
-            guard let plan = KBPlan(rawValue: planRaw) else { continue }
+            // Mensile o annuale: il piano si ricava dall'elenco dei product id,
+            // non togliendo il suffisso (".yearly" non veniva riconosciuto).
+            guard let plan = KBPlan.plan(forProductId: tx.productID) else { continue }
             guard activePlan == nil || plan.storageQuota > (activePlan?.storageQuota ?? 0) else { continue }
             
             activePlan          = plan
@@ -609,30 +688,31 @@ final class KBSubscriptionManager: ObservableObject {
         // interroga il server StoreKit fresco e restituisce la transazione
         // più recente per quel product ID, indipendentemente dalla cache locale.
         for plan in KBPlan.allCases {
-            guard let productId = plan.productId else { continue }
-            if let current = activePlan, current.storageQuota >= plan.storageQuota { continue }
+            for productId in plan.allProductIds {
+                if let current = activePlan, current.storageQuota >= plan.storageQuota { continue }
             
-            guard let result = await Transaction.latest(for: productId),
-                  case .verified(let tx) = result else { continue }
-            if let revoked = tx.revocationDate, revoked <= Date() { continue }
-            if let expiry  = tx.expirationDate,  expiry  <= Date() { continue }
+                guard let result = await Transaction.latest(for: productId),
+                      case .verified(let tx) = result else { continue }
+                if let revoked = tx.revocationDate, revoked <= Date() { continue }
+                if let expiry  = tx.expirationDate,  expiry  <= Date() { continue }
             
-            KBLog.app.kbInfo("SubscriptionManager: fallback latest tx found product=\(productId) plan=\(plan.rawValue)")
-            activePlan          = plan
-            activeJWS           = result.jwsRepresentation
-            expiryDate          = tx.expirationDate
+                KBLog.app.kbInfo("SubscriptionManager: fallback latest tx found product=\(productId) plan=\(plan.rawValue)")
+                activePlan          = plan
+                activeJWS           = result.jwsRepresentation
+                expiryDate          = tx.expirationDate
             
-            let groupID = tx.subscriptionGroupID ?? tx.productID
-            if let statuses = try? await Product.SubscriptionInfo.status(for: groupID),
-               let matched  = statuses.first(where: {
-                   if case .verified(let info) = $0.renewalInfo,
-                      info.currentProductID == tx.productID { return true }
-                   return false
-               }) ?? statuses.first,
-               case .verified(let info) = matched.renewalInfo {
-                willRenew = info.willAutoRenew
-            } else {
-                willRenew = true
+                let groupID = tx.subscriptionGroupID ?? tx.productID
+                if let statuses = try? await Product.SubscriptionInfo.status(for: groupID),
+                   let matched  = statuses.first(where: {
+                       if case .verified(let info) = $0.renewalInfo,
+                          info.currentProductID == tx.productID { return true }
+                       return false
+                   }) ?? statuses.first,
+                   case .verified(let info) = matched.renewalInfo {
+                    willRenew = info.willAutoRenew
+                } else {
+                    willRenew = true
+                }
             }
         }
         

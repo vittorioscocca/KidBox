@@ -25,6 +25,18 @@ struct StorageUsageView: View {
     @State private var showUpgradeSheet           = false
     @State private var showManageSubscriptions  = false
     @State private var showOfferCodeRedemption  = false
+
+    /// Origine nel funnel d'acquisto: la stessa schermata si apre da
+    /// Impostazioni («storage_settings») e dal Profilo («profile_storage»).
+    var triggerFeature: String = "storage_settings"
+
+    /// Annuale di default quando lo store lo offre, come nel paywall.
+    @State private var yearly = true
+    private var showYearly: Bool { yearly && subscriptionManager.hasYearlyProducts }
+    /// Etichetta del piano negli eventi: "pro" / "pro_yearly".
+    private func analyticsLabel(_ plan: KBPlan) -> String {
+        showYearly ? "\(plan.rawValue)_yearly" : plan.rawValue
+    }
     
     private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
     
@@ -94,6 +106,18 @@ struct StorageUsageView: View {
             
             // ── Piani disponibili ───────────────────────────────────────────
             Section("Piani disponibili") {
+                if subscriptionManager.hasYearlyProducts {
+                    Picker("Periodo", selection: $yearly) {
+                        Text("Mensile").tag(false)
+                        if let pct = subscriptionManager.yearlySavingPercent() {
+                            Text(String(format: NSLocalizedString("Annuale · −%d%%", comment: "Yearly billing option with saving percentage"), pct)).tag(true)
+                        } else {
+                            Text("Annuale").tag(true)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowBackground(Color.clear)
+                }
                 // Carosello: le card di listino sono alte (fino a nove voci su
                 // Pro) e affiancate si confrontano a colpo d'occhio, invece di
                 // allungare la pagina per tre schermate.
@@ -199,6 +223,9 @@ struct StorageUsageView: View {
         .onAppear {
             guard !familyId.isEmpty else { return }
             vm.load(modelContext: modelContext, familyId: familyId)
+            // Il carosello dei piani È un paywall: senza questo evento chi
+            // arrivava qui non entrava nel funnel d'acquisto.
+            AppAnalytics.paywallShown(triggerFeature: triggerFeature, planShown: "carousel")
             Task {
                 await subscriptionManager.loadPlan()
                 await subscriptionManager.loadProducts()
@@ -367,9 +394,11 @@ struct StorageUsageView: View {
     @ViewBuilder
     private func planCard(plan: KBPlan) -> some View {
         let isCurrent = subscriptionManager.currentPlan == plan
-        let product   = subscriptionManager.storeProduct(for: plan)
+        // In prova il Pro è «attuale» ma nessuno lo paga: si può abbonarsi.
+        let isTrial   = isCurrent && subscriptionManager.trialEndsAt != nil
+        let product   = subscriptionManager.storeProduct(for: plan, yearly: showYearly)
         /// Stesso criterio dell'"Abbonati" in Piani: Pro/Max quando non è già il piano attuale e l'utente è proprietario.
-        let canPurchase = !isCurrent && plan != .free
+        let canPurchase = (!isCurrent || isTrial) && plan != .free
         let color = planColor(plan)
 
         VStack(alignment: .leading, spacing: 12) {
@@ -377,7 +406,7 @@ struct StorageUsageView: View {
                 Text(plan.displayName)
                     .font(.title3.bold())
                 if isCurrent {
-                    Text("Piano attuale")
+                    Text(isTrial ? LocalizedStringKey("In prova") : LocalizedStringKey("Piano attuale"))
                         .font(.caption.bold())
                         .foregroundStyle(.white)
                         .padding(.horizontal, 9).padding(.vertical, 3)
@@ -393,7 +422,9 @@ struct StorageUsageView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(product.map {
-                    String(format: NSLocalizedString("%@/mese", comment: "Monthly price suffix (%@ = StoreKit localized price)"), $0.displayPrice)
+                    showYearly
+                        ? String(format: NSLocalizedString("%@/anno", comment: "Yearly price suffix (%@ = StoreKit localized price)"), $0.displayPrice)
+                        : String(format: NSLocalizedString("%@/mese", comment: "Monthly price suffix (%@ = StoreKit localized price)"), $0.displayPrice)
                 } ?? plan.monthlyPrice)
                     .font(.title3.bold())
                     .foregroundStyle(plan == .free ? .secondary : color)
@@ -425,8 +456,12 @@ struct StorageUsageView: View {
 
             if canPurchase {
                 Button {
-                    guard subscriptionManager.isFamilyOwner else { showOwnerOnly = true; return }
-                    Task { await subscriptionManager.purchase(plan) }
+                    guard subscriptionManager.isFamilyOwner else {
+                        AppAnalytics.purchaseFailed(plan: analyticsLabel(plan), triggerFeature: triggerFeature, reason: "not_owner")
+                        showOwnerOnly = true
+                        return
+                    }
+                    Task { await subscriptionManager.purchase(plan, yearly: showYearly, triggerFeature: triggerFeature) }
                 } label: {
                     Group {
                         if subscriptionManager.isPurchasing {
@@ -529,8 +564,12 @@ struct StorageUsageView: View {
                 Spacer()
                 
                 Button("Upgrade") {
-                    guard subscriptionManager.isFamilyOwner else { showOwnerOnly = true; return }
-                    Task { await subscriptionManager.purchase(.pro) }
+                    guard subscriptionManager.isFamilyOwner else {
+                        AppAnalytics.purchaseFailed(plan: analyticsLabel(.pro), triggerFeature: triggerFeature, reason: "not_owner")
+                        showOwnerOnly = true
+                        return
+                    }
+                    Task { await subscriptionManager.purchase(.pro, yearly: showYearly, triggerFeature: triggerFeature) }
                 }
                     .font(.caption.bold())
                     .foregroundStyle(.white)

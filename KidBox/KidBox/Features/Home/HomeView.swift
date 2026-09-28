@@ -58,6 +58,9 @@ struct HomeView: View {
     
     // MARK: - AI button / FAB (Catalyst) / family switcher
     @State private var showAIUpgrade = false
+    /// Paywall aperto dal banner della prova Pro (trigger distinto nel funnel).
+    @State private var showTrialPaywall = false
+    @ObservedObject private var subscriptionManager = KBSubscriptionManager.shared
     /// I pulsanti di abbonamento restano visibili a tutti: chi non ha creato
     /// la famiglia riceve la spiegazione al tocco, non un pulsante mancante.
     @State private var showOwnerOnly = false
@@ -429,6 +432,14 @@ struct HomeView: View {
                         }
                     }
 
+                    // Prova Pro: senza questo banner la famiglia si ritrova tutto
+                    // sbloccato senza saperlo, e a fine prova perde cose senza
+                    // capire perché. Solo al proprietario, che è chi può abbonarsi.
+                    if hasFamily, subscriptionManager.isFamilyOwner,
+                       let days = subscriptionManager.trialDaysLeft {
+                        ProTrialBanner(daysLeft: days) { showTrialPaywall = true }
+                    }
+
                     // Sopra le sezioni, non in fondo: il senso della checklist è
                     // farsi vedere da chi apre la Home e non sa da dove partire.
                     if onboarding.isVisible {
@@ -507,6 +518,10 @@ struct HomeView: View {
         .ownerOnlyAlert(isPresented: $showOwnerOnly)
         .sheet(isPresented: $showAIUpgrade) {
             UpgradeSheetView(triggerFeature: "home_upsell")
+                .environmentObject(KBSubscriptionManager.shared)
+        }
+        .sheet(isPresented: $showTrialPaywall) {
+            UpgradeSheetView(triggerFeature: "trial_banner")
                 .environmentObject(KBSubscriptionManager.shared)
         }
         .toolbar {

@@ -415,6 +415,12 @@ final class NotificationManager: NSObject, ObservableObject {
             pendingDeepLink = .passwordSecurity(familyId: familyId)
             KBLog.auth.kbInfo("DeepLink set for passwordSecurity familyId=\(familyId)")
 
+        } else if type == "pro_trial" {
+            // Promemoria e fine della prova Pro (functions/proTrial.js): si apre
+            // la sezione Abbonamento, come per la scadenza di un abbonamento.
+            pendingDeepLink = .subscriptionExpiring(familyId: userInfo["familyId"] as? String)
+            KBLog.auth.kbInfo("DeepLink set for pro_trial stage=\(userInfo["stage"] as? String ?? "?")")
+
         } else if type == "broadcast" {
             // `title` / `body` arrivano dal payload `data`, non da `aps.alert`:
             // il server li duplica lì apposta, perché la copia in `aps` iOS la

@@ -61,6 +61,32 @@ enum FitnessWeeklyReportBuilder {
             .max()
     }
 
+    /// Consuntivo dell'intero piano: le settimane sommate, più quello che solo
+    /// il mese intero mostra (andamento per settimana, attività fuori programma).
+    static func recap(plan: FitnessPlanDocument) -> FitnessPlanRecap {
+        let weekly = plan.weeks
+            .map(\.index)
+            .sorted()
+            .compactMap { report(for: $0, plan: plan) }
+        let lastWeek = weekly.last?.weekIndex ?? FitnessPlanPromptBuilder.planWeeks
+
+        return FitnessPlanRecap(
+            startDate: Calendar.current.startOfDay(for: plan.startDate),
+            endDate: plan.lastDay,
+            goal: plan.input.goal,
+            plannedSessions: weekly.reduce(0) { $0 + $1.plannedSessions },
+            completedSessions: weekly.reduce(0) { $0 + $1.completedSessions },
+            skippedSessions: weekly.reduce(0) { $0 + $1.skippedSessions },
+            substitutedSessions: weekly.reduce(0) { $0 + $1.substitutedSessions },
+            totalMinutes: weekly.reduce(0) { $0 + $1.totalMinutes },
+            totalKcal: weekly.reduce(0) { $0 + $1.totalKcal },
+            totalDistanceMeters: weekly.reduce(0) { $0 + $1.totalDistanceMeters },
+            weeklyCompletionPercents: weekly.map(\.completionPercent),
+            chronicallySkippedWeekdays: chronicallySkippedWeekdays(plan: plan, upTo: lastWeek),
+            extraWorkouts: plan.logged.count
+        )
+    }
+
     /// Giorni della settimana saltati almeno due volte: sono il segnale che
     /// l'AI usa per proporre di spostare quella seduta.
     private static func chronicallySkippedWeekdays(

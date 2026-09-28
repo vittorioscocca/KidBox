@@ -55,6 +55,8 @@ enum FitnessPlanParser {
             )
         }
 
+        weeks = oneSessionPerDay(weeks)
+
         guard !weeks.isEmpty else {
             KBLog.ai.kbError("FitnessPlanParser: JSON senza settimane utilizzabili")
             throw FitnessPlanAIError.invalidPlanFormat
@@ -70,6 +72,36 @@ enum FitnessPlanParser {
             generatedAt: Date(),
             messageUnitsConsumed: messageUnitsConsumed
         )
+    }
+
+    /// Una seduta per giorno, anche quando l'AI ne mette due sullo stesso
+    /// `dayOffset` (è successo nel settembre 2026: lunedì e mercoledì doppi
+    /// nella settimana 4, mai chiesti). Il doppione non si vede sul calendario
+    /// ma pesa nel report: resta la seduta più lunga, che è quella principale.
+    static func oneSessionPerDay(_ weeks: [FitnessWeek]) -> [FitnessWeek] {
+        let cal = Calendar.current
+        var keptByDay: [Date: String] = [:]
+        for session in weeks.flatMap(\.sessions) {
+            let day = cal.startOfDay(for: session.date)
+            if let keptId = keptByDay[day],
+               let kept = weeks.lazy.flatMap(\.sessions).first(where: { $0.id == keptId }),
+               kept.durationMinutes >= session.durationMinutes {
+                continue
+            }
+            keptByDay[day] = session.id
+        }
+        let keep = Set(keptByDay.values)
+        let dropped = weeks.reduce(0) { $0 + $1.sessions.count } - keep.count
+        if dropped > 0 {
+            KBLog.ai.kbError("FitnessPlanParser: scartate \(dropped) sedute doppie sullo stesso giorno")
+        }
+        return weeks
+            .map { week in
+                var week = week
+                week.sessions = week.sessions.filter { keep.contains($0.id) }
+                return week
+            }
+            .filter { !$0.sessions.isEmpty }
     }
 
     // MARK: - Aggiornamento parziale (Sposta / adeguamento settimanale)

@@ -66,6 +66,8 @@ struct FitnessPlanView: View {
 
     @State private var weeklyReport: FitnessWeeklyReport?
     @State private var adjustmentProposal: FitnessAdjustmentProposal?
+    /// Consuntivo del mese, presente solo quando il piano è finito.
+    @State private var planRecap: FitnessPlanRecap?
 
     @State private var alertMessage = ""
     @State private var showAlert = false
@@ -77,12 +79,24 @@ struct FitnessPlanView: View {
     private enum SetupPresentation: String, Identifiable {
         case onboarding
         case settings
+        case continuation
 
         var id: String { rawValue }
 
         var mode: FitnessPlanSetupView.Mode {
-            self == .onboarding ? .onboarding : .settings
+            switch self {
+            case .onboarding:   return .onboarding
+            case .settings:     return .settings
+            case .continuation: return .continuation
+            }
         }
+    }
+
+    /// Piano concluso da cui far nascere il prossimo: la generazione se ne porta
+    /// dietro il consuntivo. Un piano ancora in corso non conta come storia.
+    private var finishedPlan: FitnessPlanDocument? {
+        guard let plan, plan.isFinished() else { return nil }
+        return plan
     }
 
     init(familyId: String, childId: String) {
@@ -153,7 +167,9 @@ struct FitnessPlanView: View {
                     introCard
                     lockedCard
                 } else if let plan {
-                    if let weeklyReport, !isReviewed(weeklyReport) {
+                    if let planRecap {
+                        planRecapCard(planRecap, plan: plan)
+                    } else if let weeklyReport, !isReviewed(weeklyReport) {
                         weeklyReportCard(weeklyReport)
                     }
                     calendarCard(plan)
@@ -204,7 +220,7 @@ struct FitnessPlanView: View {
                 input: input,
                 estimatedUnits: estimatedUnits,
                 needsManualMetrics: needsManualMetrics,
-                plan: presentation.mode == .settings ? plan : nil,
+                plan: presentation == .settings ? plan : nil,
                 lastUsage: lastUsage,
                 onDelete: { Task { await deletePlan() } },
                 onConfirm: { confirmed in
@@ -237,9 +253,11 @@ struct FitnessPlanView: View {
             }
         }
         .sheet(item: $editingSession) { session in
-            FitnessSessionEditSheet(session: session) { updated in
-                Task { await applyManualEdit(updated) }
-            }
+            FitnessSessionEditSheet(
+                session: session,
+                onSave: { updated in Task { await applyManualEdit(updated) } },
+                onDelete: { Task { await deleteSession(session) } }
+            )
         }
         .sheet(item: $showMoveSheet) { session in
             FitnessMoveSessionSheet(session: session) { newDate in
@@ -502,7 +520,7 @@ struct FitnessPlanView: View {
             weekdayHeader
             monthGrid(plan)
 
-            HStack(spacing: 16) {
+            HStack(spacing: 12) {
                 ForEach([FitnessSessionStatus.done, .planned, .skipped], id: \.rawValue) { status in
                     HStack(spacing: 5) {
                         Image(systemName: status.systemImage)
@@ -513,7 +531,18 @@ struct FitnessPlanView: View {
                             .foregroundStyle(KBTheme.secondaryText(colorScheme))
                     }
                 }
+                // Giorni con più sedute in stati diversi (vedi `dayMarker`).
+                HStack(spacing: 5) {
+                    Image(systemName: "circle.lefthalf.filled")
+                        .font(.footnote)
+                        .foregroundStyle(FitnessSessionStatus.moved.tint)
+                    Text("In parte")
+                        .font(.footnote)
+                        .foregroundStyle(KBTheme.secondaryText(colorScheme))
+                }
             }
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
 
             Divider()
 
@@ -616,13 +645,28 @@ struct FitnessPlanView: View {
         displayedMonth = startOfMonth(selectedDay)
     }
 
+    /// Segno del giorno sul calendario, calcolato su tutte le sedute del giorno.
+    ///
+    /// Prima valeva lo stato della prima seduta: un giorno con una seduta fatta
+    /// e un doppione ancora da fare mostrava la spunta verde, mentre il report
+    /// contava il doppione come mancato. La percentuale sembrava sbagliata e il
+    /// calendario non diceva perché.
+    private func dayMarker(_ sessions: [FitnessSession]) -> (symbol: String, tint: Color)? {
+        let trackable = sessions.filter { !$0.isRest }
+        let relevant = trackable.isEmpty ? sessions : trackable
+        let statuses = Set(relevant.map(\.status))
+        guard let only = statuses.first else { return nil }
+        if statuses.count == 1 { return (only.systemImage, only.tint) }
+        return ("circle.lefthalf.filled", FitnessSessionStatus.moved.tint)
+    }
+
     private func dayCell(_ day: Date, plan: FitnessPlanDocument) -> some View {
         let cal = Calendar.current
         let sessions = plan.sessions(on: day)
         let isSelected = cal.isDate(day, inSameDayAs: selectedDay)
         let isToday = cal.isDateInToday(day)
         let inPlan = plan.weekIndex(for: day) != nil
-        let status = sessions.first?.status
+        let marker = dayMarker(sessions)
 
         return Button {
             withAnimation { selectedDay = cal.startOfDay(for: day) }
@@ -638,10 +682,10 @@ struct FitnessPlanView: View {
                                : KBTheme.secondaryText(colorScheme).opacity(0.45))
                     )
                 Group {
-                    if let status {
-                        Image(systemName: status.systemImage)
+                    if let marker {
+                        Image(systemName: marker.symbol)
                             .font(.footnote)
-                            .foregroundStyle(isSelected ? Color.white : status.tint)
+                            .foregroundStyle(isSelected ? Color.white : marker.tint)
                     } else {
                         Color.clear
                     }
@@ -1230,6 +1274,179 @@ struct FitnessPlanView: View {
         }
     }
 
+    // MARK: - Consuntivo del piano
+
+    /// Report di fine piano: prende il posto del report dell'ultima settimana,
+    /// che proponeva un «adeguamento» per una settimana che non esiste, e
+    /// accompagna al mese successivo.
+    private func planRecapCard(_ recap: FitnessPlanRecap, plan: FitnessPlanDocument) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "flag.checkered")
+                    .foregroundStyle(tint)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(
+                        String(
+                            format: NSLocalizedString(
+                                "Piano concluso · mese %d",
+                                comment: "Fitness plan recap title"
+                            ),
+                            plan.cycleNumber
+                        )
+                    )
+                    .font(.headline)
+                    .foregroundStyle(KBTheme.primaryText(colorScheme))
+                    Text(
+                        String(
+                            format: NSLocalizedString(
+                                "Dal %1$@ al %2$@",
+                                comment: "Fitness plan recap date range"
+                            ),
+                            FitnessPlanFormat.mediumDate(recap.startDate),
+                            FitnessPlanFormat.mediumDate(recap.endDate)
+                        )
+                    )
+                    .font(.footnote)
+                    .foregroundStyle(KBTheme.secondaryText(colorScheme))
+                }
+                Spacer(minLength: 8)
+                Text(verbatim: "\(recap.completionPercent)%")
+                    .font(.title3.bold().monospacedDigit())
+                    .foregroundStyle(tint)
+            }
+
+            ProgressView(value: recap.completionRate)
+                .tint(tint)
+
+            Text(recap.headline)
+                .font(.subheadline)
+                .foregroundStyle(KBTheme.primaryText(colorScheme))
+
+            HStack(spacing: 16) {
+                reportMetric("Completate", value: "\(recap.completedSessions)/\(recap.plannedSessions)")
+                reportMetric("Minuti", value: "\(recap.totalMinutes)")
+                reportMetric(
+                    "Distanza",
+                    value: FitnessDistanceFormatter.kilometers(recap.totalDistanceMeters) ?? "—"
+                )
+                if recap.totalKcal > 0 {
+                    reportMetric("kcal", value: "\(recap.totalKcal)")
+                }
+            }
+
+            if !recap.weeklyCompletionPercents.isEmpty {
+                weeklyTrend(recap.weeklyCompletionPercents)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                if recap.substitutedSessions > 0 {
+                    recapNote(
+                        String(
+                            format: NSLocalizedString(
+                                "Sedute fatte con un'altra attività: %d",
+                                comment: "Fitness plan recap substituted"
+                            ),
+                            recap.substitutedSessions
+                        ),
+                        systemImage: "arrow.left.arrow.right"
+                    )
+                }
+                if recap.extraWorkouts > 0 {
+                    recapNote(
+                        String(
+                            format: NSLocalizedString(
+                                "Attività fuori programma: %d",
+                                comment: "Fitness plan recap extra workouts"
+                            ),
+                            recap.extraWorkouts
+                        ),
+                        systemImage: "plus.circle"
+                    )
+                }
+                if !recap.chronicallySkippedWeekdays.isEmpty {
+                    recapNote(
+                        String(
+                            format: NSLocalizedString(
+                                "Giorni saltati più spesso: %@",
+                                comment: "Fitness plan recap skipped weekdays"
+                            ),
+                            FitnessPlanPromptBuilder.weekdayNames(recap.chronicallySkippedWeekdays)
+                        ),
+                        systemImage: "calendar.badge.exclamationmark"
+                    )
+                }
+            }
+
+            Divider()
+
+            Text("Il mese successivo riparte da qui: l'AI tiene conto di cosa hai fatto davvero, dei giorni saltati e del livello raggiunto nell'ultima settimana.")
+                .font(.subheadline)
+                .foregroundStyle(KBTheme.secondaryText(colorScheme))
+
+            Button {
+                setupPresentation = .continuation
+            } label: {
+                Label("Prepara il mese successivo", systemImage: "sparkles")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 4)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(tint)
+            .disabled(isGenerating)
+
+            Text(
+                String(
+                    format: NSLocalizedString(
+                        "Generare il piano costa circa %d messaggi AI",
+                        comment: "Fitness plan AI cost"
+                    ),
+                    estimatedUnits
+                )
+            )
+            .font(.footnote)
+            .foregroundStyle(KBTheme.secondaryText(colorScheme))
+        }
+        .fitnessCard()
+    }
+
+    /// Completamento settimana per settimana: dice se il mese è calato alla
+    /// fine o è partito piano, cosa che la percentuale totale nasconde.
+    private func weeklyTrend(_ percents: [Int]) -> some View {
+        HStack(alignment: .bottom, spacing: 10) {
+            ForEach(Array(percents.enumerated()), id: \.offset) { index, percent in
+                VStack(spacing: 4) {
+                    Text(verbatim: "\(percent)%")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(KBTheme.secondaryText(colorScheme))
+                    ZStack(alignment: .bottom) {
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            .fill(tint.opacity(0.15))
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            .fill(tint)
+                            .frame(height: 44 * CGFloat(min(max(percent, 0), 100)) / 100)
+                    }
+                    .frame(height: 44)
+                    Text(
+                        String(
+                            format: NSLocalizedString("Sett. %d", comment: "Fitness plan recap week label"),
+                            index + 1
+                        )
+                    )
+                    .font(.caption2)
+                    .foregroundStyle(KBTheme.secondaryText(colorScheme))
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func recapNote(_ text: String, systemImage: String) -> some View {
+        Label(text, systemImage: systemImage)
+            .font(.subheadline)
+            .foregroundStyle(KBTheme.secondaryText(colorScheme))
+    }
+
     // MARK: - Copilota
 
     /// Stesso FAB arancione di tutte le altre chat AI dell'app, con lo stesso
@@ -1329,6 +1546,7 @@ struct FitnessPlanView: View {
                 await FitnessPlanNotificationManager.removePlan(childId: childId)
                 plan = nil
                 weeklyReport = nil
+                planRecap = nil
             }
         case .plan(let remote):
             guard remote.generatedAt >= (plan?.generatedAt ?? .distantPast) else { return }
@@ -1338,6 +1556,11 @@ struct FitnessPlanView: View {
                remote.generatedAt == current.generatedAt,
                doneCount(remote) <= doneCount(current) {
                 return
+            }
+            // Piano rigenerato su un altro device: i report già visti erano
+            // quelli del piano vecchio.
+            if let current = plan, remote.generatedAt > current.generatedAt {
+                FitnessPlanStore.resetReviewedWeeks(childId: childId)
             }
             plan = remote
             input = remote.input
@@ -1361,12 +1584,22 @@ struct FitnessPlanView: View {
             treatments: activeTreatments,
             vaccines: allVaccines,
             visits: allVisits,
-            exams: allExams
+            exams: allExams,
+            previousPlan: finishedPlan
         )
         estimatedUnits = FitnessPlanGenerator.estimate(payload: payload).messageUnits
     }
 
     private func refreshWeeklyReport() {
+        // A piano finito il report dell'ultima settimana cede il posto al
+        // consuntivo del mese: il suo «adeguamento» riguarderebbe una
+        // settimana che non c'è.
+        if let finishedPlan {
+            planRecap = FitnessWeeklyReportBuilder.recap(plan: finishedPlan)
+            weeklyReport = nil
+            return
+        }
+        planRecap = nil
         guard let plan,
               let weekIndex = FitnessWeeklyReportBuilder.lastCompletedWeekIndex(plan: plan)
         else {
@@ -1407,7 +1640,10 @@ struct FitnessPlanView: View {
             treatments: activeTreatments,
             vaccines: allVaccines,
             visits: allVisits,
-            exams: allExams
+            exams: allExams,
+            // Qualunque strada porti a rigenerare un piano finito (il pulsante
+            // del consuntivo o le impostazioni), il mese concluso diventa storia.
+            previousPlan: finishedPlan
         )
         estimatedUnits = FitnessPlanGenerator.estimate(payload: payload).messageUnits
 
@@ -1419,7 +1655,9 @@ struct FitnessPlanView: View {
             )
             lastUsage = result.usage
             selectedDay = Calendar.current.startOfDay(for: Date())
+            displayedMonth = startOfMonth(selectedDay)
             adjustmentProposal = nil
+            FitnessPlanStore.resetReviewedWeeks(childId: childId)
             await persist(result.document, rescheduleNotifications: true)
             if KBHealthKitService.shared.isAvailable {
                 reviewAfterHealthPermission = true
@@ -1539,6 +1777,13 @@ struct FitnessPlanView: View {
             target.actualHeartRateBpm = workout.heartRateBpm
         }
         updated.loggedWorkouts = updated.logged.filter { $0.id != workout.id }
+        await persist(updated, rescheduleNotifications: true)
+    }
+
+    @MainActor
+    private func deleteSession(_ session: FitnessSession) async {
+        guard var updated = plan else { return }
+        updated.removeSession(id: session.id)
         await persist(updated, rescheduleNotifications: true)
     }
 
@@ -1673,6 +1918,7 @@ struct FitnessPlanView: View {
         await FitnessPlanRemoteStore.delete(childId: childId)
         plan = nil
         weeklyReport = nil
+        planRecap = nil
         adjustmentProposal = nil
         lastUsage = nil
     }
@@ -1694,6 +1940,7 @@ struct FitnessPlanView: View {
 private struct FitnessSessionEditSheet: View {
     let session: FitnessSession
     let onSave: (FitnessSession) -> Void
+    let onDelete: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
@@ -1702,10 +1949,16 @@ private struct FitnessSessionEditSheet: View {
     @State private var activityTitle: String
     @State private var minutes: String
     @State private var kcal: String
+    @State private var showDeleteConfirm = false
 
-    init(session: FitnessSession, onSave: @escaping (FitnessSession) -> Void) {
+    init(
+        session: FitnessSession,
+        onSave: @escaping (FitnessSession) -> Void,
+        onDelete: @escaping () -> Void
+    ) {
         self.session = session
         self.onSave = onSave
+        self.onDelete = onDelete
         _status = State(initialValue: session.status)
         _activityTitle = State(initialValue: session.actualActivityTitle ?? "")
         _minutes = State(initialValue: session.actualMinutes.map(String.init) ?? "")
@@ -1756,6 +2009,28 @@ private struct FitnessSessionEditSheet: View {
                         Text("Se hai svolto un'attività diversa da quella prevista, scrivila qui: il consuntivo di fine settimana ne terrà conto.")
                     }
                 }
+
+                // Prima l'unico modo di togliere una seduta era chiederlo al
+                // copilota: un doppione messo dall'AI restava nel calendario e
+                // abbassava la percentuale della settimana senza rimedio.
+                Section {
+                    Button("Elimina seduta", role: .destructive) {
+                        showDeleteConfirm = true
+                    }
+                } footer: {
+                    Text("La seduta sparisce dal calendario e non conta più nei report.")
+                }
+            }
+            .confirmationDialog(
+                "Eliminare questa seduta?",
+                isPresented: $showDeleteConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Elimina seduta", role: .destructive) {
+                    onDelete()
+                    dismiss()
+                }
+                Button("Annulla", role: .cancel) {}
             }
             .navigationTitle("Modifica seduta")
             .navigationBarTitleDisplayMode(.inline)

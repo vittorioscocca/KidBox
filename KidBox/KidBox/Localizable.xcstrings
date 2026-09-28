@@ -1,6 +1,29 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
+    "%@/anno" : {
+      "comment" : "Yearly price suffix (%@ = StoreKit localized price)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@/year"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@/año"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@/an"
+          }
+        }
+      }
+    },
     "" : {
 
     },
@@ -675,6 +698,50 @@
         }
       }
     },
+    "%@ · poi %@/anno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · then %2$@/year"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · luego %2$@/año"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · puis %2$@/an"
+          }
+        }
+      }
+    },
+    "%@ · poi %@/mese" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · then %2$@/month"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · luego %2$@/mes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · puis %2$@/mois"
+          }
+        }
+      }
+    },
     "%@ · Ultima apertura %@" : {
       "localizations" : {
         "en" : {
@@ -933,6 +1000,29 @@
         }
       }
     },
+    "%1$d messaggi AI · %2$d/%3$d della prova Pro" : {
+      "comment" : "Clinical record AI usage summary during the Pro trial",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d AI messages · %2$d/%3$d of the Pro trial"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d mensajes de IA · %2$d/%3$d de la prueba Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d messages IA · %2$d/%3$d de l’essai Pro"
+          }
+        }
+      }
+    },
     "%1$d messaggi AI · %2$d/%3$d oggi" : {
       "comment" : "Clinical record AI usage summary\nFitness plan AI usage summary\nMeal plan AI usage summary",
       "localizations" : {
@@ -952,6 +1042,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d messages IA · %2$d/%3$d aujourd’hui"
+          }
+        }
+      }
+    },
+    "%1$d/%2$d messaggi della prova Pro" : {
+      "comment" : "AI usage during the Pro trial (used/total, not per day)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d/%2$d Pro trial messages"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d/%2$d mensajes de la prueba Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d/%2$d messages de l’essai Pro"
           }
         }
       }
@@ -1065,6 +1178,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%d jours"
+          }
+        }
+      }
+    },
+    "%d giorni gratis" : {
+      "comment" : "Store free trial length on the subscribe button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d days free"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d días gratis"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d jours gratuits"
           }
         }
       }
@@ -1448,6 +1584,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld sur %lld terminées"
+          }
+        }
+      }
+    },
+    "%lld di %lld messaggi della prova usati" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld trial messages used"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld de %lld mensajes de la prueba usados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sur %lld messages de l’essai utilisés"
           }
         }
       }
@@ -4135,6 +4293,28 @@
     },
     "Abbonati" : {
 
+    },
+    "Abbonati · %@/anno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscribe · %@/year"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suscribirse · %@/año"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S'abonner · %@/an"
+          }
+        }
+      }
     },
     "Abbonati · %@/mese" : {
       "localizations" : {
@@ -7799,7 +7979,6 @@
     },
     "Annuale" : {
       "comment" : "Event recurrence: yearly",
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7817,6 +7996,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Annuelle"
+          }
+        }
+      }
+    },
+    "Annuale · −%d%%" : {
+      "comment" : "Yearly billing option with saving percentage",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yearly · −%d%%"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anual · −%d %%"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuel · −%d %%"
           }
         }
       }
@@ -9428,6 +9630,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Activité"
+          }
+        }
+      }
+    },
+    "Attività fuori programma: %d" : {
+      "comment" : "Fitness plan recap extra workouts",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off-plan activities: %d"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actividades fuera del plan: %d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activités hors programme : %d"
           }
         }
       }
@@ -16098,6 +16323,28 @@
         }
       }
     },
+    "Controlla obiettivo e giorni: il nuovo mese parte da oggi e tiene conto di com'è andato quello concluso." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check your goal and days: the new month starts today and takes into account how the last one went."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revisa el objetivo y los días: el nuevo mes empieza hoy y tiene en cuenta cómo fue el que ha terminado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérifiez l'objectif et les jours : le nouveau mois commence aujourd'hui et tient compte de la façon dont le précédent s'est passé."
+          }
+        }
+      }
+    },
     "Controllo automatico settimanale" : {
       "localizations" : {
         "en" : {
@@ -18063,6 +18310,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Donnez un nom à la famille et ajoutez le premier enfant. Vous pourrez tout modifier plus tard."
+          }
+        }
+      }
+    },
+    "Dal %1$@ al %2$@" : {
+      "comment" : "Fitness plan recap date range",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From %1$@ to %2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Del %1$@ al %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du %1$@ au %2$@"
           }
         }
       }
@@ -20540,6 +20810,29 @@
         }
       }
     },
+    "È l'ultimo giorno della tua prova Pro. Abbonati per non perdere spazio in più, pianificatori e assistente AI." : {
+      "comment" : "Paywall notice, last day of Pro trial",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It's the last day of your Pro trial. Subscribe to keep extra storage, planners and the AI assistant."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es el último día de tu prueba Pro. Suscríbete para conservar el espacio extra, los planificadores y el asistente de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C’est le dernier jour de votre essai Pro. Abonnez-vous pour garder l’espace supplémentaire, les planificateurs et l’assistant IA."
+          }
+        }
+      }
+    },
     "ECG" : {
       "localizations" : {
         "en" : {
@@ -21224,6 +21517,28 @@
         }
       }
     },
+    "Elimina seduta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete session"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la séance"
+          }
+        }
+      }
+    },
     "Elimina spesa" : {
       "localizations" : {
         "en" : {
@@ -21707,6 +22022,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Supprimer ce mot de passe ?"
+          }
+        }
+      }
+    },
+    "Eliminare questa seduta?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this session?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar esta sesión?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer cette séance ?"
           }
         }
       }
@@ -26263,6 +26600,28 @@
         }
       }
     },
+    "Genera il mese successivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generate next month"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generar el mes siguiente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Générer le mois suivant"
+          }
+        }
+      }
+    },
     "Genera il piano" : {
       "localizations" : {
         "en" : {
@@ -26816,6 +27175,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Jours disponibles"
+          }
+        }
+      }
+    },
+    "Giorni saltati più spesso: %@" : {
+      "comment" : "Fitness plan recap skipped weekdays",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Days most often skipped: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Días saltados con más frecuencia: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jours le plus souvent sautés : %@"
           }
         }
       }
@@ -27374,6 +27756,28 @@
         }
       }
     },
+    "Guarda com'è andato il mese e prepara il successivo, costruito sui tuoi risultati." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See how the month went and plan the next one, built on your results."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mira cómo fue el mes y prepara el siguiente, basado en tus resultados."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Découvrez comment s'est passé le mois et préparez le suivant, construit sur vos résultats."
+          }
+        }
+      }
+    },
     "Guida all'utilizzo" : {
       "localizations" : {
         "en" : {
@@ -27442,6 +27846,75 @@
         }
       }
     },
+    "Hai completato il %d%% del piano: il prossimo mese conviene alleggerirlo." : {
+      "comment" : "Fitness plan recap headline low",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You completed %d%% of the plan: next month it's best to lighten it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has completado el %d%% del plan: el próximo mes conviene aligerarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez terminé %d%% du plan : le mois prochain, mieux vaut l'alléger."
+          }
+        }
+      }
+    },
+    "Hai completato il %d%% del piano: il prossimo mese conviene consolidare senza aumentare." : {
+      "comment" : "Fitness plan recap headline mid",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You completed %d%% of the plan: next month it's best to consolidate without increasing."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has completado el %d%% del plan: el próximo mes conviene consolidar sin aumentar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez terminé %d%% du plan : le mois prochain, mieux vaut consolider sans augmenter."
+          }
+        }
+      }
+    },
+    "Hai completato il %d%% del piano: il prossimo mese può alzare il carico." : {
+      "comment" : "Fitness plan recap headline good",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You completed %d%% of the plan: next month can raise the load."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has completado el %d%% del plan: el próximo mes puede subir la carga."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez terminé %d%% du plan : le mois prochain peut augmenter la charge."
+          }
+        }
+      }
+    },
     "Hai completato il %d%% del piano: si può recuperare la prossima settimana." : {
       "comment" : "Fitness weekly report headline mid",
       "localizations" : {
@@ -27488,6 +27961,29 @@
         }
       }
     },
+    "Hai completato tutto il piano: mese perfetto." : {
+      "comment" : "Fitness plan recap headline perfect",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You completed the whole plan: a perfect month."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has completado todo el plan: un mes perfecto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez terminé tout le plan : un mois parfait."
+          }
+        }
+      }
+    },
     "Hai già un account?" : {
       "localizations" : {
         "en" : {
@@ -27506,6 +28002,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vous avez déjà un compte ?"
+          }
+        }
+      }
+    },
+    "Hai Pro in prova ancora per %d giorni. Abbonati per non perdere spazio in più, pianificatori e assistente AI quando finisce." : {
+      "comment" : "Paywall notice during the Pro trial (%d = days left)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have Pro on trial for %d more days. Subscribe to keep extra storage, planners and the AI assistant when it ends."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te quedan %d días de prueba Pro. Suscríbete para conservar el espacio extra, los planificadores y el asistente de IA cuando termine."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il vous reste %d jours d’essai Pro. Abonnez-vous pour garder l’espace supplémentaire, les planificateurs et l’assistant IA à la fin de l’essai."
           }
         }
       }
@@ -28668,6 +29187,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le média sera supprimé de votre chat."
+          }
+        }
+      }
+    },
+    "Il mese successivo riparte da qui: l'AI tiene conto di cosa hai fatto davvero, dei giorni saltati e del livello raggiunto nell'ultima settimana." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next month starts from here: the AI takes into account what you actually did, the days you skipped and the level you reached in the last week."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El mes siguiente parte de aquí: la IA tiene en cuenta lo que hiciste de verdad, los días saltados y el nivel alcanzado en la última semana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le mois suivant repart d'ici : l'IA tient compte de ce que vous avez vraiment fait, des jours sautés et du niveau atteint la dernière semaine."
           }
         }
       }
@@ -30051,6 +30592,28 @@
         }
       }
     },
+    "In parte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partly"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En parte"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En partie"
+          }
+        }
+      }
+    },
     "In PDF" : {
       "localizations" : {
         "en" : {
@@ -30114,6 +30677,51 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "AU PROGRAMME"
+          }
+        }
+      }
+    },
+    "In prova" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On trial"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En prueba"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En essai"
+          }
+        }
+      }
+    },
+    "In prova fino al %@" : {
+      "comment" : "Profile plan row during the Pro trial (%@ = end date)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On trial until %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En prueba hasta el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En essai jusqu’au %@"
           }
         }
       }
@@ -32016,6 +32624,28 @@
         }
       }
     },
+    "L'abbonamento si rinnova automaticamente ogni anno. Puoi annullare in qualsiasi momento dalle impostazioni del tuo account Apple." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The subscription renews automatically every year. You can cancel at any time from your Apple account settings."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La suscripción se renueva automáticamente cada año. Puedes cancelar en cualquier momento desde los ajustes de tu cuenta de Apple."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'abonnement se renouvelle automatiquement chaque année. Vous pouvez annuler à tout moment depuis les réglages de votre compte Apple."
+          }
+        }
+      }
+    },
     "L'abbonamento si rinnova automaticamente ogni mese. Puoi annullare in qualsiasi momento dalle impostazioni del tuo account Apple." : {
       "localizations" : {
         "en" : {
@@ -33135,6 +33765,29 @@
         }
       }
     },
+    "La prova Pro è finita. I tuoi dati restano tutti: con Pro tornano spazio in più, pianificatori e assistente AI." : {
+      "comment" : "Paywall notice after the Pro trial ended",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Pro trial has ended. All your data stays: Pro brings back extra storage, planners and the AI assistant."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu prueba Pro ha terminado. Todos tus datos se conservan: con Pro vuelven el espacio extra, los planificadores y el asistente de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre essai Pro est terminé. Toutes vos données restent : avec Pro, l’espace supplémentaire, les planificateurs et l’assistant IA reviennent."
+          }
+        }
+      }
+    },
     "La salute dei tuoi figli, in un posto solo" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -33199,6 +33852,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le choix s'applique à tous vos appareils. Les autres membres continuent de discuter entre eux, et vous retrouverez les messages en la réactivant."
+          }
+        }
+      }
+    },
+    "La seduta sparisce dal calendario e non conta più nei report." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The session disappears from the calendar and no longer counts in the reports."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La sesión desaparece del calendario y deja de contar en los informes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La séance disparaît du calendrier et n'est plus comptée dans les rapports."
           }
         }
       }
@@ -35646,7 +36321,6 @@
     },
     "Mensile" : {
       "comment" : "Event recurrence: monthly",
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -35735,6 +36409,28 @@
         }
       }
     },
+    "Mese successivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next month"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mes siguiente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mois suivant"
+          }
+        }
+      }
+    },
     "Mesi" : {
       "localizations" : {
         "en" : {
@@ -35775,6 +36471,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Messages"
+          }
+        }
+      }
+    },
+    "Messaggi AI della prova Pro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro trial AI messages"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mensajes de IA de la prueba Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Messages IA de l’essai Pro"
           }
         }
       }
@@ -45384,6 +46102,28 @@
         }
       }
     },
+    "Periodo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Billing period"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Periodo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Période"
+          }
+        }
+      }
+    },
     "Periodo personalizzato" : {
       "localizations" : {
         "en" : {
@@ -46027,6 +46767,29 @@
         }
       }
     },
+    "Piano concluso · mese %d" : {
+      "comment" : "Fitness plan recap title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan completed · month %d"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan terminado · mes %d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan terminé · mois %d"
+          }
+        }
+      }
+    },
     "Piano Fitness" : {
       "localizations" : {
         "en" : {
@@ -46045,6 +46808,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plan Fitness"
+          }
+        }
+      }
+    },
+    "Piano fitness concluso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fitness plan completed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan de fitness terminado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan fitness terminé"
           }
         }
       }
@@ -46692,6 +47477,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réservé"
+          }
+        }
+      }
+    },
+    "Prepara il mese successivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan next month"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparar el mes siguiente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Préparer le mois suivant"
           }
         }
       }
@@ -47447,6 +48254,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Politique de confidentialité"
+          }
+        }
+      }
+    },
+    "Pro incluso: ancora %d giorni" : {
+      "comment" : "Home banner during Pro trial (%d = days left)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro included: %d days left"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro incluido: quedan %d días"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro inclus : encore %d jours"
+          }
+        }
+      }
+    },
+    "Pro incluso: ultimo giorno" : {
+      "comment" : "Home banner, last day of Pro trial",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro included: last day"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro incluido: último día"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro inclus : dernier jour"
           }
         }
       }
@@ -50676,6 +51529,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Résumé du contexte santé…"
+          }
+        }
+      }
+    },
+    "Riattiva · %@/anno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reactivate · %@/year"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reactivar · %@/año"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réactiver · %@/an"
           }
         }
       }
@@ -54995,6 +55870,29 @@
         }
       }
     },
+    "Sedute fatte con un'altra attività: %d" : {
+      "comment" : "Fitness plan recap substituted",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessions done with a different activity: %d"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesiones hechas con otra actividad: %d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Séances faites avec une autre activité : %d"
+          }
+        }
+      }
+    },
     "Sedute riaperte perché chiuse da un'attività di un altro tipo: %d" : {
       "comment" : "Fitness sync repaired count"
     },
@@ -55817,6 +56715,29 @@
         }
       }
     },
+    "Servono %1$d messaggi AI per questo aggiornamento ma della prova Pro ne restano %2$d su %3$d. Riduci i referti allegati o abbonati a Pro." : {
+      "comment" : "Clinical record quota error during the Pro trial",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This update needs %1$d AI messages, but only %2$d of %3$d are left in your Pro trial. Attach fewer reports or subscribe to Pro."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta actualización necesita %1$d mensajes de IA, pero en tu prueba Pro solo quedan %2$d de %3$d. Adjunta menos informes o suscríbete a Pro."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette mise à jour nécessite %1$d messages IA, mais il n’en reste que %2$d sur %3$d dans votre essai Pro. Joignez moins de comptes rendus ou abonnez-vous à Pro."
+          }
+        }
+      }
+    },
     "Servono %1$d messaggi AI per questo aggiornamento ma ne restano %2$d su %3$d oggi. Riprova domani o riduci i referti allegati." : {
       "comment" : "Clinical record quota error",
       "localizations" : {
@@ -55925,6 +56846,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Séances"
+          }
+        }
+      }
+    },
+    "Sett. %d" : {
+      "comment" : "Fitness plan recap week label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wk %d"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem. %d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem. %d"
           }
         }
       }
@@ -56968,6 +57912,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Espace familial"
+          }
+        }
+      }
+    },
+    "Spazio in più, pianificatori e assistente AI sono sbloccati. Nessuna carta richiesta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extra storage, planners and the AI assistant are unlocked. No card required."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espacio extra, planificadores y asistente de IA desbloqueados. Sin tarjeta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espace supplémentaire, planificateurs et assistant IA débloqués. Aucune carte requise."
           }
         }
       }

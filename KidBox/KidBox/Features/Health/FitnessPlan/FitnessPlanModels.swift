@@ -648,8 +648,36 @@ struct FitnessPlanDocument: Codable, Equatable {
     /// Attività svolte che non corrispondono a nessuna seduta programmata.
     /// Opzionale: i piani generati prima di questo campo devono restare leggibili.
     var loggedWorkouts: [FitnessLoggedWorkout]?
+    /// Consuntivi dei mesi già conclusi, dal più vecchio: un piano nuovo nasce
+    /// dal precedente e se ne porta dietro la storia, perché il documento su
+    /// Firestore è uno solo per profilo e la rigenerazione lo sovrascrive.
+    /// Opzionale per la stessa ragione di `loggedWorkouts`.
+    var previousCycles: [FitnessPlanRecap]?
 
     var logged: [FitnessLoggedWorkout] { loggedWorkouts ?? [] }
+
+    /// Numero del mese nel percorso: 1 per il primo piano generato.
+    var cycleNumber: Int { (previousCycles?.count ?? 0) + 1 }
+
+    /// Ultimo giorno del piano (mezzanotte locale), cioè la fine dell'ultima settimana.
+    var lastDay: Date {
+        let cal = Calendar.current
+        let weekCount = weeks.map(\.index).max() ?? FitnessPlanPromptBuilder.planWeeks
+        return cal.date(byAdding: .day, value: weekCount * 7 - 1, to: cal.startOfDay(for: startDate))
+            ?? startDate
+    }
+
+    /// Il piano è finito: l'ultima settimana è passata e non resta nessuna
+    /// seduta da fare spostata oltre la fine. Da qui in poi la dashboard
+    /// propone il consuntivo del mese invece del report settimanale.
+    func isFinished(now: Date = Date()) -> Bool {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: now)
+        guard lastDay < today else { return false }
+        return !allSessions.contains { session in
+            session.status == .planned && !session.isRest && cal.startOfDay(for: session.date) >= today
+        }
+    }
 
     /// Attività registrate in una giornata, ordinate dalla più recente.
     func loggedWorkouts(on day: Date) -> [FitnessLoggedWorkout] {
@@ -792,6 +820,126 @@ struct FitnessWeeklyReport: Codable, Equatable {
                 format: NSLocalizedString(
                     "Hai completato il %d%% del piano: forse è troppo carico rispetto ai tuoi impegni.",
                     comment: "Fitness weekly report headline low"
+                ),
+                percent
+            )
+        }
+    }
+}
+
+// MARK: - Consuntivo del piano
+
+/// Consuntivo di un piano concluso: è il report di fine mese e, salvato nel
+/// piano successivo, la memoria da cui l'AI riparte.
+///
+/// Calcolato in locale come il report settimanale: non costa messaggi AI.
+/// La decodifica è tollerante perché il documento è condiviso con Android e
+/// web: un campo inatteso qui farebbe perdere l'intero piano, non la storia.
+struct FitnessPlanRecap: Codable, Equatable {
+    var startDate: Date
+    /// Ultimo giorno del piano, incluso.
+    var endDate: Date
+    var goal: FitnessGoal
+    var plannedSessions: Int
+    var completedSessions: Int
+    var skippedSessions: Int
+    var substitutedSessions: Int
+    var totalMinutes: Int
+    var totalKcal: Int
+    var totalDistanceMeters: Double
+    /// Completamento settimana per settimana, in ordine, in percentuale.
+    var weeklyCompletionPercents: [Int]
+    /// Giorni della settimana (convenzione `Calendar`) saltati almeno due volte.
+    var chronicallySkippedWeekdays: [Int]
+    /// Attività registrate fuori programma e mai attribuite a una seduta.
+    var extraWorkouts: Int
+
+    init(
+        startDate: Date,
+        endDate: Date,
+        goal: FitnessGoal,
+        plannedSessions: Int,
+        completedSessions: Int,
+        skippedSessions: Int,
+        substitutedSessions: Int,
+        totalMinutes: Int,
+        totalKcal: Int,
+        totalDistanceMeters: Double,
+        weeklyCompletionPercents: [Int],
+        chronicallySkippedWeekdays: [Int],
+        extraWorkouts: Int
+    ) {
+        self.startDate = startDate
+        self.endDate = endDate
+        self.goal = goal
+        self.plannedSessions = plannedSessions
+        self.completedSessions = completedSessions
+        self.skippedSessions = skippedSessions
+        self.substitutedSessions = substitutedSessions
+        self.totalMinutes = totalMinutes
+        self.totalKcal = totalKcal
+        self.totalDistanceMeters = totalDistanceMeters
+        self.weeklyCompletionPercents = weeklyCompletionPercents
+        self.chronicallySkippedWeekdays = chronicallySkippedWeekdays
+        self.extraWorkouts = extraWorkouts
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        startDate = try c.decode(Date.self, forKey: .startDate)
+        endDate = try c.decodeIfPresent(Date.self, forKey: .endDate) ?? startDate
+        goal = (try? c.decodeIfPresent(FitnessGoal.self, forKey: .goal)) ?? .toning
+        plannedSessions = try c.decodeIfPresent(Int.self, forKey: .plannedSessions) ?? 0
+        completedSessions = try c.decodeIfPresent(Int.self, forKey: .completedSessions) ?? 0
+        skippedSessions = try c.decodeIfPresent(Int.self, forKey: .skippedSessions) ?? 0
+        substitutedSessions = try c.decodeIfPresent(Int.self, forKey: .substitutedSessions) ?? 0
+        totalMinutes = try c.decodeIfPresent(Int.self, forKey: .totalMinutes) ?? 0
+        totalKcal = try c.decodeIfPresent(Int.self, forKey: .totalKcal) ?? 0
+        totalDistanceMeters = try c.decodeIfPresent(Double.self, forKey: .totalDistanceMeters) ?? 0
+        weeklyCompletionPercents = try c.decodeIfPresent([Int].self, forKey: .weeklyCompletionPercents) ?? []
+        chronicallySkippedWeekdays = try c.decodeIfPresent([Int].self, forKey: .chronicallySkippedWeekdays) ?? []
+        extraWorkouts = try c.decodeIfPresent(Int.self, forKey: .extraWorkouts) ?? 0
+    }
+
+    var completionRate: Double {
+        guard plannedSessions > 0 else { return 0 }
+        return Double(completedSessions) / Double(plannedSessions)
+    }
+
+    var completionPercent: Int { Int((completionRate * 100).rounded()) }
+
+    /// Frase di sintesi, scelta localmente. Le soglie sono le stesse che il
+    /// prompt del mese successivo usa per decidere il carico: la frase annuncia
+    /// quello che l'AI farà, non una cosa diversa.
+    var headline: String {
+        let percent = completionPercent
+        switch percent {
+        case 100...:
+            return NSLocalizedString(
+                "Hai completato tutto il piano: mese perfetto.",
+                comment: "Fitness plan recap headline perfect"
+            )
+        case 70..<100:
+            return String(
+                format: NSLocalizedString(
+                    "Hai completato il %d%% del piano: il prossimo mese può alzare il carico.",
+                    comment: "Fitness plan recap headline good"
+                ),
+                percent
+            )
+        case 40..<70:
+            return String(
+                format: NSLocalizedString(
+                    "Hai completato il %d%% del piano: il prossimo mese conviene consolidare senza aumentare.",
+                    comment: "Fitness plan recap headline mid"
+                ),
+                percent
+            )
+        default:
+            return String(
+                format: NSLocalizedString(
+                    "Hai completato il %d%% del piano: il prossimo mese conviene alleggerirlo.",
+                    comment: "Fitness plan recap headline low"
                 ),
                 percent
             )

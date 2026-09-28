@@ -80,9 +80,20 @@ struct AIResponse {
     }
 
     var usageSummary: String {
-        period == .lifetime
-            ? "\(usageToday)/\(dailyLimit) messaggi gratuiti"
-            : "\(usageToday)/\(dailyLimit) messaggi oggi"
+        switch period {
+        case .lifetime:
+            return "\(usageToday)/\(dailyLimit) messaggi gratuiti"
+        case .trial:
+            return String(
+                format: NSLocalizedString(
+                    "%1$d/%2$d messaggi della prova Pro",
+                    comment: "AI usage during the Pro trial (used/total, not per day)"
+                ),
+                usageToday, dailyLimit
+            )
+        case .daily:
+            return "\(usageToday)/\(dailyLimit) messaggi oggi"
+        }
     }
     var isNearLimit: Bool { usageToday >= Int(Double(dailyLimit) * 0.8) }
 }

@@ -52,6 +52,9 @@ enum FitnessPlanPromptBuilder {
         cresce e una settimana di scarico se il volume è alto).
         Allena SOLO nei giorni indicati come disponibili: ogni sessione deve avere un "dayOffset"
         compreso nell'elenco di offset ammessi fornito nel messaggio utente. Non inventare altri giorni.
+        UNA SOLA seduta per giorno: ogni "dayOffset" compare al massimo una volta in tutto il piano.
+        Il lavoro complementare (forza, mobilità, riscaldamento) va dentro la seduta di quel giorno,
+        mai in una seduta separata sullo stesso giorno.
         Ogni sessione deve avere esercizi o attività concrete e obiettivi MISURABILI (minuti, distanza,
         calorie, serie × ripetizioni, ritmo). Niente obiettivi generici tipo "allenati bene".
         Rispetta la durata indicata per sessione, con una tolleranza di ±10 minuti.
@@ -107,10 +110,18 @@ enum FitnessPlanPromptBuilder {
         startDate: Date,
         allowedDayOffsets: [Int],
         profileSummary: [String],
-        healthContext: String
+        healthContext: String,
+        previousPlan: FitnessPlanDocument? = nil
     ) -> String {
         var lines: [String] = []
-        lines.append("Crea il piano di allenamento mensile per \(subjectName).")
+        if let previousPlan {
+            lines.append(
+                "Crea il piano di allenamento del mese \(previousPlan.cycleNumber + 1) per \(subjectName): "
+                + "è la continuazione del piano appena concluso, descritto più sotto."
+            )
+        } else {
+            lines.append("Crea il piano di allenamento mensile per \(subjectName).")
+        }
         lines.append("")
         lines.append("--- OBIETTIVO E DISPONIBILITÀ ---")
         lines.append("Obiettivo principale: \(input.goal.promptLabel)")
@@ -138,7 +149,15 @@ enum FitnessPlanPromptBuilder {
             let detail = input.raceDetail.trimmingCharacters(in: .whitespacesAndNewlines)
             if !detail.isEmpty { race += " — \(detail)" }
             lines.append(race)
-            if let raceDate = input.raceDate {
+            if let raceDate = input.raceDate,
+               raceDate < Calendar.current.startOfDay(for: Date()) {
+                // Succede proprio al mese successivo: la gara era il traguardo
+                // del piano concluso e le impostazioni sono rimaste quelle.
+                lines.append(
+                    "Data della gara: \(formatDate(raceDate)), già passata. Imposta il mese come "
+                    + "recupero attivo e poi ripresa, salvo indicazioni diverse nelle note."
+                )
+            } else if let raceDate = input.raceDate {
                 let weeks = max(0, Calendar.current.dateComponents(
                     [.weekOfYear], from: Date(), to: raceDate
                 ).weekOfYear ?? 0)
@@ -163,6 +182,11 @@ enum FitnessPlanPromptBuilder {
             lines.append("Note dell'utente (infortuni, limiti, preferenze): \(notes)")
         }
 
+        if let previousPlan {
+            lines.append("")
+            lines.append(contentsOf: previousPlanLines(previousPlan))
+        }
+
         lines.append("")
         lines.append("--- DATI ANTROPOMETRICI E ALLENAMENTI (app Salute) ---")
         if profileSummary.isEmpty {
@@ -176,6 +200,125 @@ enum FitnessPlanPromptBuilder {
         lines.append(healthContext)
 
         return lines.joined(separator: "\n")
+    }
+
+    // MARK: - Mese precedente
+
+    /// Il piano concluso raccontato all'AI: i numeri del consuntivo, l'ultima
+    /// settimana seduta per seduta (è il livello da cui ripartire) e i mesi
+    /// ancora prima in una riga ciascuno. Poche centinaia di caratteri: non
+    /// sposta le unità del piano, che restano al minimo di 5 × 3.
+    static func previousPlanLines(_ plan: FitnessPlanDocument) -> [String] {
+        let recap = FitnessWeeklyReportBuilder.recap(plan: plan)
+        var lines: [String] = []
+        lines.append(
+            "--- MESE PRECEDENTE (mese \(plan.cycleNumber), dal \(formatDate(recap.startDate)) "
+            + "al \(formatDate(recap.endDate))) ---"
+        )
+        lines.append("Obiettivo di quel mese: \(recap.goal.promptLabel)")
+        lines.append(
+            "Sedute completate: \(recap.completedSessions) su \(recap.plannedSessions) "
+            + "(\(recap.completionPercent)%), saltate \(recap.skippedSessions), "
+            + "fatte con un'attività diversa da quella prevista \(recap.substitutedSessions)"
+        )
+        lines.append(
+            "Completamento per settimana: "
+            + recap.weeklyCompletionPercents.map { "\($0)%" }.joined(separator: ", ")
+        )
+        var volume = "Volume svolto: \(recap.totalMinutes) minuti"
+        if recap.totalDistanceMeters >= 10 {
+            volume += String(format: ", %.1f km", recap.totalDistanceMeters / 1000)
+        }
+        if recap.totalKcal > 0 { volume += ", \(recap.totalKcal) kcal" }
+        lines.append(volume)
+        if !recap.chronicallySkippedWeekdays.isEmpty {
+            lines.append("Giorni saltati più volte: \(weekdayNames(recap.chronicallySkippedWeekdays))")
+        }
+        if recap.extraWorkouts > 0 {
+            var counts: [String: Int] = [:]
+            for workout in plan.logged { counts[workout.title, default: 0] += 1 }
+            let ranked: [(String, Int)] = counts.sorted { lhs, rhs in
+                lhs.value == rhs.value ? lhs.key < rhs.key : lhs.value > rhs.value
+            }
+            let titles: [String] = ranked.prefix(4).map { "\($0.0) ×\($0.1)" }
+            lines.append(
+                "Attività registrate fuori programma: \(recap.extraWorkouts) ("
+                + titles.joined(separator: ", ") + ")"
+            )
+        }
+
+        if let lastWeek = plan.weeks.max(by: { $0.index < $1.index }) {
+            lines.append("Sedute dell'ultima settimana (il livello da cui ripartire):")
+            for session in lastWeek.sessions.sorted(by: { $0.date < $1.date }) where !session.isRest {
+                lines.append("- " + sessionOutcomeLine(session))
+            }
+        }
+
+        // I mesi più vecchi restano nel documento (sono poche centinaia di
+        // byte l'uno) ma al prompt ne bastano gli ultimi, per la tendenza.
+        let older = plan.previousCycles ?? []
+        let shown = older.suffix(5)
+        if !shown.isEmpty {
+            lines.append("Mesi ancora precedenti:")
+            for (offset, cycle) in shown.enumerated() {
+                let number = older.count - shown.count + offset + 1
+                lines.append(
+                    "- mese \(number) (\(cycle.goal.promptLabel)): \(cycle.completionPercent)% "
+                    + "delle sedute, \(cycle.totalMinutes) minuti"
+                )
+            }
+        }
+
+        lines.append("")
+        lines.append("REGOLE PER LA CONTINUAZIONE:")
+        lines.append(
+            "- Riparti dal livello raggiunto nell'ultima settimana, non da zero: niente settimana "
+            + "introduttiva se la persona si è allenata con continuità."
+        )
+        lines.append(
+            "- Completamento del mese dal 70% in su: progressione moderata (circa +10% di volume o "
+            + "una seduta più impegnativa). Dal 40% al 69%: stesso volume, consolida. Sotto il 40%: "
+            + "riduci durata o numero di sedute e rendile più facili da incastrare."
+        )
+        lines.append(
+            "- Nei giorni saltati più volte metti le sedute più brevi o leggere, se restano fra "
+            + "quelli disponibili."
+        )
+        lines.append(
+            "- Le attività fatte al posto di quelle previste e quelle fuori programma dicono cosa la "
+            + "persona fa volentieri: dagli spazio nel nuovo mese."
+        )
+        lines.append(
+            "- Mantieni le discipline ma varia esercizi e stimoli rispetto al mese precedente."
+        )
+        lines.append(
+            "- Il campo \"summary\" si apre con 1-2 frasi di bilancio del mese concluso, con i numeri, "
+            + "e spiega come il nuovo mese ne tiene conto."
+        )
+        return lines
+    }
+
+    /// Una seduta dell'ultima settimana come la legge l'AI: prevista e svolta.
+    private static func sessionOutcomeLine(_ session: FitnessSession) -> String {
+        var line = "\(session.title) (\(session.activityType), \(session.durationMinutes) min, "
+            + "intensità \(session.intensity)): "
+        switch session.status {
+        case .done:
+            var outcome = ["completata"]
+            if let minutes = session.actualMinutes { outcome.append("\(minutes) min") }
+            if let meters = session.actualDistanceMeters, meters >= 10 {
+                outcome.append(String(format: "%.1f km", meters / 1000))
+            }
+            if session.wasSubstituted, let actual = session.actualActivityTitle {
+                outcome.append("svolta come \(actual)")
+            }
+            line += outcome.joined(separator: ", ")
+        case .skipped:
+            line += "saltata"
+        case .planned, .moved:
+            line += "non registrata"
+        }
+        return line
     }
 
     // MARK: - Ricalcolo dopo uno spostamento

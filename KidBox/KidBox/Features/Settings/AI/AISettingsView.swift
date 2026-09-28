@@ -35,6 +35,7 @@ struct AISettingsView: View {
     }
     
     private var plan: KBPlan { subscriptionManager.currentPlan }
+    private var isInTrial: Bool { subscriptionManager.trialEndsAt != nil }
     
     // MARK: - Body
     
@@ -125,7 +126,8 @@ struct AISettingsView: View {
 
             // MARK: - Utilizzo
             if subscriptionManager.isAIAccessible && viewModel.aiEnabled {
-                Section(plan.aiQuotaPeriod == .lifetime ? "Bonus AI gratuito" : "Utilizzo oggi") {
+                Section(isInTrial ? LocalizedStringKey("Messaggi AI della prova Pro")
+                        : plan.aiQuotaPeriod == .lifetime ? LocalizedStringKey("Bonus AI gratuito") : LocalizedStringKey("Utilizzo oggi")) {
                     if viewModel.loadingUsage {
                         HStack {
                             ProgressView().controlSize(.small)
@@ -135,9 +137,15 @@ struct AISettingsView: View {
                     } else if let usage = viewModel.usage {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text(plan.aiQuotaPeriod == .lifetime
-                                     ? "\(usage.usageToday) di \(plan.aiMessageLimit) messaggi gratuiti usati"
-                                     : "\(usage.usageToday) di \(plan.aiMessageLimit) messaggi usati oggi")
+                                Group {
+                                    if isInTrial {
+                                        Text("\(usage.usageToday) di \(usage.dailyLimit) messaggi della prova usati")
+                                    } else if plan.aiQuotaPeriod == .lifetime {
+                                        Text("\(usage.usageToday) di \(plan.aiMessageLimit) messaggi gratuiti usati")
+                                    } else {
+                                        Text("\(usage.usageToday) di \(plan.aiMessageLimit) messaggi usati oggi")
+                                    }
+                                }
                                     .font(.subheadline)
                                 Spacer()
                                 if usage.isNearLimit {
@@ -148,7 +156,8 @@ struct AISettingsView: View {
                             }
                             ProgressView(
                                 value: Double(usage.usageToday),
-                                total: Double(plan.aiMessageLimit)
+                                // Nella prova il tetto è quello del server, non il Pro del listino.
+                                total: Double(max(1, isInTrial ? usage.dailyLimit : plan.aiMessageLimit))
                             )
                             .tint(usage.isNearLimit ? .orange : .blue)
 
@@ -593,8 +602,19 @@ struct UpgradeSheetView: View {
     /// famiglia riceve la spiegazione al tocco, non un pulsante mancante.
     @State private var showOwnerOnly = false
 
+    /// Annuale di default quando lo store lo offre: è il piano che conviene di più.
+    @State private var yearly = true
+
+    /// Product id per cui l'utente ha diritto alla prova gratuita dello store.
+    @State private var introEligibleIds: Set<String> = []
+
     private let tint     = Color(red: 0.35, green: 0.6, blue: 0.85)
     private let maxColor = Color(red: 0.55, green: 0.35, blue: 0.9)
+
+    /// L'annuale si propone solo se lo store lo ha davvero (prodotti configurati).
+    private var hasYearly: Bool { subscriptionManager.hasYearlyProducts }
+    private var showYearly: Bool { yearly && hasYearly }
+    private var yearlySavingPercent: Int? { subscriptionManager.yearlySavingPercent() }
 
     var body: some View {
         NavigationStack {
@@ -615,6 +635,21 @@ struct UpgradeSheetView: View {
                             .padding(.horizontal)
                     }
                     .padding(.top, 8)
+
+                    trialNotice
+
+                    if hasYearly {
+                        Picker("Periodo", selection: $yearly) {
+                            Text("Mensile").tag(false)
+                            if let pct = yearlySavingPercent {
+                                Text(String(format: NSLocalizedString("Annuale · −%d%%", comment: "Yearly billing option with saving percentage"), pct)).tag(true)
+                            } else {
+                                Text("Annuale").tag(true)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal)
+                    }
 
                     if let msg = contextualMessage {
                         HStack(spacing: 10) {
@@ -686,6 +721,12 @@ struct UpgradeSheetView: View {
         .task {
             AppAnalytics.paywallShown(triggerFeature: triggerFeature, planShown: "both")
             await subscriptionManager.loadProducts()
+            var eligible: Set<String> = []
+            for product in subscriptionManager.products {
+                guard let sub = product.subscription, sub.introductoryOffer != nil else { continue }
+                if await sub.isEligibleForIntroOffer { eligible.insert(product.id) }
+            }
+            introEligibleIds = eligible
         }
         .offerCodeRedemption(isPresented: $showOfferCodeRedemption) { result in
             Task { @MainActor in
@@ -708,6 +749,55 @@ struct UpgradeSheetView: View {
         }
     }
     
+    // MARK: - Prova Pro
+
+    /// Riquadro in cima al paywall durante la prova Pro o appena dopo.
+    @ViewBuilder
+    private var trialNotice: some View {
+        if let days = subscriptionManager.trialDaysLeft {
+            noticeBox(
+                icon: "hourglass",
+                text: days == 1
+                    ? NSLocalizedString("È l'ultimo giorno della tua prova Pro. Abbonati per non perdere spazio in più, pianificatori e assistente AI.", comment: "Paywall notice, last day of Pro trial")
+                    : String(format: NSLocalizedString("Hai Pro in prova ancora per %d giorni. Abbonati per non perdere spazio in più, pianificatori e assistente AI quando finisce.", comment: "Paywall notice during the Pro trial (%d = days left)"), days)
+            )
+        } else if subscriptionManager.trialEnded, subscriptionManager.currentPlan == .free {
+            noticeBox(
+                icon: "gift",
+                text: NSLocalizedString("La prova Pro è finita. I tuoi dati restano tutti: con Pro tornano spazio in più, pianificatori e assistente AI.", comment: "Paywall notice after the Pro trial ended")
+            )
+        }
+    }
+
+    private func noticeBox(icon: String, text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon).foregroundStyle(tint)
+            Text(text).font(.subheadline)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal)
+    }
+
+    /// «7 giorni gratis» se l'utente ha diritto alla prova gratuita dello store.
+    private func freeTrialText(for product: Product?) -> String? {
+        guard let product, introEligibleIds.contains(product.id),
+              let offer = product.subscription?.introductoryOffer,
+              offer.paymentMode == .freeTrial else { return nil }
+        let unit = offer.period.unit
+        let value = offer.period.value
+        let days: Int
+        switch unit {
+        case .day:   days = value
+        case .week:  days = value * 7
+        case .month: days = value * 30
+        case .year:  days = value * 365
+        @unknown default: return nil
+        }
+        return String(format: NSLocalizedString("%d giorni gratis", comment: "Store free trial length on the subscribe button"), days)
+    }
+
     // MARK: - Plan card
     
     @ViewBuilder
@@ -718,9 +808,11 @@ struct UpgradeSheetView: View {
         purchasable: Bool = true
     ) -> some View {
         let isCurrent   = subscriptionManager.currentPlan == plan
+        // In prova il Pro è «attuale» ma nessuno lo paga: il pulsante resta.
+        let isTrial     = isCurrent && subscriptionManager.trialEndsAt != nil
         let isCancelled = isCurrent && subscriptionManager.isCancelledButActive
         let expiryDate  = subscriptionManager.subscriptionExpirationDate
-        let product     = subscriptionManager.storeProduct(for: plan)
+        let product     = subscriptionManager.storeProduct(for: plan, yearly: showYearly)
         
         VStack(alignment: .leading, spacing: 14) {
             
@@ -739,7 +831,13 @@ struct UpgradeSheetView: View {
                         .background(Capsule().fill(color.opacity(0.12)))
                 }
                 Spacer()
-                if isCurrent {
+                if isTrial {
+                    Text("In prova")
+                        .font(.caption.bold())
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(Capsule().fill(color))
+                } else if isCurrent {
                     Text(isCancelled ? "In scadenza" : "Piano attuale")
                         .font(.caption.bold())
                         .foregroundStyle(.white)
@@ -775,10 +873,14 @@ struct UpgradeSheetView: View {
             }
             
             // Bottone acquisto — solo testo, niente legalFooter dentro
-            if purchasable, !isCurrent || isCancelled {
+            if purchasable, !isCurrent || isCancelled || isTrial {
                 Button {
-                        guard subscriptionManager.isFamilyOwner else { showOwnerOnly = true; return }
-                        Task { await subscriptionManager.purchase(plan) }
+                        guard subscriptionManager.isFamilyOwner else {
+                            AppAnalytics.purchaseFailed(plan: plan.rawValue, triggerFeature: triggerFeature, reason: "not_owner")
+                            showOwnerOnly = true
+                            return
+                        }
+                        Task { await subscriptionManager.purchase(plan, yearly: showYearly, triggerFeature: triggerFeature) }
                     } label: {
                         HStack {
                             if subscriptionManager.isPurchasing {
@@ -786,9 +888,25 @@ struct UpgradeSheetView: View {
                                 Text("Acquisto in corso…")
                             } else {
                                 let priceStr = product?.displayPrice ?? plan.monthlyPrice
-                                Text(isCancelled
-                                     ? "Riattiva · \(priceStr)/mese"
-                                     : "Abbonati · \(priceStr)/mese")
+                                // Un Text per ramo: con il ternario fra letterali Swift
+                                // sceglie String e il testo non passa dal catalogo.
+                                if let trialText = freeTrialText(for: product) {
+                                    if showYearly {
+                                        Text("\(trialText) · poi \(priceStr)/anno")
+                                    } else {
+                                        Text("\(trialText) · poi \(priceStr)/mese")
+                                    }
+                                } else if showYearly {
+                                    if isCancelled {
+                                        Text("Riattiva · \(priceStr)/anno")
+                                    } else {
+                                        Text("Abbonati · \(priceStr)/anno")
+                                    }
+                                } else {
+                                    Text(isCancelled
+                                         ? "Riattiva · \(priceStr)/mese"
+                                         : "Abbonati · \(priceStr)/mese")
+                                }
                             }
                         }
                         .font(.subheadline.bold())
@@ -823,7 +941,13 @@ struct UpgradeSheetView: View {
         let termsURL   = URL(string: "https://vittorioscocca.github.io/KidBox/terms/")!
         
         return VStack(spacing: 6) {
-            Text("L'abbonamento si rinnova automaticamente ogni mese. Puoi annullare in qualsiasi momento dalle impostazioni del tuo account Apple.")
+            Group {
+                if showYearly {
+                    Text("L'abbonamento si rinnova automaticamente ogni anno. Puoi annullare in qualsiasi momento dalle impostazioni del tuo account Apple.")
+                } else {
+                    Text("L'abbonamento si rinnova automaticamente ogni mese. Puoi annullare in qualsiasi momento dalle impostazioni del tuo account Apple.")
+                }
+            }
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

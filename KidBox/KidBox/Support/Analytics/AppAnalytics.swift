@@ -157,10 +157,42 @@ enum AppAnalytics {
         ])
     }
 
-    static func subscriptionStarted(plan: String, trial: Bool) {
+    // Funnel d'acquisto: paywall_shown → purchase_started → subscription_started,
+    // con le due uscite purchase_cancelled / purchase_failed. Tutti portano
+    // `trigger_feature`, così ogni passo si lega alla schermata che ha aperto
+    // il paywall. Stessi nomi e valori su Android.
+
+    static func subscriptionStarted(plan: String, trial: Bool, triggerFeature: String) {
         Analytics.logEvent("subscription_started", parameters: [
             "plan": plan,
-            "trial": trial
+            "trial": trial,
+            "trigger_feature": triggerFeature
+        ])
+    }
+
+    /// Tocco su «Abbonati» da chi può abbonarsi: parte il foglio dello store.
+    static func purchaseStarted(plan: String, triggerFeature: String) {
+        Analytics.logEvent("purchase_started", parameters: [
+            "plan": plan,
+            "trigger_feature": triggerFeature
+        ])
+    }
+
+    /// Foglio dello store chiuso senza pagare.
+    static func purchaseCancelled(plan: String, triggerFeature: String) {
+        Analytics.logEvent("purchase_cancelled", parameters: [
+            "plan": plan,
+            "trigger_feature": triggerFeature
+        ])
+    }
+
+    /// Acquisto non concluso per un motivo diverso dalla rinuncia. `reason`:
+    /// not_owner, product_unavailable, pending, verification, server_error, error.
+    static func purchaseFailed(plan: String, triggerFeature: String, reason: String) {
+        Analytics.logEvent("purchase_failed", parameters: [
+            "plan": plan,
+            "trigger_feature": triggerFeature,
+            "reason": reason
         ])
     }
 

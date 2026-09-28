@@ -30,6 +30,9 @@ enum FitnessPlanGenerator {
         let startDate: Date
         let hasWeight: Bool
         let hasHeight: Bool
+        /// Storia da portare nel piano nuovo: i consuntivi dei mesi già chiusi
+        /// più quello del piano appena concluso. Vuota per un primo piano.
+        var previousCycles: [FitnessPlanRecap] = []
     }
 
     // MARK: - Date del piano
@@ -64,6 +67,7 @@ enum FitnessPlanGenerator {
         vaccines: [KBVaccine],
         visits: [KBMedicalVisit],
         exams: [KBMedicalExam],
+        previousPlan: FitnessPlanDocument? = nil,
         startDate: Date = planStartDate()
     ) -> Payload {
         let snapshot = KBHealthLinkStore.load(childId: childId)
@@ -108,13 +112,17 @@ enum FitnessPlanGenerator {
                 startDate: startDate,
                 allowedDayOffsets: allowedDayOffsets(input: input, startDate: startDate),
                 profileSummary: profileSummary,
-                healthContext: healthContext
+                healthContext: healthContext,
+                previousPlan: previousPlan
             ),
             profileSummary: profileSummary,
             healthContext: healthContext,
             startDate: startDate,
             hasWeight: snapshot?.weightKg != nil || input.manualWeightValue != nil,
-            hasHeight: snapshot?.heightCm != nil || input.manualHeightValue != nil
+            hasHeight: snapshot?.heightCm != nil || input.manualHeightValue != nil,
+            previousCycles: previousPlan.map { previous in
+                (previous.previousCycles ?? []) + [FitnessWeeklyReportBuilder.recap(plan: previous)]
+            } ?? []
         )
     }
 
@@ -170,13 +178,16 @@ enum FitnessPlanGenerator {
             purpose: "fitnessPlan"
         )
 
-        let document = try FitnessPlanParser.parsePlan(
+        var document = try FitnessPlanParser.parsePlan(
             response.reply,
             subjectName: subjectName,
             input: input,
             startDate: payload.startDate,
             messageUnitsConsumed: response.messageUnitsConsumed
         )
+        if !payload.previousCycles.isEmpty {
+            document.previousCycles = payload.previousCycles
+        }
         let usage = FitnessPlanAIUsageInfo(
             messageUnitsConsumed: response.messageUnitsConsumed,
             usageToday: response.usageToday,

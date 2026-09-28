@@ -107,9 +107,7 @@ enum FitnessPlanNotificationManager {
             .sorted { $0.1 < $1.1 }
             .prefix(maxScheduled)
 
-        guard !upcoming.isEmpty else { return }
-
-        let requests = upcoming.map { session, fireDate in
+        var requests = upcoming.map { session, fireDate in
             request(
                 session: session,
                 fireDate: fireDate,
@@ -118,6 +116,11 @@ enum FitnessPlanNotificationManager {
                 subjectName: plan.subjectName
             )
         }
+        if let planEnd = planEndRequest(plan: plan, childId: childId, familyId: familyId, now: now) {
+            requests.append(planEnd)
+        }
+        guard !requests.isEmpty else { return }
+
         let accepted = await KBLocalNotificationBudget.shared.add(requests, priority: .deadline)
         if accepted > 0 {
             KBDeviceReminderLedger.record(ledgerKey(childId: childId))
@@ -140,6 +143,56 @@ enum FitnessPlanNotificationManager {
     static func removePlan(childId: String) async {
         await cancelAll(childId: childId)
         KBDeviceReminderLedger.forget(ledgerKey(childId: childId))
+    }
+
+    /// Il giorno dopo la fine del piano, all'ora dei promemoria: senza, il piano
+    /// finiva in silenzio e l'ultima cosa vista era il report di una settimana.
+    /// Stesso `type` dei promemoria delle sedute, così il tap apre la dashboard
+    /// (dove c'è il consuntivo), ma nessuna categoria: «Fatto» e «Sposta» qui
+    /// non hanno una seduta a cui applicarsi.
+    private static func planEndRequest(
+        plan: FitnessPlanDocument,
+        childId: String,
+        familyId: String?,
+        now: Date
+    ) -> UNNotificationRequest? {
+        let cal = Calendar.current
+        guard
+            let dayAfter = cal.date(byAdding: .day, value: 1, to: plan.lastDay),
+            let fireDate = cal.date(
+                bySettingHour: plan.input.reminderHour,
+                minute: plan.input.reminderMinute,
+                second: 0,
+                of: dayAfter
+            ),
+            fireDate > now
+        else { return nil }
+
+        let content = UNMutableNotificationContent()
+        content.title = NSString.localizedUserNotificationString(
+            forKey: "Piano fitness concluso",
+            arguments: nil
+        )
+        content.body = NSString.localizedUserNotificationString(
+            forKey: "Guarda com'è andato il mese e prepara il successivo, costruito sui tuoi risultati.",
+            arguments: nil
+        )
+        content.sound = .default
+        var userInfo: [String: Any] = [
+            "type": FitnessPlanNotificationCategory.notificationType,
+            "childId": childId,
+        ]
+        if let familyId { userInfo["familyId"] = familyId }
+        content.userInfo = userInfo
+
+        return UNNotificationRequest(
+            identifier: identifier(childId: childId, sessionId: "planEnd"),
+            content: content,
+            trigger: UNCalendarNotificationTrigger(
+                dateMatching: cal.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate),
+                repeats: false
+            )
+        )
     }
 
     private static func request(

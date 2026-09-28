@@ -613,14 +613,22 @@ struct ProfileView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Piano \(subscriptionManager.currentPlan.displayName)")
                             .font(.system(size: 15, weight: .semibold))
-                        HStack(spacing: 4) {
-                            Text(String(format: NSLocalizedString("%@ storage", comment: "Storage quota label (%@ = formatted size)"), subscriptionManager.currentPlan.storageLabel))
+                        if let trialEnd = subscriptionManager.trialEndsAt {
+                            // In prova il listino (quota AI giornaliera del Pro) non
+                            // vale: la prova ha un tetto suo, e ciò che conta è la fine.
+                            Text(String(format: NSLocalizedString("In prova fino al %@", comment: "Profile plan row during the Pro trial (%@ = end date)"), trialEnd.formatted(date: .long, time: .omitted)))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                            Text("·").foregroundStyle(.secondary)
-                            Text(subscriptionManager.currentPlan.aiQuotaLabel)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                        } else {
+                            HStack(spacing: 4) {
+                                Text(String(format: NSLocalizedString("%@ storage", comment: "Storage quota label (%@ = formatted size)"), subscriptionManager.currentPlan.storageLabel))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text("·").foregroundStyle(.secondary)
+                                Text(subscriptionManager.currentPlan.aiQuotaLabel)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                     
@@ -663,7 +671,7 @@ struct ProfileView: View {
             Divider().padding(.horizontal, 16)
             
             NavigationLink {
-                StorageUsageView()
+                StorageUsageView(triggerFeature: "profile_storage")
                     .environmentObject(subscriptionManager)
             } label: {
                 HStack {

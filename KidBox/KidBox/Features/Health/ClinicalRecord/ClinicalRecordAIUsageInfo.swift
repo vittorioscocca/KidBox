@@ -33,15 +33,24 @@ struct ClinicalRecordAIUsageInfo: Equatable {
 
     var usageSummary: String {
         // La chiave giornaliera è la stessa di Piano Alimentare e Fitness.
-        let format = period == .lifetime
-            ? NSLocalizedString(
+        let format: String
+        switch period {
+        case .lifetime:
+            format = NSLocalizedString(
                 "%1$d messaggi AI · %2$d/%3$d del bonus gratuito",
                 comment: "Clinical record AI usage summary on the Free lifetime bonus"
             )
-            : NSLocalizedString(
+        case .trial:
+            format = NSLocalizedString(
+                "%1$d messaggi AI · %2$d/%3$d della prova Pro",
+                comment: "Clinical record AI usage summary during the Pro trial"
+            )
+        case .daily:
+            format = NSLocalizedString(
                 "%1$d messaggi AI · %2$d/%3$d oggi",
                 comment: "Clinical record AI usage summary"
             )
+        }
         return String(format: format, messageUnitsConsumed, usageToday, dailyLimit)
     }
 
@@ -64,16 +73,25 @@ enum ClinicalRecordAIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .quotaWouldExceed(let needed, let remaining, let dailyLimit, let period):
-            // Sul Free non c'è un «domani»: il bonus non si rinnova.
-            let format = period == .lifetime
-                ? NSLocalizedString(
+            // Sul Free e nella prova non c'è un «domani»: il totale non si rinnova.
+            let format: String
+            switch period {
+            case .lifetime:
+                format = NSLocalizedString(
                     "Servono %1$d messaggi AI per questo aggiornamento ma del bonus gratuito ne restano %2$d su %3$d. Riduci i referti allegati o passa a Pro.",
                     comment: "Clinical record quota error on the Free lifetime bonus"
                 )
-                : NSLocalizedString(
+            case .trial:
+                format = NSLocalizedString(
+                    "Servono %1$d messaggi AI per questo aggiornamento ma della prova Pro ne restano %2$d su %3$d. Riduci i referti allegati o abbonati a Pro.",
+                    comment: "Clinical record quota error during the Pro trial"
+                )
+            case .daily:
+                format = NSLocalizedString(
                     "Servono %1$d messaggi AI per questo aggiornamento ma ne restano %2$d su %3$d oggi. Riprova domani o riduci i referti allegati.",
                     comment: "Clinical record quota error"
                 )
+            }
             return String(format: format, needed, remaining, dailyLimit)
         case .payloadTooLarge(let chars, let maxChars):
             // Stessa chiave di Piano Alimentare e Fitness.

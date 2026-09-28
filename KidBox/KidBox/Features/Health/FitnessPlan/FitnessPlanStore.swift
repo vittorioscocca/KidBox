@@ -52,6 +52,12 @@ enum FitnessPlanStore {
         UserDefaults.standard.set(Array(weeks), forKey: reviewedWeeksPrefix + childId)
     }
 
+    /// Un piano nuovo riparte dalla settimana 1: senza azzerare, i report del
+    /// mese successivo nascerebbero già «visti» e non comparirebbero mai.
+    static func resetReviewedWeeks(childId: String) {
+        UserDefaults.standard.removeObject(forKey: reviewedWeeksPrefix + childId)
+    }
+
     // MARK: - Ultima riconciliazione con Apple Salute
 
     static func lastHealthSync(childId: String) -> Date? {
