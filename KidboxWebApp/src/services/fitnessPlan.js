@@ -502,6 +502,9 @@ Genera esattamente ${PLAN_WEEKS} settimane, con progressione settimanale sensata
 cresce e una settimana di scarico se il volume è alto).
 Allena SOLO nei giorni indicati come disponibili: ogni sessione deve avere un "dayOffset"
 compreso nell'elenco di offset ammessi fornito nel messaggio utente. Non inventare altri giorni.
+UNA SOLA seduta per giorno: ogni "dayOffset" compare al massimo una volta in tutto il piano.
+Il lavoro complementare (forza, mobilità, riscaldamento) va dentro la seduta di quel giorno,
+mai in una seduta separata sullo stesso giorno.
 Ogni sessione deve avere esercizi o attività concrete e obiettivi MISURABILI (minuti, distanza,
 calorie, serie × ripetizioni, ritmo). Niente obiettivi generici tipo "allenati bene".
 Rispetta la durata indicata per sessione, con una tolleranza di ±10 minuti.
@@ -699,6 +702,27 @@ function parseSession(raw, weekIndex, startMillis) {
   };
 }
 
+/**
+ * Una seduta per giorno, anche quando l'AI ne mette due sullo stesso
+ * `dayOffset` (settembre 2026: lunedì e mercoledì doppi, mai chiesti). Il
+ * doppione non si vede sul calendario ma pesa nel report: resta la seduta più
+ * lunga. Porting di `FitnessPlanParser.oneSessionPerDay`.
+ */
+function oneSessionPerDay(weeks) {
+  const keptByDay = new Map();
+  weeks.flatMap((w) => w.sessions).forEach((session) => {
+    const day = startOfDayMillis(session.date);
+    const kept = keptByDay.get(day);
+    if (!kept || (session.durationMinutes || 0) > (kept.durationMinutes || 0)) {
+      keptByDay.set(day, session);
+    }
+  });
+  const keep = new Set([...keptByDay.values()].map((s) => s.id));
+  return weeks
+    .map((w) => ({ ...w, sessions: w.sessions.filter((s) => keep.has(s.id)) }))
+    .filter((w) => w.sessions.length > 0);
+}
+
 /** Porting di `FitnessPlanParser.parsePlan`. */
 export function parsePlan({ raw, subjectName, input, startDate, messageUnitsConsumed }) {
   const object = jsonObjectFrom(raw);
@@ -721,7 +745,8 @@ export function parsePlan({ raw, subjectName, input, startDate, messageUnitsCons
     weeks.push({ index, focus: (rawWeek.focus || "").trim(), sessions });
   });
 
-  if (weeks.length === 0) throw new Error("INVALID_PLAN_FORMAT");
+  const uniqueWeeks = oneSessionPerDay(weeks);
+  if (uniqueWeeks.length === 0) throw new Error("INVALID_PLAN_FORMAT");
 
   return {
     subjectName,
@@ -729,7 +754,7 @@ export function parsePlan({ raw, subjectName, input, startDate, messageUnitsCons
     startDate,
     summary,
     safetyNotes,
-    weeks: weeks.sort((a, b) => a.index - b.index),
+    weeks: uniqueWeeks.sort((a, b) => a.index - b.index),
     generatedAt: Date.now(),
     messageUnitsConsumed,
     loggedWorkouts: null,
