@@ -263,6 +263,10 @@ function encodeDocument(plan) {
     generatedAt: iso(plan.generatedAt),
     messageUnitsConsumed: plan.messageUnitsConsumed || 0,
     loggedWorkouts: plan.loggedWorkouts ?? null,
+    // Consuntivi dei mesi precedenti, scritti dal telefono quando genera il
+    // mese successivo: la pagina non li usa ma deve riscriverli com'erano,
+    // altrimenti una spunta da qui cancellerebbe la storia del percorso.
+    previousCycles: plan.previousCycles ?? null,
   };
 }
 
@@ -297,6 +301,7 @@ function decodeDocument(raw) {
     generatedAt: fromIso(raw.generatedAt) || Date.now(),
     messageUnitsConsumed: Number(raw.messageUnitsConsumed) || 0,
     loggedWorkouts: raw.loggedWorkouts ?? null,
+    previousCycles: Array.isArray(raw.previousCycles) ? raw.previousCycles : null,
   };
 }
 
