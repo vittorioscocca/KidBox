@@ -37,13 +37,14 @@ const LIMITS = {
   storageBytesMax: 100 * GIB,
   storageBytesFreeMax: 2 * GIB,
   priceMonthlyMax: 99.99,
+  priceYearlyMax: 999.99,
   maxFeatures: 20,
   maxTextLength: 200,
   langs: ["it", "en", "fr", "es"],
 };
 
 /** Campi che la console NON può toccare: cambiarli romperebbe gli acquisti. */
-const CAMPI_IMMUTABILI = ["id", "order", "displayName", "productId", "currency"];
+const CAMPI_IMMUTABILI = ["id", "order", "displayName", "productId", "productIdYearly", "currency"];
 
 /** Piani ammessi, nell'ordine di presentazione. */
 const PLAN_IDS = Object.values(BUNDLED.plans)
@@ -118,6 +119,11 @@ function validatePlans(plans) {
     const aiLimit = Number(p.aiLimit);
     const aiPeriod = String(p.aiPeriod || "");
     const priceMonthly = Number(p.priceMonthly);
+    // Facoltativo: la console che non conosce ancora il campo lo omette, e
+    // allora vale quello del bundle invece di sparire dal listino.
+    const priceYearly = p.priceYearly === undefined || p.priceYearly === null ?
+      Number(base.priceYearly ?? 0) :
+      Number(p.priceYearly);
     const tettoStorage = id === "free" ? LIMITS.storageBytesFreeMax : LIMITS.storageBytesMax;
     const tettoAI = id === "free" ? LIMITS.aiLimitFreeMax : LIMITS.aiLimitMax;
 
@@ -141,12 +147,16 @@ function validatePlans(plans) {
     if (!Number.isFinite(priceMonthly) || priceMonthly < 0 || priceMonthly > LIMITS.priceMonthlyMax) {
       errors.push(`${id}: priceMonthly deve essere tra 0 e ${LIMITS.priceMonthlyMax}`);
     }
+    if (!Number.isFinite(priceYearly) || priceYearly < 0 || priceYearly > LIMITS.priceYearlyMax) {
+      errors.push(`${id}: priceYearly deve essere tra 0 e ${LIMITS.priceYearlyMax}`);
+    }
 
     out[id] = {
       storageBytes,
       aiLimit,
       aiPeriod,
       priceMonthly,
+      priceYearly,
       highlighted: p.highlighted === true,
       priceLabel: sanitizeLocalized(p.priceLabel),
       tagline: sanitizeLocalized(p.tagline),

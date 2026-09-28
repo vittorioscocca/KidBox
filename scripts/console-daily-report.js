@@ -185,7 +185,7 @@ async function main() {
   };
 
   // 2. Famiglie e membri: struttura, non attività.
-  const [famTotal, famYesterday, fam7, famPro, famMax, ovPro, ovMax, usersDocs] = await Promise.all([
+  const [famTotal, famYesterday, fam7, famPro, famMax, ovPro, ovMax, usersDocs, famTrial] = await Promise.all([
     count(tok, "families"),
     count(tok, "families", gte("createdAt", romeMidnight(yesterday))),
     count(tok, "families", gte("createdAt", romeMidnight(shiftDay(yesterday, -6)))),
@@ -194,7 +194,18 @@ async function main() {
     count(tok, "families", eq("planOverride", "pro")),
     count(tok, "families", eq("planOverride", "max")),
     count(tok, "users"),
+    // La prova Pro scrive `plan: "pro"` come un abbonamento vero: senza
+    // toglierla, ogni famiglia nuova risulterebbe pagante.
+    count(tok, "families", eq("planSource", "trial")),
   ]);
+  // Registro delle prove (functions/proTrial.js): pochi documenti, si leggono tutti.
+  const trialRows = await call(tok, `${FS}:runQuery`, {
+    structuredQuery: {
+      from: [{ collectionId: "trials" }],
+      select: { fields: [{ fieldPath: "startedAt" }, { fieldPath: "endedAt" }, { fieldPath: "convertedAt" }, { fieldPath: "convertedDuringTrial" }] },
+    },
+  }).catch(() => []);
+  const trialDocs = trialRows.filter((r) => r.document).map((r) => r.document.fields || {});
   // Distribuzione membri per famiglia: una lettura per membro, solo il nome.
   const memberRows = await call(tok, `${FS}:runQuery`, {
     structuredQuery: {
@@ -233,7 +244,18 @@ async function main() {
     with3plus: sizes.filter((n) => n >= 3).length,
     with2plusExternal: external.filter((f) => f.n >= 2).length,
     with3plusExternal: external.filter((f) => f.n >= 3).length,
-    paying: { pro: famPro, max: famMax, overridePro: ovPro, overrideMax: ovMax },
+    paying: { pro: famPro - famTrial, max: famMax, overridePro: ovPro, overrideMax: ovMax },
+    trial: {
+      active: famTrial,
+      granted: trialDocs.length,
+      grantedYesterday: trialDocs.filter((f) => {
+        const t = tsMillis(f.startedAt);
+        return t >= Date.parse(romeMidnight(yesterday)) && t < Date.parse(romeMidnight(shiftDay(yesterday, 1)));
+      }).length,
+      ended: trialDocs.filter((f) => f.endedAt).length,
+      converted: trialDocs.filter((f) => f.convertedAt).length,
+      convertedDuringTrial: trialDocs.filter((f) => f.convertedDuringTrial?.booleanValue).length,
+    },
   };
 
   // 2-bis. Coorti settimanali: delle famiglie nate in una settimana, quante
@@ -436,6 +458,7 @@ function print(o) {
     L.push("L'ultima settimana è incompleta e le coorti recenti maturano ancora: confronta ogni settimana con le precedenti ALLA STESSA ETÀ, non con il valore finale.");
   }
   L.push(`A pagamento: pro ${f.paying.pro} · max ${f.paying.max} · override console pro/max ${f.paying.overridePro}/${f.paying.overrideMax}`);
+  L.push(`Prova Pro: in corso ${f.trial.active} · concesse ${f.trial.granted} (ieri ${f.trial.grantedYesterday}) · finite ${f.trial.ended} · convertite ${f.trial.converted} (di cui durante la prova ${f.trial.convertedDuringTrial}). La conversione si legge sulle prove FINITE, non su quelle in corso.`);
   L.push("");
 
   L.push("## Rollup attività (metrics/{date}, azioni di valore su Firestore) — 14 gg");

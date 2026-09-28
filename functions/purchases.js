@@ -38,6 +38,10 @@ const ANDROID_PACKAGE_NAME = "it.vittorioscocca.kidbox";
 const PRODUCT_TO_PLAN = {
   "it.vittorioscocca.kidbox.pro.monthly": "pro",
   "it.vittorioscocca.kidbox.max.monthly": "max",
+  // Annuali: stessi piani, stesso gruppo di abbonamento su App Store (così
+  // passare da mensile ad annuale è un cambio di piano, non un doppio addebito).
+  "it.vittorioscocca.kidbox.pro.yearly": "pro",
+  "it.vittorioscocca.kidbox.max.yearly": "max",
 };
 
 /**

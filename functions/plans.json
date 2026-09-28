@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-31",
+  "updatedAt": "2026-09-28",
   "plans": {
     "free": {
       "id": "free",
@@ -11,6 +11,8 @@
       "aiPeriod": "lifetime",
       "productId": null,
       "priceMonthly": 0,
+      "priceYearly": 0,
+      "productIdYearly": null,
       "currency": "EUR",
       "highlighted": false,
       "priceLabel": {
@@ -211,6 +213,8 @@
       "aiPeriod": "daily",
       "productId": "it.vittorioscocca.kidbox.pro.monthly",
       "priceMonthly": 4.99,
+      "priceYearly": 39.99,
+      "productIdYearly": "it.vittorioscocca.kidbox.pro.yearly",
       "currency": "EUR",
       "highlighted": true,
       "priceLabel": {
@@ -431,6 +435,8 @@
       "aiPeriod": "daily",
       "productId": "it.vittorioscocca.kidbox.max.monthly",
       "priceMonthly": 9.99,
+      "priceYearly": 79.99,
+      "productIdYearly": "it.vittorioscocca.kidbox.max.yearly",
       "currency": "EUR",
       "highlighted": false,
       "priceLabel": {

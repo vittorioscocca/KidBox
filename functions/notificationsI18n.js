@@ -105,6 +105,15 @@ const STRINGS = {
     "wallet.kind.parking": "Parcheggio",
     "wallet.kind.museum": "Museo",
     "wallet.kind.default": "Biglietto",
+    "trial.reminderTitle": "La prova Pro finisce tra {days} giorni",
+    "trial.reminderTitleOne": "La prova Pro finisce domani",
+    "trial.reminderBody":
+      "Spazio in più, pianificatori e assistente AI restano attivi " +
+      "fino al {date}. Per tenerli, abbonati a Pro dall'app.",
+    "trial.endedTitle": "La prova Pro è finita",
+    "trial.endedBody":
+      "La famiglia è tornata al piano Free e niente di quello che " +
+      "hai salvato va perso. Pianificatori e AI tornano con Pro.",
   },
 
   en: {
@@ -172,6 +181,15 @@ const STRINGS = {
     "wallet.kind.parking": "Parking",
     "wallet.kind.museum": "Museum",
     "wallet.kind.default": "Ticket",
+    "trial.reminderTitle": "Your Pro trial ends in {days} days",
+    "trial.reminderTitleOne": "Your Pro trial ends tomorrow",
+    "trial.reminderBody":
+      "Extra storage, planners and the AI assistant stay on until " +
+      "{date}. To keep them, subscribe to Pro in the app.",
+    "trial.endedTitle": "Your Pro trial has ended",
+    "trial.endedBody":
+      "Your family is back on the Free plan and nothing you saved " +
+      "is lost. Planners and AI come back with Pro.",
   },
 
   fr: {
@@ -239,6 +257,17 @@ const STRINGS = {
     "wallet.kind.parking": "Parking",
     "wallet.kind.museum": "Musée",
     "wallet.kind.default": "Billet",
+    "trial.reminderTitle": "Votre essai Pro se termine dans {days} jours",
+    "trial.reminderTitleOne": "Votre essai Pro se termine demain",
+    "trial.reminderBody":
+      "L'espace supplémentaire, les planificateurs et l'assistant " +
+      "IA restent actifs jusqu'au {date}. Pour les garder, " +
+      "abonnez-vous à Pro dans l'app.",
+    "trial.endedTitle": "Votre essai Pro est terminé",
+    "trial.endedBody":
+      "Votre famille est revenue au forfait Free et rien de ce que " +
+      "vous avez enregistré n'est perdu. Les planificateurs et l'IA " +
+      "reviennent avec Pro.",
   },
 
   es: {
@@ -306,6 +335,16 @@ const STRINGS = {
     "wallet.kind.parking": "Aparcamiento",
     "wallet.kind.museum": "Museo",
     "wallet.kind.default": "Billete",
+    "trial.reminderTitle": "Tu prueba Pro termina en {days} días",
+    "trial.reminderTitleOne": "Tu prueba Pro termina mañana",
+    "trial.reminderBody":
+      "El espacio extra, los planificadores y el asistente de IA " +
+      "siguen activos hasta el {date}. Para conservarlos, " +
+      "suscríbete a Pro desde la app.",
+    "trial.endedTitle": "Tu prueba Pro ha terminado",
+    "trial.endedBody":
+      "Tu familia ha vuelto al plan Free y no se pierde nada de lo " +
+      "que guardaste. Los planificadores y la IA vuelven con Pro.",
   },
 };
 

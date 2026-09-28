@@ -555,6 +555,10 @@ function renderPlansEditor() {
           <label>Prezzo / mese</label>
           <input type="number" step="0.01" min="0" id="plan-${id}-price" value="${p.priceMonthly}" style="width:100%" />
         </div>
+        <div class="field" style="margin:0;width:120px">
+          <label>Prezzo / anno</label>
+          <input type="number" step="0.01" min="0" id="plan-${id}-price-year" value="${p.priceYearly ?? 0}" style="width:100%" title="Solo per le schede della landing: nelle app il prezzo lo mostra lo store. Deve coincidere con App Store Connect e Play Console." />
+        </div>
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-dim);padding-bottom:8px">
           <input type="checkbox" id="plan-${id}-hot" ${p.highlighted?'checked':''} /> in evidenza
         </label>
@@ -590,6 +594,7 @@ function plansFromForm() {
       aiLimit: parseInt(document.getElementById(`plan-${id}-ai`).value, 10),
       aiPeriod: base.aiPeriod,
       priceMonthly: Number(document.getElementById(`plan-${id}-price`).value),
+      priceYearly: Number(document.getElementById(`plan-${id}-price-year`).value),
       highlighted: document.getElementById(`plan-${id}-hot`).checked,
       priceLabel: {}, tagline: {}, badge: {}, features: {},
     };
@@ -746,7 +751,7 @@ function renderFamiliesTable(rows) {
 
   // ── aggiorna stat card sempre coerenti con la vista filtrata ──
   let pFree=0, pPro=0, pMax=0;
-  filtered.forEach(r => { if(r.plan==='pro') pPro++; else if(r.plan==='max') pMax++; else pFree++; });
+  filtered.forEach(r => { if(r.trial) pFree++; else if(r.plan==='pro') pPro++; else if(r.plan==='max') pMax++; else pFree++; });
   setVal('stat-families', fmtNum(filtered.length));
   setVal('stat-plan-pro', fmtNum(pPro));
   setVal('stat-plan-max', fmtNum(pMax));
@@ -780,7 +785,7 @@ function renderFamiliesTable(rows) {
         ${r.fid.slice(0,18)}…</td>
       <td data-label="Famiglia" style="font-size:13px;font-weight:500" title="${r.fname||''}">${fnameShort}</td>
       <td data-label="Email" class="dim" style="font-size:12px" title="${email}">${emailShort}</td>
-      <td data-label="Piano"><span class="badge badge-${r.plan}">${r.plan}</span></td>
+      <td data-label="Piano"><span class="badge badge-${r.plan}">${r.planLabel || r.plan}</span></td>
       <td data-label="Dispositivi" style="font-size:13px;white-space:nowrap">${platforms}</td>
       <td data-label="Storage" class="mono">${fmtBytes(r.storageBytes)}</td>
       <td data-label="AI mese" class="mono ${r.aiMonth>0?'hi':''}">${r.aiMonth > 0 ? r.aiMonth : '—'}</td>
@@ -992,7 +997,7 @@ function renderFunnelSection(rows) {
     <td>${r.fname}</td>
     <td>${r.totalMembers}</td>
     <td>${r.activeMembers14d}</td>
-    <td><span class="badge badge-${r.plan}">${r.plan}</span></td>
+    <td><span class="badge badge-${r.plan}">${r.planLabel || r.plan}</span></td>
   </tr>`).join('');
 
   el.innerHTML = `
@@ -1203,6 +1208,9 @@ async function loadFamilies() {
       const d    = fdoc.data();
       const ov   = d.planOverride;
       const plan = (ov === 'pro' || ov === 'max') ? ov : (d.plan || 'free');
+      // Prova Pro (functions/proTrial.js): `plan` dice pro ma nessuno paga.
+      const trial = plan === 'pro' && d.planSource === 'trial';
+      const planLabel = trial ? 'pro · prova' : plan;
       let storageBytes=0, aiMonth=0, ownerEmail='—', iosCount=0, androidCount=0, totalMemberCount=0, activeCount14d=0;
       try { const sd=await getDoc(doc(db,'families',fid,'stats','storage')); if(sd.exists()) storageBytes=sd.data().usedBytes||0; } catch {}
       // legge messaggi AI del mese corrente (non giornaliero)
@@ -1238,13 +1246,14 @@ async function loadFamilies() {
         }
       } catch {}
       const fname = d.name || '—';
-      return { fid, fname, plan, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: fdoc.data().updatedAt?.toDate(), totalMembers: totalMemberCount, activeMembers14d: activeCount14d };
+      return { fid, fname, plan, trial, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: fdoc.data().updatedAt?.toDate(), totalMembers: totalMemberCount, activeMembers14d: activeCount14d };
     }));
     rows.push(...res);
   }
 
   rows.forEach(r => {
-    if(r.plan==='pro')  planPro++;
+    if(r.trial) planFree++;
+    else if(r.plan==='pro')  planPro++;
     else if(r.plan==='max') planMax++;
     else planFree++;
     totalStorage+=r.storageBytes;

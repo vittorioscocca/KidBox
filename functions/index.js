@@ -11,6 +11,7 @@ const {logEvent: logAnalyticsEvent} = require("./analytics");
 // Catalogo piani: quote/prezzi/feature vivono SOLO in functions/plans.json.
 // Vedi functions/plansConfig.js e internal/plans-source-of-truth.md.
 const plansConfig = require("./plansConfig");
+const proTrial = require("./proTrial");
 const {stripExpiredInviteSecrets} = require("./invitesCleanup");
 // Testi delle notifiche push per lingua: il client scrive la lingua scelta su
 // `users/{uid}.notificationLanguage`, qui si traduce la cornice prima di inviare.
@@ -2206,7 +2207,20 @@ function aiTodayKey() {
  * @return {Promise<string>}
  */
 async function resolveFamilyPlanForQuotas(uid, familyId) {
+  return (await resolveFamilyPlanDetailed(uid, familyId)).plan;
+}
+
+/**
+ * Come [resolveFamilyPlanForQuotas], con in più da dove viene il piano
+ * (`planSource`: "ios", "android", "trial", "override"…). Serve a dare alla
+ * prova Pro la sua quota AI invece di quella del Pro pagato.
+ * @param {string|null|undefined} uid
+ * @param {string|null|undefined} familyId
+ * @return {Promise<{plan: string, source: ?string}>}
+ */
+async function resolveFamilyPlanDetailed(uid, familyId) {
   let plan = "free";
+  let source = null;
   let expiredByDate = false;
   try {
     if (familyId) {
@@ -2217,8 +2231,10 @@ async function resolveFamilyPlanForQuotas(uid, familyId) {
         if (ov === "pro" || ov === "max") {
           // L'override amministrativo dalla console non scade mai.
           plan = ov;
+          source = "override";
         } else {
           plan = d.plan || "free";
+          source = typeof d.planSource === "string" ? d.planSource : null;
           // Scadenza autorevole lato server: `planExpiresAt` è scritto solo da
           // validatePurchase a partire dalla ricevuta verificata. Senza questo
           // controllo un abbonamento scaduto resterebbe Pro per sempre, perché
@@ -2242,12 +2258,13 @@ async function resolveFamilyPlanForQuotas(uid, familyId) {
       const userSnap = await admin.firestore().collection("users").doc(uid).get();
       if (userSnap.exists) {
         plan = userSnap.data().plan || "free";
+        source = plan === "free" ? source : "user";
       }
     }
-    return plan;
+    return {plan, source};
   } catch (e) {
     logger.warn("resolveFamilyPlanForQuotas failed", {uid, familyId, error: e.message});
-    return "free";
+    return {plan: "free", source: null};
   }
 }
 
@@ -2314,11 +2331,17 @@ const AI_FREE_LIFETIME_LIMIT = plansConfig.AI_FREE_LIFETIME_LIMIT;
  * Usa [resolveFamilyPlanForQuotas] così rispetta planOverride da console admin.
  * @param {string|null|undefined} uid
  * @param {string|null|undefined} familyId
- * @return {Promise<{period: "daily"|"lifetime", limit: number}>}
+ * @return {Promise<{period: "daily"|"lifetime"|"trial", limit: number}>}
  */
 async function resolveAIQuota(uid, familyId = null) {
   try {
-    const plan = await resolveFamilyPlanForQuotas(uid, familyId);
+    const {plan, source} = await resolveFamilyPlanDetailed(uid, familyId);
+    // Prova Pro: tutto il Pro tranne l'AI, che ha un totale suo per l'intera
+    // prova. Il periodo "trial" non è "lifetime", quindi i pianificatori
+    // riservati a Pro/Max (gate `quota.period === "lifetime"`) restano aperti.
+    if (source === "trial" && plan !== "free") {
+      return await proTrial.trialAIQuota();
+    }
     return await plansConfig.aiQuotaForPlan(plan);
   } catch (e) {
     logger.warn("resolveAIQuota failed, using default", {uid, familyId, error: e.message});
@@ -2540,15 +2563,8 @@ function anthropicReplyText(json) {
  */
 async function refundAIUsage(familyId, uid, quota, units) {
   const delta = Math.max(1, Math.floor(Number(units) || 1));
-  const isLifetime = quota?.period === "lifetime";
-  const periodKey = isLifetime ? "free" : aiTodayKey();
   const db = admin.firestore();
-  const familyRef = db
-      .collection("ai_usage").doc(`family_${familyId}`)
-      .collection(isLifetime ? "lifetime" : "daily").doc(periodKey);
-  const userRef = isLifetime ?
-    db.collection("ai_usage").doc(`user_${uid}`).collection("lifetime").doc("free") :
-    null;
+  const {familyRef, userRef} = proTrial.aiUsageRefs(db, familyId, uid, quota?.period, aiTodayKey());
 
   try {
     await db.runTransaction(async (tx) => {
@@ -2604,19 +2620,13 @@ async function checkAndIncrementAIUsage(familyId, uid, quota, incrementBy = 1) {
   }
 
   const isLifetime = period === "lifetime";
-  const periodKey = isLifetime ? "free" : aiTodayKey();
+  const isTrial = period === "trial";
   const db = admin.firestore();
-  const ref = db
-      .collection("ai_usage").doc(`family_${familyId}`)
-      .collection(isLifetime ? "lifetime" : "daily").doc(periodKey);
-
   // Il bonus Free è tracciato anche per utente: chiunque può creare famiglie
   // illimitate (firestore.rules), quindi il solo contatore per famiglia si
   // aggirerebbe creandone una nuova ogni 5 messaggi. Con il contatore per uid
   // il bonus resta 5 per persona a prescindere da quante famiglie apre.
-  const userRef = isLifetime ?
-    db.collection("ai_usage").doc(`user_${uid}`).collection("lifetime").doc("free") :
-    null;
+  const {familyRef: ref, userRef} = proTrial.aiUsageRefs(db, familyId, uid, period, aiTodayKey());
 
   return await db.runTransaction(async (tx) => {
     // Firestore impone tutte le letture prima di qualsiasi scrittura.
@@ -2633,6 +2643,8 @@ async function checkAndIncrementAIUsage(familyId, uid, quota, incrementBy = 1) {
       let message;
       if (isLifetime) {
         message = `Hai già usato tutti i ${limit} messaggi AI gratuiti del piano Free. Passa a Pro per continuare a usare l'assistente.`;
+      } else if (isTrial) {
+        message = `Hai usato tutti i ${limit} messaggi AI della prova Pro. Abbonati a Pro per continuare a usare l'assistente.`;
       } else if (delta > 1 && remaining > 0) {
         // Un messaggio "pesante" (Sonnet, contesto ampio) scala più di un'unità:
         // se restano 5 messaggi e questo ne costa 6, dire solo "limite
@@ -2645,7 +2657,7 @@ async function checkAndIncrementAIUsage(familyId, uid, quota, incrementBy = 1) {
       // I numeri viaggiano anche nei details, così i client possono comporre
       // la frase nella lingua dell'utente.
       throw new HttpsError("resource-exhausted", message, {
-        reason: isLifetime ? "lifetime-limit" : "daily-limit",
+        reason: isLifetime ? "lifetime-limit" : isTrial ? "trial-limit" : "daily-limit",
         units: delta,
         remaining,
         limit,
@@ -4579,12 +4591,8 @@ exports.getAIUsage = onCall(
       await assertFamilyMember(uid, familyId);
 
       const quota = await resolveAIQuota(uid, familyId);
-      const isLifetime = quota.period === "lifetime";
-      const periodKey = isLifetime ? "free" : aiTodayKey();
       const db = admin.firestore();
-      const ref = db
-          .collection("ai_usage").doc(`family_${familyId}`)
-          .collection(isLifetime ? "lifetime" : "daily").doc(periodKey);
+      const {familyRef: ref, userRef} = proTrial.aiUsageRefs(db, familyId, uid, quota.period, aiTodayKey());
 
       const snap = await ref.get();
       const familyCount = snap.exists ? (snap.data().count || 0) : 0;
@@ -4592,10 +4600,8 @@ exports.getAIUsage = onCall(
       // Allineato a checkAndIncrementAIUsage: sul bonus a vita conta il massimo
       // tra contatore famiglia e contatore utente, così la UI blocca quando blocca il server.
       let count = familyCount;
-      if (isLifetime) {
-        const userSnap = await db
-            .collection("ai_usage").doc(`user_${uid}`)
-            .collection("lifetime").doc("free").get();
+      if (userRef) {
+        const userSnap = await userRef.get();
         const userCount = userSnap.exists ? (userSnap.data().count || 0) : 0;
         count = Math.max(familyCount, userCount);
       }
@@ -5715,6 +5721,11 @@ exports.validatePurchase = onCall(
       }
 
       const db = admin.firestore();
+      // Da dove arrivava la famiglia prima di questo acquisto: se era in prova
+      // (o l'aveva appena finita) è una conversione, e va segnata sul registro
+      // delle prove per misurarle. Solo al primo acquisto: i client rimandano la
+      // ricevuta a ogni refresh, e da lì in poi planSource è già "ios"/"android".
+      const previousSource = (await db.collection("families").doc(familyId).get()).get("planSource");
       const planPayload = {
         plan: result.plan,
         planUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -5735,6 +5746,17 @@ exports.validatePurchase = onCall(
       logger.info("validatePurchase: piano aggiornato", {
         uid, familyId, plan: result.plan, expiresAtMs: result.expiresAtMs,
       });
+
+      if (previousSource === "trial" || previousSource === "trial_ended") {
+        const trialSnap = await db.collection("trials").where("familyId", "==", familyId).limit(1).get();
+        if (!trialSnap.empty) {
+          await trialSnap.docs[0].ref.set({
+            convertedAt: admin.firestore.FieldValue.serverTimestamp(),
+            convertedPlan: result.plan,
+            convertedDuringTrial: previousSource === "trial",
+          }, {merge: true}).catch((e) => logger.warn("Prova Pro: conversione non segnata", {familyId, error: e.message}));
+        }
+      }
 
       return {
         plan: result.plan,
@@ -5880,6 +5902,130 @@ exports.onFamilyDeletedQuota = onDocumentDeleted(
       // Liberare lo slot alla cancellazione: il limite è "famiglie attive",
       // non "famiglie mai create".
       await recomputeOwnedFamilies(event.data?.data()?.ownerUid);
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROVA PRO — vedi functions/proTrial.js
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Ogni famiglia nuova parte in prova Pro, se chi la crea non l'ha mai avuta e
+ * se `config/trial.enabled` è acceso. Trigger separato da onFamilyCreatedQuota
+ * perché un errore qui non deve bloccare il conteggio delle famiglie.
+ */
+exports.grantProTrialOnFamilyCreated = onDocumentCreated(
+    {document: "families/{familyId}", region: "europe-west1", maxInstances: 20},
+    async (event) => {
+      const familyId = event.params.familyId;
+      const ownerUid = event.data?.data()?.ownerUid;
+      if (!ownerUid) return;
+      try {
+        const esito = await proTrial.grantTrial(familyId, ownerUid, {source: "family_created"});
+        if (esito.granted) logger.info("Prova Pro concessa", {familyId, ownerUid, expiresAtMs: esito.expiresAtMs});
+      } catch (e) {
+        logger.warn("Prova Pro: concessione fallita", {familyId, ownerUid, error: e.message});
+      }
+    },
+);
+
+/**
+ * Manda la push della prova al proprietario, nella sua lingua.
+ * @param {string} uid
+ * @param {string} familyId
+ * @param {"reminder"|"ended"} stage
+ * @param {number} expiresAtMs
+ * @return {Promise<boolean>} true se è partito almeno un invio
+ */
+async function sendProTrialPush(uid, familyId, stage, expiresAtMs) {
+  const byUid = await getTokensForUsers([uid], null);
+  const entry = byUid.get(uid);
+  if (!entry?.tokens.length) return false;
+  const lang = entry.lang;
+  let title;
+  let body;
+  if (stage === "reminder") {
+    const days = Math.max(1, Math.ceil((expiresAtMs - Date.now()) / proTrial.DAY_MS));
+    title = days === 1 ?
+      tn(lang, "trial.reminderTitleOne") :
+      tn(lang, "trial.reminderTitle", {days});
+    body = tn(lang, "trial.reminderBody", {date: formatLongDate(new Date(expiresAtMs), lang)});
+  } else {
+    title = tn(lang, "trial.endedTitle");
+    body = tn(lang, "trial.endedBody");
+  }
+  const message = buildDataOnlyMessage({
+    tokens: entry.tokens,
+    title,
+    body,
+    data: {type: "pro_trial", stage, familyId},
+  });
+  const {successCount} = await sendMulticastAndPrune(
+      [message], [{uid, tokens: entry.tokens, refsByToken: entry.refsByToken}], "proTrial",
+  );
+  return successCount > 0;
+}
+
+/**
+ * Ogni ora: riporta al Free le prove scadute e avvisa i proprietari.
+ *
+ * Il server declassa già da solo per le quote (planExpiresAt in
+ * resolveFamilyPlanDetailed), ma i client leggono `families.plan` senza
+ * guardare la scadenza: senza questo giro una famiglia resterebbe Pro sulle
+ * app per sempre. Gira anche a prova spenta, perché le prove già concesse
+ * devono finire comunque.
+ */
+exports.expireProTrials = onSchedule(
+    {schedule: "every 60 minutes", region: "europe-west1", timeZone: "Europe/Rome", maxInstances: 1},
+    async () => {
+      const db = admin.firestore();
+      const cfg = await proTrial.loadTrialConfig();
+      const now = Date.now();
+      const snap = await db.collection("families").where("planSource", "==", "trial").get();
+      let scadute = 0;
+      let promemoria = 0;
+
+      for (const doc of snap.docs) {
+        const d = doc.data() || {};
+        const expiresAtMs = d.planExpiresAt?.toMillis?.() ?? 0;
+        const trialSnap = await db.collection("trials").where("familyId", "==", doc.id).limit(1).get();
+        const trialDoc = trialSnap.empty ? null : trialSnap.docs[0];
+        const uid = trialDoc?.id || d.ownerUid;
+
+        if (expiresAtMs <= now) {
+          // Transazione: tra la query e la scrittura un acquisto vero può aver
+          // sostituito la prova, e quello non va mai declassato.
+          const declassata = await db.runTransaction(async (tx) => {
+            const fresh = await tx.get(doc.ref);
+            if (fresh.data()?.planSource !== "trial") return false;
+            tx.set(doc.ref, {
+              plan: "free",
+              planSource: "trial_ended",
+              planUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            }, {merge: true});
+            if (trialDoc) {
+              tx.set(trialDoc.ref, {endedAt: admin.firestore.FieldValue.serverTimestamp()}, {merge: true});
+            }
+            return true;
+          });
+          if (!declassata) continue;
+          scadute++;
+          if (uid && !trialDoc?.get("endNotifiedAt")) {
+            const inviata = await sendProTrialPush(uid, doc.id, "ended", expiresAtMs).catch(() => false);
+            if (trialDoc) await trialDoc.ref.set({endNotifiedAt: admin.firestore.FieldValue.serverTimestamp(), endPushDelivered: inviata}, {merge: true});
+          }
+          continue;
+        }
+
+        const reminderMs = cfg.reminderDaysBefore * proTrial.DAY_MS;
+        if (reminderMs > 0 && expiresAtMs - now <= reminderMs && uid && trialDoc && !trialDoc.get("reminderSentAt")) {
+          const inviata = await sendProTrialPush(uid, doc.id, "reminder", expiresAtMs).catch(() => false);
+          await trialDoc.ref.set({reminderSentAt: admin.firestore.FieldValue.serverTimestamp(), reminderPushDelivered: inviata}, {merge: true});
+          promemoria++;
+        }
+      }
+
+      if (scadute || promemoria) logger.info("expireProTrials", {inProva: snap.size, scadute, promemoria});
     },
 );
 
