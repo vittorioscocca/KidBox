@@ -1,0 +1,31 @@
+# Novità iOS 2.3.6 — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 29/09/2026 sulle modifiche della 2.3.6: abbonamenti annuali Pro e Max (39,99 € e 79,99 €, −33% sul mensile) con la scelta nel paywall e in Utilizzo spazio; Piano Fitness con consuntivo di fine piano, «Prepara il mese successivo» e notifica di fine piano; report settimanali del mese nuovo non più «già visti». La prova Pro NON è citata: è nel codice ma spenta sul server finché non la si accende.
+
+## it
+
+• Piani annuali: Pro e Max si possono pagare anche una volta l'anno, risparmiando un terzo rispetto al mensile. Scegli tra mensile e annuale nei Piani o in Utilizzo spazio.
+• Piano Fitness: a fine mese vedi il consuntivo di come è andata, e con «Prepara il mese successivo» crei il piano nuovo partendo dai tuoi risultati.
+• Una notifica ti avvisa quando il piano fitness è concluso.
+• I report settimanali del mese nuovo non risultano più già letti.
+
+## en-GB
+
+• Yearly plans: Pro and Max can now be paid once a year, saving a third compared with monthly. Choose monthly or yearly in Plans or in Storage usage.
+• Fitness Plan: at the end of the month you see how it went, and "Prepare next month" builds the new plan starting from your results.
+• A notification lets you know when your fitness plan is finished.
+• Weekly reports for the new month no longer show up as already read.
+
+## es-ES
+
+• Planes anuales: Pro y Max también se pueden pagar una vez al año, ahorrando un tercio respecto al mensual. Elige entre mensual y anual en Planes o en Uso del espacio.
+• Plan de fitness: al final del mes ves el resumen de cómo ha ido, y con «Preparar el mes siguiente» creas el nuevo plan a partir de tus resultados.
+• Una notificación te avisa cuando el plan de fitness ha terminado.
+• Los informes semanales del mes nuevo ya no aparecen como leídos.
+
+## fr-FR
+
+• Forfaits annuels : Pro et Max peuvent désormais être payés une fois par an, avec un tiers d'économie par rapport au mensuel. Choisissez mensuel ou annuel dans Forfaits ou dans Utilisation de l'espace.
+• Plan fitness : à la fin du mois, vous voyez le bilan, et « Préparer le mois suivant » crée le nouveau plan à partir de vos résultats.
+• Une notification vous prévient quand votre plan fitness est terminé.
+• Les bilans hebdomadaires du nouveau mois n'apparaissent plus comme déjà lus.
