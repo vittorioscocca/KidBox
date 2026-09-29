@@ -72,10 +72,10 @@
    * le famiglie nuove partono in Pro. Se la prova si spegne, va tolta anche qui.
    */
   var TRIAL_LINE = {
-    it: "14 giorni inclusi per le famiglie nuove, senza carta",
-    en: "14 days included for new families, no card needed",
-    fr: "14\u00a0jours inclus pour les nouvelles familles, sans carte",
-    es: "14 días incluidos para las familias nuevas, sin tarjeta",
+    it: "Prova Pro gratis per 14 giorni: parte da sola quando crei la tua famiglia, senza carta",
+    en: "Try Pro free for 14 days: it starts on its own when you create your family, no card needed",
+    fr: "Essai Pro gratuit de 14\u00a0jours\u00a0: il démarre tout seul quand vous créez votre famille, sans carte",
+    es: "Prueba Pro gratis 14 días: empieza sola cuando creas tu familia, sin tarjeta",
   };
 
   function featureHtml(feature, plan) {
