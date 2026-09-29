@@ -225,9 +225,17 @@ Regole che valgono per tutti i piani:
   itinerari di viaggio con l'AI). Le altre funzioni AI sul Free usano i messaggi
   di prova.
 - L'abbonamento si acquista dall'app (App Store su iPhone, iPad e Mac; Google
-  Play su Android), si rinnova automaticamente ogni mese e si annulla in
+  Play su Android), mensile o annuale (l'annuale costa circa un terzo in meno
+  del mensile per dodici mesi). Si rinnova automaticamente e si annulla in
   qualunque momento dalle impostazioni dell'account Apple o di Google Play.
-- Se si annulla, l'abbonamento resta attivo fino alla fine del mese già pagato.
+- Se si annulla, l'abbonamento resta attivo fino alla fine del periodo già
+  pagato (mese o anno).
+- **Prova Pro**: chi crea una famiglia nuova ha il piano Pro incluso per 14
+  giorni, senza carta e senza impegno. Durante la prova l'AI ha un tetto suo
+  (50 messaggi in tutto per la prova). Alla fine la famiglia torna da sola al
+  piano Free e non perde nulla di ciò che ha salvato; per continuare con il Pro
+  ci si abbona dall'app. La prova si ha una sola volta per persona: non si
+  rinnova creando un'altra famiglia.
 
 ## Supporto
 
