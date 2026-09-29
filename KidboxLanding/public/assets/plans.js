@@ -65,6 +65,17 @@
     return '<div class="psub">' + escapeHtml(line) + "</div>";
   }
 
+  /**
+   * Prova Pro al contrario (functions/proTrial.js, interruttore config/trial):
+   * le famiglie nuove partono in Pro. Se la prova si spegne, va tolta anche qui.
+   */
+  var TRIAL_LINE = {
+    it: "14 giorni inclusi per le famiglie nuove, senza carta",
+    en: "14 days included for new families, no card needed",
+    fr: "14\u00a0jours inclus pour les nouvelles familles, sans carte",
+    es: "14 días incluidos para las familias nuevas, sin tarjeta",
+  };
+
   function featureHtml(feature, plan) {
     var text = escapeHtml(
         String(feature.text)
@@ -90,6 +101,7 @@
       '      <div class="pn">' + escapeHtml(plan.displayName) + "</div>" +
         '<div class="pp">' + priceHtml(plan, lang) + "</div>" +
         yearlyHtml(plan, lang) +
+        (plan.id === "pro" ? '<div class="psub"><b>' + escapeHtml(TRIAL_LINE[lang] || TRIAL_LINE.en) + "</b></div>" : "") +
         '<div class="psub">' + escapeHtml((plan.tagline && plan.tagline[lang]) || "") + "</div><hr>",
       "      <ul>",
       features,
