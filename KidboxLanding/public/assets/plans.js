@@ -20,6 +20,13 @@
   "use strict";
 
   var PRICE_SUFFIX = {it: "/ mese", en: "/ month", fr: "/ mois", es: "/ mes"};
+  /** Riga dell'annuale sotto il prezzo mensile: {p} = prezzo, {s} = risparmio in %. */
+  var YEARLY_LINE = {
+    it: "oppure {p} all'anno (−{s}%)",
+    en: "or {p} a year (−{s}%)",
+    fr: "ou {p} par an (−{s}\u00a0%)",
+    es: "o {p} al año (−{s}\u00a0%)",
+  };
 
   function escapeHtml(s) {
     return String(s === null || s === undefined ? "" : s)
@@ -41,6 +48,21 @@
     var price = "€&thinsp;" + amount;
     if (plan.priceMonthly === 0) return price;
     return price + " <small>" + (PRICE_SUFFIX[lang] || PRICE_SUFFIX.en) + "</small>";
+  }
+
+  /**
+   * «oppure € 39,99 all'anno (−33%)», solo se il listino ha il prezzo annuale.
+   * Il risparmio si calcola sul mensile ×12, come nelle app.
+   */
+  function yearlyHtml(plan, lang) {
+    if (!plan.priceYearly || !plan.priceMonthly) return "";
+    var amount = new Intl.NumberFormat(lang, {minimumFractionDigits: 2}).format(plan.priceYearly);
+    var saving = Math.round((1 - plan.priceYearly / (plan.priceMonthly * 12)) * 100);
+    if (saving <= 0) return "";
+    var line = (YEARLY_LINE[lang] || YEARLY_LINE.en)
+        .replace("{p}", "€\u2009" + amount)
+        .replace("{s}", String(saving));
+    return '<div class="psub">' + escapeHtml(line) + "</div>";
   }
 
   function featureHtml(feature, plan) {
@@ -67,6 +89,7 @@
       badge ? '      <div class="badge">⭐ ' + escapeHtml(badge) + "</div>" : null,
       '      <div class="pn">' + escapeHtml(plan.displayName) + "</div>" +
         '<div class="pp">' + priceHtml(plan, lang) + "</div>" +
+        yearlyHtml(plan, lang) +
         '<div class="psub">' + escapeHtml((plan.tagline && plan.tagline[lang]) || "") + "</div><hr>",
       "      <ul>",
       features,

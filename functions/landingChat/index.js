@@ -135,7 +135,8 @@ function plansText(plans) {
       .map((p) => {
         const price = p.priceMonthly === 0 ?
           "gratis, per sempre" :
-          `${p.priceMonthly.toFixed(2).replace(".", ",")} € al mese`;
+          `${p.priceMonthly.toFixed(2).replace(".", ",")} € al mese` +
+          (p.priceYearly ? ` oppure ${p.priceYearly.toFixed(2).replace(".", ",")} € all'anno` : "");
         const ai = p.aiPeriod === "lifetime" ?
           `${p.aiLimit} messaggi AI di prova, una tantum (non si rinnovano)` :
           `${p.aiLimit} messaggi AI al giorno`;
@@ -161,7 +162,7 @@ function plansText(plans) {
 function priceAnswer(plans, lang) {
   const L = {
     it: {
-      locale: "it-IT", free: "gratis, per sempre", month: "al mese",
+      locale: "it-IT", free: "gratis, per sempre", month: "al mese", or: "oppure", year: "all'anno",
       storage: "di spazio per la famiglia",
       aiOnce: (n) => `${n} messaggi AI di prova, una tantum`,
       aiDaily: (n) => `${n} messaggi AI al giorno`,
@@ -169,7 +170,7 @@ function priceAnswer(plans, lang) {
       outro: "L'abbonamento si acquista dall'app (App Store o Google Play), si rinnova ogni mese e si annulla quando vuoi. Il piano Free non scade mai.",
     },
     en: {
-      locale: "en-GB", free: "free, forever", month: "per month",
+      locale: "en-GB", free: "free, forever", month: "per month", or: "or", year: "per year",
       storage: "of family storage",
       aiOnce: (n) => `${n} one-off trial AI messages`,
       aiDaily: (n) => `${n} AI messages per day`,
@@ -177,7 +178,7 @@ function priceAnswer(plans, lang) {
       outro: "You subscribe from the app (App Store or Google Play); it renews monthly and you can cancel whenever you like. The Free plan never expires.",
     },
     es: {
-      locale: "es-ES", free: "gratis, para siempre", month: "al mes",
+      locale: "es-ES", free: "gratis, para siempre", month: "al mes", or: "o", year: "al año",
       storage: "de espacio para la familia",
       aiOnce: (n) => `${n} mensajes de IA de prueba, por una sola vez`,
       aiDaily: (n) => `${n} mensajes de IA al día`,
@@ -185,7 +186,7 @@ function priceAnswer(plans, lang) {
       outro: "La suscripción se compra desde la app (App Store o Google Play), se renueva cada mes y se cancela cuando quieras. El plan Free no caduca nunca.",
     },
     fr: {
-      locale: "fr-FR", free: "gratuit, pour toujours", month: "par mois", colon: "\u00a0:",
+      locale: "fr-FR", free: "gratuit, pour toujours", month: "par mois", or: "ou", year: "par an", colon: "\u00a0:",
       storage: "d'espace pour la famille",
       aiOnce: (n) => `${n} messages IA d'essai, une seule fois`,
       aiDaily: (n) => `${n} messages IA par jour`,
@@ -202,9 +203,10 @@ function priceAnswer(plans, lang) {
   const lines = Object.values(plans)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       .map((p) => {
+        const fmt = new Intl.NumberFormat(L.locale, {style: "currency", currency: p.currency || "EUR"});
         const price = p.priceMonthly === 0 ? L.free :
-          `${new Intl.NumberFormat(L.locale, {style: "currency", currency: p.currency || "EUR"})
-              .format(p.priceMonthly)} ${L.month}`;
+          `${fmt.format(p.priceMonthly)} ${L.month}` +
+          (p.priceYearly ? ` ${L.or} ${fmt.format(p.priceYearly)} ${L.year}` : "");
         const ai = p.aiPeriod === "lifetime" ? L.aiOnce(p.aiLimit) : L.aiDaily(p.aiLimit);
         // Le voci della scheda senza segnaposto: spazio e messaggi sono già detti.
         const extras = (p.features?.[lang] || p.features?.it || [])

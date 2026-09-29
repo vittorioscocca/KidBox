@@ -33,11 +33,11 @@ const URL_DOC = `https://firestore.googleapis.com/v1/projects/${PROJECT}` +
   `/databases/(default)/documents/config/plans?key=${API_KEY}`;
 
 /** Campi che identificano il piano e il prodotto: restano quelli del repo. */
-const CAMPI_IMMUTABILI = ["id", "order", "displayName", "productId", "currency"];
+const CAMPI_IMMUTABILI = ["id", "order", "displayName", "productId", "productIdYearly", "currency"];
 /** Ordine delle chiavi nel file, per avere diff leggibili invece che rimescolati. */
 const ORDINE_CAMPI = [
   "id", "order", "displayName", "storageBytes", "aiLimit", "aiPeriod",
-  "productId", "priceMonthly", "currency", "highlighted",
+  "productId", "priceMonthly", "priceYearly", "productIdYearly", "currency", "highlighted",
   "priceLabel", "tagline", "badge", "features",
 ];
 
@@ -77,6 +77,7 @@ function differenze(vecchi, nuovi) {
     if (a.aiLimit !== b.aiLimit) righe.push(`  ${id}: messaggi AI ${a.aiLimit} → ${b.aiLimit}`);
     if (a.aiPeriod !== b.aiPeriod) righe.push(`  ${id}: periodo quota ${a.aiPeriod} → ${b.aiPeriod}`);
     if (a.priceMonthly !== b.priceMonthly) righe.push(`  ${id}: prezzo ${a.priceMonthly} → ${b.priceMonthly}`);
+    if (a.priceYearly !== b.priceYearly) righe.push(`  ${id}: prezzo annuale ${a.priceYearly} → ${b.priceYearly}`);
     if (JSON.stringify(a.features) !== JSON.stringify(b.features)) righe.push(`  ${id}: feature modificate`);
     for (const campo of ["priceLabel", "tagline", "badge"]) {
       if (JSON.stringify(a[campo]) !== JSON.stringify(b[campo])) righe.push(`  ${id}: ${campo} modificato`);
