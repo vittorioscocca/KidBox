@@ -62,7 +62,9 @@
     var line = (YEARLY_LINE[lang] || YEARLY_LINE.en)
         .replace("{p}", "€\u2009" + amount)
         .replace("{s}", String(saving));
-    return '<div class="psub">' + escapeHtml(line) + "</div>";
+    // Colore del marchio e grassetto: in grigio come il resto passava inosservata.
+    return '<div class="psub" style="color:var(--accent2);font-weight:700;font-size:0.86rem">' +
+      escapeHtml(line) + "</div>";
   }
 
   /**
@@ -101,7 +103,10 @@
       '      <div class="pn">' + escapeHtml(plan.displayName) + "</div>" +
         '<div class="pp">' + priceHtml(plan, lang) + "</div>" +
         yearlyHtml(plan, lang) +
-        (plan.id === "pro" ? '<div class="psub"><b>' + escapeHtml(TRIAL_LINE[lang] || TRIAL_LINE.en) + "</b></div>" : "") +
+        (plan.id === "pro" ?
+          '<div class="psub"><span style="display:inline-block;margin-top:6px;padding:5px 11px;' +
+          'border-radius:12px;background:var(--accent-l);color:var(--accent2);font-weight:700;line-height:1.35">🎁 ' +
+          escapeHtml(TRIAL_LINE[lang] || TRIAL_LINE.en) + "</span></div>" : "") +
         '<div class="psub">' + escapeHtml((plan.tagline && plan.tagline[lang]) || "") + "</div><hr>",
       "      <ul>",
       features,
