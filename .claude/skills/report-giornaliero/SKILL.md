@@ -166,3 +166,9 @@ Dopo aver scritto il report, aggiorna la pagina https://claude.ai/artifact/UVf8R
 4. Nel report in chat, ultima riga: «Cruscotto aggiornato: https://claude.ai/artifact/UVf8RrK61zVSeu2Cj1GGzJ».
 
 Nel commento e nella pagina non deve entrare nessun dato personale (email, nomi, uid): gli script già non li emettono, tu non aggiungerli.
+
+**Il commento deve reggere accanto ai numeri della pagina** (osservazioni ricevute il 29/09/2026, tutte fondate):
+- **Stesse definizioni dei KPI.** Il riquadro «Famiglie con 2+ membri» mostra quelle VERE (senza prove) e sotto il totale con le prove: nel commento usa lo stesso numero, e se citi l'altro nomina la differenza. «Nuovi utenti» è in persone (totalUsers di first_open), non in eventi. Se citi una parte di un totale (per esempio i 0,33 $ di Sonnet dentro i 0,36 $ del giorno), scrivilo: «0,33 $ di Sonnet su 0,36 $ totali». Un numero nel commento diverso da quello del riquadro, senza spiegazione, fa dubitare di tutta la pagina.
+- **Le cause sono ipotesi finché non le verifichi, e il testo lo deve dire.** «È il budget, non il mercato» si scrive solo dopo il confronto che lo sostiene: installazioni dichiarate da Meta contro first_open Android dello stesso giorno, first_open iOS (senza campagna) contro Android, download App Store per sorgente (ricerca contro referrer). Senza il confronto la forma è «probabilmente è il budget: lo dice X, da verificare con Y».
+- **Niente «regge» o «stabile» sul totale se una parte crolla.** Una piattaforma o una sorgente che scende di oltre il 50% in una settimana (download App Store da 54 a 15) va nominata nella stessa frase, anche se il totale tiene.
+- **Funnel:** cita quelli sequenziali (`closedFunnels`: chi crea, chi entra, uso), mai il funnel per contatori indipendenti, che supera il 100% perché mescola i due percorsi.

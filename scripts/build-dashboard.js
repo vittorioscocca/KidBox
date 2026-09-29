@@ -76,12 +76,30 @@ const pct = (x) => (x == null || Number.isNaN(x) ? "—" : `${Math.round(x * 100
 const sum = (arr) => arr.reduce((a, b) => a + (Number(b) || 0), 0);
 const avg = (arr) => (arr.length ? sum(arr) / arr.length : null);
 
-/** Freccia di confronto: ieri contro la media dei 7 giorni prima. */
-function delta(value, base) {
-  if (value == null || base == null || !base) return { cls: "flat", text: "" };
-  const r = (value - base) / base;
+/**
+ * Freccia di confronto: ieri contro la media dei 7 giorni prima.
+ *
+ * Con valori piccoli la percentuale inganna («+1001%» su 0,36 $ contro una media
+ * di 3 centesimi): sotto `minAbs` di differenza assoluta la variazione è
+ * trascurabile, e se la base è sotto `minBase` si mostra la differenza assoluta
+ * invece della percentuale.
+ * @param {number} value
+ * @param {number} base
+ * @param {{minAbs?: number, minBase?: number, unit?: string, dec?: number}} opt
+ */
+function delta(value, base, opt = {}) {
+  const { minAbs = 3, minBase = 10, unit = "", dec = 0 } = opt;
+  if (value == null || base == null) return { cls: "flat", text: "" };
+  const diff = value - base;
+  if (Math.abs(diff) < minAbs) return { cls: "flat", text: "≈ media 7gg (differenza trascurabile)" };
+  const cls = diff > 0 ? "up" : "down";
+  const sign = diff > 0 ? "+" : "−";
+  if (!base || Math.abs(base) < minBase) {
+    return { cls, text: `${sign}${fmt(Math.abs(diff), dec)}${unit} vs media 7gg (${fmt(base, dec)}${unit})` };
+  }
+  const r = diff / base;
   if (Math.abs(r) < 0.1) return { cls: "flat", text: "≈ media 7gg" };
-  return { cls: r > 0 ? "up" : "down", text: `${r > 0 ? "+" : "−"}${Math.round(Math.abs(r) * 100)}% vs media 7gg` };
+  return { cls, text: `${sign}${Math.round(Math.abs(r) * 100)}% vs media 7gg` };
 }
 
 // ------------------------------------------------------------------ grafici
@@ -190,6 +208,13 @@ function build({ note, outFile }) {
   });
   const activeTot = activeBy(null);
   const evCount = (list, name) => sum((list || []).filter((r) => r.eventName === name).map((r) => r.eventCount));
+  // Persone, non eventi: è l'unità del commento e del funnel. (Un device può
+  // mandare più first_open, per esempio dopo una reinstallazione.)
+  const evUsers = (list, name) => sum((list || []).filter((r) => r.eventName === name).map((r) => r.totalUsers));
+  const evBaseUsers = (name) => {
+    const r = (G?.events?.baseline7d || []).find((x) => x.eventName === name);
+    return r ? r.totalUsers / 7 : 0;
+  };
   const evBase = (name) => {
     const r = (G?.events?.baseline7d || []).find((x) => x.eventName === name);
     return r ? r.eventCount / 7 : 0;
@@ -236,25 +261,25 @@ function build({ note, outFile }) {
       label: "Utenti attivi ieri (GA4)",
       value: fmt(activeTot[13]),
       sub: G ? `Android ${fmt(activeBy("Android")[13])} · iOS ${fmt(activeBy("iOS")[13])} · web ${fmt(activeBy("web")[13])}` : "GA4 non disponibile",
-      delta: delta(activeTot[13], avg(activeTot.slice(6, 13))),
+      delta: delta(activeTot[13], avg(activeTot.slice(6, 13)), { minAbs: 5 }),
     },
     {
-      label: "Nuovi utenti ieri (first_open)",
-      value: fmt(evCount(G?.events?.yesterday, "first_open")),
+      label: "Nuovi utenti ieri (first_open, persone)",
+      value: fmt(evUsers(G?.events?.yesterday, "first_open")),
       sub: "include i device di test di Google/Apple",
-      delta: delta(evCount(G?.events?.yesterday, "first_open"), evBase("first_open")),
+      delta: delta(evUsers(G?.events?.yesterday, "first_open"), evBaseUsers("first_open")),
     },
     {
-      label: "Famiglie con 2+ membri",
-      value: fmt(C?.families?.with2plus),
-      sub: C ? `su ${fmt(C.families.withMembers)} con membri · ${pct(C.families.with2plus / (C.families.withMembers || 1))}` : "console non disponibile",
+      label: "Famiglie con 2+ membri (vere)",
+      value: fmt(C?.families?.with2plusExternal ?? C?.families?.with2plus),
+      sub: C ? `senza le famiglie di prova · ${fmt(C.families.with2plus)} contandole · su ${fmt(C.families.withMembers)} con membri` : "console non disponibile",
       delta: { cls: "flat", text: "strutturale: cambia lentamente" },
     },
     {
       label: `DAU / WAU / MAU (${lastRollup ? itShort(lastRollup.date) : "—"})`,
       value: lastRollup ? `${fmt(lastRollup.dau)} / ${fmt(lastRollup.wau)} / ${fmt(lastRollup.mau)}` : "—",
       sub: lastRollup ? `WAU/MAU ${pct(lastRollup.stickinessWauMau)} · azioni di valore su Firestore` : "rollup non disponibile",
-      delta: lastRollup ? delta(lastRollup.dau, avg(days14.slice(6, 13).map((d) => metricsByDate[d]?.dau).filter((v) => v != null))) : { cls: "flat", text: "" },
+      delta: lastRollup ? delta(lastRollup.dau, avg(days14.slice(6, 13).map((d) => metricsByDate[d]?.dau).filter((v) => v != null)), { minAbs: 2 }) : { cls: "flat", text: "" },
     },
     {
       label: "Letture cross-member (xread)",
@@ -266,13 +291,13 @@ function build({ note, outFile }) {
       label: "Spesa Meta ieri",
       value: M ? eur(spend14[13]) : "—",
       sub: M ? `${activeCampaigns.length} campagn${activeCampaigns.length === 1 ? "a attiva" : "e attive"} · click ${fmt(metaByDate[yesterday]?.clicks || 0)} · CTR ${fmt((metaByDate[yesterday]?.ctr || 0), 1)}%` : "Meta non disponibile",
-      delta: delta(spend14[13], avg(spend14.slice(6, 13).filter((v) => v != null))),
+      delta: delta(spend14[13], avg(spend14.slice(6, 13).filter((v) => v != null)), { minAbs: 1, minBase: 5, unit: " €", dec: 2 }),
     },
     {
       label: "Costo AI ieri (Anthropic)",
       value: N ? usd(N.totals.yesterday) : "—",
       sub: N ? `mese ${usd(N.totals.monthToDate)} · proiezione ${usd(N.totals.monthProjected)}` : "Anthropic non disponibile",
-      delta: N ? delta(N.totals.yesterday, avg(ai14.slice(6, 13))) : { cls: "flat", text: "" },
+      delta: N ? delta(N.totals.yesterday, avg(ai14.slice(6, 13)), { minAbs: 1, minBase: 5, unit: " $", dec: 2 }) : { cls: "flat", text: "" },
     },
     {
       label: "Google Cloud, mese (netto)",
@@ -473,8 +498,14 @@ footer { font-size: 12.5px; color: var(--ink-3); display: grid; gap: 4px; }
   </section>
 
   <section>
-    <div class="section-head"><h2>Funnel a 28 giorni, per utenti unici</h2><span class="hint">${G ? `${itDate(G.funnelUsers.d28.start)} → ${itDate(G.funnelUsers.d28.end)} · GA4` : "GA4 non disponibile"}${C ? ` · pagina /join negli ultimi 7 gg: ${fmt(joinShown7)} viste → ${fmt(joinStore7)} tap store` : ""}</span></div>
-    <div class="card">${funnelChart(funnelSteps)}</div>
+    <div class="section-head"><h2>Funnel a 28 giorni, sequenziali</h2><span class="hint">${G ? `${itDate(G.funnelUsers.d28.start)} → ${itDate(G.funnelUsers.d28.end)} · GA4` : "GA4 non disponibile"}${C ? ` · pagina /join negli ultimi 7 gg: ${fmt(joinShown7)} viste → ${fmt(joinStore7)} tap store` : ""}</span></div>
+    ${G?.closedFunnels && Object.keys(G.closedFunnels).length ? [
+      ["creatori", "Chi crea la famiglia"],
+      ["invitati", "Chi entra con un invito"],
+      ["uso", "Uso dopo la famiglia"],
+    ].filter(([k]) => G.closedFunnels[k]?.length).map(([k, t]) => `<div class="card"><h3>${t}</h3>${funnelChart(G.closedFunnels[k].map((st) => ({ label: st.label, value: st.users })))}</div>`).join("") +
+    `<p class="muted">Sequenziali: ogni gradino conta solo chi ha fatto anche i precedenti, nell'ordine, quindi la percentuale non supera mai il 100%. I due percorsi sono separati perché chi entra con un invito non passa dalla creazione della famiglia. «Invito generato» è quasi sempre il 100%: il wizard crea il link da solo, quindi non misura una condivisione; la condivisione si legge nel ramo di chi entra.</p>`
+    : `<div class="card">${funnelChart(funnelSteps)}</div><p class="muted">Funnel sequenziale non disponibile oggi: questi sono contatori indipendenti per evento, non un percorso, e possono superare il 100%.</p>`}
     <div class="card"><h3>Famiglie che trovano un secondo membro <small>coorti per settimana di nascita · senza le famiglie di prova</small></h3>
       ${C?.cohorts?.length ? `<div class="tablewrap"><table><tr><th>settimana dal</th><th class="n">nate</th><th class="n">con 2+ membri</th><th></th><th class="n">giorni fino al 2°</th></tr>
       ${C.cohorts.map((c) => { const r = c.families ? c.grown / c.families : 0; const ds = [...c.daysToSecond].sort((a, b) => a - b); const med = ds.length ? fmt(ds[Math.floor(ds.length / 2)], 1) : "—"; return `<tr><td>${itDate(c.week)}</td><td class="n">${fmt(c.families)}</td><td class="n">${fmt(c.grown)} <span class="muted">${pct(r)}</span></td><td><div class="fbar" style="height:8px;min-width:90px"><div class="ffill" style="width:${Math.min(100, Math.round(r * 400))}%"></div></div></td><td class="n muted">${med}</td></tr>`; }).join("")}

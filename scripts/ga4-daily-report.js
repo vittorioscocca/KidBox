@@ -75,6 +75,31 @@ const KEY_EVENTS = [
   "landing_chat_question",
 ];
 
+/**
+ * Funnel sequenziali per ramo (vedi 3-quater). «Invito generato» nel ramo di chi
+ * crea è quasi il 100% perché il wizard genera il link da solo: non misura una
+ * condivisione, e la perdita vera si vede nel ramo di chi entra.
+ */
+const CLOSED_FUNNELS = {
+  creatori: [
+    ["Installazione", "first_open"],
+    ["Login visto", "pre_signup_screen_shown"],
+    ["Login tentato", "login_attempted"],
+    ["Famiglia creata", "family_created"],
+    ["Invito generato", "invite_generated"],
+  ],
+  invitati: [
+    ["Installazione", "first_open"],
+    ["Join tentato", "family_join_attempted"],
+    ["Entrato in famiglia", "family_joined"],
+  ],
+  uso: [
+    ["Famiglia creata", "family_created"],
+    ["Contenuto creato", "content_created"],
+    ["Letto da un altro membro", "content_shared_read"],
+  ],
+};
+
 // Parametri evento che vale la pena spaccare. Funzionano solo se registrati
 // come dimensione personalizzata nella property: altrimenti la API risponde
 // 400 e la sezione viene saltata con una nota, non è un guasto.
@@ -281,6 +306,39 @@ async function main() {
     d7: { start: shiftDay(yesterday, -6), end: yesterday, rows: await funnelRows(shiftDay(yesterday, -6), yesterday) },
   };
 
+  // 3-quater. Funnel SEQUENZIALI (GA4 runFunnelReport, v1alpha): ogni gradino
+  // conta solo chi ha fatto anche i precedenti, in quest'ordine. Il funnel qui
+  // sopra mette in fila contatori indipendenti e supera il 100% (chi entra con
+  // un invito apre l'onboarding senza essersi «registrato»; chi ha già una
+  // famiglia genera inviti). I rami sono due perché due sono i percorsi.
+  // Ordine reale del wizard a 2 pagine: la famiglia nasce prima di
+  // onboarding_completed, che scatta dopo la pagina dell'invito.
+  out.closedFunnels = {};
+  for (const [key, steps] of Object.entries(CLOSED_FUNNELS)) {
+    try {
+      const res = await fetch(`https://analyticsdata.googleapis.com/v1alpha/properties/${PROPERTY}:runFunnelReport`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dateRanges: [{ startDate: shiftDay(yesterday, -27), endDate: yesterday }],
+          funnel: {
+            isOpenFunnel: false,
+            steps: steps.map(([name, ev]) => ({ name, filterExpression: { funnelEventFilter: { eventName: ev } } })),
+          },
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error?.message || `HTTP ${res.status}`);
+      // Righe "1. Nome" → {label, users}; l'ordine è quello dei passi.
+      out.closedFunnels[key] = (json.funnelTable?.rows || []).map((r) => ({
+        label: r.dimensionValues[0].value.replace(/^\d+\.\s*/, ""),
+        users: Number(r.metricValues[0].value),
+      }));
+    } catch (e) {
+      out.notes.push(`Funnel sequenziale «${key}» non disponibile: ${e.message}`);
+    }
+  }
+
   // 4. Web (web app + landing): pagine e sorgenti di traffico, ieri.
   out.web = {};
   out.web.pages = rows(
@@ -399,6 +457,20 @@ function print(o) {
     L.push(pad(ev, 26) + pad(tot, 10) + pad(fu(w, ev, "Android"), 9) + pad(fu(w, ev, "iOS"), 7) + pad(fu(w, ev, "web"), 6) + fu(o.funnelUsers.d7, ev));
   }
   L.push("Utenti unici per evento, non somma di eventi. login_attempted scatta solo sui provider social: signup_completed può superarlo.");
+  L.push("");
+
+  // Funnel sequenziali
+  const nomi = { creatori: "chi crea la famiglia", invitati: "chi entra con un invito", uso: "uso dopo la famiglia" };
+  for (const [key, steps] of Object.entries(o.closedFunnels || {})) {
+    if (!steps.length) continue;
+    L.push(`## Funnel SEQUENZIALE 28 gg — ${nomi[key] || key}`);
+    steps.forEach((st, i) => {
+      const prev = i ? steps[i - 1].users : null;
+      L.push(pad(st.label, 26) + pad(st.users, 8) + (prev ? `${Math.round((st.users / (prev || 1)) * 100)}% del passo prima` : ""));
+    });
+    L.push("");
+  }
+  L.push("Sequenziale = ogni gradino conta solo chi ha fatto anche i precedenti, in ordine: non supera mai il 100%. «Invito generato» è ~100% perché il wizard lo genera da solo.");
   L.push("");
 
   // Breakdown
