@@ -14,11 +14,19 @@ caratteri per descrizione (entrambi gli store), 80 per la breve di Play,
 Le versioni Mac differiscono dalle iOS solo in coda (righe EULA/Privacy) e
 per l'assenza della frase Alexa in italiano.
 
-Descrizioni brevi Play:
-- `it-IT`: KidBox: salute, agenda, spese e documenti della tua famiglia in un'unica app.
-- `en-US`: KidBox: your family's health, calendar, expenses and documents in one app.
-- `fr-FR`: KidBox : santé, agenda, dépenses et documents de la famille en une seule app.
-- `es-ES`: KidBox: salud, agenda, gastos y documentos de tu familia en una sola app.
+Descrizioni brevi Play (dal 29/09/2026: «insieme» al posto di «in un'unica
+app», perché l'app vale quando entra il secondo familiare; niente prezzi né
+promozioni come «gratis» o la prova Pro, che le regole di Play sui testi
+della scheda non ammettono):
+- `it-IT`: Organizza la famiglia insieme: agenda, spesa, salute, spese e documenti
+- `en-US`: Organize your family together: shared calendar, shopping, health and documents
+- `fr-FR`: Organisez la famille ensemble : agenda, courses, santé et documents partagés
+- `es-ES`: Organiza la familia juntos: agenda, compra, salud, gastos y documentos
+
+Prima: «KidBox: salute, agenda, spese e documenti della tua famiglia in un'unica
+app.» (e traduzioni). Il commit dell'edit Play va fatto con un corpo vuoto
+esplicito (`Content-Length: 0`): senza, la risposta arriva vuota e l'edit si
+perde.
 
 Per applicare via API: script usa-e-getta di questa sessione (`asc-apply.js`),
 autenticazione come `scripts/appstore-daily-report.js` (chiave nel Portachiavi)
