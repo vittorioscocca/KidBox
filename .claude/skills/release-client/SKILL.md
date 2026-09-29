@@ -116,6 +116,13 @@ Il giro del 24/09/2026 (Android 2.3.7):
 5. **I cambi di comportamento voluti** vanno detti anche se non sono bug
    (esempio: avviso di uscita ritardato di 5 minuti).
 
+## Abbonamenti e schede insieme alla release
+
+- Abbonamenti nuovi o modificati: `/abbonamenti-store`. Su Apple si mandano in revisione dalle pagine degli abbonamenti, **non** dalla pagina della versione, e vanno nella stessa bozza della versione che li mostra.
+- **Salvare via API la scheda Play mentre una release è in revisione la aggiunge a quella revisione** (stessa «Panoramica della pubblicazione»). Dirlo all'utente PRIMA, e chiedere se preferisce aspettare l'approvazione della release.
+- Il **testo promozionale** dell'App Store (170 caratteri) si cambia in qualsiasi momento, senza nuova versione. Scriverlo sia sulla versione in vendita sia su quella in preparazione, altrimenti con l'uscita della versione nuova torna vuoto.
+- La **descrizione breve di Play** (80 caratteri) pesa sulla ricerca nello store e non ammette prezzi né promozioni («gratis», prove).
+
 ## Dopo la pubblicazione
 
 Una release è adottata in **1-2 settimane**: fino ad allora i due comportamenti

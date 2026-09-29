@@ -34,6 +34,11 @@ quando le sue stringhe sono nel catalogo con en/fr/es.
    Xcode** — non compare nel catalogo, quindi non risulta «da tradurre» e sembra
    tutto a posto. Stesso effetto in contesto `String`:
    `Text(x.isEmpty ? "Senza titolo" : x)`, `prezzo + "/mese"`.
+   **Anche il ternario fra DUE letterali** (`Text(cond ? "Annuale" : "Mensile")`,
+   `Section(cond ? "A" : "B")`, `Text(a ? "…\(x)/anno" : "…\(x)/mese")`): Swift
+   sceglie `String` per l'espressione e il testo non passa dal catalogo. Si
+   scrive un `Text` per ramo dentro `if/else` (o `Group { if … }`), oppure
+   `LocalizedStringKey("…")` esplicito in entrambi i rami.
    **Se una stringa non si traduce, questa è la prima cosa da controllare.**
 3. **`xcodebuild` da CLI non fa il merge nel catalogo** (solo l'IDE lo fa). Per
    estrarre: build, poi aggregare i `.stringsdata` da
@@ -49,6 +54,12 @@ quando le sue stringhe sono nel catalogo con en/fr/es.
    allineate ai segmenti EN); se cambi una pagina EN i segmenti si spostano →
    `i18n_skeleton.py show/save`. Dopo `translate_html.py` **rilanciare
    `build_tools.py`** (footer, menu, canonical, hreflang).
+   **Un segmento EN senza traduzione blocca SOLO quella pagina, in silenzio:** la
+   build stampa «N testi senza traduzione» e lascia la pagina ES/FR com'era.
+   Così la privacy ES e FR è rimasta per settimane senza la sezione sulla chat
+   (corretto il 29/09/2026). Dopo ogni build leggere l'output e, per ogni pagina
+   EN toccata, controllare con `translate_html.py extract <pagina>-en.html` che
+   non ci siano segmenti assenti dal json.
 
 **Anche su Android esiste il buco invisibile**, quando l'italiano è un
 letterale Kotlin invece di una risorsa: le etichette della ricorrenza nel

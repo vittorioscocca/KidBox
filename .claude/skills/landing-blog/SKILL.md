@@ -93,6 +93,14 @@ traducono**.
 - Nel footer **niente `<nav>`**: il CSS globale `nav{position:sticky…}` della
   barra in alto lo stravolge. Il footer è generato, **mai editarlo a mano**.
 
+## Le card dei piani e `plans.js`
+
+- Le card dei piani delle quattro home le disegna `assets/plans.js` due volte: al build (`node scripts/render-landing-plans.js`, solo IT ed EN; ES e FR da `translate_html.py build`) e **nel browser**, rileggendo `config/plans`. Quindi il testo nelle card lo decide lo script, non l'HTML.
+- **Dopo ogni modifica a `plans.js` alzare la versione nell'URL** (`/assets/plans.js?v=N` in `index.html` e `index-en.html`, poi rigenerare ES/FR). La cache è di 5 minuti, e con la versione vecchia lo script ridisegna le card vecchie sopra quelle nuove: il 29/09/2026 sembrava che la modifica non fosse uscita.
+- **Testi da far vedere** (annuale, prova Pro): colore del marchio (`var(--accent2)`) e grassetto. Il `.psub` grigio passa inosservato. Stili in linea nelle righe generate, così non si tocca il CSS di ogni pagina.
+- La prova Pro e dove altro vive il suo testo: `/prova-pro`.
+- Verifica dal vivo nel browser (non solo `curl`): leggere il contenuto di `.plan` dopo 2-3 secondi, quando lo script ha già ridisegnato.
+
 ## SEO e consenso
 
 - `kidboxapp.com` è verificato in Search Console con un TXT

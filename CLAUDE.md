@@ -39,6 +39,8 @@ i suoi commit si vedono solo con `git -C KidBoxAndroid`.
 - `/calendario` — ricorrenze, promemoria degli eventi, calendari del telefono e iscritti da link, Google e Outlook senza OAuth
 - `/cifratura` — la chiave di famiglia: dove vive, come arriva a un membro, cosa il server non può fare
 - `/ai` — purpose, modello, unità scalate e quote; le trappole di copilota, cache e max_tokens
+- `/abbonamenti-store` — Pro/Max mensili e annuali su App Store e Play: livelli, IVA, invio in revisione, verifica via API
+- `/prova-pro` — la prova Pro di 14 giorni: concessione, interruttore, regalo alle famiglie esistenti, dove vive il testo
 
 ## Divisione del lavoro
 
