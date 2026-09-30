@@ -170,8 +170,11 @@ verrebbe da pensare. Ognuna è costata almeno una volta.
   live stanno in `live/current`.
 - **La condivisione della posizione non vive nella schermata Posizione.** Su
   iOS sta in `LocationSharingService` (singleton, ripresa a ogni avvio), su
-  Android nel foreground service: il ViewModel della mappa legge e basta.
-  Appartiene al dispositivo che l'ha avviata.
+  Android nel foreground service con lo stato in `LocationSharingStateStore`:
+  il ViewModel della mappa legge e basta. Appartiene al dispositivo che l'ha
+  avviata. Su Android il servizio riscrive la posizione ogni 15 minuti anche
+  da fermo, e se tace il server lo risveglia con una push silenziosa
+  (`resumeStaleLocationSharing`).
 - **La riga «Distanza» del Piano Fitness è dichiarata a Google Play**: deve
   restare visibile anche a zero, altrimenti `READ_DISTANCE` diventa
   indimostrabile. Nel Piano Alimentare invece non deve comparire.
@@ -190,8 +193,9 @@ verrebbe da pensare. Ognuna è costata almeno una volta.
   `fitnessCopilot`, …). Due modelli: Sonnet per il ragionamento, Haiku dove
   basta. Il consumo si conta in «messaggi», contatore condiviso dalla famiglia.
 - **Scheduler**: posizioni temporanee scadute e promemoria to-do ogni 5 minuti,
-  biglietti in scadenza ogni ora, calendari iscritti ogni 6 ore, allineamento
-  piani e garbage collection di notte.
+  push di ripresa della condivisione Android ogni 30 minuti, biglietti in
+  scadenza ogni ora, calendari iscritti ogni 6 ore, allineamento piani e
+  garbage collection di notte.
 - **Notifiche**: un trigger per tipo (documento, chat, foto, visita, evento,
   spesa, to-do assegnato, spesa, articolo spesa, nota, biglietto, carta fedeltà).
 - **App Check** su tutti e quattro i client; enforcement ancora spento finché

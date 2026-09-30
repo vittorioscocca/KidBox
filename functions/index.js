@@ -1347,6 +1347,97 @@ exports.expireTemporaryLocations = onSchedule(
     },
 );
 
+/** Tipo della push silenziosa di ripresa. Stesso valore in KidBoxFirebaseMessagingService (Android). */
+const LOCATION_RESUME_TYPE = "location_resume";
+/** Il servizio Android riscrive la posizione almeno ogni 15 min anche da fermo: oltre 40, è morto. */
+const LOCATION_RESUME_STALE_MS = 40 * 60 * 1000;
+/** Oltre questo il telefono è spento, disinstallato o perso: si smette di provare. */
+const LOCATION_RESUME_GIVE_UP_MS = 3 * 24 * 60 * 60 * 1000;
+/** Una prova ogni tanto per persona, non a ogni giro. */
+const LOCATION_RESUME_EVERY_MS = 2 * 60 * 60 * 1000;
+
+/**
+ * Riaccende la condivisione posizione dei telefoni Android su cui si è fermata.
+ *
+ * Il servizio in primo piano che invia la posizione muore (sistema, risparmio
+ * energetico del produttore) e da Android 12 non può ripartire da solo da
+ * background: il watchdog viene respinto. Il 30/09/2026 un telefono risultava
+ * «in condivisione» con la posizione ferma da 10 giorni, mentre mandava arrivi
+ * e uscite da una zona. Una push dati ad alta priorità è uno dei pochi momenti
+ * in cui Android permette di riavviarlo.
+ *
+ * Si distingue «fermo» da «morto» perché dalla build che gestisce questa push
+ * il servizio riscrive `live/current` almeno ogni 15 minuti anche senza
+ * muoversi. La push va solo ai token con `locationResume == true`: le build
+ * precedenti la mostrerebbero come «Nuova notifica», e senza il permesso
+ * posizione «sempre» il servizio non ripartirebbe comunque (il client scrive
+ * il campo solo se ce l'ha). iOS non ne ha bisogno: la riprende da sé.
+ *
+ * `resumeCheckedAt` sta su `live/current`, che la query legge già: il limite
+ * di una prova ogni 2 ore non costa letture in più.
+ */
+exports.resumeStaleLocationSharing = onSchedule(
+    {
+      schedule: "every 30 minutes",
+      region: "europe-west1",
+      maxInstances: 1,
+      timeZone: "Europe/Rome",
+    },
+    async () => {
+      const db = admin.firestore();
+      const now = Date.now();
+      const stale = await db.collectionGroup("live")
+          .where("lastUpdateAt", "<", admin.firestore.Timestamp.fromMillis(now - LOCATION_RESUME_STALE_MS))
+          .where("lastUpdateAt", ">", admin.firestore.Timestamp.fromMillis(now - LOCATION_RESUME_GIVE_UP_MS))
+          .get();
+      if (stale.empty) return;
+
+      let sent = 0;
+      for (const liveDoc of stale.docs) {
+        // families/{familyId}/locations/{uid}/live/current
+        const statusRef = liveDoc.ref.parent.parent;
+        if (liveDoc.id !== "current" || !statusRef || statusRef.parent.id !== "locations") continue;
+        const checkedAt = liveDoc.get("resumeCheckedAt")?.toMillis?.() ?? 0;
+        if (now - checkedAt < LOCATION_RESUME_EVERY_MS) continue;
+
+        const familyId = statusRef.parent.parent.id;
+        const uid = statusRef.id;
+        try {
+          await liveDoc.ref.update({resumeCheckedAt: admin.firestore.FieldValue.serverTimestamp()});
+
+          const status = await statusRef.get();
+          if (status.get("isSharing") !== true) continue;
+
+          const tokensSnap = await db.collection("users").doc(uid)
+              .collection("fcmTokens").where("locationResume", "==", true).get();
+          const refsByToken = new Map();
+          tokensSnap.forEach((t) => {
+            const tok = t.get("token") || t.id;
+            if (tok) refsByToken.set(tok, t.ref);
+          });
+          const tokens = [...refsByToken.keys()];
+          if (tokens.length === 0) continue;
+
+          const result = await admin.messaging().sendEachForMulticast({
+            tokens,
+            data: {type: LOCATION_RESUME_TYPE, familyId},
+            android: {priority: "high", ttl: 10 * 60 * 1000},
+          });
+          await pruneInvalidFcmTokens(uid, tokens, result.responses, refsByToken);
+          sent += result.successCount;
+          logger.info("resumeStaleLocationSharing: push di ripresa", {
+            familyId, uid,
+            fermaDaMin: Math.round((now - liveDoc.get("lastUpdateAt").toMillis()) / 60000),
+            successCount: result.successCount, failureCount: result.failureCount,
+          });
+        } catch (err) {
+          logger.error("resumeStaleLocationSharing: fallito", {familyId, uid, err: String(err)});
+        }
+      }
+      if (sent > 0) logger.info("resumeStaleLocationSharing: completato", {candidati: stale.size, sent});
+    },
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // GEOFENCE — arrivo / partenza zona
 // ─────────────────────────────────────────────────────────────────────────────

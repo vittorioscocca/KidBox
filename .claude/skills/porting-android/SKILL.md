@@ -148,7 +148,10 @@ Per misurare davvero: il debug dell'SDK è già attivo, `adb logcat` mostra
 ## Notifiche e deep link
 
 7. **Payload FCM ibrido obbligatorio** (`notification` + `data`) con
-   `android.notification.clickAction`. Il data-only «per far girare sempre
+   `android.notification.clickAction`. Unica eccezione voluta: la push
+   silenziosa `location_resume`, solo dati, che non deve mostrare niente e va
+   solo ai token con `locationResume == true`, perché le build precedenti
+   mostrano ogni push dati sconosciuta come «Nuova notifica». Il data-only «per far girare sempre
    `onMessageReceived`» è una strada già percorsa e fallita: ad app killata su
    HyperOS/MIUI la notifica non arriva, e senza il blocco `notification`
    spariscono i banner heads-up. Il tap non navigava per il **manifest**, non
@@ -188,6 +191,16 @@ Per misurare davvero: il debug dell'SDK è già attivo, `adb logcat` mostra
     31), servizio fermato senza toccare lo stato persistito, e ripresa in
     `onResume` dell'Activity. Riferimento: `LocationSharingService`, 19 crash
     su 30 a settembre 2026, corretto in 2.4.0.
+    **Il permesso «Consenti sempre» non basta** a far ripartire il servizio da
+    background: toglie la `SecurityException`, non il divieto di Android 12+.
+    Il 30/09/2026 un telefono con «sempre» (le zone lo richiedono) aveva la
+    condivisione ferma da 10 giorni. Gli avvii ammessi che usiamo sono la push
+    dati ad alta priorità (`location_resume`, mandata da
+    `resumeStaleLocationSharing`), l'evento di zona
+    (`GeofenceTransitionReceiver`) e l'app in primo piano; tutti passano da
+    `LocationSharingService.resumeIfNeeded`. Lo stato «questo telefono
+    condivide» sta in `LocationSharingStateStore`, mai nel documento Firestore:
+    la schermata che lo deduceva da lì annullava lo stop dato dalla notifica.
     Per leggere gli stack: `GET …/v1beta1/apps/{app}/errorIssues:search` ed
     `errorReports:search` della Play Developer Reporting API (GET, con
     `interval.startTime.*` come query); `errorCountMetricSet` conta soltanto.

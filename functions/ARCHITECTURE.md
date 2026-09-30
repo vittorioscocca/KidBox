@@ -60,6 +60,7 @@ npm run lint      # eslint
 |---|---|---|
 | `refreshCalendarFeeds` | ogni 6 ore | Rilegge tutti i feed ICS (`collectionGroup("calendarFeeds")`) con ETag/Last-Modified; un errore finisce in `lastError` senza svuotare gli eventi. |
 | `expireTemporaryLocations` | ogni 5 min | `collectionGroup("locations")`, scade `mode == "temporary"` con `expiresAt <= now`. |
+| `resumeStaleLocationSharing` | ogni 30 min | `collectionGroup("live")` con `lastUpdateAt` fra 40 min e 3 giorni fa: se lo stato è ancora `isSharing`, push dati silenziosa `location_resume` ad alta priorità ai soli token con `locationResume == true` (Android dalla build che la gestisce, con permesso posizione «sempre»), per riavviare il servizio morto. Una prova ogni 2 ore per persona (`resumeCheckedAt` su `live/current`). Il servizio Android riscrive la posizione almeno ogni 15 min anche da fermo: è quello che distingue «fermo» da «morto». Indice `live.lastUpdateAt` COLLECTION_GROUP in `firestore.indexes.json`. |
 | `garbageCollectDeleted` | `0 3 */5 * *` (540 s, 512 MiB) | Hard-delete `isDeleted == true` in `documents`, `chatMessages`, `photos`, `walletTickets` + blob Storage. Una `collectionGroup` per collection, paginata a 450 doc, con deadline interna a 480 s: il lavoro non finito passa al giro dopo. |
 | `notifyUpcomingWalletTickets` | ogni 60 min | Promemoria wallet T-24h / T-2h (flag idempotenti). |
 | `cleanupResolvedCases` | ogni 24 h | Pulizia `cases` risolti da > 7 gg, a pagine di 450 (limite batch Firestore). |
