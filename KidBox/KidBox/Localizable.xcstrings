@@ -1,6 +1,72 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
+    "%@ sta condividendo la posizione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is sharing their location"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ está compartiendo su ubicación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ partage sa position"
+          }
+        }
+      }
+    },
+    "%@ sta condividendo temporaneamente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is sharing temporarily"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ está compartiendo temporalmente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ partage temporairement"
+          }
+        }
+      }
+    },
+    "%@ sta condividendo temporaneamente fino alle %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ is sharing temporarily until %2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ está compartiendo temporalmente hasta las %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ partage temporairement jusqu’à %2$@"
+          }
+        }
+      }
+    },
     "%@/anno" : {
       "comment" : "Yearly price suffix (%@ = StoreKit localized price)",
       "localizations" : {
@@ -137,6 +203,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Demander de l’activer"
+          }
+        }
+      }
+    },
+    "Espandi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expandir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Développer"
           }
         }
       }
@@ -439,6 +527,28 @@
         }
       }
     },
+    "Riduci" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réduire"
+          }
+        }
+      }
+    },
     "Spazio in più, pianificatori e assistente AI per tutta la famiglia. Senza carta e senza rinnovo: dopo %d giorni torni al Free e i tuoi dati restano." : {
       "comment" : "Pro trial offer description (%d = trial days)",
       "localizations" : {
@@ -458,6 +568,94 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Espace supplémentaire, planificateurs et assistant IA pour toute la famille. Sans carte ni renouvellement : après %d jours, vous revenez à Free et vos données restent."
+          }
+        }
+      }
+    },
+    "Stai condividendo la tua posizione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're sharing your location"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estás compartiendo tu ubicación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous partagez votre position"
+          }
+        }
+      }
+    },
+    "Stai condividendo temporaneamente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're sharing temporarily"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estás compartiendo temporalmente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous partagez temporairement"
+          }
+        }
+      }
+    },
+    "Stai condividendo temporaneamente fino alle %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're sharing temporarily until %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estás compartiendo temporalmente hasta las %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous partagez temporairement jusqu’à %@"
+          }
+        }
+      }
+    },
+    "e altri %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "and %lld more"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "y %lld más"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "et %lld autres"
           }
         }
       }

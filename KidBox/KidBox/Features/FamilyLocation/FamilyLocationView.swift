@@ -41,6 +41,10 @@ struct FamilyLocationView: View {
     /// Vista satellitare attiva. Non viene persistita: la mappa riparte sempre
     /// dalla vista standard, come fa Mappe di sistema.
     @State private var isSatellite = false
+
+    /// Scheda in basso abbassata a una riga. Si ricorda fra un'apertura e
+    /// l'altra, come il foglio di Mappe.
+    @AppStorage("kb_location_card_collapsed") private var isCardCollapsed = false
     
     init(familyId: String) {
         self.familyId = familyId
@@ -151,7 +155,8 @@ struct FamilyLocationView: View {
                     withAnimation(.easeInOut(duration: 0.5)) {
                         cameraPosition = .userLocation(fallback: .automatic)
                     }
-                }
+                },
+                isCollapsed: $isCardCollapsed
             )
             .background(
                 GeometryReader { geo in
@@ -162,8 +167,12 @@ struct FamilyLocationView: View {
             )
         }
         .trackSectionPresence(.familyLocation, familyId: familyId)
+        // Niente barra: come in Mappe restano solo i pulsanti (indietro, zone)
+        // sospesi sulla mappa. Il titolo resta per l'accessibilità e per il
+        // pulsante indietro delle schermate successive, ma non si vede.
         .navigationTitle("Posizione")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         // Guardare dov'è un familiare è cross-member per definizione: non c'è un
         // `createdBy` da confrontare, si sta guardando la posizione altrui.
         .onAppear {
@@ -178,6 +187,11 @@ struct FamilyLocationView: View {
             }
         }
         .toolbar {
+            // Sostituisce il titolo visibile con niente.
+            ToolbarItem(placement: .principal) {
+                Color.clear.frame(width: 1, height: 1)
+                    .accessibilityHidden(true)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink {
                     GeofenceListView(familyId: familyId)
@@ -227,7 +241,9 @@ struct FamilyLocationView: View {
         
         // Bottoni "Segui [nome]" — visibili solo se il familiare sta condividendo
         // (others contiene già solo chi è in sharedUsers, quindi solo chi condivide)
-        VStack(spacing: 10) {
+        // `.trailing`: centrata, la colonna portava il pulsante mappa/satellite
+        // al centro dei pill «Segui», che sono più larghi.
+        VStack(alignment: .trailing, spacing: 10) {
             mapStyleButton
 
             ForEach(others) { user in
@@ -409,38 +425,44 @@ struct FamilyLocationView: View {
     
     // MARK: - Status lines
     
+    // `String(localized:)` e non letterali: queste righe finiscono in un
+    // `Text(String)`, che non passa dal catalogo, e restavano in italiano per
+    // tutti. Stesse frasi (e traduzioni) di Android.
     private var mySharingStatusLine: String? {
         guard viewModel.isSharing else { return nil }
         switch viewModel.myMode {
         case .realtime:
-            return "Stai condividendo la tua posizione"
+            return String(localized: "Stai condividendo la tua posizione")
         case .temporary:
-            guard let expires = viewModel.myExpiresAt else { return "Stai condividendo temporaneamente" }
-            return "Stai condividendo temporaneamente fino alle \(expires.formatted(date: .omitted, time: .shortened))"
+            guard let expires = viewModel.myExpiresAt else { return String(localized: "Stai condividendo temporaneamente") }
+            let time = expires.formatted(date: .omitted, time: .shortened)
+            return String(localized: "Stai condividendo temporaneamente fino alle \(time)")
         case .none:
             return nil
         }
     }
-    
+
     private var othersSharingLine: String? {
         let myUid = Auth.auth().currentUser?.uid ?? ""
         let others = viewModel.sharedUsers.filter { $0.id != myUid }
         guard !others.isEmpty else { return nil }
-        
+
         let parts = others.map { u in
             if u.mode == .temporary {
                 if let exp = u.expiresAt {
-                    return "\(u.name) sta condividendo temporaneamente fino alle \(exp.formatted(date: .omitted, time: .shortened))"
+                    let time = exp.formatted(date: .omitted, time: .shortened)
+                    return String(localized: "\(u.name) sta condividendo temporaneamente fino alle \(time)")
                 } else {
-                    return "\(u.name) sta condividendo temporaneamente"
+                    return String(localized: "\(u.name) sta condividendo temporaneamente")
                 }
             } else {
-                return "\(u.name) sta condividendo la posizione"
+                return String(localized: "\(u.name) sta condividendo la posizione")
             }
         }
-        
+
         if parts.count <= 2 { return parts.joined(separator: " • ") }
-        return "\(parts.prefix(2).joined(separator: " • ")) • e altri \(parts.count - 2)"
+        let more = String(localized: "e altri \(parts.count - 2)")
+        return "\(parts.prefix(2).joined(separator: " • ")) • \(more)"
     }
     
     // MARK: - SwiftData helpers
@@ -480,10 +502,106 @@ struct FindMyBottomCard: View {
     let onToggleChanged: (Bool) -> Void
     /// Tap sulla card "La mia posizione" → centra mappa su di me
     var onTapMyLocation: (() -> Void)? = nil
-    
+    /// Scheda abbassata a una sola riga, come il foglio di Mappe.
+    @Binding var isCollapsed: Bool
+
+    /// Spostamento del dito durante il trascinamento della scheda.
+    @GestureState private var dragY: CGFloat = 0
+
     var body: some View {
         VStack(spacing: 14) {
-            
+            grabber
+
+            if isCollapsed {
+                collapsedRow
+            } else {
+                expandedContent
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, isCollapsed ? 16 : 24)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(.horizontal, 12)
+        .padding(.bottom, 8)
+        // Segue il dito verso il basso da aperta; da chiusa accenna appena la
+        // salita, poi al rilascio scatta nello stato nuovo.
+        .offset(y: isCollapsed ? min(0, dragY) * 0.25 : max(0, dragY))
+        .gesture(
+            DragGesture(minimumDistance: 10)
+                .updating($dragY) { value, state, _ in
+                    state = value.translation.height
+                }
+                .onEnded { value in
+                    let dy = value.predictedEndTranslation.height
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                        if dy > 60 { isCollapsed = true }
+                        else if dy < -60 { isCollapsed = false }
+                    }
+                }
+        )
+        .animation(.easeInOut(duration: 0.3), value: isSharing)
+        .animation(.easeInOut(duration: 0.3), value: myCurrentAddress)
+    }
+
+    /// La maniglia di Mappe: si trascina, e un tocco apre o chiude.
+    private var grabber: some View {
+        Capsule()
+            .fill(Color.secondary.opacity(0.45))
+            .frame(width: 36, height: 5)
+            .frame(maxWidth: .infinity)
+            .frame(height: 12)
+            .contentShape(Rectangle())
+            .onTapGesture { toggleCollapsed() }
+            .accessibilityElement()
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel(isCollapsed ? Text("Espandi") : Text("Riduci"))
+            .accessibilityAction { toggleCollapsed() }
+    }
+
+    private func toggleCollapsed() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            isCollapsed.toggle()
+        }
+    }
+
+    /// Scheda abbassata: chi sono, lo stato in una riga, e l'interruttore.
+    private var collapsedRow: some View {
+        HStack(spacing: 12) {
+            Image(systemName: isSharing ? "location.fill" : "location.slash")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(isSharing ? .blue : .secondary)
+                .frame(width: 32, height: 32)
+                .background(.thinMaterial)
+                .clipShape(Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Io")
+                    .font(.headline)
+                if !isSharing {
+                    Text("Nessuna posizione condivisa")
+                        .font(.subheadline)
+                        .foregroundStyle(.red)
+                } else if let line = myCurrentAddress ?? myStatusLine {
+                    Text(line)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .lineLimit(1)
+            Spacer(minLength: 8)
+            Toggle("", isOn: Binding(
+                get: { isSharing },
+                set: { onToggleChanged($0) }
+            ))
+            .labelsHidden()
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { toggleCollapsed() }
+    }
+
+    private var expandedContent: some View {
+        VStack(spacing: 14) {
             HStack {
                 Text("Io")
                     .font(.system(size: 34, weight: .bold))
@@ -564,15 +682,6 @@ struct FindMyBottomCard: View {
             .background(.thinMaterial)
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 24)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .padding(.horizontal, 12)
-        .padding(.bottom, 8)
-        .animation(.easeInOut(duration: 0.3), value: isSharing)
-        .animation(.easeInOut(duration: 0.3), value: myCurrentAddress)
     }
 }
 
