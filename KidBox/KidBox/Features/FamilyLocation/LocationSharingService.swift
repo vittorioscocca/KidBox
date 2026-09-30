@@ -373,21 +373,30 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
             applyPowerMode(.stationary)
         }
 
+        // Dovuto anche quando in questa sessione non si è ancora scritto niente:
+        // dopo una ripresa il primo fix può arrivare prima della conferma del
+        // server, e da fermi non ne arrivano altri (prova del 30/09/2026: un
+        // iPhone ripartito da `restoreFromDefaults` non ha più scritto nulla).
+        let due = lastUploadDate.map { Date().timeIntervalSince($0) >= Self.heartbeatInterval } ?? true
         // L'ultima posizione SCRITTA prima dell'ultimo fix: da fermi i fix
         // sono grossolani, e riscriverli farebbe saltare il pin.
-        guard remoteConfirmed, let familyId, let uid,
-              Auth.auth().currentUser?.uid == uid,
-              let lastUpload = lastUploadDate,
-              Date().timeIntervalSince(lastUpload) >= Self.heartbeatInterval,
-              let location = lastUploadedLocation ?? lastLocation
-        else { return }
+        guard due, let location = lastUploadedLocation ?? lastLocation else { return }
 
         if let expiresAt, expiresAt <= Date() {
             Task { await stopSharing() }
             return
         }
+        upload(location)
+    }
 
+    /// Scrive `location` se il server ha confermato la condivisione e
+    /// l'account è ancora quello che l'ha avviata.
+    private func upload(_ location: CLLocation) {
+        guard remoteConfirmed, let familyId, let uid,
+              Auth.auth().currentUser?.uid == uid
+        else { return }
         lastUploadDate = Date()
+        lastUploadedLocation = location
         Task {
             await remote.updateLocation(familyId: familyId, uid: uid, location: location)
         }
@@ -431,6 +440,11 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
                     self.statusRetryDelay = 60
                     if sharingOnServer {
                         self.remoteConfirmed = true
+                        // Il fix arrivato prima della conferma parte adesso: da
+                        // fermi potrebbe non arrivarne un altro.
+                        if self.lastUploadDate == nil, let pending = self.lastLocation {
+                            self.upload(pending)
+                        }
                     } else {
                         KBLog.app.kbInfo("LocationSharing: spenta sul server → stop locale")
                         self.deactivate()
@@ -485,7 +499,7 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
     }
 
     private func handle(_ location: CLLocation) {
-        guard isSharing, let familyId, let uid else { return }
+        guard isSharing, familyId != nil, let uid else { return }
 
         if let expiresAt, expiresAt <= Date() {
             Task { await stopSharing() }
@@ -536,7 +550,9 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
 
         lastLocation = location
 
-        // Account cambiato su questo dispositivo senza passare dallo stop.
+        // Prima della conferma del server il fix resta in `lastLocation` e parte
+        // alla conferma (vedi `listenOwnStatus`). Account cambiato su questo
+        // dispositivo senza passare dallo stop: niente.
         guard remoteConfirmed, Auth.auth().currentUser?.uid == uid else { return }
 
         let now = Date()
@@ -551,11 +567,7 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
             return
         }
 
-        lastUploadDate = now
-        lastUploadedLocation = location
-        Task {
-            await remote.updateLocation(familyId: familyId, uid: uid, location: location)
-        }
+        upload(location)
     }
 
     // MARK: - CLLocationManagerDelegate
