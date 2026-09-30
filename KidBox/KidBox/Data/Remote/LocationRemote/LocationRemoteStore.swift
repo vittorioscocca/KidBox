@@ -30,9 +30,16 @@ final class LocationRemoteStore {
             "lastUpdateAt": FieldValue.serverTimestamp()
         ]
 
+        // In tempo reale la scadenza di una vecchia condivisione temporanea va
+        // tolta, non lasciata: il 30/09/2026 un documento «realtime» portava
+        // ancora la scadenza del 14/09, e la web app (che guardava solo la
+        // data) nascondeva la posizione. Come fa già Android.
         if let expiresAt {
             data["expiresAt"] = expiresAt
+        } else {
+            data["expiresAt"] = FieldValue.delete()
         }
+        data["stoppedReason"] = FieldValue.delete()
 
         try await db.collection("families")
             .document(familyId)

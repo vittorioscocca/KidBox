@@ -3,6 +3,7 @@ import {
   Timestamp,
   collection,
   deleteDoc,
+  deleteField,
   doc,
   onSnapshot,
   serverTimestamp,
@@ -41,7 +42,10 @@ export async function startSharing({ familyId, uid, name, mode, expiresAt }) {
     startedAt: serverTimestamp(),
     lastUpdateAt: serverTimestamp(),
   };
-  if (expiresAt) data.expiresAt = Timestamp.fromDate(expiresAt);
+  // In tempo reale la scadenza di una vecchia condivisione temporanea va tolta:
+  // col merge resterebbe, e chi legge solo la data nasconderebbe la posizione.
+  data.expiresAt = expiresAt ? Timestamp.fromDate(expiresAt) : deleteField();
+  data.stoppedReason = deleteField();
   await setDoc(doc(locationsCol(familyId), uid), data, { merge: true });
 }
 
@@ -134,8 +138,12 @@ export function listenSharedLocations({ familyId, onChange, onError }) {
         if (!data.isSharing) return;
         // Una condivisione a tempo scaduta non va mostrata: lo scheduler la
         // ripulisce ogni 5 minuti, nel frattempo la si ignora.
+        // Solo per le temporanee: un documento «realtime» può portarsi dietro
+        // la scadenza di una vecchia temporanea (le build iOS precedenti non la
+        // toglievano), e contarla nascondeva una condivisione attiva. Come
+        // fanno iOS e Android.
         const expires = data.expiresAt?.toDate?.();
-        if (expires && expires < new Date()) return;
+        if (data.mode === "temporary" && expires && expires < new Date()) return;
         statusByUid.set(d.id, {
           name: data.name ?? "",
           mode: data.mode ?? "realtime",
