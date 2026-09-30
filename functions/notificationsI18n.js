@@ -114,6 +114,10 @@ const STRINGS = {
     "trial.endedBody":
       "La famiglia è tornata al piano Free e niente di quello che " +
       "hai salvato va perso. Pianificatori e AI tornano con Pro.",
+    "trial.requestTitle": "{name} vorrebbe provare Pro",
+    "trial.requestBody":
+      "Attiva la prova gratuita: {days} giorni di Pro per tutta la famiglia, " +
+      "senza carta e senza rinnovo.",
   },
 
   en: {
@@ -187,6 +191,10 @@ const STRINGS = {
       "Extra storage, planners and the AI assistant stay on until " +
       "{date}. To keep them, subscribe to Pro in the app.",
     "trial.endedTitle": "Your Pro trial has ended",
+    "trial.requestTitle": "{name} would like to try Pro",
+    "trial.requestBody":
+      "Start the free trial: {days} days of Pro for the whole family, " +
+      "no card and no renewal.",
     "trial.endedBody":
       "Your family is back on the Free plan and nothing you saved " +
       "is lost. Planners and AI come back with Pro.",
@@ -264,6 +272,10 @@ const STRINGS = {
       "IA restent actifs jusqu'au {date}. Pour les garder, " +
       "abonnez-vous à Pro dans l'app.",
     "trial.endedTitle": "Votre essai Pro est terminé",
+    "trial.requestTitle": "{name} aimerait essayer Pro",
+    "trial.requestBody":
+      "Activez l'essai gratuit : {days} jours de Pro pour toute la famille, " +
+      "sans carte ni renouvellement.",
     "trial.endedBody":
       "Votre famille est revenue au forfait Free et rien de ce que " +
       "vous avez enregistré n'est perdu. Les planificateurs et l'IA " +
@@ -342,6 +354,10 @@ const STRINGS = {
       "siguen activos hasta el {date}. Para conservarlos, " +
       "suscríbete a Pro desde la app.",
     "trial.endedTitle": "Tu prueba Pro ha terminado",
+    "trial.requestTitle": "{name} quiere probar Pro",
+    "trial.requestBody":
+      "Activa la prueba gratuita: {days} días de Pro para toda la familia, " +
+      "sin tarjeta y sin renovación.",
     "trial.endedBody":
       "Tu familia ha vuelto al plan Free y no se pierde nada de lo " +
       "que guardaste. Los planificadores y la IA vuelven con Pro.",

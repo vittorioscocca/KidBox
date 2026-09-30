@@ -124,16 +124,24 @@ function ineligibleReason(familySnap, trialSnap, memberSnap, uid) {
   return null;
 }
 
+/** Pausa fra due richieste della prova dello stesso membro al proprietario. */
+const REQUEST_COOLDOWN_MS = DAY_MS;
+
 /**
  * Se il pulsante della prova va mostrato a `uid` per questa famiglia.
  * Solo letture: la chiamano i client all'apertura di piani e spazio.
+ *
+ * A chi non è proprietario dice anche se il proprietario potrebbe attivarla
+ * (`ownerCanStart`) e se gliel'ha già chiesto da poco (`askedOwner`): il
+ * client mostra allora «Chiedi di attivarla» invece del pulsante.
  * @param {string} familyId
  * @param {string} uid
- * @return {Promise<{eligible: boolean, reason: string, days: number, aiLimit: number}>}
+ * @return {Promise<{eligible: boolean, reason: string, days: number, aiLimit: number,
+ *     ownerCanStart: boolean, askedOwner: boolean}>}
  */
 async function trialEligibility(familyId, uid) {
   const cfg = await loadTrialConfig();
-  const base = {days: cfg.days, aiLimit: cfg.aiLimit};
+  const base = {days: cfg.days, aiLimit: cfg.aiLimit, ownerCanStart: false, askedOwner: false};
   if (!cfg.enabled) return {eligible: false, reason: "disabled", ...base};
   const db = admin.firestore();
   const familyRef = db.collection("families").doc(familyId);
@@ -143,7 +151,34 @@ async function trialEligibility(familyId, uid) {
     familyRef.collection("members").doc(uid).get(),
   ]);
   const reason = ineligibleReason(familySnap, trialSnap, memberSnap, uid);
-  return {eligible: reason === null, reason: reason || "ok", ...base};
+  if (reason !== "not-owner") return {eligible: reason === null, reason: reason || "ok", ...base};
+
+  const ownerUid = familySnap.get("ownerUid");
+  if (!ownerUid) return {eligible: false, reason, ...base};
+  const [ownerTrialSnap, requestSnap] = await Promise.all([
+    db.collection("trials").doc(ownerUid).get(),
+    trialRequestRef(familyId, uid).get(),
+  ]);
+  const ownerCanStart = ineligibleReason(familySnap, ownerTrialSnap, null, ownerUid) === null;
+  const askedAtMs = requestSnap.get("requestedAt")?.toMillis?.() ?? 0;
+  return {
+    eligible: false,
+    reason,
+    ...base,
+    ownerCanStart,
+    askedOwner: Date.now() - askedAtMs < REQUEST_COOLDOWN_MS,
+  };
+}
+
+/**
+ * Registro delle richieste «chiedi di attivare la prova» (solo server): una
+ * per membro e famiglia, per non far arrivare al proprietario una push a tocco.
+ * @param {string} familyId
+ * @param {string} uid chi chiede
+ * @return {FirebaseFirestore.DocumentReference}
+ */
+function trialRequestRef(familyId, uid) {
+  return admin.firestore().collection("trialRequests").doc(`${familyId}_${uid}`);
 }
 
 /**
@@ -228,9 +263,11 @@ function aiUsageRefs(db, familyId, uid, period, todayKey) {
 module.exports = {
   DEFAULTS,
   DAY_MS,
+  REQUEST_COOLDOWN_MS,
   loadTrialConfig,
   trialAIQuota,
   trialEligibility,
+  trialRequestRef,
   grantTrial,
   aiUsageRefs,
   _resetCacheForTests: () => {

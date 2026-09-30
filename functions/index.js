@@ -5976,6 +5976,59 @@ exports.startProTrial = onCall(
 );
 
 /**
+ * «Chiedi di attivarla»: un membro che non è il proprietario avvisa con una
+ * push il proprietario, a cui la prova spetta ancora. Al massimo una richiesta
+ * al giorno per membro; la push apre la sezione Abbonamento, dove c'è il pulsante.
+ */
+exports.askOwnerForProTrial = onCall(
+    {region: "europe-west1", maxInstances: 20, invoker: "public"},
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+      const {familyId} = request.data || {};
+      if (!familyId || typeof familyId !== "string") {
+        throw new HttpsError("invalid-argument", "familyId è richiesto.");
+      }
+      await assertFamilyMember(uid, familyId);
+
+      const stato = await proTrial.trialEligibility(familyId, uid);
+      if (stato.reason !== "not-owner" || !stato.ownerCanStart) {
+        throw new HttpsError("failed-precondition", "Prova non disponibile.", {reason: stato.reason});
+      }
+      if (stato.askedOwner) return {sent: true, alreadyAsked: true};
+
+      const db = admin.firestore();
+      const ownerUid = (await db.collection("families").doc(familyId).get()).get("ownerUid");
+      const requesterName = await resolveMemberName(familyId, uid);
+      const byUid = await getTokensForUsers([ownerUid], null);
+      const entry = byUid.get(ownerUid);
+      let delivered = false;
+      if (entry?.tokens.length) {
+        const message = buildDataOnlyMessage({
+          tokens: entry.tokens,
+          title: tn(entry.lang, "trial.requestTitle", {name: requesterName}),
+          body: tn(entry.lang, "trial.requestBody", {days: stato.days}),
+          data: {type: "pro_trial", stage: "request", familyId},
+        });
+        const {successCount} = await sendMulticastAndPrune(
+            [message], [{uid: ownerUid, tokens: entry.tokens, refsByToken: entry.refsByToken}], "proTrialRequest",
+        );
+        delivered = successCount > 0;
+      }
+      // Registrata solo se consegnata: se il proprietario non ha un telefono
+      // raggiungibile, il membro deve poter riprovare (o chiederlo a voce).
+      if (delivered) {
+        await proTrial.trialRequestRef(familyId, uid).set({
+          familyId, uid, ownerUid,
+          requestedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+      logger.info("Prova Pro: richiesta al proprietario", {familyId, uid, ownerUid, delivered});
+      return {sent: delivered, alreadyAsked: false};
+    },
+);
+
+/**
  * Manda la push della prova al proprietario, nella sua lingua.
  * @param {string} uid
  * @param {string} familyId
