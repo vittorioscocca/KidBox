@@ -638,6 +638,11 @@ struct UpgradeSheetView: View {
 
                     trialNotice
 
+                    if subscriptionManager.showsTrialCard {
+                        ProTrialOfferCard(triggerFeature: triggerFeature)
+                            .padding(.horizontal)
+                    }
+
                     if hasYearly {
                         Picker("Periodo", selection: $yearly) {
                             Text("Mensile").tag(false)
@@ -651,7 +656,8 @@ struct UpgradeSheetView: View {
                         .padding(.horizontal)
                     }
 
-                    if let msg = contextualMessage {
+                    // Con la card della prova il contesto lo dice già il suo titolo.
+                    if let msg = contextualMessage, !subscriptionManager.showsTrialCard {
                         HStack(spacing: 10) {
                             Image(systemName: "sparkles")
                                 .foregroundStyle(tint)

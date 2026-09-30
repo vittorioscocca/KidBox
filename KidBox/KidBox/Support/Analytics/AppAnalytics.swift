@@ -157,6 +157,18 @@ enum AppAnalytics {
         ])
     }
 
+    /// Prova Pro attivata dal pulsante (non dalla creazione della famiglia).
+    static func proTrialStarted(triggerFeature: String) {
+        Analytics.logEvent("pro_trial_started", parameters: [
+            "trigger_feature": triggerFeature
+        ])
+    }
+
+    /// Un membro che non è il proprietario gli chiede di attivare la prova.
+    static func proTrialOwnerAsked() {
+        Analytics.logEvent("pro_trial_owner_asked", parameters: nil)
+    }
+
     // Funnel d'acquisto: paywall_shown → purchase_started → subscription_started,
     // con le due uscite purchase_cancelled / purchase_failed. Tutti portano
     // `trigger_feature`, così ogni passo si lega alla schermata che ha aperto

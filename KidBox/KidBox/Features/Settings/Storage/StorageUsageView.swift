@@ -73,7 +73,9 @@ struct StorageUsageView: View {
             }
             
             // ── Banner warning storage ──────────────────────────────────────
-            if vm.isOverLimit || vm.isNearLimit {
+            // Con la prova disponibile il suo «Upgrade» sarebbe un secondo
+            // invito accanto a «Prova Pro»: la card della prova basta.
+            if (vm.isOverLimit || vm.isNearLimit), !subscriptionManager.showsTrialCard {
                 Section {
                     upgradeBanner
                         .listRowInsets(EdgeInsets())
@@ -101,6 +103,17 @@ struct StorageUsageView: View {
                                    totalBytes: subscriptionManager.currentPlan.storageQuota)
                         .listRowBackground(cardBackground)
                     }
+                }
+            }
+            
+            // ── Prova Pro dal pulsante ──────────────────────────────────────
+            if subscriptionManager.showsTrialCard {
+                Section {
+                    ProTrialOfferCard(triggerFeature: triggerFeature)
+                        .padding(.horizontal)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                 }
             }
             

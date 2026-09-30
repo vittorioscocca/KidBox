@@ -72,6 +72,396 @@
         }
       }
     },
+    "Attiva la prova Pro: altri %1$d messaggi e tutto il Pro per %2$d giorni, senza carta e senza rinnovo." : {
+      "comment" : "Pro trial card body after the free AI messages (%1$d = AI messages in the trial, %2$d = trial days)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start the Pro trial: %1$d more messages and all of Pro for %2$d days, no card and no renewal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activa la prueba Pro: %1$d mensajes más y todo Pro durante %2$d días, sin tarjeta y sin renovación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activez l’essai Pro : %1$d messages de plus et tout Pro pendant %2$d jours, sans carte ni renouvellement."
+          }
+        }
+      }
+    },
+    "Attivala ora: %d giorni di Pro per tutta la famiglia, senza carta e senza rinnovo. Dopo torni al Free e i tuoi dati restano." : {
+      "comment" : "Pro trial card body from a Pro-only planner (%d = trial days)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start it now: %d days of Pro for the whole family, no card and no renewal. Afterwards you go back to Free and your data stays."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actívala ahora: %d días de Pro para toda la familia, sin tarjeta y sin renovación. Después vuelves a Free y tus datos se conservan."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activez-le maintenant : %d jours de Pro pour toute la famille, sans carte ni renouvellement. Ensuite, vous revenez à Free et vos données restent."
+          }
+        }
+      }
+    },
+    "Chiedi di attivarla" : {
+      "comment" : "Button: ask the family owner to start the Pro trial",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask to start it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedir que la active"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demander de l’activer"
+          }
+        }
+      }
+    },
+    "Gli itinerari di viaggio sono inclusi nella prova Pro" : {
+      "comment" : "Pro trial card title from the travel plan lock",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Travel itineraries are included in the Pro trial"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los itinerarios de viaje están incluidos en la prueba Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les itinéraires de voyage sont inclus dans l’essai Pro"
+          }
+        }
+      }
+    },
+    "Hai usato i messaggi AI gratuiti" : {
+      "comment" : "Pro trial card title when the free AI messages are used up",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've used your free AI messages"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has usado los mensajes de IA gratuitos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez utilisé vos messages IA gratuits"
+          }
+        }
+      }
+    },
+    "Il piano alimentare è incluso nella prova Pro" : {
+      "comment" : "Pro trial card title from the meal plan lock",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The meal plan is included in the Pro trial"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El plan de alimentación está incluido en la prueba Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le plan alimentaire est inclus dans l’essai Pro"
+          }
+        }
+      }
+    },
+    "Il piano fitness è incluso nella prova Pro" : {
+      "comment" : "Pro trial card title from the fitness plan lock",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The fitness plan is included in the Pro trial"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El plan de fitness está incluido en la prueba Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le plan fitness est inclus dans l’essai Pro"
+          }
+        }
+      }
+    },
+    "La prova gratuita la attiva chi ha creato la famiglia: %d giorni di Pro per tutti, senza carta. Puoi chiederlo con un tocco, riceverà una notifica." : {
+      "comment" : "Pro trial card body for a member who is not the family owner (%d = trial days)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The free trial is started by whoever created the family: %d days of Pro for everyone, no card. You can ask with one tap and they'll get a notification."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La prueba gratuita la activa quien creó la familia: %d días de Pro para todos, sin tarjeta. Puedes pedirlo con un toque y recibirá una notificación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’essai gratuit est activé par la personne qui a créé la famille : %d jours de Pro pour tous, sans carte. Demandez-le en un geste, elle recevra une notification."
+          }
+        }
+      }
+    },
+    "Non è stato possibile attivare la prova. Riprova tra poco." : {
+      "comment" : "Error when starting the Pro trial fails",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't start the trial. Please try again shortly."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido activar la prueba. Inténtalo de nuevo en unos minutos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d’activer l’essai. Réessayez dans quelques instants."
+          }
+        }
+      }
+    },
+    "Non è stato possibile avvisare chi ha creato la famiglia: forse non ha le notifiche attive. Chiediglielo di persona." : {
+      "comment" : "The owner could not be notified about the Pro trial request",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't notify whoever created the family: their notifications may be off. Ask them in person."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido avisar a quien creó la familia: quizá no tiene las notificaciones activadas. Pídeselo en persona."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de prévenir la personne qui a créé la famille : ses notifications sont peut-être désactivées. Demandez-le-lui de vive voix."
+          }
+        }
+      }
+    },
+    "Non è stato possibile inviare la richiesta. Riprova tra poco." : {
+      "comment" : "Error when asking the owner to start the Pro trial fails",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't send the request. Please try again shortly."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido enviar la solicitud. Inténtalo de nuevo en unos minutos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d’envoyer la demande. Réessayez dans quelques instants."
+          }
+        }
+      }
+    },
+    "Prova Pro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro trial"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essai Pro"
+          }
+        }
+      }
+    },
+    "Prova Pro gratis per %d giorni" : {
+      "comment" : "Pro trial offer title (%d = trial days)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try Pro free for %d days"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba Pro gratis durante %d días"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essayez Pro gratuitement pendant %d jours"
+          }
+        }
+      }
+    },
+    "Prova Pro per %d giorni" : {
+      "comment" : "Button that starts the Pro trial (%d = trial days)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try Pro for %d days"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probar Pro %d días"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essayer Pro pendant %d jours"
+          }
+        }
+      }
+    },
+    "Richiesta inviata" : {
+      "comment" : "Pro trial request already sent to the family owner",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request sent"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solicitud enviada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demande envoyée"
+          }
+        }
+      }
+    },
+    "Richiesta inviata: chi ha creato la famiglia riceverà una notifica per attivare la prova." : {
+      "comment" : "Confirmation after asking the family owner to start the Pro trial",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request sent: whoever created the family will get a notification to start the trial."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solicitud enviada: quien creó la familia recibirá una notificación para activar la prueba."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demande envoyée : la personne qui a créé la famille recevra une notification pour activer l’essai."
+          }
+        }
+      }
+    },
+    "Spazio in più, pianificatori e assistente AI per tutta la famiglia. Senza carta e senza rinnovo: dopo %d giorni torni al Free e i tuoi dati restano." : {
+      "comment" : "Pro trial offer description (%d = trial days)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extra storage, planners and the AI assistant for the whole family. No card and no renewal: after %d days you go back to Free and your data stays."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espacio extra, planificadores y asistente de IA para toda la familia. Sin tarjeta y sin renovación: después de %d días vuelves a Free y tus datos se conservan."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espace supplémentaire, planificateurs et assistant IA pour toute la famille. Sans carte ni renouvellement : après %d jours, vous revenez à Free et vos données restent."
+          }
+        }
+      }
+    },
     "–" : {
       "localizations" : {
         "en" : {

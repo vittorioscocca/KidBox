@@ -182,6 +182,29 @@ final class KBSubscriptionManager: ObservableObject {
     /// true = la famiglia ha avuto la prova Pro ed è finita senza abbonamento.
     @Published private(set) var trialEnded: Bool = false
 
+    /// Giorni di prova Pro che il proprietario può attivare adesso dal pulsante
+    /// «Prova Pro per 14 giorni»; nil se non gli spetta (già avuta, non è il
+    /// proprietario, piano già attivo, prova spenta). Decide il server
+    /// (`getProTrialStatus`), perché il registro `trials/{uid}` non è leggibile.
+    @Published private(set) var trialOfferDays: Int? = nil
+    @Published private(set) var isStartingTrial: Bool = false
+    @Published private(set) var trialStartError: String?
+
+    /// Messaggi AI inclusi nella prova, per il testo della card nel contesto AI.
+    @Published private(set) var trialAILimit: Int = 50
+
+    /// Giorni della prova che il PROPRIETARIO può ancora attivare, quando chi
+    /// guarda è un altro membro: la card diventa «Chiedi di attivarla».
+    @Published private(set) var trialAskOwnerDays: Int? = nil
+    /// true = richiesta già mandata al proprietario nelle ultime 24 ore.
+    @Published private(set) var trialOwnerAsked: Bool = false
+    @Published private(set) var isAskingOwner: Bool = false
+    /// Esito da mostrare dopo «Chiedi di attivarla» (nil = nessun avviso).
+    @Published private(set) var trialAskOwnerMessage: String?
+
+    /// true = la card della prova (pulsante o richiesta al proprietario) è visibile.
+    var showsTrialCard: Bool { trialOfferDays != nil || trialAskOwnerDays != nil }
+
     /// Giorni interi rimasti di prova (1 nell'ultimo giorno), nil se non in prova.
     var trialDaysLeft: Int? {
         guard let end = trialEndsAt else { return nil }
@@ -356,6 +379,99 @@ final class KBSubscriptionManager: ObservableObject {
         // Su Free verifica se il bonus una tantum di messaggi AI è già esaurito,
         // così l'ingresso in UI (bottoni AskAI, sezione AI, ecc.) è coerente da subito.
         await refreshAIQuotaStatus(familyId: familyId)
+
+        await refreshTrialOffer(familyId: familyId)
+    }
+
+    // MARK: - Prova Pro dal pulsante
+
+    /// Chiede al server se la prova spetta: al proprietario (pulsante) o, per
+    /// gli altri membri, al proprietario al posto loro (richiesta). Solo su
+    /// Free: con un piano attivo o una prova in corso la card non ha senso.
+    private func refreshTrialOffer(familyId: String) async {
+        guard currentPlan == .free, !trialEnded, !familyId.isEmpty else {
+            trialOfferDays = nil
+            trialAskOwnerDays = nil
+            return
+        }
+        do {
+            let result = try await functions.httpsCallable("getProTrialStatus").call(["familyId": familyId])
+            let data = result.data as? [String: Any]
+            let eligible = data?["eligible"] as? Bool ?? false
+            let days = (data?["days"] as? NSNumber)?.intValue ?? 14
+            let ownerCanStart = data?["ownerCanStart"] as? Bool ?? false
+            trialAILimit = (data?["aiLimit"] as? NSNumber)?.intValue ?? trialAILimit
+            trialOfferDays = eligible ? days : nil
+            trialAskOwnerDays = !eligible && ownerCanStart ? days : nil
+            trialOwnerAsked = data?["askedOwner"] as? Bool ?? false
+        } catch {
+            // Senza risposta la card non compare: meglio che una che fallisce.
+            trialOfferDays = nil
+            trialAskOwnerDays = nil
+            KBLog.app.kbError("SubscriptionManager: getProTrialStatus failed \(error.localizedDescription)")
+        }
+    }
+
+    /// «Chiedi di attivarla»: push al proprietario (al massimo una al giorno).
+    func askOwnerForTrial() async {
+        let familyId = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+            .string(forKey: "activeFamilyId") ?? ""
+        guard !familyId.isEmpty, !isAskingOwner else { return }
+        isAskingOwner = true
+        defer { isAskingOwner = false }
+        do {
+            let result = try await functions.httpsCallable("askOwnerForProTrial").call(["familyId": familyId])
+            let sent = (result.data as? [String: Any])?["sent"] as? Bool ?? false
+            if sent {
+                trialOwnerAsked = true
+                AppAnalytics.proTrialOwnerAsked()
+                trialAskOwnerMessage = NSLocalizedString("Richiesta inviata: chi ha creato la famiglia riceverà una notifica per attivare la prova.", comment: "Confirmation after asking the family owner to start the Pro trial")
+            } else {
+                trialAskOwnerMessage = NSLocalizedString("Non è stato possibile avvisare chi ha creato la famiglia: forse non ha le notifiche attive. Chiediglielo di persona.", comment: "The owner could not be notified about the Pro trial request")
+            }
+        } catch {
+            KBLog.app.kbError("SubscriptionManager: askOwnerForProTrial failed \(error.localizedDescription)")
+            trialAskOwnerMessage = NSLocalizedString("Non è stato possibile inviare la richiesta. Riprova tra poco.", comment: "Error when asking the owner to start the Pro trial fails")
+        }
+    }
+
+    func clearTrialAskOwnerMessage() {
+        trialAskOwnerMessage = nil
+    }
+
+    /// Attiva la prova Pro sulla famiglia attiva e ricarica il piano.
+    /// - Returns: true se la prova è partita.
+    @discardableResult
+    func startTrial(triggerFeature: String) async -> Bool {
+        let familyId = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+            .string(forKey: "activeFamilyId") ?? ""
+        guard !familyId.isEmpty, !isStartingTrial else { return false }
+        isStartingTrial = true
+        trialStartError = nil
+        defer { isStartingTrial = false }
+        do {
+            _ = try await functions.httpsCallable("startProTrial").call(["familyId": familyId])
+            AppAnalytics.proTrialStarted(triggerFeature: triggerFeature)
+            trialOfferDays = nil
+            await loadPlan()
+            Task.detached(priority: .utility) {
+                await StorageUsageViewModel.prefetchForGate(familyId: familyId)
+            }
+            return true
+        } catch {
+            KBLog.app.kbError("SubscriptionManager: startProTrial failed \(error.localizedDescription)")
+            trialStartError = NSLocalizedString("Non è stato possibile attivare la prova. Riprova tra poco.", comment: "Error when starting the Pro trial fails")
+            return false
+        }
+    }
+
+    /// Chiusura dell'avviso d'errore: si richiede lo stato, perché il rifiuto
+    /// può voler dire che la prova non spetta più (già usata, piano attivo).
+    func clearTrialStartError() {
+        trialStartError = nil
+        let familyId = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+            .string(forKey: "activeFamilyId") ?? ""
+        Task { await refreshTrialOffer(familyId: familyId) }
     }
     
     func clearPurchaseError() {
@@ -367,6 +483,9 @@ final class KBSubscriptionManager: ObservableObject {
         isFamilyOwner = false
         currentFamilyId = nil
         aiAccessBlocked = false
+        trialOfferDays = nil
+        trialAskOwnerDays = nil
+        trialOwnerAsked = false
     }
     
     // MARK: - Load StoreKit products
