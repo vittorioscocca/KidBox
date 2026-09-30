@@ -100,6 +100,7 @@
 		7C76416C303DE7D70006C0D8 /* Screenshot 2026-08-25 alle 17.10.11.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Screenshot 2026-08-25 alle 17.10.11.png"; path = "../../../../var/folders/j0/hpc5d3213kx18zqxzlwfz3c40000gp/T/TemporaryItems/NSIRD_screencaptureui_Qoq0Xt/Screenshot 2026-08-25 alle 17.10.11.png"; sourceTree = "<group>"; };
 		7CAF2A012F90C0DE00AB0001 /* KidBoxAutoFill.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KidBoxAutoFill.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7CB37F442F72B12F00CD0F7C /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		7CBE8EBE306D10DC009E5AD9 /* Screenshot 2026-09-30 alle 11.41.40.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Screenshot 2026-09-30 alle 11.41.40.png"; path = "../../../../var/folders/j0/hpc5d3213kx18zqxzlwfz3c40000gp/T/TemporaryItems/NSIRD_screencaptureui_d95doR/Screenshot 2026-09-30 alle 11.41.40.png"; sourceTree = "<group>"; };
 		7CD6455D2F88195600AF9B23 /* KidBoxNotificationService.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KidBoxNotificationService.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7CE0B0042F3378CB0086D687 /* KidBoxControlsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KidBoxControlsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7CE0B0182F3378CB0086D687 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
@@ -361,6 +362,7 @@
 		7CFC51F52F33E9000086D687 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				7CBE8EBE306D10DC009E5AD9 /* Screenshot 2026-09-30 alle 11.41.40.png */,
 				7C76416C303DE7D70006C0D8 /* Screenshot 2026-08-25 alle 17.10.11.png */,
 				7CE0B0182F3378CB0086D687 /* AppIntents.framework */,
 				7CB37F442F72B12F00CD0F7C /* StoreKit.framework */,
