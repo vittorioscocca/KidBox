@@ -410,10 +410,15 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
         statusListener = nil
         guard let familyId, let uid else { return }
 
+        // `includeMetadataChanges: true` è indispensabile: se il documento in
+        // cache è identico a quello del server, senza di esso Firestore non
+        // manda l'aggiornamento «ora viene dal server» e la conferma non arriva
+        // mai. Prova dal vivo del 30/09/2026: dopo ogni ripresa (reinstallazione,
+        // riavvio) l'iPhone condivideva senza scrivere niente.
         statusListener = Firestore.firestore()
             .collection("families").document(familyId)
             .collection("locations").document(uid)
-            .addSnapshotListener { [weak self] snap, error in
+            .addSnapshotListener(includeMetadataChanges: true) { [weak self] snap, error in
                 if let error {
                     let denied = (error as NSError).code == FirestoreErrorCode.permissionDenied.rawValue
                     Task { @MainActor in
