@@ -1,0 +1,20 @@
+<it-IT>
+• Prova Pro gratis per 14 giorni: ora la attivi tu con un tocco, da Utilizzo spazio o dai Piani. Senza carta e senza rinnovo: alla fine torni al Free e i tuoi dati restano.
+• Hai finito i messaggi AI gratuiti o vuoi un piano alimentare, fitness o di viaggio? La prova ti viene proposta proprio lì.
+• Non hai creato tu la famiglia? Con «Chiedi di attivarla» chi l'ha creata riceve una notifica.
+</it-IT>
+<en-US>
+• Try Pro free for 14 days: you now start it yourself with one tap, from Storage usage or Plans. No card and no renewal: afterwards you go back to Free and your data stays.
+• Used up your free AI messages, or want a meal, fitness or travel plan? The trial is offered right there.
+• Didn't create the family yourself? With "Ask to start it", whoever created it gets a notification.
+</en-US>
+<fr-FR>
+• Essayez Pro gratuitement pendant 14 jours : vous l'activez vous-même en un geste, depuis Utilisation de l'espace ou Forfaits. Sans carte ni renouvellement : ensuite, vous revenez à Free et vos données restent.
+• Plus de messages IA gratuits, ou envie d'un plan alimentaire, fitness ou de voyage ? L'essai vous est proposé à cet endroit.
+• Vous n'avez pas créé la famille ? Avec « Demander de l'activer », la personne qui l'a créée reçoit une notification.
+</fr-FR>
+<es-ES>
+• Prueba Pro gratis durante 14 días: ahora la activas tú con un toque, desde Uso del espacio o Planes. Sin tarjeta y sin renovación: al terminar vuelves a Free y tus datos se conservan.
+• ¿Se acabaron los mensajes de IA gratuitos o quieres un plan de alimentación, fitness o viaje? La prueba se te ofrece justo ahí.
+• ¿No creaste tú la familia? Con «Pedir que la active», quien la creó recibe una notificación.
+</es-ES>
