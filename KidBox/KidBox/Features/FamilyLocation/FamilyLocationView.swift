@@ -57,8 +57,14 @@ struct FamilyLocationView: View {
             Map(position: $cameraPosition) {
                 UserAnnotation()
                 
-                ForEach(viewModel.sharedUsers) { user in
-                    Annotation("", coordinate: user.coordinate) {
+                // Per chi guarda, sé stesso è il pallino blu (dal vivo): la
+                // propria foto starebbe sull'ultima posizione SCRITTA, qualche
+                // metro o minuto indietro, e i due punti non coinciderebbero.
+                // Come in Dov'è, la propria foto la vedono solo gli altri.
+                ForEach(viewModel.sharedUsers.filter { $0.id != Auth.auth().currentUser?.uid }) { user in
+                    // Ancora al centro: il punto è il centro della foto, non il
+                    // fondo dell'etichetta (vedi AvatarMarker).
+                    Annotation("", coordinate: user.coordinate, anchor: .center) {
                         AvatarMarker(
                             name: user.name,
                             avatarData: avatarDataFor(uid: user.id),
@@ -726,11 +732,18 @@ private struct AvatarMarker: View {
                     .scaleEffect(isFollowed ? 1.15 : 1.0)
                     .animation(.spring(response: 0.3), value: isFollowed)
 
-                Text(name)
-                    .font(.caption)
-                    .bold()
-
-                LocationFreshnessText(date: lastUpdateAt)
+            }
+            // Nome e freschezza sotto la foto ma fuori dal suo riquadro: così la
+            // vista misura solo la foto, e l'ancora al centro cade sul punto vero.
+            .overlay(alignment: .top) {
+                VStack(spacing: 2) {
+                    Text(name)
+                        .font(.caption)
+                        .bold()
+                    LocationFreshnessText(date: lastUpdateAt)
+                }
+                .fixedSize()
+                .offset(y: 50)
             }
         }
         .task(id: avatarURL) {
