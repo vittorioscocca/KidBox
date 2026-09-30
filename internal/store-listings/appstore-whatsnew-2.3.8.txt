@@ -1,0 +1,31 @@
+# Novità iOS 2.3.8 — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 30/09/2026 sulle modifiche della 2.3.8, tutte sulla posizione: la condivisione vive fuori dalla schermata (prima si fermava uscendo dalla mappa) e riprende dopo un riavvio; battito ogni 15 minuti e risparmio batteria da fermi; «aggiornata X fa» con foto sbiadita oltre mezz'ora; zone «solo arrivo» che avvisano a ogni arrivo (registrano sempre arrivo e uscita); mappa senza barra, scheda in basso a scomparsa, foto nei pill dei familiari, niente proprio segnaposto accanto al pallino blu. Le frasi di stato della scheda ora sono tradotte.
+
+## it
+
+• La condivisione della posizione continua anche quando esci dalla mappa, blocchi il telefono o l'app si riavvia, e da fermo consuma meno batteria.
+• Accanto a ogni familiare vedi da quanto è aggiornata la sua posizione («adesso», «12 minuti fa»): se è ferma da più di mezz'ora, la foto si sbiadisce.
+• Le zone con l'avviso di arrivo ora ti avvisano a ogni arrivo, non solo la prima volta.
+• Mappa più pulita: niente barra in alto, la scheda in basso si abbassa trascinandola e i pulsanti dei familiari sulla mappa mostrano la loro foto.
+
+## en-GB
+
+• Location sharing now keeps going when you leave the map, lock your phone or the app restarts, and uses less battery when you're not moving.
+• Next to each family member you can see how recent their location is ("just now", "12 minutes ago"): if it hasn't updated for more than half an hour, their photo fades.
+• Zones with arrival alerts now notify you every time someone arrives, not just the first time.
+• A cleaner map: no bar at the top, the card at the bottom slides down when you drag it, and the family member buttons on the map show their photo.
+
+## es-ES
+
+• Compartir la ubicación ahora sigue funcionando cuando sales del mapa, bloqueas el teléfono o la app se reinicia, y gasta menos batería cuando estás quieto.
+• Junto a cada familiar ves cuándo se actualizó su ubicación («ahora», «hace 12 minutos»): si lleva más de media hora sin actualizarse, su foto se atenúa.
+• Las zonas con aviso de llegada ahora avisan cada vez que alguien llega, no solo la primera.
+• Un mapa más limpio: sin barra arriba, la tarjeta de abajo baja al arrastrarla y los botones de los familiares en el mapa muestran su foto.
+
+## fr-FR
+
+• Le partage de position continue désormais quand vous quittez la carte, verrouillez le téléphone ou que l'app redémarre, et consomme moins de batterie à l'arrêt.
+• À côté de chaque membre de la famille, vous voyez à quand remonte sa position (« à l'instant », « il y a 12 minutes ») : si elle n'a pas été mise à jour depuis plus d'une demi-heure, sa photo s'estompe.
+• Les zones avec alerte d'arrivée vous préviennent désormais à chaque arrivée, et plus seulement la première fois.
+• Une carte plus épurée : plus de barre en haut, la fiche du bas se réduit en la faisant glisser, et les boutons des membres de la famille sur la carte affichent leur photo.
