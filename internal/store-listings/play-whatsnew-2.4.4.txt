@@ -1,0 +1,24 @@
+<it-IT>
+• Condivisione della posizione più affidabile: «Interrompi» nella notifica la spegne davvero, la condivisione temporanea scade anche ad app chiusa e da fermo consuma meno batteria.
+• Accanto a ogni familiare vedi da quanto è aggiornata la sua posizione («adesso», «12 minuti fa»).
+• Le zone con l'avviso di arrivo ti avvisano a ogni arrivo, non solo la prima volta.
+• La scheda in basso della mappa si abbassa trascinandola.
+</it-IT>
+<en-US>
+• More reliable location sharing: "Stop" in the notification really turns it off, temporary sharing ends even with the app closed, and it uses less battery when you're still.
+• Next to each family member you see how recent their location is ("just now", "12 minutes ago").
+• Zones with arrival alerts notify you every time someone arrives, not just the first time.
+• The card at the bottom of the map slides down when you drag it.
+</en-US>
+<fr-FR>
+• Partage de position plus fiable : « Arrêter » dans la notification le coupe vraiment, le partage temporaire se termine même app fermée, et il consomme moins à l'arrêt.
+• À côté de chaque membre, vous voyez à quand remonte sa position (« à l'instant », « il y a 12 minutes »).
+• Les zones avec alerte d'arrivée vous préviennent à chaque arrivée, pas seulement la première fois.
+• La fiche en bas de la carte se réduit en la faisant glisser.
+</fr-FR>
+<es-ES>
+• Compartir la ubicación es más fiable: «Detener» en la notificación lo apaga de verdad, lo temporal termina aunque la app esté cerrada y gasta menos batería cuando estás quieto.
+• Junto a cada familiar ves cuándo se actualizó su ubicación («ahora», «hace 12 minutos»).
+• Las zonas con aviso de llegada avisan cada vez que alguien llega, no solo la primera.
+• La tarjeta de abajo del mapa baja al arrastrarla.
+</es-ES>
