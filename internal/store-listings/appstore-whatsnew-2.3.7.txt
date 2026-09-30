@@ -1,0 +1,27 @@
+# Novità iOS 2.3.7 — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 30/09/2026 sulle modifiche della 2.3.7: la prova Pro di 14 giorni si attiva dal pulsante (Utilizzo spazio e paywall) invece che in silenzio alla creazione della famiglia; la card cambia titolo con l'origine (messaggi AI finiti, piano alimentare, fitness, itinerari); i membri che non hanno creato la famiglia la chiedono al proprietario con una push. Formula App Store: «Pro incluso per 14 giorni», non «prova gratuita dell'abbonamento» (vedi /prova-pro). I nomi dei pulsanti sono quelli del String Catalog di ciascuna lingua.
+
+## it
+
+• Pro incluso per 14 giorni, senza carta e senza rinnovo: ora lo attivi tu con «Prova Pro per 14 giorni», in Utilizzo spazio o nei Piani. Alla fine torni al Free e i tuoi dati restano.
+• Hai finito i messaggi AI gratuiti o vuoi un piano alimentare, fitness o di viaggio? I 14 giorni di Pro ti vengono proposti proprio lì.
+• Non hai creato tu la famiglia? Con «Chiedi di attivarla» chi l'ha creata riceve una notifica.
+
+## en-GB
+
+• Pro included for 14 days, no card and no renewal: you now start it yourself with "Try Pro for 14 days", in Storage usage or Plans. Afterwards you go back to Free and your data stays.
+• Used up your free AI messages, or want a meal, fitness or travel plan? The 14 days of Pro are offered right there.
+• Didn't create the family yourself? With "Ask to start it", whoever created it gets a notification.
+
+## es-ES
+
+• Pro incluido durante 14 días, sin tarjeta y sin renovación: ahora lo activas tú con «Probar Pro 14 días», en Uso del espacio o en Planes. Al terminar vuelves a Free y tus datos se conservan.
+• ¿Se acabaron los mensajes de IA gratuitos o quieres un plan de alimentación, fitness o viaje? Los 14 días de Pro se te ofrecen justo ahí.
+• ¿No creaste tú la familia? Con «Pedir que la active», quien la creó recibe una notificación.
+
+## fr-FR
+
+• Pro inclus pendant 14 jours, sans carte ni renouvellement : vous l'activez vous-même avec « Essayer Pro pendant 14 jours », dans Utilisation de l'espace ou Forfaits. Ensuite, vous revenez à Free et vos données restent.
+• Plus de messages IA gratuits, ou envie d'un plan alimentaire, fitness ou de voyage ? Les 14 jours de Pro vous sont proposés à cet endroit.
+• Vous n'avez pas créé la famille ? Avec « Demander de l'activer », la personne qui l'a créée reçoit une notification.

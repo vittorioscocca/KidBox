@@ -1,0 +1,43 @@
+# Novità Mac 2.3.7 — testi «Novità» per App Store Connect
+
+Cumulate: la 2.3.6 non è uscita su Mac (su App Store Connect c'è direttamente la 2.3.7, che aveva già le note della 2.3.6). In testa le voci della 2.3.7 iOS (Pro incluso per 14 giorni dal pulsante, proposto dove serve, richiesta al proprietario), sotto quelle della 2.3.6 lasciate com'erano. Scritti il 30/09/2026; nessuna voce solo iPhone.
+
+## it
+
+• Pro incluso per 14 giorni, senza carta e senza rinnovo: ora lo attivi tu con «Prova Pro per 14 giorni», in Utilizzo spazio o nei Piani. Alla fine torni al Free e i tuoi dati restano.
+• Hai finito i messaggi AI gratuiti o vuoi un piano alimentare, fitness o di viaggio? I 14 giorni di Pro ti vengono proposti proprio lì.
+• Non hai creato tu la famiglia? Con «Chiedi di attivarla» chi l'ha creata riceve una notifica.
+• Piani annuali: Pro e Max si possono pagare anche una volta l'anno, risparmiando un terzo rispetto al mensile. Scegli tra mensile e annuale nei Piani o in Utilizzo spazio.
+• Piano Fitness: a fine mese vedi il consuntivo di come è andata, e con «Prepara il mese successivo» crei il piano nuovo partendo dai tuoi risultati.
+• Una notifica ti avvisa quando il piano fitness è concluso.
+• I report settimanali del mese nuovo non risultano più già letti.
+
+## en-GB
+
+• Pro included for 14 days, no card and no renewal: you now start it yourself with "Try Pro for 14 days", in Storage usage or Plans. Afterwards you go back to Free and your data stays.
+• Used up your free AI messages, or want a meal, fitness or travel plan? The 14 days of Pro are offered right there.
+• Didn't create the family yourself? With "Ask to start it", whoever created it gets a notification.
+• Yearly plans: Pro and Max can now be paid once a year, saving a third compared with monthly. Choose monthly or yearly in Plans or in Storage usage.
+• Fitness Plan: at the end of the month you see how it went, and "Prepare next month" builds the new plan starting from your results.
+• A notification lets you know when your fitness plan is finished.
+• Weekly reports for the new month no longer show up as already read.
+
+## es-ES
+
+• Pro incluido durante 14 días, sin tarjeta y sin renovación: ahora lo activas tú con «Probar Pro 14 días», en Uso del espacio o en Planes. Al terminar vuelves a Free y tus datos se conservan.
+• ¿Se acabaron los mensajes de IA gratuitos o quieres un plan de alimentación, fitness o viaje? Los 14 días de Pro se te ofrecen justo ahí.
+• ¿No creaste tú la familia? Con «Pedir que la active», quien la creó recibe una notificación.
+• Planes anuales: Pro y Max también se pueden pagar una vez al año, ahorrando un tercio respecto al mensual. Elige entre mensual y anual en Planes o en Uso del espacio.
+• Plan de fitness: al final del mes ves el resumen de cómo ha ido, y con «Preparar el mes siguiente» creas el nuevo plan a partir de tus resultados.
+• Una notificación te avisa cuando el plan de fitness ha terminado.
+• Los informes semanales del mes nuevo ya no aparecen como leídos.
+
+## fr-FR
+
+• Pro inclus pendant 14 jours, sans carte ni renouvellement : vous l'activez vous-même avec « Essayer Pro pendant 14 jours », dans Utilisation de l'espace ou Forfaits. Ensuite, vous revenez à Free et vos données restent.
+• Plus de messages IA gratuits, ou envie d'un plan alimentaire, fitness ou de voyage ? Les 14 jours de Pro vous sont proposés à cet endroit.
+• Vous n'avez pas créé la famille ? Avec « Demander de l'activer », la personne qui l'a créée reçoit une notification.
+• Forfaits annuels : Pro et Max peuvent désormais être payés une fois par an, avec un tiers d'économie par rapport au mensuel. Choisissez mensuel ou annuel dans Forfaits ou dans Utilisation de l'espace.
+• Plan fitness : à la fin du mois, vous voyez le bilan, et « Préparer le mois suivant » crée le nouveau plan à partir de vos résultats.
+• Une notification vous prévient quand votre plan fitness est terminé.
+• Les bilans hebdomadaires du nouveau mois n'apparaissent plus comme déjà lus.

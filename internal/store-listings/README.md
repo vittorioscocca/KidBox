@@ -51,3 +51,6 @@ Su App Store Connect si applicano con lo script riutilizzabile:
 (senza `--apply` mostra attuale/nuovo e non scrive). Stessa autenticazione del
 report giornaliero. Applicate il 20/09/2026 su iOS 2.3.1 e Mac 2.3.1, entrambe
 in «Prepare for Submission».
+Applicate il 30/09/2026 su iOS 2.3.7 e Mac 2.3.7 (Mac cumulata: note 2.3.7 in
+testa, sotto quelle della 2.3.6 che su Mac non è uscita). Play 2.4.3 in
+`play-whatsnew-2.4.3.txt`, da incollare nella console.
