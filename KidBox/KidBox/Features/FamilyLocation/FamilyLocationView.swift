@@ -257,8 +257,17 @@ struct FamilyLocationView: View {
                     }
                 } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: followingUserId == user.id ? "location.fill" : "location")
-                            .font(.system(size: 13, weight: .semibold))
+                        // La foto di chi si segue, come su Android: prima era
+                        // l'icona della posizione, uguale per tutti i pill.
+                        TimelineView(.periodic(from: .now, by: 60)) { context in
+                            FamilyAvatarImage(
+                                name: user.name,
+                                avatarData: avatarDataFor(uid: user.id),
+                                avatarURL: user.avatarURL
+                            )
+                            .frame(width: 24, height: 24)
+                            .opacity(LocationFreshness.isStale(user.lastUpdateAt, now: context.date) ? 0.55 : 1)
+                        }
                         Text(user.name.components(separatedBy: " ").first ?? user.name)
                             .font(.system(size: 13, weight: .semibold))
                         // La carica è quella di chi condivide: `others` esclude
@@ -275,8 +284,9 @@ struct FamilyLocationView: View {
                             onOrange: followingUserId == user.id
                         )
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .padding(.leading, 6)
+                    .padding(.trailing, 12)
+                    .padding(.vertical, 6)
                     .background(
                         followingUserId == user.id
                         ? Color.orange
@@ -750,28 +760,66 @@ private struct AvatarMarker: View {
     
     /// Scarica tramite Firebase Storage SDK (gestisce autenticazione automaticamente)
     private func loadRemoteImageIfNeeded() async {
-        guard avatarData == nil,
-              let avatarURL,
-              let url = URL(string: avatarURL)
-        else {
-            print("AvatarMarker: skip download — avatarData=\(avatarData != nil) avatarURL=\(avatarURL ?? "nil")")
-            return
+        guard avatarData == nil, let avatarURL else { return }
+        if let image = await FamilyAvatarImageCache.image(for: avatarURL) {
+            remoteImage = image
         }
-        
-        print("AvatarMarker: downloading from \(avatarURL)")
-        
+    }
+}
+
+// MARK: - Foto dei familiari
+
+/// Foto dei familiari scaricate da Storage, in memoria: segnaposto e pill
+/// «Segui» mostrano la stessa immagine, e scaricarla due volte non serve.
+enum FamilyAvatarImageCache {
+    private static let cache = NSCache<NSString, UIImage>()
+
+    @MainActor
+    static func image(for urlString: String) async -> UIImage? {
+        if let cached = cache.object(forKey: urlString as NSString) { return cached }
+        guard let url = URL(string: urlString) else { return nil }
         do {
-            let ref = Storage.storage().reference(forURL: url.absoluteString)
-            let data = try await ref.data(maxSize: 2 * 1024 * 1024)
-            print("AvatarMarker: downloaded \(data.count) bytes")
-            if let image = UIImage(data: data) {
-                await MainActor.run { remoteImage = image }
-                print("AvatarMarker: image set OK")
-            } else {
-                print("AvatarMarker: UIImage creation failed")
-            }
+            let data = try await Storage.storage()
+                .reference(forURL: url.absoluteString)
+                .data(maxSize: 2 * 1024 * 1024)
+            guard let image = UIImage(data: data) else { return nil }
+            cache.setObject(image, forKey: urlString as NSString)
+            return image
         } catch {
-            print("AvatarMarker: download failed — \(error.localizedDescription)")
+            KBLog.app.kbError("FamilyAvatarImageCache: download fallito — \(error.localizedDescription)")
+            return nil
+        }
+    }
+}
+
+/// Foto di un familiare in un cerchio: la propria da SwiftData, le altre da
+/// Storage; senza foto l'iniziale su fondo chiaro, come su Android.
+struct FamilyAvatarImage: View {
+    let name: String
+    let avatarData: Data?
+    let avatarURL: String?
+
+    @State private var remoteImage: UIImage?
+
+    var body: some View {
+        Group {
+            if let avatarData, let local = UIImage(data: avatarData) {
+                Image(uiImage: local).resizable().scaledToFill()
+            } else if let remoteImage {
+                Image(uiImage: remoteImage).resizable().scaledToFill()
+            } else {
+                ZStack {
+                    Circle().fill(Color(red: 0.91, green: 0.93, blue: 0.96))
+                    Text(verbatim: name.first.map { String($0).uppercased() } ?? "?")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Color(red: 0.22, green: 0.25, blue: 0.32))
+                }
+            }
+        }
+        .clipShape(Circle())
+        .task(id: avatarURL) {
+            guard avatarData == nil, let avatarURL else { return }
+            remoteImage = await FamilyAvatarImageCache.image(for: avatarURL)
         }
     }
 }
