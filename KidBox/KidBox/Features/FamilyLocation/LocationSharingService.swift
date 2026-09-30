@@ -546,7 +546,10 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
             return
         }
 
-        if let anchor = movementAnchor, location.distance(from: anchor) < Self.movementRadius {
+        // Uno spostamento più piccolo dell'imprecisione del fix è rumore, non
+        // movimento: vale per capire se si è fermi e per decidere se scrivere.
+        let noise = max(Self.movementRadius, location.horizontalAccuracy)
+        if let anchor = movementAnchor, location.distance(from: anchor) < noise {
             // Ancora lì: il jitter da fermi non conta come movimento.
         } else {
             movementAnchor = location
@@ -567,8 +570,12 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
         // Volutamente senza toccare `lastUploadDate`: da fermi non si scrive,
         // ma il fix successivo rivaluta subito la distanza invece di aspettare
         // altri 45 s, così appena ci si muove la posizione parte.
+        // Oltre i 10 m, e anche oltre l'imprecisione del fix: al chiuso un
+        // iPhone fermo con fix da ±12 m scriveva ogni pochi minuti (prova del
+        // 30/09). In movimento vero lo spostamento supera l'imprecisione, e il
+        // fix si scrive anche se grossolano: in macchina il pin non si ferma.
         if let lastUploaded = lastUploadedLocation,
-           location.distance(from: lastUploaded) < Self.minUploadDistance {
+           location.distance(from: lastUploaded) < max(Self.minUploadDistance, location.horizontalAccuracy) {
             return
         }
 
