@@ -78,6 +78,26 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
     /// fermo e uno che ha smesso di inviare sarebbero indistinguibili.
     private static let heartbeatInterval: TimeInterval = 15 * 60
 
+    // MARK: - Risparmio batteria
+
+    /// In movimento il GPS; da fermi la posizione da Wi-Fi e celle, che costa
+    /// una frazione. Prima il GPS restava alla massima precisione anche col
+    /// telefono sul tavolo, per una scrittura ogni 45 secondi al più.
+    private enum PowerMode { case moving, stationary }
+    private var powerMode: PowerMode = .moving
+
+    /// Ultimo punto in cui ci si è mossi davvero, e quando.
+    private var movementAnchor: CLLocation?
+    private var lastMovementAt = Date()
+
+    /// Sotto questo raggio un fix nuovo è ancora «lì»: il jitter da fermi.
+    private static let movementRadius: CLLocationDistance = 30
+    /// Da fermi da così tanto si spegne il GPS.
+    private static let stationaryAfter: TimeInterval = 5 * 60
+    /// Da fermi, quanto deve spostarsi un fix grossolano (oltre la sua
+    /// imprecisione) perché si riaccenda il GPS.
+    private static let wakeUpDistance: CLLocationDistance = 100
+
     // MARK: - Private
 
     private let remote = LocationRemoteStore()
@@ -110,8 +130,7 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
     private override init() {
         super.init()
         locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.distanceFilter = 10
+        applyPowerMode(.moving)
         locationManager.allowsBackgroundLocationUpdates = true
         locationManager.pausesLocationUpdatesAutomatically = false
         locationManager.showsBackgroundLocationIndicator = true
@@ -246,6 +265,10 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
     // MARK: - Ciclo di vita della sessione
 
     private func activate(promptForAuthorization: Bool) {
+        // Ogni sessione parte col GPS: il primo fix deve essere preciso.
+        movementAnchor = nil
+        lastMovementAt = Date()
+        applyPowerMode(.moving)
         scheduleExpiry()
         startHeartbeat()
         listenOwnStatus()
@@ -276,9 +299,27 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
 
         locationManager.stopUpdatingLocation()
         locationManager.stopMonitoringSignificantLocationChanges()
+        movementAnchor = nil
+        applyPowerMode(.moving)
 
         clearDefaults()
         setBadge(active: false)
+    }
+
+    private func applyPowerMode(_ newMode: PowerMode) {
+        powerMode = newMode
+        switch newMode {
+        case .moving:
+            // «10 metri» e non «massima»: per una scrittura ogni 45 s basta, e
+            // consuma meno. Il filtro dei 10 m resta quello di sempre.
+            locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+            locationManager.distanceFilter = 10
+        case .stationary:
+            // Wi-Fi e celle: il GPS si spegne. I fix che arrivano servono solo
+            // a capire se ci si è mossi (vedi `handle`), non si scrivono.
+            locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+            locationManager.distanceFilter = 50
+        }
     }
 
     private func scheduleExpiry() {
@@ -319,11 +360,26 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
     }
 
     private func heartbeatIfDue() {
-        guard isSharing, remoteConfirmed, let familyId, let uid,
+        guard isSharing else { return }
+
+        // Fermi da 5 minuti: si spegne il GPS. Il controllo sta qui e non in
+        // `handle` perché da fermi `distanceFilter` non consegna fix che lo
+        // facciano scattare.
+        // Serve un punto di riferimento preciso: senza, da fermi non si
+        // saprebbe più dire quando ci si è mossi.
+        if powerMode == .moving, movementAnchor != nil,
+           Date().timeIntervalSince(lastMovementAt) >= Self.stationaryAfter {
+            KBLog.app.kbInfo("LocationSharing: fermi da 5 minuti → GPS spento, Wi-Fi e celle")
+            applyPowerMode(.stationary)
+        }
+
+        // L'ultima posizione SCRITTA prima dell'ultimo fix: da fermi i fix
+        // sono grossolani, e riscriverli farebbe saltare il pin.
+        guard remoteConfirmed, let familyId, let uid,
               Auth.auth().currentUser?.uid == uid,
               let lastUpload = lastUploadDate,
               Date().timeIntervalSince(lastUpload) >= Self.heartbeatInterval,
-              let location = lastLocation ?? lastUploadedLocation
+              let location = lastUploadedLocation ?? lastLocation
         else { return }
 
         if let expiresAt, expiresAt <= Date() {
@@ -436,17 +492,46 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
             return
         }
 
+        // Con «Posizione esatta» spenta ogni fix è approssimativo per scelta
+        // dell'utente (chilometri): i due filtri sulla precisione lo
+        // scarterebbero sempre, e quel telefono non scriverebbe più niente.
+        let approximateOnly = locationManager.accuracyAuthorization == .reducedAccuracy
+
         guard
             location.horizontalAccuracy >= 0,
-            location.horizontalAccuracy <= Self.maxAccuracy,
+            approximateOnly || location.horizontalAccuracy <= Self.maxAccuracy,
             abs(location.timestamp.timeIntervalSinceNow) <= Self.maxFixAge
         else { return }
 
-        if location.horizontalAccuracy > Self.coarseAccuracy,
+        if !approximateOnly,
+           location.horizontalAccuracy > Self.coarseAccuracy,
            let lastUploaded = lastUploadedLocation,
            lastUploaded.horizontalAccuracy <= Self.coarseAccuracy,
            location.timestamp.timeIntervalSince(lastUploaded.timestamp) < Self.preciseFixValidity {
             return
+        }
+
+        if powerMode == .stationary {
+            // Da fermi arrivano fix da Wi-Fi e celle: dicono solo se ci si è
+            // mossi. Scritti, farebbero saltare il pin; il battito riscrive
+            // l'ultima posizione precisa. Se ci si è allontanati davvero (oltre
+            // l'imprecisione del fix), si riaccende il GPS e si scrive il
+            // prossimo fix preciso.
+            if let anchor = movementAnchor,
+               location.distance(from: anchor) > Self.wakeUpDistance + location.horizontalAccuracy {
+                KBLog.app.kbInfo("LocationSharing: di nuovo in movimento → GPS")
+                movementAnchor = nil
+                lastMovementAt = Date()
+                applyPowerMode(.moving)
+            }
+            return
+        }
+
+        if let anchor = movementAnchor, location.distance(from: anchor) < Self.movementRadius {
+            // Ancora lì: il jitter da fermi non conta come movimento.
+        } else {
+            movementAnchor = location
+            lastMovementAt = Date()
         }
 
         lastLocation = location
