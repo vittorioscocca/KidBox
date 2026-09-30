@@ -6,7 +6,8 @@ description: Preparare una release iOS o Android di KidBox — note «Novità» 
 ## Il confine, prima di tutto
 
 **I client li pubblica l'utente.** Io scrivo i testi, li applico via API dove si
-può, e preparo. Non tocco mai:
+può, e preparo. Dal 30/09/2026 committo e pusho io anche iOS e Android (vedi
+`CLAUDE.md`); la pubblicazione sugli store resta sua. Non tocco mai:
 
 - `CURRENT_PROJECT_VERSION` e `MARKETING_VERSION` in
   `KidBox.xcodeproj/project.pbxproj` — **nemmeno per rimetterli a posto, nemmeno
@@ -16,7 +17,6 @@ può, e preparo. Non tocco mai:
   attribuirtelo e in ogni caso non scriverci sopra.
 - `versionCode` Android. **Un versionCode caricato non si riusa mai più**, anche
   se la release viene rimossa (il 49 è bruciato così).
-- I commit dei due client.
 
 **Quando l'utente chiede il messaggio di commit, dagli il messaggio e basta**:
 testo semplice in un blocco suo, titolo in prima riga, niente `git commit -F -
