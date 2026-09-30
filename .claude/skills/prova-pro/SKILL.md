@@ -5,7 +5,8 @@ description: La prova Pro gratuita di 14 giorni di KidBox — come viene concess
 
 ## Come funziona (live dal 29/09/2026)
 
-- **Si attiva da sola**, senza pulsante né carta: quando qualcuno crea una famiglia nuova, il trigger `grantProTrialOnFamilyCreated` scrive sulla famiglia `plan: "pro"`, `planSource: "trial"` e `planExpiresAt` fra 14 giorni, e registra `trials/{uid}` del proprietario.
+- **Si attiva dal pulsante** «Prova Pro per 14 giorni», nella schermata Spazio e nel paywall (iOS `ProTrialOfferCard` in `ProTrialBanner.swift`, Android `ProTrialOfferCard` in `ProTrialBanner.kt`; scritti il 30/09, da pubblicare). Il client chiede `getProTrialStatus` (solo letture: prova accesa, chi chiama è il proprietario, non l'ha mai avuta, famiglia senza piano) e mostra la card solo se `eligible`; il tocco chiama `startProTrial`, che fa le stesse scritture del trigger con `source: "button"` e rifiuta chi non è proprietario (`ownerUid` o membro `role: "owner"`). Evento GA4 `pro_trial_started` con `trigger_feature`.
+- **Concessione automatica alla creazione della famiglia:** il trigger `grantProTrialOnFamilyCreated` scrive sulla famiglia `plan: "pro"`, `planSource: "trial"` e `planExpiresAt` fra 14 giorni, e registra `trials/{uid}` del proprietario. Resta attivo finché `config/trial.autoGrant` non è `false`: serve alle app pubblicate prima del pulsante (iOS 2.3.6, Android 2.4.2). **Spegnerlo quando le app col pulsante sono in vendita su entrambi gli store**, e insieme cambiare i testi che dicono «parte da sola» (tabella sotto).
 - **Una per PERSONA, non per famiglia.** `trials/{uid}` è solo server (nessuna rule lo apre): aprire un'altra famiglia non dà una seconda prova.
 - **Non la ricevono:**
   - chi entra con un invito in una famiglia esistente, perché la prova appartiene al proprietario;
@@ -19,7 +20,7 @@ description: La prova Pro gratuita di 14 giorni di KidBox — come viene concess
 
 ## Interruttore e parametri
 
-Documento `config/trial`: `enabled` (bool), `days` (1-30), `aiLimit` (0-200), `reminderDaysBefore` (0-7). Cache di 60 secondi. Assente o illeggibile = prova spenta.
+Documento `config/trial`: `enabled` (bool), `autoGrant` (bool, assente = acceso), `days` (1-30), `aiLimit` (0-200), `reminderDaysBefore` (0-7). Cache di 60 secondi. Assente o illeggibile = prova spenta.
 - **Spegnerla:** `enabled: false`. Le prove già concesse finiscono comunque alla loro scadenza.
 - **Accenderla solo quando i client che la spiegano sono in vendita su ENTRAMBI gli store** (iOS ≥ 2.3.6, Android ≥ 2.4.2). Le app vecchie vedono il Pro sbloccato senza banner, e a fine prova perdono funzioni senza capire perché. Il 29/09 l'utente ha deciso di accenderla prima: è una sua scelta da rispettare, ma va detto il rischio.
 
@@ -39,9 +40,9 @@ Documento `config/trial`: `enabled` (bool), `days` (1-30), `aiLimit` (0-200), `r
 | Chat della landing | `functions/landingChat/knowledge.md` (deploy di `functions:landingChat`) |
 | Testo promozionale App Store (iPhone e Mac, 4 lingue) | via API sulla versione in vendita e su quella in preparazione |
 | Push di promemoria e fine | `functions/notificationsI18n.js`, chiavi `trial.*` |
-| App | banner `ProTrialBanner` (iOS/Android), riquadro nel paywall, «In prova» su card e profilo |
+| App | card col pulsante `ProTrialOfferCard` (Spazio e paywall), banner `ProTrialBanner` in Home, riquadro nel paywall, «In prova» su card e profilo |
 
-**Come si scrive:** la frase deve dire COME si ottiene, non solo che esiste. «14 giorni inclusi per le famiglie nuove» non l'ha capita nessuno; la forma giusta è «Prova Pro gratis per 14 giorni: parte da sola quando crei la tua famiglia, senza carta».
+**Come si scrive:** la frase deve dire COME si ottiene, non solo che esiste. «14 giorni inclusi per le famiglie nuove» non l'ha capita nessuno; con `autoGrant` acceso la forma giusta è «Prova Pro gratis per 14 giorni: parte da sola quando crei la tua famiglia, senza carta». Con `autoGrant: false` diventa «…: la attivi dall'app con un tocco, senza carta».
 - «Gratis» va bene su landing, chat e app. Nella **descrizione breve di Play NO**: le regole sui testi della scheda vietano prezzi e promozioni. Nell'App Store scrivere «Pro incluso per 14 giorni» e non «prova gratuita dell'abbonamento», che fa pensare alla prova con addebito automatico dello store.
 
 **Se la prova si spegne:** togliere `TRIAL_LINE`, la frase nella nota (4 lingue), la sezione nella knowledge della chat e il testo promozionale App Store. Il banner nelle app si nasconde da solo.

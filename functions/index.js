@@ -5911,8 +5911,10 @@ exports.onFamilyDeletedQuota = onDocumentDeleted(
 
 /**
  * Ogni famiglia nuova parte in prova Pro, se chi la crea non l'ha mai avuta e
- * se `config/trial.enabled` è acceso. Trigger separato da onFamilyCreatedQuota
- * perché un errore qui non deve bloccare il conteggio delle famiglie.
+ * se `config/trial` ha `enabled` acceso e `autoGrant` non spento. Serve alle
+ * app pubblicate prima del pulsante: con `autoGrant: false` la prova parte
+ * solo da `startProTrial`. Trigger separato da onFamilyCreatedQuota perché un
+ * errore qui non deve bloccare il conteggio delle famiglie.
  */
 exports.grantProTrialOnFamilyCreated = onDocumentCreated(
     {document: "families/{familyId}", region: "europe-west1", maxInstances: 20},
@@ -5921,11 +5923,55 @@ exports.grantProTrialOnFamilyCreated = onDocumentCreated(
       const ownerUid = event.data?.data()?.ownerUid;
       if (!ownerUid) return;
       try {
+        const cfg = await proTrial.loadTrialConfig();
+        if (!cfg.autoGrant) return;
         const esito = await proTrial.grantTrial(familyId, ownerUid, {source: "family_created"});
         if (esito.granted) logger.info("Prova Pro concessa", {familyId, ownerUid, expiresAtMs: esito.expiresAtMs});
       } catch (e) {
         logger.warn("Prova Pro: concessione fallita", {familyId, ownerUid, error: e.message});
       }
+    },
+);
+
+/**
+ * Se mostrare il pulsante «Prova Pro per 14 giorni»: prova accesa, chi chiama
+ * è il proprietario, non l'ha mai avuta, la famiglia non ha già un piano.
+ */
+exports.getProTrialStatus = onCall(
+    {region: "europe-west1", maxInstances: 20, invoker: "public"},
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+      const {familyId} = request.data || {};
+      if (!familyId || typeof familyId !== "string") {
+        throw new HttpsError("invalid-argument", "familyId è richiesto.");
+      }
+      await assertFamilyMember(uid, familyId);
+      return proTrial.trialEligibility(familyId, uid);
+    },
+);
+
+/**
+ * Il pulsante della prova: la concede alla famiglia attiva del proprietario.
+ * Stesse scritture del trigger e dello script regalo, `source: "button"`.
+ */
+exports.startProTrial = onCall(
+    {region: "europe-west1", maxInstances: 20, invoker: "public"},
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+      const {familyId} = request.data || {};
+      if (!familyId || typeof familyId !== "string") {
+        throw new HttpsError("invalid-argument", "familyId è richiesto.");
+      }
+      await assertFamilyMember(uid, familyId);
+      const esito = await proTrial.grantTrial(familyId, uid, {source: "button", requireOwner: true});
+      if (!esito.granted) {
+        logger.info("Prova Pro: pulsante rifiutato", {familyId, uid, reason: esito.reason});
+        throw new HttpsError("failed-precondition", "Prova non disponibile.", {reason: esito.reason});
+      }
+      logger.info("Prova Pro concessa dal pulsante", {familyId, uid, expiresAtMs: esito.expiresAtMs});
+      return {granted: true, expiresAtMs: esito.expiresAtMs};
     },
 );
 

@@ -1,7 +1,9 @@
 /* eslint-disable max-len */
 /**
- * Prova Pro al contrario: ogni famiglia nuova parte in Pro per qualche giorno,
- * senza carta, e poi torna al Free da sola.
+ * Prova Pro senza carta: il proprietario la attiva dal pulsante «Prova Pro per
+ * 14 giorni» (callable `startProTrial`), e la famiglia torna al Free da sola.
+ * Finché `config/trial.autoGrant` non è false parte anche da sola alla
+ * creazione della famiglia, per le app pubblicate prima del pulsante.
  *
  * Perché lato server: il piano dei client arriva da `families/{id}.plan`, quindi
  * scrivere lì `pro` sblocca la prova anche sulle app già pubblicate, senza
@@ -27,6 +29,8 @@ const logger = require("firebase-functions/logger");
 
 const DEFAULTS = {
   enabled: false,
+  /** Concessione automatica alla creazione della famiglia (app senza pulsante). */
+  autoGrant: true,
   days: 14,
   plan: "pro",
   /** Messaggi AI in tutto, per l'intera prova (non al giorno). */
@@ -72,6 +76,7 @@ async function loadTrialConfig() {
     const d = snap.exists ? snap.data() || {} : {};
     cfg = {
       enabled: d.enabled === true,
+      autoGrant: d.autoGrant !== false,
       days: clampInt(d.days ?? DEFAULTS.days, "days"),
       // La prova non concede mai il Max: il suo costo AI non è coperto.
       plan: "pro",
@@ -96,14 +101,61 @@ async function trialAIQuota() {
 }
 
 /**
- * Concede la prova alla famiglia, se chi l'ha creata non l'ha mai avuta.
+ * Perché la prova non si può concedere, o null se si può.
+ * Il proprietario è `ownerUid` della famiglia o il membro con `role: "owner"`,
+ * come `isFamilyOwner` dei client: la prova è sua, e a lui vanno le push.
+ * @param {FirebaseFirestore.DocumentSnapshot} familySnap
+ * @param {FirebaseFirestore.DocumentSnapshot} trialSnap
+ * @param {?FirebaseFirestore.DocumentSnapshot} memberSnap null = non controllare il ruolo
+ * @param {string} uid
+ * @return {?string}
+ */
+function ineligibleReason(familySnap, trialSnap, memberSnap, uid) {
+  if (!familySnap.exists) return "no-family";
+  if (trialSnap.exists) return "already-used";
+  const d = familySnap.data() || {};
+  if (memberSnap) {
+    const isOwner = d.ownerUid === uid || (memberSnap.exists && memberSnap.get("role") === "owner");
+    if (!isOwner) return "not-owner";
+  }
+  const override = d.planOverride;
+  if (override === "pro" || override === "max") return "override";
+  if (d.plan && d.plan !== "free") return "has-plan";
+  return null;
+}
+
+/**
+ * Se il pulsante della prova va mostrato a `uid` per questa famiglia.
+ * Solo letture: la chiamano i client all'apertura di piani e spazio.
+ * @param {string} familyId
+ * @param {string} uid
+ * @return {Promise<{eligible: boolean, reason: string, days: number, aiLimit: number}>}
+ */
+async function trialEligibility(familyId, uid) {
+  const cfg = await loadTrialConfig();
+  const base = {days: cfg.days, aiLimit: cfg.aiLimit};
+  if (!cfg.enabled) return {eligible: false, reason: "disabled", ...base};
+  const db = admin.firestore();
+  const familyRef = db.collection("families").doc(familyId);
+  const [familySnap, trialSnap, memberSnap] = await Promise.all([
+    familyRef.get(),
+    db.collection("trials").doc(uid).get(),
+    familyRef.collection("members").doc(uid).get(),
+  ]);
+  const reason = ineligibleReason(familySnap, trialSnap, memberSnap, uid);
+  return {eligible: reason === null, reason: reason || "ok", ...base};
+}
+
+/**
+ * Concede la prova alla famiglia, se `uid` non l'ha mai avuta.
  *
  * Non tocca nulla se la famiglia ha già un piano (abbonamento o override della
  * console): la prova non deve mai sovrascrivere qualcosa che vale di più.
  * @param {string} familyId
- * @param {string} uid chi riceve la prova (il creatore della famiglia)
- * @param {{source?: string, force?: boolean}} opts `force` salta l'interruttore
- *     (solo per gli script amministrativi, mai dai trigger)
+ * @param {string} uid chi riceve la prova (il proprietario della famiglia)
+ * @param {{source?: string, force?: boolean, requireOwner?: boolean}} opts
+ *     `force` salta l'interruttore (solo per gli script amministrativi, mai
+ *     dai trigger); `requireOwner` rifiuta chi non è proprietario (callable)
  * @return {Promise<{granted: boolean, reason: string, expiresAtMs?: number}>}
  */
 async function grantTrial(familyId, uid, opts = {}) {
@@ -114,16 +166,16 @@ async function grantTrial(familyId, uid, opts = {}) {
   const db = admin.firestore();
   const familyRef = db.collection("families").doc(familyId);
   const trialRef = db.collection("trials").doc(uid);
+  const memberRef = familyRef.collection("members").doc(uid);
 
   return db.runTransaction(async (tx) => {
-    const [familySnap, trialSnap] = await Promise.all([tx.get(familyRef), tx.get(trialRef)]);
-    if (!familySnap.exists) return {granted: false, reason: "no-family"};
-    if (trialSnap.exists) return {granted: false, reason: "already-used"};
-
-    const d = familySnap.data() || {};
-    const override = d.planOverride;
-    if (override === "pro" || override === "max") return {granted: false, reason: "override"};
-    if (d.plan && d.plan !== "free") return {granted: false, reason: "has-plan"};
+    const [familySnap, trialSnap, memberSnap] = await Promise.all([
+      tx.get(familyRef),
+      tx.get(trialRef),
+      opts.requireOwner ? tx.get(memberRef) : Promise.resolve(null),
+    ]);
+    const reason = ineligibleReason(familySnap, trialSnap, memberSnap, uid);
+    if (reason) return {granted: false, reason};
 
     const nowMs = Date.now();
     const expiresAtMs = nowMs + cfg.days * DAY_MS;
@@ -178,6 +230,7 @@ module.exports = {
   DAY_MS,
   loadTrialConfig,
   trialAIQuota,
+  trialEligibility,
   grantTrial,
   aiUsageRefs,
   _resetCacheForTests: () => {
