@@ -3,125 +3,115 @@ import SwiftUI
 import MapKit
 import CoreLocation
 import Combine
-import UserNotifications
 internal import os
 import FirebaseAuth
 import FirebaseFirestore
 
+/// Stato della schermata Posizione: mappa della famiglia, zone, e lo stato
+/// della propria condivisione **letto** da `LocationSharingService`.
+///
+/// La condivisione non vive più qui: questo ViewModel è uno `@StateObject` di
+/// una rotta push, e quando teneva il `CLLocationManager` tornare indietro
+/// bastava a fermare gli invii (vedi `LocationSharingService`).
 @MainActor
-final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
-    
+final class FamilyLocationViewModel: ObservableObject {
+
     // MARK: - Published
-    
+
     @Published var sharedUsers: [SharedUserLocation] = []
-    
-    @Published var isSharing: Bool = false
-    @Published var myMode: ShareMode?
-    @Published var myExpiresAt: Date?
-    @Published var myCurrentAddress: String? = nil
-    
-    /// True appena l'utente attiva la condivisione (fix chicken-and-egg):
-    /// consente di inviare lat/lon anche prima che il listener ci includa.
-    @Published private(set) var sharingRequested: Bool = false
+
+    /// Stato della condivisione di questo dispositivo **in questa famiglia**:
+    /// il servizio può condividere in un'altra.
+    @Published private(set) var isSharing: Bool = false
+    @Published private(set) var myMode: ShareMode?
+    @Published private(set) var myExpiresAt: Date?
+    @Published private(set) var myCurrentAddress: String? = nil
 
     @Published var geofences: [KBGeofence] = []
-    
+
     // MARK: - Private
-    
+
     private let remote = LocationRemoteStore()
     private var listener: ListenerRegistration?
 
     private var geofenceListener: ListenerRegistration?
     private let geofenceRemote = GeofenceRemoteStore()
-    
-    private let locationManager = CLLocationManager()
+
+    private let sharing = LocationSharingService.shared
     private let familyId: String
-    
-    private var shouldStartLocationUpdates = false
-    private var expiryTask: Task<Void, Never>?
+    private var cancellables = Set<AnyCancellable>()
 
-    /// `distanceFilter` da solo può far scattare un invio a Firestore molto
-    /// più spesso di quanto serva (basta muoversi di 10m). Questo throttle
-    /// temporale limita la scrittura remota a una ogni `locationUploadInterval`,
-    /// indipendentemente da quanti fix GPS arrivano nel frattempo.
-    private static let locationUploadInterval: TimeInterval = 45
-    private var lastLocationUploadDate: Date?
+    /// Reverse geocoding per l'indirizzo nella card: solo con la schermata
+    /// aperta, e non a ogni fix. Prima partiva a ogni posizione, anche in
+    /// background e prima di ogni filtro, e `CLGeocoder` è limitato da Apple:
+    /// in macchina le richieste venivano rifiutate.
+    private let geocoder = CLGeocoder()
+    private var lastGeocodedLocation: CLLocation?
+    private var lastGeocodeDate: Date?
+    private static let geocodeMinDistance: CLLocationDistance = 50
+    private static let geocodeMinInterval: TimeInterval = 30
 
-    /// Distanza minima dall'ultima posizione **effettivamente scritta** perché
-    /// valga la pena scriverne una nuova.
-    ///
-    /// Il `distanceFilter` del `CLLocationManager` non basta: quello confronta
-    /// il fix nuovo con l'ultimo **consegnato**, e con `kCLLocationAccuracyBest`
-    /// il jitter GPS da fermo (indoor, tra i palazzi) supera regolarmente i 10m.
-    /// CoreLocation continua quindi a consegnare, e il throttle temporale da
-    /// solo trasforma quel rumore in 80 scritture/ora per device a tempo
-    /// indeterminato, anche con il telefono appoggiato su un tavolo.
-    /// Confrontando con l'ultima posizione scritta, un device fermo scrive zero.
-    /// È lo stesso gate che Android ha già in `LocationSharingService`
-    /// (`lastWrittenLocation` + `distanceTo`).
-    private static let minUploadDistanceMeters: CLLocationDistance = 10
-    private var lastUploadedLocation: CLLocation?
-    
     /// Nome canonico (SwiftData) passato dalla View. Il self-healing avviene
     /// in `healRemoteDisplayNameIfNeeded()`, guidato dal listener: prima veniva
     /// riscritto a ogni fix GPS dentro `updateLocation`, ma quella scrittura
     /// finiva sul documento di stato e faceva scattare
     /// `notifyLocationSharingChanged` ogni pochi secondi.
     private(set) var myCurrentDisplayName: String = "Utente"
-    
+
     // MARK: - Init
-    
+
     init(familyId: String) {
         self.familyId = familyId
-        super.init()
-        
-        locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.distanceFilter = 10
-        locationManager.allowsBackgroundLocationUpdates = true
-        locationManager.pausesLocationUpdatesAutomatically = false
-        locationManager.showsBackgroundLocationIndicator = true
+
+        Publishers.CombineLatest4(sharing.$isSharing, sharing.$familyId, sharing.$mode, sharing.$expiresAt)
+            .sink { [weak self] active, sharingFamilyId, mode, expiresAt in
+                guard let self else { return }
+                let here = active && sharingFamilyId == self.familyId
+                self.isSharing = here
+                self.myMode = here ? mode : nil
+                self.myExpiresAt = here ? expiresAt : nil
+                if !here {
+                    self.myCurrentAddress = nil
+                    self.lastGeocodedLocation = nil
+                }
+            }
+            .store(in: &cancellables)
+
+        sharing.$lastLocation
+            .compactMap { $0 }
+            .sink { [weak self] location in
+                self?.updateAddressIfNeeded(for: location)
+            }
+            .store(in: &cancellables)
     }
-    
+
     // MARK: - Lifecycle
-    
+
     func start() {
         listen()
         listenGeofences()
-        requestAuthorizationIfNeeded()
-        // Se l'app è stata rilanciata in background da significant location changes,
-        // ripristina il tracking se eravamo in sharing
-        resumeIfNeeded()
+        sharing.requestAuthorizationIfNeeded()
         syncGeofenceMonitor()
     }
-    
+
     func stop() {
         listener?.remove()
         listener = nil
 
         geofenceListener?.remove()
         geofenceListener = nil
-        // NON fermiamo il monitoraggio geofence: deve restare attivo in background/app chiusa.
-        // Le regioni sono gestite dal singleton GeofenceMonitorService.shared.
-
-        expiryTask?.cancel()
-        expiryTask = nil
-        
-        // NON fermiamo il location manager se stiamo condividendo —
-        // l'app continua in background e significant changes rimane attivo
-        if !sharingRequested {
-            stopLocationUpdates()
-        }
+        // NON si fermano né il monitoraggio geofence né la condivisione: vivono
+        // nei singleton `GeofenceMonitorService` e `LocationSharingService`.
+        geocoder.cancelGeocode()
     }
-    
+
     // MARK: - Firestore listen
-    
+
     private func listen() {
         listener = remote.listen(familyId: familyId) { [weak self] users in
             Task { @MainActor in
                 guard let self else { return }
                 self.sharedUsers = users
-                self.applyRemoteStateForMeIfNeeded()
                 self.healRemoteDisplayNameIfNeeded()
             }
         }
@@ -217,54 +207,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         )
         GeofenceMonitorService.shared.startMonitoring(geofences: active)
     }
-    
-    /// Dopo relaunch (o quando non abbiamo appena premuto un bottone),
-    /// riallinea lo stato UI in base a ciò che Firestore dice su "me".
-    private func applyRemoteStateForMeIfNeeded() {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-        
-        // Se l'utente ha appena premuto "condividi" in questa sessione,
-        // non sovrascriviamo il suo stato locale col listener (evita flicker).
-        if sharingRequested {
-            syncGeofenceMonitor()
-            return
-        }
-        
-        guard let me = sharedUsers.first(where: { $0.id == uid }) else {
-            // Non risulto in sharing lato remote
-            isSharing = false
-            myMode = nil
-            myExpiresAt = nil
-            
-            expiryTask?.cancel()
-            expiryTask = nil
-            syncGeofenceMonitor()
-            return
-        }
-        
-        // Risulto in sharing lato remote
-        isSharing = true
-        myMode = me.mode
-        myExpiresAt = me.expiresAt
-        
-        // Se temporaneo scaduto → stop forzato
-        if me.mode == .temporary, let exp = me.expiresAt, exp <= Date() {
-            Task { await stopSharing() }
-            return
-        }
-        
-        // Ripristina updates e timer (anche dopo relaunch)
-        sharingRequested = true
-        if me.mode == .temporary {
-            scheduleExpiryStopIfNeeded()
-        } else {
-            expiryTask?.cancel()
-            expiryTask = nil
-        }
-        startLocationUpdatesIfPossible()
-        syncGeofenceMonitor()
-    }
-    
+
     /// Riallinea il nome su Firestore se è rimasto indietro rispetto a quello
     /// canonico locale (es. profilo rinominato mentre la condivisione era già
     /// attiva su un altro device). È una scrittura sul documento di STATO,
@@ -289,341 +232,68 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
     // MARK: - Actions
 
     func startRealtime(displayName: String) async {
-        guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return }
-        
         myCurrentDisplayName = displayName
-        
-        sharingRequested = true
-        isSharing = true
-        myMode = .realtime
-        myExpiresAt = nil
-        
-        saveLocationDefaults(uid: uid, displayName: displayName)
-        setBadge(active: true)
-        
-        expiryTask?.cancel()
-        expiryTask = nil
-        
-        do {
-            try await remote.startSharing(
-                familyId: familyId,
-                uid: uid,
-                name: displayName,
-                mode: .realtime,
-                expiresAt: nil
-            )
-        } catch {
-            KBLog.app.kbError("FamilyLocation startRealtime failed: \(error.localizedDescription)")
-            rollbackSharingUI()
-            return
-        }
-        
-        startLocationUpdatesIfPossible()
+        await sharing.start(familyId: familyId, displayName: displayName, mode: .realtime, expiresAt: nil)
         syncGeofenceMonitor()
     }
-    
+
     func startTemporary(hours: Int, displayName: String) async {
-        guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return }
-        
         myCurrentDisplayName = displayName
-        
         let expires = Date().addingTimeInterval(Double(hours) * 3600)
-        
-        sharingRequested = true
-        isSharing = true
-        myMode = .temporary
-        myExpiresAt = expires
-        
-        saveLocationDefaults(uid: uid, displayName: displayName)
-        setBadge(active: true)
-        
-        do {
-            try await remote.startSharing(
-                familyId: familyId,
-                uid: uid,
-                name: displayName,
-                mode: .temporary,
-                expiresAt: expires
-            )
-        } catch {
-            KBLog.app.kbError("FamilyLocation startTemporary failed: \(error.localizedDescription)")
-            rollbackSharingUI()
-            return
-        }
-        
-        scheduleExpiryStopIfNeeded()
-        startLocationUpdatesIfPossible()
+        await sharing.start(familyId: familyId, displayName: displayName, mode: .temporary, expiresAt: expires)
         syncGeofenceMonitor()
     }
-    
+
     func stopSharing() async {
-        guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return }
-        
-        sharingRequested = false
-        isSharing = false
-        myMode = nil
-        myExpiresAt = nil
-        myCurrentAddress = nil
-        
-        expiryTask?.cancel()
-        expiryTask = nil
-        
-        // Rimuovi da UserDefaults
-        clearLocationDefaults()
-        setBadge(active: false)
-        
-        await remote.stopSharing(familyId: familyId, uid: uid)
-        
-        stopLocationUpdates()
+        guard isSharing else { return }
+        await sharing.stopSharing()
         syncGeofenceMonitor()
     }
-    
+
     // MARK: - FIX: aggiorna il nome mentre la condivisione è attiva
-    
+
     /// Chiama questo ogni volta che il profilo viene salvato o la view appare,
     /// così il nome su Firestore e su tutti i device è sempre quello corretto.
     func updateDisplayName(_ name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed != "Utente" else { return }
         guard trimmed != myCurrentDisplayName else { return } // nessun cambiamento, evita write inutile
-        
+
         myCurrentDisplayName = trimmed
         KBLog.app.kbDebug("FamilyLocation updateDisplayName -> \(trimmed)")
-        
-        guard isSharing, let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return }
-        
-        Task {
-            await remote.updateDisplayName(familyId: familyId, uid: uid, displayName: trimmed)
-        }
+
+        // Si riscrive solo se il nome sul server è davvero diverso. La View lo
+        // chiama a ogni apertura, e ora `isSharing` è vero fin da subito (lo
+        // stato viene dal servizio, non più dal primo snapshot): scrivendo
+        // sempre, ogni apertura della mappa riscriveva il documento di stato e
+        // accendeva `notifyLocationSharingChanged` per niente.
+        healRemoteDisplayNameIfNeeded()
     }
-    
-    private func rollbackSharingUI() {
-        sharingRequested = false
-        isSharing = false
-        myMode = nil
-        myExpiresAt = nil
-        
-        expiryTask?.cancel()
-        expiryTask = nil
-        
-        clearLocationDefaults()
-        setBadge(active: false)
-        stopLocationUpdates()
-        syncGeofenceMonitor()
-    }
-    
-    // MARK: - Temporary expiry timer
-    
-    private func scheduleExpiryStopIfNeeded() {
-        expiryTask?.cancel()
-        expiryTask = nil
-        
-        guard sharingRequested, myMode == .temporary, let expiresAt = myExpiresAt else { return }
-        
-        let seconds = expiresAt.timeIntervalSinceNow
-        if seconds <= 0 {
-            Task { await stopSharing() }
+
+    // MARK: - Indirizzo nella card
+
+    private func updateAddressIfNeeded(for location: CLLocation) {
+        guard isSharing else { return }
+        if let last = lastGeocodedLocation,
+           location.distance(from: last) < Self.geocodeMinDistance {
             return
         }
-        
-        expiryTask = Task { [weak self] in
-            do {
-                try await Task.sleep(for: .seconds(seconds))
-            } catch {
-                return // cancellato
-            }
-            
-            KBLog.app.kbError("FamilyLocation temporary sharing expired -> auto stop")
-            await self?.stopSharing()
-        }
-    }
-    
-    // MARK: - Authorization & Location
-    
-    private func requestAuthorizationIfNeeded() {
-        let status = locationManager.authorizationStatus
-        switch status {
-        case .notDetermined:
-            // Prima chiediamo WhenInUse, poi upgrade ad Always
-            locationManager.requestWhenInUseAuthorization()
-        case .authorizedWhenInUse:
-            // Abbiamo WhenInUse, chiediamo upgrade ad Always per il background
-            locationManager.requestAlwaysAuthorization()
-        case .authorizedAlways:
-            break
-        case .restricted, .denied:
-            KBLog.app.kbError("Location permission denied/restricted")
-        @unknown default:
-            break
-        }
-    }
-    
-    private func startLocationUpdatesIfPossible() {
-        let status = locationManager.authorizationStatus
-        
-        switch status {
-        case .authorizedWhenInUse, .authorizedAlways:
-            // Il primo fix di una nuova sessione di condivisione va sempre
-            // inviato subito, non bloccato da un throttle rimasto da prima.
-            lastLocationUploadDate = nil
-            // Anche il gate di distanza va azzerato, altrimenti riattivando la
-            // condivisione da fermi il primo fix verrebbe scartato e gli altri
-            // membri resterebbero senza posizione.
-            lastUploadedLocation = nil
-            locationManager.startUpdatingLocation()
-            locationManager.requestLocation()
-            shouldStartLocationUpdates = false
-            
-            // Significant changes: risveglia l'app anche se terminata dall'utente
-            // (funziona solo con authorizedAlways)
-            if status == .authorizedAlways {
-                locationManager.startMonitoringSignificantLocationChanges()
-            }
-            
-            if status == .authorizedWhenInUse {
-                locationManager.requestAlwaysAuthorization()
-            }
-            
-        case .notDetermined:
-            shouldStartLocationUpdates = true
-            locationManager.requestWhenInUseAuthorization()
-            
-        case .restricted, .denied:
-            shouldStartLocationUpdates = false
-            KBLog.app.kbError("Cannot start location updates: permission denied")
-            
-        @unknown default:
-            shouldStartLocationUpdates = false
-        }
-    }
-    
-    private func stopLocationUpdates() {
-        locationManager.stopUpdatingLocation()
-        locationManager.stopMonitoringSignificantLocationChanges()
-        shouldStartLocationUpdates = false
-    }
-    
-    /// Chiamato all'avvio: se Firestore dice che eravamo in sharing (es. app rilanciata
-    /// da iOS dopo significant location change), riparte il tracking immediatamente.
-    private func resumeIfNeeded() {
-        // applyRemoteStateForMeIfNeeded() viene già chiamato dal listener Firestore
-        // appena arriva il primo snapshot — non serve fare altro qui.
-        // Il listener è già partito in start() → listen().
-        KBLog.app.kbDebug("FamilyLocation: resumeIfNeeded — listener will restore state")
-    }
-    
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        let status = manager.authorizationStatus
-        
-        switch status {
-        case .authorizedWhenInUse:
-            // Upgrade ad Always appena possibile
-            manager.requestAlwaysAuthorization()
-            if shouldStartLocationUpdates, sharingRequested {
-                startLocationUpdatesIfPossible()
-            }
-        case .authorizedAlways:
-            if shouldStartLocationUpdates, sharingRequested {
-                startLocationUpdatesIfPossible()
-            }
-        case .denied, .restricted:
-            KBLog.app.kbError("Location authorization denied/restricted")
-        default:
-            break
-        }
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard
-            sharingRequested,
-            let uid = Auth.auth().currentUser?.uid,
-            let location = locations.last
-        else { return }
-        
-        // Reverse geocoding per indirizzo nella card
-        Task {
-            let geocoder = CLGeocoder()
-            if let placemark = try? await geocoder.reverseGeocodeLocation(location).first {
-                let street = placemark.thoroughfare ?? ""
-                let number = placemark.subThoroughfare ?? ""
-                let city   = placemark.locality ?? ""
-                let parts  = [street, number, city].filter { !$0.isEmpty }
-                await MainActor.run {
-                    myCurrentAddress = parts.isEmpty ? nil : parts.joined(separator: " ")
-                }
-            }
-        }
-        
-        // Primo fix dopo l'avvio della condivisione: va inviato subito, non
-        // aspettando i 45s, altrimenti gli altri membri vedrebbero la card
-        // "in attesa di posizione" più a lungo del necessario.
-        let now = Date()
-        if let last = lastLocationUploadDate, now.timeIntervalSince(last) < Self.locationUploadInterval {
+        if let lastDate = lastGeocodeDate,
+           Date().timeIntervalSince(lastDate) < Self.geocodeMinInterval {
             return
         }
+        guard !geocoder.isGeocoding else { return }
 
-        // Gate di distanza. Volutamente DOPO quello temporale e volutamente
-        // senza toccare `lastLocationUploadDate`: se restiamo fermi non si
-        // scrive, ma il prossimo fix rivaluta subito la distanza invece di
-        // aspettare altri 45s. Così, appena ci si muove davvero, la posizione
-        // parte al primo fix utile e la mappa degli altri non resta indietro.
-        if let lastUploaded = lastUploadedLocation,
-           location.distance(from: lastUploaded) < Self.minUploadDistanceMeters {
-            return
-        }
-
-        lastLocationUploadDate = now
-        lastUploadedLocation = location
-
+        lastGeocodedLocation = location
+        lastGeocodeDate = Date()
         Task {
-            await remote.updateLocation(
-                familyId: familyId,
-                uid: uid,
-                location: location
-            )
-        }
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        KBLog.app.kbError("Location update failed: \(error.localizedDescription)")
-    }
-    
-    // MARK: - UserDefaults persistence (per AppDelegate background relaunch)
-    
-    private func saveLocationDefaults(uid: String, displayName: String) {
-        let defaults = UserDefaults.standard
-        defaults.set(uid, forKey: KBLocationDefaults.uid)
-        defaults.set(familyId, forKey: KBLocationDefaults.familyId)
-        defaults.set(displayName, forKey: KBLocationDefaults.displayName)
-        defaults.set(true, forKey: KBLocationDefaults.isSharing)
-        // Salva expiresAt se temporaneo, altrimenti rimuovi
-        if let expires = myExpiresAt {
-            defaults.set(expires.timeIntervalSince1970, forKey: KBLocationDefaults.expiresAt)
-        } else {
-            defaults.removeObject(forKey: KBLocationDefaults.expiresAt)
-        }
-        NotificationCenter.default.post(name: .kbLocationSharingStateChanged, object: nil)
-    }
-    
-    private func clearLocationDefaults() {
-        let defaults = UserDefaults.standard
-        defaults.removeObject(forKey: KBLocationDefaults.uid)
-        defaults.removeObject(forKey: KBLocationDefaults.familyId)
-        defaults.removeObject(forKey: KBLocationDefaults.displayName)
-        defaults.removeObject(forKey: KBLocationDefaults.expiresAt)   // ← NUOVO
-        defaults.set(false, forKey: KBLocationDefaults.isSharing)
-        NotificationCenter.default.post(name: .kbLocationSharingStateChanged, object: nil)
-    }
-    
-    /// Mostra badge 1 sull'icona mentre la condivisione è attiva, lo rimuove quando si ferma.
-    private func setBadge(active: Bool) {
-        Task { @MainActor in
-            do {
-                try await UNUserNotificationCenter.current()
-                    .setBadgeCount(active ? 1 : 0)
-            } catch {
-                KBLog.app.kbError("FamilyLocation setBadge failed: \(error.localizedDescription)")
-            }
+            guard let placemark = try? await geocoder.reverseGeocodeLocation(location).first else { return }
+            let street = placemark.thoroughfare ?? ""
+            let number = placemark.subThoroughfare ?? ""
+            let city   = placemark.locality ?? ""
+            let parts  = [street, number, city].filter { !$0.isEmpty }
+            guard isSharing else { return }
+            myCurrentAddress = parts.isEmpty ? nil : parts.joined(separator: " ")
         }
     }
 }

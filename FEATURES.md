@@ -168,6 +168,10 @@ verrebbe da pensare. Ognuna è costata almeno una volta.
   c'è un hook alla consegna.
 - **La posizione è divisa in due**: `locations/{uid}` è lo stato, le coordinate
   live stanno in `live/current`.
+- **La condivisione della posizione non vive nella schermata Posizione.** Su
+  iOS sta in `LocationSharingService` (singleton, ripresa a ogni avvio), su
+  Android nel foreground service: il ViewModel della mappa legge e basta.
+  Appartiene al dispositivo che l'ha avviata.
 - **La riga «Distanza» del Piano Fitness è dichiarata a Google Play**: deve
   restare visibile anche a zero, altrimenti `READ_DISTANCE` diventa
   indimostrabile. Nel Piano Alimentare invece non deve comparire.

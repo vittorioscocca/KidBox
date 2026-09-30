@@ -9,9 +9,10 @@ import Foundation
 
 /// UserDefaults keys used to persist the active location sharing session.
 ///
-/// Written by `FamilyLocationViewModel` when the user starts/stops sharing.
-/// Read by `AppDelegate` when iOS relaunches the app in background
-/// after a significant location change.
+/// Written by `LocationSharingService` when this device starts/stops sharing.
+/// Read by `LocationSharingService.restoreFromDefaults()` at every launch
+/// (also a background relaunch after a significant location change) and by
+/// the Home sharing indicator.
 enum KBLocationDefaults {
     static let uid         = "kb_location_uid"
     static let familyId    = "kb_location_familyId"

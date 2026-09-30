@@ -1602,6 +1602,9 @@ final class AppCoordinator: ObservableObject {
         // Prima di `signOut()`: dopo, le rules non lascerebbero più scrivere e
         // questo dispositivo resterebbe nell'elenco degli altri per sempre.
         await KBDeviceSessionRegistry.shared.stopAndRemove()
+        // Stesso motivo: senza, gli altri vedrebbero la posizione ferma come
+        // «in condivisione», e il GPS resterebbe acceso per un account uscito.
+        await LocationSharingService.shared.stopSharing()
 
         do {
             try Auth.auth().signOut()

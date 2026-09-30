@@ -32,7 +32,8 @@ import FBSDKCoreKit
 /// - Handle user interaction with notifications (tap)
 /// - Handle quick actions on treatment dose notifications (Assunto / Saltato)
 /// - Present notifications while app is in foreground
-/// - Handle background location relaunch (significant location changes)
+/// - Resume live location sharing at launch (`LocationSharingService`), also
+///   when iOS relaunches the app in background for a significant location change
 ///
 /// Notes:
 /// - Avoid logging sensitive notification payload data (could contain PII).
@@ -42,8 +43,7 @@ import FBSDKCoreKit
 final class AppDelegate: NSObject,
                          UIApplicationDelegate,
                          UNUserNotificationCenterDelegate,
-                         MessagingDelegate,
-                         CLLocationManagerDelegate {
+                         MessagingDelegate {
     
     // MARK: - SwiftData container (iniettato da KidBoxApp)
     
@@ -51,13 +51,7 @@ final class AppDelegate: NSObject,
     /// Usato da `TreatmentDoseActionHandler` per aggiornare i `KBDoseLog`
     /// direttamente dalla quick action senza aprire l'app.
     var modelContainer: ModelContainer?
-    
-    // MARK: - Background location manager
-    
-    /// Location manager dedicato al relaunch — separato da quello del ViewModel.
-    /// Serve solo per ricevere il primo evento di significant change che sveglia l'app
-    /// dopo che è stata terminata dall'utente, poi il ViewModel prende il controllo.
-    private var backgroundLocationManager: CLLocationManager?
+
     private static let passwordSecurityRefreshTaskId = "it.vittorioscocca.kidbox.password-security-refresh"
 
     // MARK: - Orientation
@@ -148,14 +142,14 @@ final class AppDelegate: NSObject,
         registerBackgroundTasks()
         schedulePasswordSecurityRefresh()
         
-        // 📍 Background location relaunch
-        // iOS rilancia l'app con .location nelle launchOptions quando c'è
-        // un significant location change pendente mentre l'app era terminata.
-        // Nota: .location è deprecata in iOS 26 ma funziona ancora —
-        // migreremo a CLLocationUpdate/CLMonitor quando iOS 26 sarà GA.
-        if wasRelauchedForLocation(launchOptions: launchOptions) {
-            KBLog.app.kbInfo("App relaunched by iOS for background location event")
-            setupBackgroundLocationManager()
+        // 📍 Condivisione posizione: se questo dispositivo stava condividendo,
+        // riprende. A ogni avvio, non solo quando iOS rilancia l'app per un
+        // significant location change: prima lo faceva solo in quel caso, con
+        // un location manager a parte, e altrimenti ripartiva solo aprendo la
+        // schermata Posizione. Il servizio è un singleton a vita-app: il suo
+        // CLLocationManager riceve anche l'evento che ha rilanciato l'app.
+        MainActor.assumeIsolated {
+            LocationSharingService.shared.restoreFromDefaults()
         }
 
         // 📍 Geofence: istanzia il singleton così il suo CLLocationManager delegate è vivo
@@ -252,21 +246,6 @@ final class AppDelegate: NSObject,
         KBLog.app.kbDebug("Facebook openURL handled via UIScene")
     }
     
-    private func setupBackgroundLocationManager() {
-        let manager = CLLocationManager()
-        manager.delegate = self
-        manager.allowsBackgroundLocationUpdates = true
-        backgroundLocationManager = manager
-        manager.startMonitoringSignificantLocationChanges()
-    }
-    
-    /// Controlla se l'app è stata rilanciata da iOS per un location event.
-    /// Usa la raw key string per evitare il warning di deprecazione di .location su iOS 26+.
-    private func wasRelauchedForLocation(launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        let key = UIApplication.LaunchOptionsKey(rawValue: "UIApplicationLaunchOptionsLocationKey")
-        return launchOptions?[key] != nil
-    }
-    
     /// Alza la capacità di `URLCache.shared` (default di sistema: pochi MB su
     /// disco). Serve alle immagini remote scaricate con `AsyncImage`/URLSession:
     /// oltre alle media, i loghi delle carte fedeltà — una carta si usa alla
@@ -276,46 +255,6 @@ final class AppDelegate: NSObject,
         let memory = 100 * 1024 * 1024   // 100 MB
         let disk   = 300 * 1024 * 1024   // 300 MB
         URLCache.shared = URLCache(memoryCapacity: memory, diskCapacity: disk, diskPath: "kidbox-media-cache")
-    }
-    
-    // MARK: - CLLocationManagerDelegate (background relaunch)
-    
-    /// Riceve la posizione quando l'app viene rilanciata in background da iOS.
-    /// In questo momento la UI non è ancora costruita, quindi scriviamo
-    /// direttamente su Firestore tramite LocationRemoteStore.
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.last else { return }
-        
-        KBLog.app.kbInfo("Background location received lat=\(location.coordinate.latitude) lon=\(location.coordinate.longitude)")
-        
-        // Leggi uid/familyId da UserDefaults (salvati dal FamilyLocationViewModel
-        // quando l'utente attiva la condivisione). `displayName` non serve più qui
-        // (updateLocation scrive solo le coordinate) ma la sua presenza resta un
-        // segnale che il setup della condivisione è completo.
-        let defaults = UserDefaults.standard
-        guard
-            let uid = defaults.string(forKey: KBLocationDefaults.uid),
-            let familyId = defaults.string(forKey: KBLocationDefaults.familyId),
-            defaults.string(forKey: KBLocationDefaults.displayName) != nil,
-            defaults.bool(forKey: KBLocationDefaults.isSharing)
-        else {
-            KBLog.app.kbDebug("Background location: no active sharing session, skipping")
-            return
-        }
-        
-        let store = LocationRemoteStore()
-        Task {
-            await store.updateLocation(
-                familyId: familyId,
-                uid: uid,
-                location: location
-            )
-            KBLog.app.kbInfo("Background location: Firestore update sent uid=\(uid)")
-        }
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        KBLog.app.kbError("Background location error: \(error.localizedDescription)")
     }
     
     // MARK: - Notification response handling
