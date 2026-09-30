@@ -9,12 +9,14 @@ description: Preparare una release iOS o Android di KidBox — note «Novità» 
 può, e preparo. Dal 30/09/2026 committo e pusho io anche iOS e Android (vedi
 `CLAUDE.md`); la pubblicazione sugli store resta sua. Non tocco mai:
 
-- `CURRENT_PROJECT_VERSION` e `MARKETING_VERSION` in
-  `KidBox.xcodeproj/project.pbxproj` — **nemmeno per rimetterli a posto, nemmeno
-  di passaggio**. Sono la moneta con cui l'utente pubblica; non c'è script di
-  incremento automatico, quindi ogni cambiamento lì è deliberato. Se dopo un
-  `xcodebuild` il pbxproj risulta modificato, controlla la data prima di
-  attribuirtelo e in ogni caso non scriverci sopra.
+- `CURRENT_PROJECT_VERSION` e `MARKETING_VERSION` **di mia iniziativa**. Dal
+  30/09/2026 li scrivo io, ma solo coi numeri che mi dà l'utente, in tutti e 5
+  i target (KidBox, ShareExtension, NotificationService, ControlsExtension,
+  AutoFill; Debug e Release = 10 righe per chiave; i target di test restano a
+  1.0/1). Dopo, ricontare: 10 e 10 col valore nuovo, 0 col vecchio. Mai
+  incrementi automatici, mai «rimetterli a posto». Se dopo un `xcodebuild` il
+  pbxproj risulta modificato senza richiesta, controlla la data prima di
+  attribuirtelo e non scriverci sopra.
 - `versionCode` Android. **Un versionCode caricato non si riusa mai più**, anche
   se la release viene rimossa (il 49 è bruciato così).
 

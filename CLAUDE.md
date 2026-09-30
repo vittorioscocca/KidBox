@@ -46,9 +46,11 @@ i suoi commit si vedono solo con `git -C KidBoxAndroid`.
 
 - Claude deploya **e committa** functions, rules, console, landing e web app.
 - iOS e Android (dal 30/09/2026): Claude scrive, compila, **committa col suo
-  messaggio e pusha**; l'utente pubblica sugli store. Non toccare mai build
-  number e versione, nemmeno per «rimetterli a posto» (se l'utente li ha già
-  cambiati, vanno nel commit così come sono).
+  messaggio e pusha**; l'utente pubblica sugli store.
+- Versione e build iOS: le scrive Claude **solo coi numeri che dà l'utente**,
+  in tutti e 5 i target (KidBox + 4 estensioni, Debug e Release: 10 righe per
+  `MARKETING_VERSION` e per `CURRENT_PROJECT_VERSION`; i target di test no).
+  Mai di iniziativa. Android `versionCode`/`versionName` restano dell'utente.
 - Push su entrambi i repo via HTTPS e Portachiavi: la credenziale GitHub la
   salva l'utente. Se il push fallisce per autenticazione, commit fatto e dirlo.
 - Commit per path, mai `git add -A` (l'albero contiene lavoro dell'utente).
