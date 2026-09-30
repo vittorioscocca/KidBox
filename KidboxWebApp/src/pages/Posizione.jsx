@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFamily } from "../FamilyContext";
 import { useAuth } from "../AuthContext";
 import { useTranslation } from "../i18n/LocaleContext";
@@ -17,6 +17,27 @@ import Modal from "../components/Modal";
 import "./Posizione.css";
 
 const DURATIONS = [1, 2, 4, 8];
+
+/**
+ * Oltre mezz'ora senza aggiornamenti (due battiti da 15 minuti persi) quel
+ * dispositivo ha smesso di inviare: la posizione dice «era qui», non «è qui».
+ * Stessa soglia di iOS e Android.
+ */
+const LOCATION_STALE_AFTER_MS = 30 * 60 * 1000;
+const HEARTBEAT_MS = 15 * 60 * 1000;
+
+function isLocationStale(lastUpdateAt, now) {
+  return lastUpdateAt != null && now - lastUpdateAt.getTime() > LOCATION_STALE_AFTER_MS;
+}
+
+function freshnessLabel(t, lastUpdateAt, now) {
+  if (!lastUpdateAt) return null;
+  const minutes = Math.max(0, Math.floor((now - lastUpdateAt.getTime()) / 60000));
+  if (minutes < 2) return t.location.updatedNow;
+  if (minutes < 120) return t.location.updatedMinutes(minutes);
+  if (minutes < 48 * 60) return t.location.updatedHours(Math.floor(minutes / 60));
+  return t.location.updatedDays(Math.floor(minutes / (24 * 60)));
+}
 
 export default function Posizione() {
   const { currentFamilyId } = useFamily();
@@ -37,6 +58,15 @@ export default function Posizione() {
     () => localStorage.getItem("kidbox:mapLayer") || "map"
   );
   const watchRef = useRef(null);
+  const lastPosRef = useRef(null);
+  const heartbeatRef = useRef(null);
+  // «X minuti fa» deve invecchiare anche senza dati nuovi.
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     if (!currentFamilyId) return undefined;
@@ -64,6 +94,8 @@ export default function Posizione() {
    */
   useEffect(() => {
     const onUnload = () => {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
       if (watchRef.current != null) {
         navigator.geolocation.clearWatch(watchRef.current);
         stopSharing({ familyId: currentFamilyId, uid: user.uid });
@@ -105,13 +137,15 @@ export default function Posizione() {
           lon: pos.coords.longitude,
           accuracy: pos.coords.accuracy,
         });
-        updateCoordinates({
+        const coords = {
           familyId: currentFamilyId,
           uid: user.uid,
           lat: pos.coords.latitude,
           lon: pos.coords.longitude,
           accuracy: pos.coords.accuracy,
-        });
+        };
+        lastPosRef.current = coords;
+        updateCoordinates(coords);
       },
       (err) => {
         setError(
@@ -123,10 +157,18 @@ export default function Posizione() {
       },
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
     );
+    // Da fermi il browser non richiama watchPosition: come le app, una
+    // scrittura ogni 15 minuti dice agli altri che la scheda è ancora aperta.
+    clearInterval(heartbeatRef.current);
+    heartbeatRef.current = setInterval(() => {
+      if (lastPosRef.current) updateCoordinates(lastPosRef.current);
+    }, HEARTBEAT_MS);
     setSharing(true);
   };
 
   const endSharing = async () => {
+    clearInterval(heartbeatRef.current);
+    heartbeatRef.current = null;
     if (watchRef.current != null) {
       navigator.geolocation.clearWatch(watchRef.current);
       watchRef.current = null;
@@ -171,6 +213,15 @@ export default function Posizione() {
     setZoneDraft({ latitude: lat, longitude: lon, radius: 150, name: "", emoji: "📍" });
   };
 
+  // La mappa ridisegna tutti i segnaposto a ogni nuovo array: si ricalcola
+  // solo quando cambiano i dati o qualcuno passa da «attuale» a «vecchia»,
+  // non a ogni scatto dell'orologio.
+  const staleKey = people.map((p) => (isLocationStale(p.lastUpdateAt, now) ? "1" : "0")).join("");
+  const mapPeople = useMemo(
+    () => people.map((p, i) => ({ ...p, stale: staleKey[i] === "1" })),
+    [people, staleKey]
+  );
+
   const timeLabel = (date) =>
     date
       ? new Intl.DateTimeFormat(locale === "en" ? "en-US" : "it-IT", {
@@ -209,7 +260,7 @@ export default function Posizione() {
             ◎
           </button>
           <FamilyMap
-            people={people}
+            people={mapPeople}
             zones={zones}
             onMapClick={onMapClick}
             focus={focus}
@@ -268,8 +319,11 @@ export default function Posizione() {
             </div>
           ) : (
             <ul className="people-list">
-              {people.map((p) => (
-                <li key={p.id}>
+              {people.map((p) => {
+                const stale = isLocationStale(p.lastUpdateAt, now);
+                const freshness = freshnessLabel(t, p.lastUpdateAt, now);
+                return (
+                <li key={p.id} className={stale ? "stale" : undefined}>
                   <button
                     onClick={() =>
                       setFocus({ lat: p.latitude, lon: p.longitude, zoom: 16 })
@@ -290,11 +344,18 @@ export default function Posizione() {
                         {p.mode === "temporary" && p.expiresAt
                           ? t.location.until(timeLabel(p.expiresAt))
                           : t.location.realtime}
+                        {freshness && (
+                          <>
+                            {" · "}
+                            <span className="person-freshness">{freshness}</span>
+                          </>
+                        )}
                       </span>
                     </span>
                   </button>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
 

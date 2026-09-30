@@ -69,6 +69,12 @@
   font-size: 0.62rem;
 }
 
+/* Posizione vecchia (oltre mezz'ora): segnaposto sbiadito, come su iOS e Android. */
+.person-marker.stale .person-pin {
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+
 .person-pin {
   position: relative;
 }

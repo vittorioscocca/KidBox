@@ -151,6 +151,17 @@
   color: var(--muted);
 }
 
+/* Posizione vecchia (oltre mezz'ora): «era qui», non «è qui». */
+.people-list li.stale .person-dot {
+  opacity: 0.55;
+  filter: grayscale(1);
+}
+
+.people-list li.stale .person-freshness {
+  color: var(--accent2);
+  font-weight: 600;
+}
+
 .zones-head {
   display: flex;
   align-items: center;

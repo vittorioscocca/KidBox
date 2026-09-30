@@ -98,13 +98,16 @@ export function listenSharedLocations({ familyId, onChange, onError }) {
       const unsub = onSnapshot(
         liveDoc(familyId, uid),
         (snap) => {
-          const d = snap.data();
+          // "estimate": sulla propria scrittura non ancora confermata
+          // `lastUpdateAt` (serverTimestamp) sarebbe null.
+          const d = snap.data({ serverTimestamps: "estimate" });
           if (d?.lat != null && d?.lon != null) {
             coordByUid.set(uid, {
               latitude: d.lat,
               longitude: d.lon,
               accuracy: d.accuracy ?? null,
-              lastUpdateAt: d.lastUpdateAt ?? null,
+              // Date, non Timestamp: la pagina ci fa i conti.
+              lastUpdateAt: d.lastUpdateAt?.toDate?.() ?? null,
               // Scritti dai client nativi insieme alle coordinate (vedi
               // LocationRemoteStore.updateLocation); assenti quando il
               // livello non è noto, e allora la pila non si mostra.

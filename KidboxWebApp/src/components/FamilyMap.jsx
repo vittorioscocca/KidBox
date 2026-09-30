@@ -166,7 +166,8 @@ export default function FamilyMap({ people, zones, onMapClick, focus, selfPositi
         batteryBadgeHtml(p.batteryLevel, p.isCharging) +
         `</span>`;
       const icon = L.divIcon({
-        className: "person-marker",
+        // `stale`: posizione vecchia, segnaposto sbiadito (vedi Posizione.jsx).
+        className: "person-marker" + (p.stale ? " stale" : ""),
         html: avatar + label,
         iconSize: [120, 72],
         iconAnchor: [60, 20],
