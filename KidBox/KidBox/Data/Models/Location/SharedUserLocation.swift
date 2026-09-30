@@ -20,7 +20,11 @@ struct SharedUserLocation: Identifiable, Equatable {
     /// dispositivo non ne ha ancora spedita una (versioni precedenti incluse).
     let batteryLevel: Int?
     let isCharging: Bool
-    
+    /// Ultima scrittura della posizione (`live/current.lastUpdateAt`). iOS e
+    /// Android la riscrivono almeno ogni 15 min anche da fermi, quindi una data
+    /// vecchia vuol dire che quel telefono ha smesso di inviare.
+    let lastUpdateAt: Date?
+
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }

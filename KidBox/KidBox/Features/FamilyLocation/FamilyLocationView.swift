@@ -59,7 +59,8 @@ struct FamilyLocationView: View {
                             name: user.name,
                             avatarData: avatarDataFor(uid: user.id),
                             avatarURL: user.avatarURL,
-                            isFollowed: followingUserId == user.id
+                            isFollowed: followingUserId == user.id,
+                            lastUpdateAt: user.lastUpdateAt
                         )
                         .onTapGesture {
                             centerOn(user: user)
@@ -253,6 +254,10 @@ struct FamilyLocationView: View {
                                 onOrange: followingUserId == user.id
                             )
                         }
+                        LocationFreshnessText(
+                            date: user.lastUpdateAt,
+                            onOrange: followingUserId == user.id
+                        )
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
@@ -578,26 +583,36 @@ private struct AvatarMarker: View {
     let avatarData: Data?
     let avatarURL: String?
     var isFollowed: Bool = false
-    
+    var lastUpdateAt: Date? = nil
+
     @State private var remoteImage: UIImage? = nil
-    
+
     var body: some View {
-        VStack(spacing: 4) {
-            avatarImage
-                .frame(width: 40, height: 40)
-                .clipShape(Circle())
-                .overlay(
-                    Circle().stroke(
-                        isFollowed ? Color.orange : Color(.quaternaryLabel),
-                        lineWidth: isFollowed ? 3 : 1
+        // Il segnaposto di una posizione vecchia si sbiadisce: dice «era qui»,
+        // non «è qui». Si rivaluta ogni minuto anche senza nuovi dati.
+        TimelineView(.periodic(from: .now, by: 60)) { context in
+            let stale = LocationFreshness.isStale(lastUpdateAt, now: context.date)
+            VStack(spacing: 4) {
+                avatarImage
+                    .frame(width: 40, height: 40)
+                    .clipShape(Circle())
+                    .overlay(
+                        Circle().stroke(
+                            isFollowed ? Color.orange : Color(.quaternaryLabel),
+                            lineWidth: isFollowed ? 3 : 1
+                        )
                     )
-                )
-                .scaleEffect(isFollowed ? 1.15 : 1.0)
-                .animation(.spring(response: 0.3), value: isFollowed)
-            
-            Text(name)
-                .font(.caption)
-                .bold()
+                    .saturation(stale ? 0 : 1)
+                    .opacity(stale ? 0.55 : 1)
+                    .scaleEffect(isFollowed ? 1.15 : 1.0)
+                    .animation(.spring(response: 0.3), value: isFollowed)
+
+                Text(name)
+                    .font(.caption)
+                    .bold()
+
+                LocationFreshnessText(date: lastUpdateAt)
+            }
         }
         .task(id: avatarURL) {
             await loadRemoteImageIfNeeded()
@@ -649,6 +664,59 @@ private struct AvatarMarker: View {
         } catch {
             print("AvatarMarker: download failed — \(error.localizedDescription)")
         }
+    }
+}
+
+// MARK: - Freschezza della posizione
+
+/// Da quanto una posizione non si aggiorna. iOS e Android la riscrivono almeno
+/// ogni 15 minuti anche da fermi: oltre mezz'ora (due battiti persi) quel
+/// telefono ha smesso di inviare. Prima nessuna app lo diceva, e il 30/09/2026
+/// una famiglia vedeva da 10 giorni un pin fermo come fosse attuale.
+enum LocationFreshness {
+    static let staleAfter: TimeInterval = 30 * 60
+
+    static func isStale(_ date: Date?, now: Date = .now) -> Bool {
+        guard let date else { return false }
+        return now.timeIntervalSince(date) > staleAfter
+    }
+}
+
+/// «adesso» · «12 minuti fa» · «3 ore fa» · «2 giorni fa». Sotto le due ore si
+/// resta sui minuti: così minuti, ore e giorni sono sempre plurali e bastano le
+/// chiavi già tradotte del catalogo. Arancione quando è vecchia.
+struct LocationFreshnessText: View {
+    let date: Date?
+    var onOrange: Bool = false
+
+    var body: some View {
+        if let date {
+            TimelineView(.periodic(from: .now, by: 30)) { context in
+                label(since: date, now: context.date)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(tint(stale: LocationFreshness.isStale(date, now: context.date)))
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func label(since date: Date, now: Date) -> some View {
+        let minutes = max(0, Int(now.timeIntervalSince(date) / 60))
+        if minutes < 2 {
+            Text("adesso")
+        } else if minutes < 120 {
+            Text("\(minutes) minuti fa")
+        } else if minutes < 48 * 60 {
+            Text("\(minutes / 60) ore fa")
+        } else {
+            Text("\(minutes / (24 * 60)) giorni fa")
+        }
+    }
+
+    private func tint(stale: Bool) -> Color {
+        if onOrange { return .white }
+        return stale ? .orange : .secondary
     }
 }
 

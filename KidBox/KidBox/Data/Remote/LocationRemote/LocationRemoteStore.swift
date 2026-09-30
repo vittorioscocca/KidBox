@@ -126,7 +126,7 @@ final class LocationRemoteStore {
 
         var statusByUid: [String: Status] = [:]
         var coordListeners: [String: ListenerRegistration] = [:]
-        var coordByUid: [String: (lat: Double, lon: Double, battery: Int?, charging: Bool)] = [:]
+        var coordByUid: [String: (lat: Double, lon: Double, battery: Int?, charging: Bool, updatedAt: Date?)] = [:]
 
         // Riferimenti catturati come valori: le closure dei listener vivono
         // finché non si chiama `remove()`, e catturare `self` terrebbe in vita
@@ -150,7 +150,8 @@ final class LocationRemoteStore {
                     expiresAt: status.expiresAt,
                     avatarURL: status.avatarURL,
                     batteryLevel: coord.battery,
-                    isCharging: coord.charging
+                    isCharging: coord.charging,
+                    lastUpdateAt: coord.updatedAt
                 )
             }
             onChange(users)
@@ -172,8 +173,11 @@ final class LocationRemoteStore {
             for uid in wanted where coordListeners[uid] == nil {
                 let reg = liveRef(uid)
                     .addSnapshotListener { snap, _ in
+                        // `.estimate`: sulla propria scrittura non ancora confermata
+                        // `lastUpdateAt` (serverTimestamp) sarebbe nil, e il proprio
+                        // pin mostrerebbe «non aggiornata» proprio mentre si aggiorna.
                         guard
-                            let data = snap?.data(),
+                            let data = snap?.data(with: .estimate),
                             let lat = data["lat"] as? Double,
                             let lon = data["lon"] as? Double
                         else {
@@ -194,7 +198,8 @@ final class LocationRemoteStore {
                             battery,
                             (data["batteryCharging"] as? NSNumber)?.boolValue
                                 ?? (data["batteryCharging"] as? Bool)
-                                ?? false
+                                ?? false,
+                            (data["lastUpdateAt"] as? Timestamp)?.dateValue()
                         )
                         emit()
                     }

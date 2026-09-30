@@ -73,6 +73,11 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
     /// Un fix più vecchio di così è la cache di CoreLocation, non dove sei ora.
     private static let maxFixAge: TimeInterval = 120
 
+    /// Anche da fermi una scrittura almeno ogni 15 minuti, come su Android: chi
+    /// guarda la mappa legge «aggiornata X fa», e senza battito un telefono
+    /// fermo e uno che ha smesso di inviare sarebbero indistinguibili.
+    private static let heartbeatInterval: TimeInterval = 15 * 60
+
     // MARK: - Private
 
     private let remote = LocationRemoteStore()
@@ -92,6 +97,7 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
 
     private var waitingForAuthorization = false
     private var expiryTask: Task<Void, Never>?
+    private var heartbeatTask: Task<Void, Never>?
     private var statusListener: ListenerRegistration?
     private var statusRetryDelay: TimeInterval = 60
 
@@ -241,6 +247,7 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
 
     private func activate(promptForAuthorization: Bool) {
         scheduleExpiry()
+        startHeartbeat()
         listenOwnStatus()
         setBadge(active: true)
         startUpdates(promptForAuthorization: promptForAuthorization)
@@ -262,6 +269,8 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
 
         expiryTask?.cancel()
         expiryTask = nil
+        heartbeatTask?.cancel()
+        heartbeatTask = nil
         statusListener?.remove()
         statusListener = nil
 
@@ -290,6 +299,41 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
             }
             KBLog.app.kbInfo("LocationSharing: condivisione temporanea scaduta → stop")
             await self?.stopSharing()
+        }
+    }
+
+    /// Da fermi `distanceFilter` non consegna fix, quindi il battito non può
+    /// dipendere da loro: un controllo al minuto riscrive l'ultima posizione
+    /// buona quando l'ultima scrittura ha più di 15 minuti. Con gli
+    /// aggiornamenti di posizione attivi l'app resta viva in background, e il
+    /// ciclo con lei.
+    private func startHeartbeat() {
+        heartbeatTask?.cancel()
+        heartbeatTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                guard !Task.isCancelled, let self else { return }
+                self.heartbeatIfDue()
+            }
+        }
+    }
+
+    private func heartbeatIfDue() {
+        guard isSharing, remoteConfirmed, let familyId, let uid,
+              Auth.auth().currentUser?.uid == uid,
+              let lastUpload = lastUploadDate,
+              Date().timeIntervalSince(lastUpload) >= Self.heartbeatInterval,
+              let location = lastLocation ?? lastUploadedLocation
+        else { return }
+
+        if let expiresAt, expiresAt <= Date() {
+            Task { await stopSharing() }
+            return
+        }
+
+        lastUploadDate = Date()
+        Task {
+            await remote.updateLocation(familyId: familyId, uid: uid, location: location)
         }
     }
 
