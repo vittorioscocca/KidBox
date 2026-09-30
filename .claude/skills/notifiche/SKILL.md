@@ -195,9 +195,13 @@ Presidi oggi, da non togliere:
   arrivo nuovo. Prezzo misurato simulando «Casa genitore» come solo-arrivo,
   dal 24/09: 10 giusti, 3 persi, 8 in più (GPS che oscilla sul bordo dopo ore
   di permanenza). Vale solo per gli arrivi: un «è arrivato» in più dice una
-  cosa vera, un «è uscito» falso no. La cura vera è nei client (mandare
-  sempre entrambi i passaggi); per allora `leftAt` sullo stato scarta già il
-  rientro entro 5 minuti anche dove l'uscita non si avvisa.
+  cosa vera, un «è uscito» falso no. La cura vera è nei client: dalle build
+  del 30/09 sera (iOS `GeofenceMonitorService`, Android `toAndroidGeofence`)
+  ogni zona che avvisa qualcosa si registra con entrata E uscita e il
+  telefono manda tutti e due i passaggi; iOS porta anche le regioni già
+  registrate a entrambe all'avvio. Da lì la finestra dei 30 minuti scatta
+  solo per le build vecchie, e `leftAt` sullo stato scarta il rientro entro
+  5 minuti anche dove l'uscita non si avvisa.
 - **Gli eventi scadono dopo 30 giorni** (scelta dell'utente, 30/09/2026):
   `onGeofenceEvent` scrive `expireAt` e la TTL di Firestore su
   `geofenceEvents.expireAt` li cancella. Gli eventi scritti prima del 30/09

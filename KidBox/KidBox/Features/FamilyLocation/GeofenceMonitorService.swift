@@ -55,6 +55,27 @@ final class GeofenceMonitorService: NSObject, ObservableObject, CLLocationManage
         locationManager.pausesLocationUpdatesAutomatically = false
 
         restoreFromDefaults()
+        upgradeSingleTransitionRegions()
+    }
+
+    /// Le regioni registrate dalle build precedenti hanno solo il passaggio da
+    /// avvisare. iOS le conserva fra un avvio e l'altro, e `startMonitoring(geofences:)`
+    /// le rifà solo quando si apre la schermata Posizione: qui si portano subito,
+    /// all'avvio, a entrata e uscita. Una regione con tutti e due i flag spenti
+    /// resta com'è (non avvisa niente).
+    private func upgradeSingleTransitionRegions() {
+        for case let region as CLCircularRegion in locationManager.monitoredRegions
+        where region.notifyOnEntry != region.notifyOnExit {
+            let upgraded = CLCircularRegion(
+                center: region.center,
+                radius: region.radius,
+                identifier: region.identifier
+            )
+            upgraded.notifyOnEntry = true
+            upgraded.notifyOnExit = true
+            locationManager.startMonitoring(for: upgraded)
+            KBLog.app.kbInfo("GeofenceMonitorService: regione \(region.identifier) portata a entrata e uscita")
+        }
     }
 
     // MARK: - Context
@@ -177,14 +198,23 @@ final class GeofenceMonitorService: NSObject, ObservableObject, CLLocationManage
             return
         }
 
+        // Una zona che non avvisa niente non serve registrarla.
+        guard geofence.notifyOnArrive || geofence.notifyOnLeave else { return }
+
         let radius = effectiveRadius(for: geofence)
         let region = CLCircularRegion(
             center: center,
             radius: radius,
             identifier: geofence.id
         )
-        region.notifyOnEntry = geofence.notifyOnArrive
-        region.notifyOnExit = geofence.notifyOnLeave
+        // Sempre entrata E uscita, anche quando se ne avvisa una sola: cosa
+        // avvisare lo decide il server (onGeofenceEvent), che per riconoscere
+        // un doppione o un'uscita lampo deve vedere tutti e due i passaggi.
+        // Prima si registrava solo quello da avvisare, e in una zona «solo
+        // arrivo» (il default) dopo il primo avviso ogni arrivo sembrava un
+        // doppione.
+        region.notifyOnEntry = true
+        region.notifyOnExit = true
 
         locationManager.startMonitoring(for: region)
 
@@ -203,17 +233,13 @@ final class GeofenceMonitorService: NSObject, ObservableObject, CLLocationManage
     }
 
     private func handleRegionEvent(geofenceId: String, type: GeofenceTransitionType) {
-        // Dopo un relaunch in background lo stato locale `monitoredGeofences` è vuoto
-        // (le regioni sono però ancora registrate a livello OS). In quel caso ci fidiamo
-        // di `notifyOnEntry/notifyOnExit` impostati sulla regione: iOS consegna solo le
-        // transizioni richieste, e la Cloud Function ricontrolla comunque i flag sul doc.
-        if let state = monitoredGeofences[geofenceId] {
-            switch type {
-            case .arrive:
-                guard state.notifyOnArrive else { return }
-            case .leave:
-                guard state.notifyOnLeave else { return }
-            }
+        // Anche il passaggio che non si avvisa va al server: gli serve per tenere
+        // lo stato della zona (vedi `startMonitoringRegion`), e i flag di avviso
+        // li ricontrolla la Cloud Function sul documento. Dopo un relaunch in
+        // background `monitoredGeofences` è vuoto: si inoltra e basta.
+        if let state = monitoredGeofences[geofenceId],
+           !state.notifyOnArrive, !state.notifyOnLeave {
+            return
         }
 
         if familyId.isEmpty || uid.isEmpty {
