@@ -26,12 +26,13 @@ Documento `config/trial`: `enabled` (bool), `autoGrant` (bool, assente = acceso)
 - **Spegnerla:** `enabled: false`. Le prove già concesse finiscono comunque alla loro scadenza.
 - **Accenderla solo quando i client che la spiegano sono in vendita su ENTRAMBI gli store** (iOS ≥ 2.3.6, Android ≥ 2.4.2). Le app vecchie vedono il Pro sbloccato senza banner, e a fine prova perdono funzioni senza capire perché. Il 29/09 l'utente ha deciso di accenderla prima: è una sua scelta da rispettare, ma va detto il rischio.
 
-## Regalo alle famiglie già esistenti
+## Avviso alle famiglie già esistenti (non più regalo)
 
-`node scripts/grant-trial-gift.js`: senza argomenti è una prova a vuoto, che stampa quante famiglie e quali (id corto, membri, ultimo accesso, piattaforma, lingua, senza nomi); `--yes` concede e manda la push «Un regalo per la tua famiglia»; `--no-push` concede senza push.
-- **Criteri scelti dall'utente:** almeno un membro attivo negli ultimi 14 giorni, famiglie di qualunque dimensione, esclusi account di prova, piani esistenti e chi ha già avuto la prova. A chi possiede più famiglie tocca quella usata più di recente.
-- **Stesse scritture del trigger, in un commit atomico con precondizioni.** Rilanciarlo è innocuo.
-- **Sempre prima la prova a vuoto, mostrata all'utente;** `--yes` solo con il suo ok esplicito e con le app nuove in vendita. Al 29/09 si aspettava Android 2.4.2.
+Dal 30/09/2026 la prova è una scelta dell'utente (pulsante), quindi non si concede più d'ufficio: il vecchio `grant-trial-gift.js` è diventato `scripts/notify-trial-offer.js`, che **manda solo una notifica** ai proprietari che possono ancora attivarla. Senza argomenti è una prova a vuoto (quanti proprietari, piattaforma, lingua, esclusi e perché); `--yes` invia.
+- Destinatari: famiglie con un membro attivo negli ultimi **7** giorni, senza piano, senza account di prova, proprietario senza `trials/{uid}` e mai avvisato (`trialOfferNotices/{uid}`, solo server). Una notifica per persona.
+- **La versione dell'app non è registrata da nessuna parte** (né su `fcmTokens` né su `users`): non si può mandare solo a chi ha già il pulsante. Per questo si lancia **una settimana dopo** che iOS 2.3.7 e Android 2.4.3 sono in vendita, e il testo dice «Aggiorna KidBox e attivala dall'app con un tocco».
+- Il tocco (type `pro_trial`, stage `offer`) apre i Piani su Android, dove la card è in cima, e la sezione Abbonamento del Profilo su iOS, da cui «Gestisci spazio e piani» porta alla card.
+- Sempre prima la prova a vuoto mostrata all'utente; `--yes` solo con il suo ok.
 
 ## Dove vive il testo che la annuncia (da aggiornare tutto insieme)
 
