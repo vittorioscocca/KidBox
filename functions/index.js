@@ -1143,6 +1143,40 @@ exports.onMedicalVisitWritten = onDocumentWritten(
 // POSIZIONE
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Cancella `locations/{uid}/live/current` di chi ha smesso di condividere
+ * (stop dal telefono o scadenza della condivisione temporanea).
+ *
+ * Prima l'ultima posizione restava sul server per sempre, leggibile da ogni
+ * membro con una lettura diretta anche se nessuna mappa la mostra più: il
+ * 30/09/2026 erano 7, la più vecchia di 40 giorni.
+ *
+ * In transazione, e solo se la condivisione risulta ancora spenta: chi la
+ * riaccende subito scrive prima `isSharing: true` e poi la prima coordinata,
+ * quindi la transazione o vede `true` e lascia stare, o cancella la posizione
+ * vecchia prima che arrivi quella nuova.
+ *
+ * @param {string} familyId
+ * @param {string} uid
+ * @return {Promise<void>}
+ */
+async function deleteLiveLocationIfStopped(familyId, uid) {
+  const db = admin.firestore();
+  const locRef = db.collection("families").doc(familyId).collection("locations").doc(uid);
+  const liveRef = locRef.collection("live").doc("current");
+  try {
+    const deleted = await db.runTransaction(async (tx) => {
+      const [status, live] = await tx.getAll(locRef, liveRef);
+      if (!live.exists || status.get("isSharing") === true) return false;
+      tx.delete(liveRef);
+      return true;
+    });
+    logger.info("posizione live allo stop", {familyId, uid, deleted});
+  } catch (err) {
+    logger.error("posizione live allo stop: cancellazione fallita", {familyId, uid, err: String(err)});
+  }
+}
+
 exports.notifyLocationSharingChanged = onDocumentWritten(
     {
       document: "families/{familyId}/locations/{uid}",
@@ -1164,6 +1198,12 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
       if (beforeIsSharing === afterIsSharing) return;
 
       logger.info("notifyLocationSharingChanged triggered", {familyId, subjectUid, from: beforeIsSharing, to: afterIsSharing});
+
+      // Prima del cooldown: la cancellazione delle coordinate vale per ogni
+      // stop, anche quando la push viene saltata.
+      if (!afterIsSharing) {
+        await deleteLiveLocationIfStopped(familyId, subjectUid);
+      }
 
       const locRef = admin.firestore()
           .collection("families").doc(familyId)
@@ -1318,6 +1358,15 @@ const GEOFENCE_STALE_MS = 15 * 60 * 1000;
 const GEOFENCE_LEAVE_DELAY_MS = 5 * 60 * 1000;
 
 /**
+ * Zona solo-arrivo: entro questo tempo dall'arrivo precedente un nuovo arrivo
+ * è un doppione, oltre è un arrivo nuovo. Vedi il commento in onGeofenceEvent.
+ */
+const GEOFENCE_ARRIVE_ONLY_DEDUP_MS = 30 * 60 * 1000;
+
+/** Quanto resta un evento di zona prima che la TTL di Firestore lo cancelli (scelta dell'utente, 30/09/2026). */
+const GEOFENCE_EVENT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
  * Manda l'avviso di arrivo/uscita da una zona ai destinatari configurati.
  * Condiviso fra onGeofenceEvent (arrivi, subito) e sendDueGeofenceLeaves
  * (uscite, dopo GEOFENCE_LEAVE_DELAY_MS).
@@ -1451,6 +1500,17 @@ exports.onGeofenceEvent = onDocumentCreated(
         return;
       }
 
+      // Scadenza letta dalla TTL di Firestore su `geofenceEvents.expireAt`.
+      // Gli eventi sono lo storico degli spostamenti di persone vere e servono
+      // solo a ricostruire un avviso sbagliato: non si tengono per sempre. Il
+      // client non può aggiornare l'evento (rules), l'Admin SDK sì; l'update
+      // non riaccende questo trigger, che osserva solo le creazioni.
+      await event.data.ref.update({
+        expireAt: admin.firestore.Timestamp.fromMillis(Date.now() + GEOFENCE_EVENT_RETENTION_MS),
+      }).catch((err) => {
+        logger.warn("onGeofenceEvent: expireAt non scritto", {familyId, geofenceEventId, err: String(err)});
+      });
+
       const geofenceId = eventData.geofenceId;
       const senderUid = eventData.uid;
       const displayName = (eventData.displayName || "").trim() || "Qualcuno";
@@ -1537,21 +1597,53 @@ exports.onGeofenceEvent = onDocumentCreated(
       // ferma in casa. Se il rientro arriva prima, per chi riceve non è successo
       // niente: si annullano tutti e due. Le uscite in attesa le manda
       // sendDueGeofenceLeaves, ogni minuto.
+      //
+      // Zona solo-arrivo (il default: negli editor di iOS e Android l'uscita
+      // nasce spenta). I client pubblicati al 30/09/2026 registrano sul
+      // telefono solo il passaggio da avvisare, quindi l'uscita non arriva mai
+      // e `lastType` resta «arrive»: col solo confronto di tipo, dopo il primo
+      // avviso ogni arrivo sembrava un doppione e la zona taceva per sempre.
+      // Qui il doppione si riconosce dal tempo: un arrivo entro
+      // GEOFENCE_ARRIVE_ONLY_DEDUP_MS dal precedente (finestra che scorre a ogni
+      // arrivo) è la stessa permanenza, oltre è un arrivo nuovo.
+      //
+      // Il prezzo, misurato il 30/09 simulando «Casa genitore» come se fosse
+      // solo-arrivo: dal 24/09, 10 arrivi giusti, 3 persi e 8 in più. Gli 8 sono
+      // il GPS che oscilla sul bordo dopo ore di permanenza: senza l'uscita il
+      // server non li distingue da un rientro vero. Dicono però una cosa vera
+      // (la persona è lì), a differenza di un'uscita falsa: per questo
+      // l'eccezione vale solo per gli arrivi. La cura vera è nei client,
+      // mandare sempre entrambi i passaggi e lasciar decidere il server; per
+      // quando lo faranno, `leftAt` scarta il rientro dopo un'uscita lampo
+      // anche dove l'uscita non si avvisa (e quindi non resta in attesa).
+      const arriveOnly = transitionType === "arrive" && geofence.notifyOnLeave === false;
+      const eventAtMs = clientAtMs ?? Date.now();
       const outcome = await admin.firestore().runTransaction(async (tx) => {
         const snap = await tx.get(stateRef);
         const state = snap.exists ? snap.data() : {};
-        if (state.lastType === transitionType) return "same";
+        if (state.lastType === transitionType) {
+          if (!arriveOnly) return "same";
+          const lastAtMs = state.lastEventAt?.toMillis?.() ?? state.updatedAt?.toMillis?.() ?? 0;
+          if (eventAtMs - lastAtMs < GEOFENCE_ARRIVE_ONLY_DEDUP_MS) {
+            if (eventAtMs > lastAtMs) {
+              tx.update(stateRef, {lastEventAt: admin.firestore.Timestamp.fromMillis(eventAtMs)});
+            }
+            return "same";
+          }
+        }
         const base = {
           familyId,
           geofenceId,
           uid: senderUid,
           lastType: transitionType,
           lastEventId: geofenceEventId,
+          lastEventAt: admin.firestore.Timestamp.fromMillis(eventAtMs),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         };
         if (transitionType === "leave") {
           tx.set(stateRef, {
             ...base,
+            leftAt: admin.firestore.Timestamp.fromMillis(eventAtMs),
             pendingLeaveDueAt: notifiable ?
               admin.firestore.Timestamp.fromMillis(Date.now() + GEOFENCE_LEAVE_DELAY_MS) : null,
             pendingDisplayName: notifiable ? displayName : null,
@@ -1560,6 +1652,8 @@ exports.onGeofenceEvent = onDocumentCreated(
         }
         tx.set(stateRef, {...base, pendingLeaveDueAt: null, pendingDisplayName: null});
         if (state.pendingLeaveDueAt) return "cancelled";
+        const leftAtMs = state.lastType === "leave" ? state.leftAt?.toMillis?.() : null;
+        if (leftAtMs && eventAtMs - leftAtMs < GEOFENCE_LEAVE_DELAY_MS) return "cancelled";
         return notifiable ? "notify" : "silent";
       });
       if (outcome === "same") {

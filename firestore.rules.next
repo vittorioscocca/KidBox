@@ -458,11 +458,19 @@ service cloud.firestore {
           && coll != 'memberKeyBackups';
         // `calendarFeeds` lo scrive solo la function `saveCalendarFeed`: URL
         // validato lato server ed eventi presi dal download, non dal client.
+        // `geofenceState` lo scrive solo `onGeofenceEvent`: dal client bastava
+        // un `pendingLeaveDueAt` per far mandare a tutti un falso «è uscito».
+        // `locations/{uid}` e le sue coordinate (`live/current`) li scrive solo
+        // quell'uid: iOS, Android e web scrivono sempre il proprio, e prima un
+        // membro poteva spostare la posizione di un altro o spegnergli la
+        // condivisione. `docId` è un capture di un segmento, legato anche in list.
         allow write: if isMemberOrOwner(familyId)
           && coll != 'geofences'
           && coll != 'geofenceEvents'
+          && coll != 'geofenceState'
           && coll != 'memberKeyBackups'
-          && coll != 'calendarFeeds';
+          && coll != 'calendarFeeds'
+          && (coll != 'locations' || docId == request.auth.uid);
       }
     }
 

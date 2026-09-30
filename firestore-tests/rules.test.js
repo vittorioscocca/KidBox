@@ -190,6 +190,65 @@ async function check(nome, promessa) {
       assertFails(env.authenticatedContext("fuori").firestore()
           .doc(`families/${FAM}/calendarFeeds/f1`).get()));
 
+  // ── POSIZIONE E STATO DELLE ZONE ───────────────────
+  //
+  // `locations/{uid}` (stato della condivisione, avatar) e `live/current`
+  // (coordinate) li scrive solo il proprietario dell'uid: iOS, Android e web
+  // scrivono sempre il proprio. Prima ricadevano nel wildcard di famiglia, e un
+  // membro poteva spostare la posizione di un altro o accendergli e spegnergli
+  // la condivisione (con la push a tutta la famiglia). `geofenceState` lo
+  // scrive solo `onGeofenceEvent`: dal client bastava un `pendingLeaveDueAt`
+  // per far mandare a tutti un falso «è uscito».
+  console.log("\n── POSIZIONE E STATO DELLE ZONE ───────────────────");
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    const adm = ctx.firestore();
+    await adm.doc(`families/${FAM}/locations/${UID}`)
+        .set({isSharing: true, mode: "realtime", name: "Mario"});
+    await adm.doc(`families/${FAM}/locations/${UID}/live/current`)
+        .set({lat: 45.1, lon: 9.1, accuracy: 10});
+    await adm.doc(`families/${FAM}/geofenceState/z1_${MEMBRO}`)
+        .set({geofenceId: "z1", uid: MEMBRO, lastType: "arrive"});
+  });
+  await check("posizione: il membro avvia la PROPRIA condivisione",
+      assertSucceeds(dbMembro.doc(`families/${FAM}/locations/${MEMBRO}`)
+          .set({isSharing: true, mode: "realtime", name: "Membro"}, {merge: true})));
+  await check("posizione: il membro scrive le PROPRIE coordinate",
+      assertSucceeds(dbMembro.doc(`families/${FAM}/locations/${MEMBRO}/live/current`)
+          .set({lat: 45.2, lon: 9.2, accuracy: 8}, {merge: true})));
+  await check("posizione: il membro aggiorna il PROPRIO avatar sulla mappa",
+      assertSucceeds(dbMembro.doc(`families/${FAM}/locations/${MEMBRO}`)
+          .set({avatarURL: ""}, {merge: true})));
+  await check("posizione: il membro ferma la PROPRIA condivisione",
+      assertSucceeds(dbMembro.doc(`families/${FAM}/locations/${MEMBRO}`)
+          .set({isSharing: false}, {merge: true})));
+  await check("posizione: il membro legge lo stato di un altro",
+      assertSucceeds(dbMembro.doc(`families/${FAM}/locations/${UID}`).get()));
+  await check("posizione: il membro legge le coordinate di un altro",
+      assertSucceeds(dbMembro.doc(`families/${FAM}/locations/${UID}/live/current`).get()));
+  await check("posizione: il membro elenca gli stati di condivisione (LIST)",
+      assertSucceeds(dbMembro.collection(`families/${FAM}/locations`).get()));
+  await check("attacco: il membro NON sposta la posizione di un altro",
+      assertFails(dbMembro.doc(`families/${FAM}/locations/${UID}/live/current`)
+          .set({lat: 0, lon: 0}, {merge: true})));
+  await check("attacco: il membro NON spegne la condivisione di un altro",
+      assertFails(dbMembro.doc(`families/${FAM}/locations/${UID}`)
+          .set({isSharing: false}, {merge: true})));
+  await check("attacco: il membro NON cancella le coordinate di un altro",
+      assertFails(dbMembro.doc(`families/${FAM}/locations/${UID}/live/current`).delete()));
+  await check("attacco: nemmeno l'owner scrive la posizione di un membro",
+      assertFails(db.doc(`families/${FAM}/locations/${MEMBRO}/live/current`)
+          .set({lat: 0, lon: 0}, {merge: true})));
+  await check("attacco: il membro NON prepara un falso «è uscito» in geofenceState",
+      assertFails(dbMembro.doc(`families/${FAM}/geofenceState/z1_${UID}`)
+          .set({geofenceId: "z1", uid: UID, lastType: "leave",
+            pendingLeaveDueAt: new Date(), pendingDisplayName: "Mario"})));
+  await check("attacco: nemmeno il proprio geofenceState si riscrive dal client",
+      assertFails(dbMembro.doc(`families/${FAM}/geofenceState/z1_${MEMBRO}`)
+          .update({lastType: "leave"})));
+  await check("posizione: chi è fuori dalla famiglia NON la legge",
+      assertFails(env.authenticatedContext("fuori").firestore()
+          .doc(`families/${FAM}/locations/${UID}/live/current`).get()));
+
   console.log("\n── ESCROW: l'uso legittimo dei client ─────────────");
   await check("escrow: si legge il PROPRIO (recovery dopo reinstallazione)",
       assertSucceeds(dbMembro.doc(`families/${FAM}/memberKeyBackups/${MEMBRO}`).get()));

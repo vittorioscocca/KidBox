@@ -184,6 +184,24 @@ Presidi oggi, da non togliere:
   job è una collection group su `geofenceState.pendingLeaveDueAt`: senza
   l'esenzione in `firestore.indexes.json` fallisce. Sui dati di giugno-settembre
   Cosimo passava da 363 avvisi a ~47, Maria Pia da 119 a ~35.
+- **Zone solo-arrivo** (dal 30/09/2026). Il principio del primo punto («i
+  filtri dopo lo stato») i client **non** lo rispettano: registrano sul
+  telefono solo il passaggio da avvisare (iOS `notifyOnExit = notifyOnLeave`,
+  Android `setTransitionTypes` dai flag, più un filtro nel receiver). E
+  l'uscita nasce spenta negli editor, quindi è il caso di default: dopo il
+  primo arrivo `lastType` restava «arrive» e ogni arrivo successivo era un
+  doppione, per sempre. Per queste zone ora il doppione è un arrivo entro 30
+  minuti dal precedente (`lastEventAt`, finestra che scorre); oltre, è un
+  arrivo nuovo. Prezzo misurato simulando «Casa genitore» come solo-arrivo,
+  dal 24/09: 10 giusti, 3 persi, 8 in più (GPS che oscilla sul bordo dopo ore
+  di permanenza). Vale solo per gli arrivi: un «è arrivato» in più dice una
+  cosa vera, un «è uscito» falso no. La cura vera è nei client (mandare
+  sempre entrambi i passaggi); per allora `leftAt` sullo stato scarta già il
+  rientro entro 5 minuti anche dove l'uscita non si avvisa.
+- **Gli eventi scadono dopo 30 giorni** (scelta dell'utente, 30/09/2026):
+  `onGeofenceEvent` scrive `expireAt` e la TTL di Firestore su
+  `geofenceEvents.expireAt` li cancella. Gli eventi scritti prima del 30/09
+  non hanno il campo e restano, finché non si decide a parte.
 
 Limite noto, accettato il 24/09/2026: se il telefono perde un'uscita (GPS
 spento, zona ri-registrata) e poi manda l'arrivo, il server lo legge come
@@ -202,6 +220,10 @@ entro 5 min → «entrambi annullati»; uscita sola → dopo ~5-6 min log di
 senza notifica». L'attesa si fa con un Bash in background, non con `sleep` in
 primo piano. Poi pulizia con `scripts/firestore-delete-doc.js` (zona, eventi e
 stati `geofenceState`). Il 24/09/2026 tutti e cinque i casi sono passati.
+Zona solo-arrivo (30/09/2026, famiglia senza membri così non parte nulla):
+arrivo con `clientAt` di 50 min fa → «senza notifica»; arrivo di 45 min fa →
+«stesso stato»; arrivo attuale → arriva all'invio («members subcollection is
+empty»). E ogni evento deve avere `expireAt`.
 
 Per misurare: leggere `geofenceEvents` della famiglia, ordinare per
 `timestamp`, contare tipi ripetuti, raffiche < 2 s e coppie uscita→rientro;
