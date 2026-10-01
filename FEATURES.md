@@ -78,6 +78,7 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 | Calendario | Eventi di famiglia e **promemoria** (to-do con scadenza); viste Giorno, Settimana, Mese e Anno, ricordate fra un'apertura e l'altra. Eventi **ricorrenti** (ogni giorno/settimana/mese/anno) mostrati in ogni ripetizione. **Calendari del telefono** in sola lettura, solo per chi li guarda (iOS e Android, non web), con «Collega Google / Outlook» guidato. **Calendari iscritti da link** (ICS di scuola, squadra, festività, Google, Outlook) per tutta la famiglia su tutti e tre i client. Da entrambi: «Copia in KidBox» | F |
 | To-do | Liste e cose da fare **di famiglia**, assegnabili, con promemoria; quelli **urgenti** suonano come una sveglia | F |
 | Lista della spesa | Condivisa in tempo reale, con «aggiunto da … e quando»; dettabile ad Alexa | F |
+| Richieste («Chiedi a…») | Dall'editor del to-do si chiede a uno o più membri, o a chi non ha l'app con un link (`kidboxapp.com/r`); il primo «Ci penso io» fa nascere il to-do assegnato. iOS e Android, web app no. Disegno in `internal/richieste-disegno.md` | F |
 | Note | Note condivise, cifrate | F |
 | Spese | Voci per categoria, più quelle che nascono da sole dalle altre schede | F |
 | Wallet | Biglietti e documenti d'identità con lettura AI dei campi, carte fedeltà con codice a barre | F (la lettura AI consuma i messaggi del piano: sul Free i 5 una tantum) |

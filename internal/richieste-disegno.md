@@ -296,7 +296,14 @@ esterno e almeno 2 famiglie passate a 2+ membri entrando da una richiesta.
    chiedibile fino a fine giornata. Deep link `.familyRequest` →
    `coordinator.presentedFamilyRequest` → foglio in `RootHostView`.
    58 stringhe nuove nel catalogo con en/fr/es.
-3. **Android**, a parità (`/porting-android`).
+3. ✅ **Android** — commit `a036dbd` in `KidBoxAndroid`, 01/10/2026. Provato
+   sul telefono vero (Xiaomi, HyperOS): creazione con link, card in Home che si
+   aggiorna dal vivo, risposta dal link, push ricevuta, tap → schermata,
+   risposta da membro via callable, ritiro. Non provati: «Ci penso io» fino al
+   to-do (avrebbe scritto nella famiglia vera) e i bottoni sulla notifica
+   (`dumpsys` li mostra, HyperOS non si lascia espandere via adb).
+   Differenze da iOS: niente scadenza «tutto il giorno» (l'editor Android ha
+   sempre l'orario); i bottoni sulla notifica solo ad app aperta.
 4. **Web app**: risposta da membro, poi creazione.
 5. Dopo, solo se la previsione regge: `grocery` ed `event`, l'assistente che
    propone a chi chiedere, il connettore MCP come mittente (`createdVia`).
