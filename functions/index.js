@@ -5564,6 +5564,15 @@ async function deleteFamilyCompletely(familyId) {
   // Rimuovi contatore AI famiglia
   await deleteCollection(db.collection(`ai_usage/family_${familyId}/daily`)).catch(() => {});
   await db.collection("ai_usage").doc(`family_${familyId}`).delete().catch(() => {});
+
+  // Collegamenti Alexa della famiglia (account, voci, codici non usati): senza
+  // famiglia non aprono più niente — la skill li scarta al primo uso — ma sono
+  // dati di chi li ha creati, e se ne vanno con la famiglia.
+  for (const coll of ["alexaLinks", "alexaPersonLinks", "alexaPairings"]) {
+    await deleteCollection(db.collection(coll).where("familyId", "==", familyId)).catch((e) => {
+      logger.warn("alexa cleanup failed", {familyId, coll, err: String(e)});
+    });
+  }
 }
 
 /**
@@ -5797,6 +5806,14 @@ exports.deleteAccount = onCall(
       // sottocollezioni insieme al documento padre, quindi senza questa riga
       // restavano in archivio anche dopo la sparizione di `users/{uid}`.
       await deleteCollection(db.collection(`users/${uid}/aiConversations`)).catch(() => {});
+      // Collegamenti Alexa creati da questo account, in qualunque famiglia:
+      // la skill ormai li scarta (vedi `resolveLink` in alexa.js), ma
+      // resterebbero in archivio per sempre insieme allo userId Amazon.
+      for (const coll of ["alexaLinks", "alexaPersonLinks", "alexaPairings"]) {
+        await deleteCollection(db.collection(coll).where("uid", "==", uid)).catch((e) => {
+          logger.warn("alexa cleanup failed", {uid, coll, err: String(e)});
+        });
+      }
       await db.collection("users").doc(uid).delete().catch(() => {});
       await deleteStoragePrefix(`users/${uid}/`).catch(() => {});
 

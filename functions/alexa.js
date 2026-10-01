@@ -586,15 +586,62 @@ function alexaUserIdOf(body) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Il documento membro descrive un membro attivo: non cancellato E con `role`.
+ * Stesso criterio di `isMember` nelle rules e di `isActiveMember` in index.js:
+ * un documento senza `role` è il fantasma che iOS e web ricreano rinominandosi
+ * dopo una revoca, e non è un membro.
+ * @param {object|null} data
+ * @return {boolean}
+ */
+function isActiveMemberData(data) {
+  return !!data && data.isDeleted !== true &&
+    typeof data.role === "string" && data.role.trim() !== "";
+}
+
+/**
+ * `uid` fa ancora parte della famiglia? Membro attivo oppure proprietario,
+ * come `isMemberOrOwner` nelle rules e `assertFamilyMember` in index.js. Il
+ * caso comune costa una lettura: il documento famiglia si legge solo se il
+ * documento membro non basta.
+ * @param {string} familyId
+ * @param {string} uid
+ * @return {Promise<boolean>}
+ */
+async function isActiveMemberOrOwner(familyId, uid) {
+  const familyRef = admin.firestore().collection("families").doc(familyId);
+  const memberSnap = await familyRef.collection("members").doc(uid).get();
+  if (isActiveMemberData(memberSnap.exists ? memberSnap.data() : null)) return true;
+  const familySnap = await familyRef.get();
+  return familySnap.exists && familySnap.get("ownerUid") === uid;
+}
+
+/**
  * Collegamento attivo per questo dispositivo Alexa, o null.
+ *
+ * Il collegamento vale finché chi l'ha creato fa parte della famiglia. Fino al
+ * 01/10/2026 bastava che il documento esistesse, e nessuno lo cancella alla
+ * revoca o all'uscita: un ex membro che aveva collegato Alexa continuava a
+ * leggere e scrivere spesa e to-do della famiglia. Ora l'appartenenza si
+ * ricontrolla a ogni richiesta, e un collegamento rimasto orfano si cancella:
+ * per rientrare serve un codice nuovo, che solo un membro attivo genera.
+ * Un errore di lettura qui lancia invece di negare: nel dubbio non si cancella
+ * niente, e la richiesta finisce nel messaggio d'errore generico.
  * @param {string} alexaUserId
  * @return {Promise<{uid: string, familyId: string}|null>}
  */
 async function resolveLink(alexaUserId) {
-  const snap = await admin.firestore().collection("alexaLinks").doc(linkKey(alexaUserId)).get();
+  const ref = admin.firestore().collection("alexaLinks").doc(linkKey(alexaUserId));
+  const snap = await ref.get();
   if (!snap.exists) return null;
   const data = snap.data();
   if (!data.uid || !data.familyId) return null;
+  if (!(await isActiveMemberOrOwner(data.familyId, data.uid))) {
+    logger.warn("alexaSkill: collegamento di chi non fa più parte della famiglia, rimosso",
+        {alexaUser: linkKey(alexaUserId), familyId: data.familyId});
+    await ref.delete().catch((e) =>
+      logger.error("alexaSkill: rimozione del collegamento orfano fallita", {err: String(e)}));
+    return null;
+  }
   return {uid: data.uid, familyId: data.familyId};
 }
 
@@ -617,6 +664,15 @@ async function resolveVoiceUid(personId, familyId) {
   // Il vincolo sulla famiglia non è formale: senza, una voce registrata in
   // un'altra famiglia attribuirebbe articoli a un uid che qui non è membro.
   if (!data.uid || data.familyId !== familyId) return null;
+  // Stessa sorte del collegamento dell'account: la voce di chi è uscito o è
+  // stato tolto non attribuisce più niente, e il legame si cancella. Gli
+  // articoli ricadono su chi ha collegato l'account, come per una voce ignota.
+  if (!(await isActiveMemberOrOwner(familyId, data.uid))) {
+    logger.warn("alexaSkill: voce di chi non fa più parte della famiglia, rimossa", {familyId});
+    await snap.ref.delete().catch((e) =>
+      logger.error("alexaSkill: rimozione della voce orfana fallita", {err: String(e)}));
+    return null;
+  }
   return data.uid;
 }
 
@@ -1398,7 +1454,7 @@ async function familyMembers(familyId) {
       .collection("families").doc(familyId).collection("members").get();
   const out = [];
   for (const doc of snap.docs) {
-    if (doc.get("isDeleted") === true) continue;
+    if (!isActiveMemberData(doc.data())) continue;
     let name = doc.get("displayName") || doc.get("name") || "";
     if (!name) {
       const user = await admin.firestore().collection("users").doc(doc.id).get();
@@ -2049,23 +2105,17 @@ exports.alexaSkill = onRequest(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Rifiuta chi non fa parte della famiglia. Stesso criterio di
- * `isMemberOrOwner` nelle rules e di `assertFamilyMember` in index.js: membro
- * attivo (non cancellato E con `role`) oppure proprietario. Fino al 01/10/2026
- * bastava che il documento membro esistesse, quindi anche un membro revocato
- * da Android (`isDeleted: true`) poteva generare un codice e collegare Alexa
- * alla lista della spesa di una famiglia da cui era stato tolto.
+ * Rifiuta chi non fa parte della famiglia (vedi `isActiveMemberOrOwner`).
+ * Fino al 01/10/2026 bastava che il documento membro esistesse, quindi anche
+ * un membro revocato da Android (`isDeleted: true`) poteva generare un codice
+ * e collegare Alexa alla lista della spesa di una famiglia da cui era stato
+ * tolto.
  * @param {string} familyId
  * @param {string} uid
  * @return {Promise<void>}
  */
 async function assertActiveMember(familyId, uid) {
-  const familyRef = admin.firestore().collection("families").doc(familyId);
-  const memberSnap = await familyRef.collection("members").doc(uid).get();
-  const d = memberSnap.exists ? memberSnap.data() : null;
-  if (d && d.isDeleted !== true && typeof d.role === "string" && d.role.trim()) return;
-  const familySnap = await familyRef.get();
-  if (familySnap.exists && familySnap.get("ownerUid") === uid) return;
+  if (await isActiveMemberOrOwner(familyId, uid)) return;
   throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
 }
 
@@ -2187,9 +2237,26 @@ exports.getAlexaLinkStatus = onCall(
         };
       };
 
+      // Solo i collegamenti di chi fa ancora parte della famiglia: quelli di un
+      // ex membro non danno più accesso (vedi `resolveLink`) e mostrarli
+      // farebbe credere che Alexa sia collegata quando non lo è. Qui non si
+      // cancella niente: lo fa la skill al primo uso, o la cancellazione
+      // dell'account e della famiglia.
+      const attivi = new Map();
+      const ancoraDentro = async (d) => {
+        const linkUid = d.get("uid");
+        if (!linkUid) return false;
+        if (!attivi.has(linkUid)) attivi.set(linkUid, isActiveMemberOrOwner(familyId, linkUid));
+        return attivi.get(linkUid);
+      };
+      const tieni = async (docs) => {
+        const esiti = await Promise.all(docs.map(ancoraDentro));
+        return docs.filter((_, i) => esiti[i]);
+      };
+      const [accountDocs, voiceDocs] = await Promise.all([tieni(accounts.docs), tieni(voices.docs)]);
       const links = await Promise.all([
-        ...accounts.docs.map((d) => toLink(d, "account")),
-        ...voices.docs.map((d) => toLink(d, "voice")),
+        ...accountDocs.map((d) => toLink(d, "account")),
+        ...voiceDocs.map((d) => toLink(d, "voice")),
       ]);
 
       const mineAccount = links.find((l) => l.isMe && l.kind === "account") || null;
