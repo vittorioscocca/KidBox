@@ -1,0 +1,24 @@
+<it-IT>
+• Nuove richieste di famiglia: nei to-do tocca «Chiedi a qualcuno…» e il primo che risponde «Ci penso io» se lo prende. Funziona anche con chi non ha l'app, tramite un link.
+• L'assistente capisce «serve qualcuno per Marco giovedì» e lo chiede in famiglia per te.
+• Invitare un familiare è più semplice: dopo aver condiviso il link entri subito in KidBox.
+• Nella chat con l'assistente il tasto Invio va a capo.
+</it-IT>
+<en-US>
+• New family requests: in to-dos tap "Ask someone…" and the first to answer "I'll do it" takes it on. It works with people who don't have the app too, through a link.
+• The assistant understands "someone needs to pick up Marco on Thursday" and asks the family for you.
+• Inviting a family member is easier: after sharing the link you go straight into KidBox.
+• In the assistant chat, the Enter key starts a new line.
+</en-US>
+<fr-FR>
+• Nouvelles demandes en famille : dans « À faire », touchez « Demander à quelqu'un… » et le premier qui répond « Je m'en occupe » la prend. Ça marche aussi avec ceux qui n'ont pas l'app, via un lien.
+• L'assistant comprend « il faut quelqu'un pour Marco jeudi » et le demande à la famille pour vous.
+• Inviter un proche est plus simple : après avoir partagé le lien, vous entrez directement dans KidBox.
+• Dans le chat avec l'assistant, la touche Entrée va à la ligne.
+</fr-FR>
+<es-ES>
+• Nuevas peticiones en familia: en las tareas toca «Pedírselo a alguien…» y el primero que responde «Me encargo yo» se la queda. También funciona con quien no tiene la app, con un enlace.
+• El asistente entiende «hace falta alguien para Marco el jueves» y lo pide a la familia por ti.
+• Invitar a un familiar es más fácil: después de compartir el enlace entras directamente en KidBox.
+• En el chat con el asistente, la tecla Intro hace un salto de línea.
+</es-ES>
