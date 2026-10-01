@@ -29,6 +29,15 @@ sugli Echo dell'account dell'utente senza certificazione né revisione privacy.
 L'attribuzione passa dalla Personalization: `alexaPersonLinks` lega il
 `personId` della voce a un membro, `alexaLinks` resta il legame account→famiglia.
 
+**Un collegamento vale finché chi l'ha creato fa parte della famiglia** (dal
+01/10/2026). Revoca e uscita non toccano `alexaLinks`, quindi lo ricontrolla
+la skill: `resolveLink` e `resolveVoiceUid` verificano a ogni richiesta che
+l'uid sia membro attivo (con `role`, non cancellato) o proprietario, e
+cancellano il legame orfano; l'ex membro sente «non collegato». Lo stato in
+app non elenca i collegamenti orfani, e `deleteFamily`/`deleteAccount` si
+portano via collegamenti, voci e codici. Prima un ex membro continuava a
+scrivere nella lista della famiglia.
+
 ## Cambiare il nome di invocazione: sei punti, non uno
 
 Oggi è `mio box` (prima `kid box`, riconosciuto ~1 volta su 5).
