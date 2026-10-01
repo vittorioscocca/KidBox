@@ -136,6 +136,13 @@ const eq = (field, stringValue) => ({
 const gte = (field, timestampValue) => ({
   fieldFilter: { field: { fieldPath: field }, op: "GREATER_THAN_OR_EQUAL", value: { timestampValue } },
 });
+// [from, to): senza il limite superiore «ieri» contava anche le famiglie di oggi.
+const between = (field, from, to) => ({
+  compositeFilter: {
+    op: "AND",
+    filters: [gte(field, from), { fieldFilter: { field: { fieldPath: field }, op: "LESS_THAN", value: { timestampValue: to } } }],
+  },
+});
 
 async function main() {
   const args = process.argv.slice(2);
@@ -187,8 +194,8 @@ async function main() {
   // 2. Famiglie e membri: struttura, non attività.
   const [famTotal, famYesterday, fam7, famPro, famMax, ovPro, ovMax, usersDocs, famTrial] = await Promise.all([
     count(tok, "families"),
-    count(tok, "families", gte("createdAt", romeMidnight(yesterday))),
-    count(tok, "families", gte("createdAt", romeMidnight(shiftDay(yesterday, -6)))),
+    count(tok, "families", between("createdAt", romeMidnight(yesterday), romeMidnight(shiftDay(yesterday, 1)))),
+    count(tok, "families", between("createdAt", romeMidnight(shiftDay(yesterday, -6)), romeMidnight(shiftDay(yesterday, 1)))),
     count(tok, "families", eq("plan", "pro")),
     count(tok, "families", eq("plan", "max")),
     count(tok, "families", eq("planOverride", "pro")),
