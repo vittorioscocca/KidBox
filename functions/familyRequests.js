@@ -44,6 +44,8 @@ const ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
 /** Token del link: 32 byte in base64url sono 43 caratteri. */
 const TOKEN_RE = /^[A-Za-z0-9_-]{32,128}$/;
 const NAME_MAX = 40;
+/** Note copiate nel to-do: come le scrive l'editor, con un tetto. */
+const NOTES_MAX = 4000;
 /** Lista in cui finisce il to-do se quella scelta è sparita e non ce n'è altra. */
 const FALLBACK_LIST_NAME = "To-do";
 /** Preferenza dedicata (non ancora nelle impostazioni), poi quella dei to-do assegnati. */
@@ -296,12 +298,14 @@ async function applyResponse({familyId, requestId, answer, responder}) {
       listId: list.listId,
       isDone: false,
       isDeleted: false,
-      notes: null,
+      // Note e «urgente» scritti nell'editor da chi chiede: senza copiarli
+      // andrebbero persi in silenzio. Alla pagina del link NON si mostrano.
+      notes: typeof data.notes === "string" && data.notes.trim() ? data.notes.slice(0, NOTES_MAX) : null,
       dueAt: data.dueAt || null,
       dueHasTime: data.dueAt ? data.dueHasTime !== false : false,
       assignedTo: responder.type === "member" ? responder.uid : "",
       assignedExternalName: responder.type === "external" ? responder.name : null,
-      priority: 0,
+      priority: data.priority === 1 ? 1 : 0,
       visibilityScope: "family",
       visibilityMemberIds: [],
       doneAt: null,
