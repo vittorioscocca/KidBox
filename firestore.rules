@@ -90,9 +90,33 @@ service cloud.firestore {
       );
     }
 
-    // `joinedWithValidInvite` — la prova dell'invito consumato che chiude
-    // l'auto-iscrizione — vive in `firestore.rules.next` insieme alla regola che
-    // la usa. Tenerla qui inutilizzata faceva solo rumore in fase di deploy.
+    // Prova che un'auto-iscrizione nasce da un invito davvero consumato.
+    //
+    // `JoinWrapService` (iOS e Android) valida l'invito in transazione — scadenza,
+    // `usedAt` nullo, hash del segreto — e lo marca `usedBy = uid`. Il client
+    // riporta poi quell'id sul documento membro, e qui si verifica che i due
+    // combacino: senza un invito marcato a proprio nome non si entra.
+    //
+    // Attenzione: l'hash del segreto lo verifica il CLIENT, non le rules. Ciò
+    // che impedisce a un estraneo di marcarsi un invito è la regola di
+    // `invites` qui sotto: non può elencarli (quindi l'id lo ha solo chi ha il
+    // link), non può crearne, e può consumarne uno solo prima della scadenza.
+    // Senza quelle tre condizioni questa funzione non chiuderebbe nulla.
+    //
+    // L'invito NON viene più cancellato dopo l'uso proprio per poter fare questo
+    // controllo; resta a uso singolo perché `allow update` qui sotto lo lascia
+    // marcare solo finché `usedAt` è nullo.
+    function joinedWithValidInvite(familyId) {
+      // `let` e non l'espressione ripetuta dentro `$(...)`: il compilatore delle
+      // rules avverte «Invalid variable name: request.» quando in un segmento di
+      // path si interpola un'espressione puntata invece di una variabile.
+      let inviteId = request.resource.data.get('inviteId', '');
+      return inviteId is string
+        && inviteId != ''
+        && exists(/databases/$(database)/documents/families/$(familyId)/invites/$(inviteId))
+        && get(/databases/$(database)/documents/families/$(familyId)/invites/$(inviteId))
+             .data.get('usedBy', '') == request.auth.uid;
+    }
 
     function isMemberOrOwner(familyId) {
       return isOwner(familyId) || isMember(familyId);
@@ -233,15 +257,45 @@ service cloud.firestore {
         // `familyId` — che viaggia in chiaro nel QR e nel link d'invito —
         // poteva aggiungersi da sé a una famiglia altrui e leggerne i dati.
         // Ora chi si iscrive deve esibire l'invito che ha consumato.
-        // ⏳ La stretta contro l'auto-iscrizione vive in `firestore.rules.next`,
-        // NON qui: pretende che il client scriva `inviteId` sul documento membro,
-        // e le app già installate non lo fanno. Questo file resta quello
-        // deployabile; il passaggio avviene quando le app aggiornate sono diffuse.
-        allow create: if isSignedIn() && (uid == request.auth.uid || isOwner(familyId));
-        // Update e delete restano com'erano: qui il documento esiste già, quindi
-        // l'iscrizione è stata autorizzata a suo tempo. Servono per rinominarsi,
-        // per il soft-delete e per l'uscita volontaria.
-        allow update, delete: if isSignedIn() && (uid == request.auth.uid || isOwner(familyId));
+        //
+        // In produzione dal 01/10/2026. Fino ad allora la regola aspettava in
+        // un file a parte: le app precedenti alla 2.2.6 non scrivono `inviteId`,
+        // e con questa regola il loro join viene negato. Al passaggio negli
+        // ultimi 7 giorni non c'era nessuna versione sotto Android 2.2.8 e
+        // iOS 2.2.9, e tutti i join reali dal 22/09 (9 su 9) portavano l'invito.
+        allow create: if isSignedIn() && (
+          (uid == request.auth.uid && (
+            joinedWithValidInvite(familyId)
+            // Creazione della famiglia: il documento famiglia e quello del
+            // proprietario nascono nello stesso batch, e in un batch le rules
+            // vedono lo stato PRIMA del commit — la famiglia non esiste ancora,
+            // quindi né `isOwner` né un invito possono esistere. Non è una
+            // scorciatoia sfruttabile: per entrare in una famiglia **esistente**
+            // serve l'invito, e un documento membro depositato sotto un id che
+            // non esiste è inerte (gli id sono UUID, non si indovinano).
+            || !exists(/databases/$(database)/documents/families/$(familyId))
+          ))
+          || isOwner(familyId)
+        );
+        // L'update del proprio documento resta libero (rinominarsi, soft-delete)
+        // TRANNE la riattivazione. La revoca da Android non cancella il documento
+        // ma lo marca `isDeleted: true`: senza questo vincolo il revocato poteva
+        // rimettere `isDeleted: false` da sé e rientrare senza invito. Chi si
+        // riattiva deve esibire un invito consumato a proprio nome, e DIVERSO da
+        // quello già scritto sul documento — l'`inviteId` del primo ingresso è
+        // ancora lì, consumato proprio da lui, e varrebbe come prova eterna.
+        // Il rientro legittimo (`addMember` con merge su documento esistente)
+        // porta il nuovo `inviteId` su iOS, Android e web dalla 2.2.6.
+        allow update: if isSignedIn() && (
+          isOwner(familyId)
+          || (uid == request.auth.uid && (
+            !(resource.data.get('isDeleted', false) == true
+              && request.resource.data.get('isDeleted', false) != true)
+            || (request.resource.data.get('inviteId', '') != resource.data.get('inviteId', '')
+              && joinedWithValidInvite(familyId))
+          ))
+        );
+        allow delete: if isSignedIn() && (uid == request.auth.uid || isOwner(familyId));
         allow get:  if isSignedIn() && (uid == request.auth.uid || isOwner(familyId));
         allow list: if isMemberOrOwner(familyId);
       }
@@ -310,11 +364,11 @@ service cloud.firestore {
       // ogni membro: e siccome la chiave di unwrap è derivata da (uid, familyId)
       // con costanti compilate nei client, chi leggeva l'escrow altrui poteva
       // ricostruire la master key della famiglia. Non era un problema teorico:
-      // `members/{uid}` lascia a chiunque sia autenticato la creazione del
+      // `members/{uid}` lasciava a chiunque fosse autenticato la creazione del
       // proprio documento di membro, quindi bastava conoscere il `familyId`
       // (che viaggia in chiaro nel QR d'invito) per iscriversi da soli e
-      // arrivare alla chiave. Chiuso qui, dove costa nulla; l'auto-iscrizione
-      // resta un buco da chiudere a parte.
+      // arrivare alla chiave. Chiuso qui, dove costava nulla; l'auto-iscrizione
+      // è stata chiusa a parte il 01/10/2026 (vedi `members/{uid}`).
       //
       // Nessun client ha mai letto l'escrow di un altro utente — iOS, Android e
       // web passano tutti da (userId corrente, familyId) — quindi la stretta è

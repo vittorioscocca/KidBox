@@ -149,18 +149,16 @@ async function check(nome, promessa) {
   await check("escrow: NON si cancella quello di un altro",
       assertFails(dbMembro.doc(`families/${FAM}/memberKeyBackups/${UID}`).delete()));
 
-  // L'attacco per intero: un estraneo che conosce solo il familyId si iscrive
-  // da sé (passo ancora consentito, è un buco a parte) e prova ad arrivare
-  // alla chiave. Se un giorno il primo passo verrà chiuso, il secondo test
-  // resta valido lo stesso.
+  // L'attacco per intero: un estraneo che conosce solo il familyId prova a
+  // iscriversi da sé e ad arrivare alla chiave. L'auto-iscrizione è chiusa dal
+  // 01/10/2026 (sezione «AUTO-ISCRIZIONE» più sotto); il secondo test resta
+  // valido anche se un giorno il primo passo si riaprisse.
   const ESTRANEO = "estraneo99";
   const dbEstraneo = env.authenticatedContext(ESTRANEO).firestore();
-  // In PRODUZIONE questo passo riesce ancora: la stretta vive in
-  // `firestore.rules.next` ed è verificata in fondo a questo file.
-  await check("attacco: l'auto-iscrizione a members/{uid} riesce ancora",
-      assertSucceeds(dbEstraneo.doc(`families/${FAM}/members/${ESTRANEO}`)
+  await check("attacco: l'auto-iscrizione a members/{uid} col solo familyId NON passa",
+      assertFails(dbEstraneo.doc(`families/${FAM}/members/${ESTRANEO}`)
           .set({uid: ESTRANEO, role: "parent", isDeleted: false})));
-  await check("attacco: ma da membro NON si arriva alla chiave di famiglia",
+  await check("attacco: e NON si arriva alla chiave di famiglia",
       assertFails(dbEstraneo.doc(`families/${FAM}/memberKeyBackups/${UID}`).get()));
 
   // ── CALENDARI ISCRITTI (feed ICS) ──────────────────
@@ -459,26 +457,30 @@ async function check(nome, promessa) {
   console.log("\n── MEMBRO «RESUSCITATO» DAL NOME ──────────────────");
   const RESUSCITATO = "resuscitato5";
   const dbRes = env.authenticatedContext(RESUSCITATO).firestore();
-  await check("resuscitato: la scrittura del nome ricrea il documento (auto-creazione ancora libera)",
-      assertSucceeds(dbRes.doc(`families/${FAM_PASS}/members/${RESUSCITATO}`)
+  await check("resuscitato: la scrittura del nome NON ricrea il documento senza invito",
+      assertFails(dbRes.doc(`families/${FAM_PASS}/members/${RESUSCITATO}`)
           .set({displayName: "Nome", updatedAt: new Date()}, {merge: true})));
+  // Un documento così può esistere comunque, ricreato prima del 01/10/2026:
+  // `isMember` pretende `role`, quindi non deve aprire nulla.
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc(`families/${FAM_PASS}/members/${RESUSCITATO}`)
+        .set({displayName: "Nome", updatedAt: new Date()});
+  });
   await check("resuscitato: senza role NON legge la famiglia",
       assertFails(dbRes.doc(`families/${FAM_PASS}`).get()));
   await check("resuscitato: senza role NON elenca i membri",
       assertFails(dbRes.collection(`families/${FAM_PASS}/members`).get()));
-  // In PRODUZIONE la riattivazione da sé riesce ancora: la stretta vive in
-  // `firestore.rules.next` ed è verificata in fondo a questo file.
-  await check("revocato da Android: rimettere isDeleted false da sé riesce ancora",
-      assertSucceeds(env.authenticatedContext("revocato4").firestore()
+  await check("revocato da Android: rimettere isDeleted false da sé NON passa",
+      assertFails(env.authenticatedContext("revocato4").firestore()
           .doc(`families/${FAM_PASS}/members/revocato4`).update({isDeleted: false})));
 
   // ── INVITI ─────────────────────────────────────────
   //
-  // Senza queste strette la regola anti-auto-iscrizione di `firestore.rules.next`
-  // non chiuderebbe nulla: un estraneo che conosce il `familyId` poteva elencare
+  // Senza queste strette la regola anti-auto-iscrizione di `members/{uid}` non
+  // chiuderebbe nulla: un estraneo che conosce il `familyId` poteva elencare
   // gli inviti pendenti (o fabbricarsene uno), marcarlo a proprio nome e
   // presentarlo come prova. Qui si verifica che l'attacco fallisca e che ogni
-  // uso reale dei client — versioni già installate comprese — passi ancora.
+  // uso reale dei client passi ancora.
   console.log("\n── INVITI ─────────────────────────────────────────");
   const DOMANI = new Date(Date.now() + 24 * 3600 * 1000);
   const IERI = new Date(Date.now() - 24 * 3600 * 1000);
@@ -520,9 +522,25 @@ async function check(nome, promessa) {
           wrappedKeyTag: deleteField(),
         });
       })));
+  // Poi `addMember` (iOS, Android; web uguale col nome dentro): membro con
+  // `inviteId` in merge e indice membership, in un batch.
+  await check("join: addMember del client attuale, con inviteId, passa",
+      assertSucceeds((() => {
+        const b = dbInvitato.batch();
+        b.set(dbInvitato.doc(`families/${FAM}/members/${INVITATO}`), {
+          uid: INVITATO, role: "member", isDeleted: false, updatedBy: INVITATO,
+          updatedAt: new Date(), createdAt: new Date(), inviteId: "inv-nuovo-client",
+        }, {merge: true});
+        b.set(dbInvitato.doc(`users/${INVITATO}/memberships/${FAM}`),
+            {familyId: FAM, role: "member", createdAt: new Date()}, {merge: true});
+        return b.commit();
+      })()));
+  await check("join: appena entrato, legge la famiglia",
+      assertSucceeds(dbInvitato.doc(`families/${FAM}`).get()));
 
-  // Consumo come lo fanno le app già installate (iOS e Android fino ad agosto
-  // 2026): solo usedAt/usedBy, poi join e cancellazione dell'invito da membro.
+  // Le app precedenti alla 2.2.6 consumano con solo usedAt/usedBy e poi creano
+  // il membro SENZA `inviteId`: dal 01/10/2026 quel join è negato. Era il
+  // prezzo noto della stretta (al passaggio nessuna era più in uso).
   const VECCHIO = "vecchioclient3";
   const dbVecchio = env.authenticatedContext(VECCHIO).firestore();
   await check("invito: consumo della versione vecchia (solo usedAt/usedBy) passa",
@@ -531,12 +549,9 @@ async function check(nome, promessa) {
         await txn.get(ref);
         txn.update(ref, {usedAt: new Date(), usedBy: VECCHIO});
       })));
-  await check("invito: la versione vecchia entra e poi cancella l'invito",
-      assertSucceeds((async () => {
-        await dbVecchio.doc(`families/${FAM}/members/${VECCHIO}`)
-            .set({uid: VECCHIO, role: "member", isDeleted: false});
-        await dbVecchio.doc(`families/${FAM}/invites/inv-vecchio-client`).delete();
-      })()));
+  await check("join: la versione vecchia (membro senza inviteId) NON entra più",
+      assertFails(dbVecchio.doc(`families/${FAM}/members/${VECCHIO}`)
+          .set({uid: VECCHIO, role: "member", isDeleted: false})));
 
   await check("invito: il PROPRIETARIO (membro senza isDeleted) ne crea uno",
       assertSucceeds(db.doc(`families/${FAM}/invites/inv-da-owner`).set(invitoPendente())));
@@ -565,25 +580,6 @@ async function check(nome, promessa) {
       assertFails(dbPredone.doc(`families/${FAM}/invites/inv-senza-scadenza`)
           .update({usedAt: new Date(), usedBy: PREDONE})));
 
-  // ── LA VERSIONE FUTURA: firestore.rules.next ───────
-  //
-  // Ambiente separato perché è un ruleset diverso: `firestore.rules.next`
-  // chiude l'auto-iscrizione a `members/{uid}`, ma non è deployabile finché le
-  // app che scrivono `inviteId` non sono diffuse. Qui si verifica che il giorno
-  // del passaggio funzioni — e che nel frattempo non marcisca.
-  const envNext = await initializeTestEnvironment({
-    projectId: PROJECT_ID + "-next",
-    firestore: {
-      rules: fs.readFileSync("/Users/vscocca/KidBox/firestore.rules.next", "utf8"),
-      host: "127.0.0.1", port: 8080,
-    },
-  });
-  await envNext.withSecurityRulesDisabled(async (ctx) => {
-    const adm = ctx.firestore();
-    await adm.doc(`families/${FAM}`).set({name: "Rossi", ownerUid: UID, plan: "free"});
-    await adm.doc(`families/${FAM}/members/${UID}`).set({uid: UID, role: "owner", isDeleted: false});
-  });
-
   // ── AUTO-ISCRIZIONE A members/{uid} ────────────────
   //
   // Il `familyId` viaggia in chiaro nel QR e nel link d'invito, quindi non è un
@@ -593,8 +589,8 @@ async function check(nome, promessa) {
   // membro.
   console.log("\n── AUTO-ISCRIZIONE A members/{uid} ────────────────");
   const NUOVO = "nuovo7";
-  const nxNuovo = envNext.authenticatedContext(NUOVO).firestore();
-  await envNext.withSecurityRulesDisabled(async (ctx) => {
+  const dbNuovo = env.authenticatedContext(NUOVO).firestore();
+  await env.withSecurityRulesDisabled(async (ctx) => {
     const adm = ctx.firestore();
     // Invito consumato dal nuovo membro (usedBy = lui).
     await adm.doc(`families/${FAM}/invites/inv-ok`)
@@ -609,49 +605,49 @@ async function check(nome, promessa) {
   });
 
   await check("join: con l'invito che ha consumato, entra",
-      assertSucceeds(nxNuovo.doc(`families/${FAM}/members/${NUOVO}`)
+      assertSucceeds(dbNuovo.doc(`families/${FAM}/members/${NUOVO}`)
           .set({uid: NUOVO, role: "member", isDeleted: false, inviteId: "inv-ok"})));
   const INTRUSO = "intruso2";
   {
-    const db0 = envNext.authenticatedContext(INTRUSO).firestore();
+    const db0 = env.authenticatedContext(INTRUSO).firestore();
     await check("attacco: senza inviteId NON entra",
         assertFails(db0.doc(`families/${FAM}/members/${INTRUSO}`)
             .set({uid: INTRUSO, role: "member", isDeleted: false})));
   }
 
-  const nxIntruso = envNext.authenticatedContext(INTRUSO).firestore();
+  const dbIntruso = env.authenticatedContext(INTRUSO).firestore();
   await check("attacco: con un inviteId inventato NON entra",
-      assertFails(nxIntruso.doc(`families/${FAM}/members/${INTRUSO}`)
+      assertFails(dbIntruso.doc(`families/${FAM}/members/${INTRUSO}`)
           .set({uid: INTRUSO, role: "member", isDeleted: false, inviteId: "inventato"})));
   await check("attacco: con un invito mai consumato NON entra",
-      assertFails(nxIntruso.doc(`families/${FAM}/members/${INTRUSO}`)
+      assertFails(dbIntruso.doc(`families/${FAM}/members/${INTRUSO}`)
           .set({uid: INTRUSO, role: "member", isDeleted: false, inviteId: "inv-vergine"})));
   await check("attacco: con l'invito consumato da un ALTRO NON entra",
-      assertFails(nxIntruso.doc(`families/${FAM}/members/${INTRUSO}`)
+      assertFails(dbIntruso.doc(`families/${FAM}/members/${INTRUSO}`)
           .set({uid: INTRUSO, role: "member", isDeleted: false, inviteId: "inv-altrui"})));
 
   // L'attacco per intero, con solo il familyId in mano: ogni strada per
   // procurarsi un invito marcato a proprio nome deve essere chiusa.
   await check("attacco completo: NON elenca gli inviti per trovarne uno pendente",
-      assertFails(nxIntruso.collection(`families/${FAM}/invites`).get()));
+      assertFails(dbIntruso.collection(`families/${FAM}/invites`).get()));
   await check("attacco completo: NON si fabbrica un invito da consumare",
-      assertFails(nxIntruso.doc(`families/${FAM}/invites/inv-fabbricato`).set({
+      assertFails(dbIntruso.doc(`families/${FAM}/invites/inv-fabbricato`).set({
         usedAt: null, usedBy: null, secretHash: "mio",
         expiresAt: new Date(Date.now() + 24 * 3600 * 1000),
       })));
   await check("attacco completo: e quindi NON entra",
       assertFails((async () => {
         // Se la creazione fosse passata, proverebbe a consumarlo e a entrare.
-        await nxIntruso.doc(`families/${FAM}/invites/inv-fabbricato`)
+        await dbIntruso.doc(`families/${FAM}/invites/inv-fabbricato`)
             .update({usedAt: new Date(), usedBy: INTRUSO}).catch(() => {});
-        await nxIntruso.doc(`families/${FAM}/members/${INTRUSO}`)
+        await dbIntruso.doc(`families/${FAM}/members/${INTRUSO}`)
             .set({uid: INTRUSO, role: "member", isDeleted: false, inviteId: "inv-fabbricato"});
       })()));
 
   // Consumare l'invito significa anche svuotarlo del materiale crittografico:
   // l'invito ora sopravvive all'uso, e un documento che resta non deve
   // continuare a contenere la chiave di famiglia wrappata.
-  await envNext.withSecurityRulesDisabled(async (ctx) => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
     await ctx.firestore().doc(`families/${FAM}/invites/inv-da-consumare`).set({
       expiresAt: new Date(Date.now() + 24 * 3600 * 1000),
       usedAt: null, usedBy: null, secretHash: "h", kdfSalt: "s",
@@ -659,19 +655,19 @@ async function check(nome, promessa) {
     });
   });
   const CONSUMA = "consuma1";
-  const nxConsuma = envNext.authenticatedContext(CONSUMA).firestore();
+  const dbConsuma = env.authenticatedContext(CONSUMA).firestore();
   await check("invito: consumarlo azzera anche il materiale cifrato",
-      assertSucceeds(nxConsuma.doc(`families/${FAM}/invites/inv-da-consumare`).update({
+      assertSucceeds(dbConsuma.doc(`families/${FAM}/invites/inv-da-consumare`).update({
         usedAt: new Date(), usedBy: CONSUMA,
         secretHash: deleteField(), kdfSalt: deleteField(),
         wrappedKeyCipher: deleteField(), wrappedKeyNonce: deleteField(),
         wrappedKeyTag: deleteField(),
       })));
   await check("invito: consumato, NON si può riscrivere usedBy a proprio nome",
-      assertFails(nxIntruso.doc(`families/${FAM}/invites/inv-da-consumare`)
+      assertFails(dbIntruso.doc(`families/${FAM}/invites/inv-da-consumare`)
           .update({usedBy: INTRUSO})));
   await check("invito: NON si possono cambiare altri campi passando di qui",
-      assertFails(nxConsuma.doc(`families/${FAM}/invites/inv-vergine`)
+      assertFails(dbConsuma.doc(`families/${FAM}/invites/inv-vergine`)
           .update({usedAt: new Date(), usedBy: CONSUMA, familyName: "Altro"})));
 
   // ── RIATTIVAZIONE DOPO UNA REVOCA ──────────────────
@@ -681,21 +677,20 @@ async function check(nome, promessa) {
   // proprio nome: quello del primo ingresso è ancora sul documento.
   console.log("\n── RIATTIVAZIONE DOPO UNA REVOCA ──────────────────");
   const RIATT = "riattiva6";
-  const nxRiatt = envNext.authenticatedContext(RIATT).firestore();
-  const DOMANI_NX = new Date(Date.now() + 24 * 3600 * 1000);
-  await envNext.withSecurityRulesDisabled(async (ctx) => {
+  const dbRiatt = env.authenticatedContext(RIATT).firestore();
+  await env.withSecurityRulesDisabled(async (ctx) => {
     const adm = ctx.firestore();
-    await adm.doc(`families/${FAM}/invites/inv-primo`).set({usedAt: new Date(), usedBy: RIATT, expiresAt: DOMANI_NX});
-    await adm.doc(`families/${FAM}/invites/inv-rientro`).set({usedAt: new Date(), usedBy: RIATT, expiresAt: DOMANI_NX});
-    await adm.doc(`families/${FAM}/invites/inv-rientro-altrui`).set({usedAt: new Date(), usedBy: "altro6", expiresAt: DOMANI_NX});
-    await adm.doc(`families/${FAM}/invites/inv-rientro-vergine`).set({usedAt: null, usedBy: null, expiresAt: DOMANI_NX});
+    await adm.doc(`families/${FAM}/invites/inv-primo`).set({usedAt: new Date(), usedBy: RIATT, expiresAt: DOMANI});
+    await adm.doc(`families/${FAM}/invites/inv-rientro`).set({usedAt: new Date(), usedBy: RIATT, expiresAt: DOMANI});
+    await adm.doc(`families/${FAM}/invites/inv-rientro-altrui`).set({usedAt: new Date(), usedBy: "altro6", expiresAt: DOMANI});
+    await adm.doc(`families/${FAM}/invites/inv-rientro-vergine`).set({usedAt: null, usedBy: null, expiresAt: DOMANI});
     await adm.doc(`families/${FAM}/members/${RIATT}`)
         .set({uid: RIATT, role: "member", isDeleted: true, inviteId: "inv-primo"});
   });
-  const riattiva = (extra) => nxRiatt.doc(`families/${FAM}/members/${RIATT}`)
+  const riattiva = (extra) => dbRiatt.doc(`families/${FAM}/members/${RIATT}`)
       .set({uid: RIATT, role: "member", isDeleted: false, updatedBy: RIATT, ...extra}, {merge: true});
   await check("revocato: aggiornare il nome restando revocato è permesso",
-      assertSucceeds(nxRiatt.doc(`families/${FAM}/members/${RIATT}`)
+      assertSucceeds(dbRiatt.doc(`families/${FAM}/members/${RIATT}`)
           .set({displayName: "Nome", updatedAt: new Date()}, {merge: true})));
   await check("attacco: si riattiva senza invito NON passa",
       assertFails(riattiva({})));
@@ -706,42 +701,40 @@ async function check(nome, promessa) {
   await check("attacco: si riattiva con un invito consumato da un altro NON passa",
       assertFails(riattiva({inviteId: "inv-rientro-altrui"})));
   await check("attacco: cancellare il campo isDeleted NON riattiva",
-      assertFails(nxRiatt.doc(`families/${FAM}/members/${RIATT}`).update({isDeleted: deleteField()})));
+      assertFails(dbRiatt.doc(`families/${FAM}/members/${RIATT}`).update({isDeleted: deleteField()})));
   await check("rientro legittimo: nuovo invito consumato a proprio nome (addMember) passa",
       assertSucceeds(riattiva({inviteId: "inv-rientro"})));
   await check("rientrato: legge la famiglia",
-      assertSucceeds(nxRiatt.doc(`families/${FAM}`).get()));
-  await envNext.withSecurityRulesDisabled(async (ctx) => {
+      assertSucceeds(dbRiatt.doc(`families/${FAM}`).get()));
+  await env.withSecurityRulesDisabled(async (ctx) => {
     await ctx.firestore().doc(`families/${FAM}/members/${RIATT}`).update({isDeleted: true});
   });
   await check("owner: riattiva un membro revocato senza invito",
-      assertSucceeds(envNext.authenticatedContext(UID).firestore()
+      assertSucceeds(env.authenticatedContext(UID).firestore()
           .doc(`families/${FAM}/members/${RIATT}`).update({isDeleted: false})));
   await check("membro: esce cancellando il proprio documento",
-      assertSucceeds(nxRiatt.doc(`families/${FAM}/members/${RIATT}`).delete()));
+      assertSucceeds(dbRiatt.doc(`families/${FAM}/members/${RIATT}`).delete()));
   await check("uscito: la scrittura del nome NON ricrea il documento senza invito",
-      assertFails(nxRiatt.doc(`families/${FAM}/members/${RIATT}`)
+      assertFails(dbRiatt.doc(`families/${FAM}/members/${RIATT}`)
           .set({displayName: "Nome", updatedAt: new Date()}, {merge: true})));
 
   // Creazione famiglia: documento famiglia e membro proprietario nascono nello
   // stesso batch, quando la famiglia ancora non esiste per le rules.
   const CREATORE = "creatore1";
-  const nxCreatore = envNext.authenticatedContext(CREATORE).firestore();
+  const dbCreatore = env.authenticatedContext(CREATORE).firestore();
   await check("creazione famiglia: il batch famiglia + membro owner passa",
       assertSucceeds((() => {
-        const b = nxCreatore.batch();
-        b.set(nxCreatore.doc("families/famiglia-nuova"), {name: "Nuova", ownerUid: CREATORE});
-        b.set(nxCreatore.doc(`families/famiglia-nuova/members/${CREATORE}`),
+        const b = dbCreatore.batch();
+        b.set(dbCreatore.doc("families/famiglia-nuova"), {name: "Nuova", ownerUid: CREATORE});
+        b.set(dbCreatore.doc(`families/famiglia-nuova/members/${CREATORE}`),
             {uid: CREATORE, role: "owner", isDeleted: false});
         return b.commit();
       })()));
 
   // Il membro già iscritto resta padrone del proprio documento.
   await check("membro: può ancora aggiornare il proprio documento",
-      assertSucceeds(nxNuovo.doc(`families/${FAM}/members/${NUOVO}`)
+      assertSucceeds(dbNuovo.doc(`families/${FAM}/members/${NUOVO}`)
           .update({displayName: "Nuovo"})));
-
-  await envNext.cleanup();
 
   console.log(`\n══ Risultato: ${pass} superati, ${fail} falliti ══\n`);
   await env.cleanup();

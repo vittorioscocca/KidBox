@@ -10,7 +10,7 @@ i suoi commit si vedono solo con `git -C KidBoxAndroid`.
 - `KidBox/` iOS (SwiftUI, String Catalog con sorgente IT — le chiavi sono i letterali italiani)
 - `KidBoxAndroid/` Android (Compose; JDK: usare il JBR di Android Studio via `JAVA_HOME`)
 - `KidboxWebApp/` web app (`app.kidboxapp.com`) · `KidboxLanding/` sito e blog · `KidboxConsole/` console admin
-- `functions/` Cloud Functions (`ARCHITECTURE.md` dentro) · `firestore.rules` (+ `.next`, `firestore-tests/`)
+- `functions/` Cloud Functions (`ARCHITECTURE.md` dentro) · `firestore.rules` (+ `firestore-tests/`)
 - `scripts/` report analytics e utilità · `internal/` procedure e diagnosi · `FEATURES.md` mappa funzionale
 
 **Prima di cercare col grep, leggere `FEATURES.md`**: il README descrive l'MVP

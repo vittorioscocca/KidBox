@@ -1,6 +1,6 @@
 ---
 name: rules-change
-description: Modificare le regole Firestore di KidBox — i due file, la suite di test, la verifica differenziale contro le regole in produzione, il deploy e cosa guardare dopo. Usare ogni volta che si tocca firestore.rules o firestore.rules.next, quando l'utente dice «le rules», «i permessi Firestore», o quando qualcuno «non vede più» dei dati.
+description: Modificare le regole Firestore di KidBox — il file (e quando serve un .next), la suite di test, la verifica differenziale contro le regole in produzione, il deploy e cosa guardare dopo. Usare ogni volta che si tocca firestore.rules o firestore.rules.next, quando l'utente dice «le rules», «i permessi Firestore», o quando qualcuno «non vede più» dei dati.
 ---
 
 > Il deploy meccanico (comando, commit per path) sta in `/deploy-functions`.
@@ -8,24 +8,26 @@ description: Modificare le regole Firestore di KidBox — i due file, la suite d
 > di compilazione, non compare in Cloud Logging, e si manifesta come dati che
 > spariscono a utenti veri. Su iOS anche peggio (vedi trappola 1).
 
-## I due file
+## Un file solo, e quando serve un secondo
 
-| File | Cos'è |
-|---|---|
-| `firestore.rules` | quello che si deploya |
-| `firestore.rules.next` | **versione futura, non deployabile**: chiude l'auto-iscrizione e l'auto-riattivazione dopo revoca pretendendo `joinedWithValidInvite`, cioè l'`inviteId` sul documento membro |
+`firestore.rules` è quello che si deploya, ed è sempre deployabile.
 
-I due file devono differire **solo** nell'`allow create` / `allow update` di
-`families/{familyId}/members/{uid}` (più il blocco di avviso in testa al
-`.next`). `rules.test.js` gira su entrambi e fallisce se divergono oltre quel
-blocco: **ogni altra modifica va scritta in tutti e due**.
+Una **restrizione che dipende da un client** (la regola pretende un campo che
+solo le app nuove scrivono) non va in `firestore.rules` finché quelle app non
+sono diffuse: va in un `firestore.rules.next` identico tranne quella regola, con
+un avviso in testa, e `rules.test.js` gira su entrambi (secondo ambiente con un
+`projectId` diverso) così la regola in attesa non marcisce. **Ogni altra
+modifica va scritta in tutti e due.** Un allargamento invece è retrocompatibile
+e si deploya subito: le rules vanno live **prima** del client che ne dipende.
 
-**Il `.next` si deploya solo quando** iOS e Android con il join aggiornato sono
-pubblicati **e** l'adozione è alta — stessa disciplina dell'enforcement App
-Check. Le app pubblicate prima di settembre 2026 non scrivono `inviteId`: con
-quella regola attiva **ogni join da un'app non aggiornata viene negato**. Se
-serve deployare per altro prima di allora, si rimette l'`allow create` di
-`members` alla forma permissiva commentata lì accanto e si deploya il resto.
+L'ultimo `.next` (auto-iscrizione a `members/{uid}` solo con l'invito
+consumato, `joinedWithValidInvite`) è stato promosso il **01/10/2026** e il
+file tolto. Il criterio usato per promuoverlo, da riusare: (1) in produzione
+ogni join reale recente porta il campo (contati i documenti membro non owner
+per data e piattaforma: 9 su 9 dal 22/09); (2) GA4 `platform × appVersion` a
+7 giorni senza versioni che non lo scrivono; (3) suite verde sul nuovo e
+controprova che fallisca sul vecchio; (4) differenziale a zero regressioni.
+Prezzo noto: un'app sotto la 2.2.6 non riesce più a entrare in una famiglia.
 
 ## Le tre trappole, tutte già pagate
 

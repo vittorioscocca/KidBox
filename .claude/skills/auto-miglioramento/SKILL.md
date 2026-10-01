@@ -55,8 +55,9 @@ impara.** Nessun candidato nuovo prima di aver chiuso i conti.
    - crash e ANR freschi + recensioni sotto le 4 stelle → già nel report Play;
    - ticket `new` e `crash_reports` → già nel report console;
    - `git status --short` e `git log --oneline -15` per capire cosa è in volo;
-   - `diff firestore.rules firestore.rules.next` — se il `.next` contiene regole
-     pronte da settimane, è debito che scade;
+   - se esiste un `firestore.rules.next` (regole pronte che aspettano i client;
+     l'ultimo è stato promosso il 01/10/2026), `diff` con `firestore.rules`:
+     regole pronte da settimane sono debito che scade;
    - `gcloud functions logs read --region europe-west1 --limit 50 --min-log-level ERROR`
      se il progetto lo consente, per errori server che nessun report mostra.
 3. **Stato delle release**: cosa è in revisione, cosa è in store, da quanto.

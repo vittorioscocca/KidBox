@@ -16,7 +16,7 @@
 // Qui si TOLGONO i campi, non il documento:
 // - l'app, trovando `expiresAt` passato, mostra «invito scaduto» invece di
 //   «invito non valido» (il controllo di scadenza viene prima dell'hash);
-// - un invito consumato è la prova che `firestore.rules.next` chiede per
+// - un invito consumato è la prova che le rules chiedono (dal 01/10/2026) per
 //   l'iscrizione a `members/{uid}`: cancellarlo negherebbe quel join.
 //
 // Non si toccano gli inviti ancora validi, e c'è un'ora di margine dopo la
