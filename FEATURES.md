@@ -114,7 +114,7 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 | Funzione | Cosa fa | Piano |
 |---|---|---|
 | Alexa | Spesa e to-do dettati agli Echo; **solo `it-IT`** | F |
-| Assistente di famiglia | Chat AI che conosce i dati e crea eventi, to-do, spese | € (5 messaggi una tantum sul Free) |
+| Assistente di famiglia | Chat AI che conosce i dati e crea eventi, to-do, note, voci della lista della spesa, promemoria salute e richieste («chi prende Marco?»). Le **spese** non le crea: le propone Document Intelligence dai documenti importati | € (5 messaggi una tantum sul Free) |
 | Document Intelligence | Importi una fattura o un referto: l'AI legge e propone azioni | € |
 | Mente proattiva | Briefing mattutino, recap settimanale, analisi mensile | € |
 | Chat della landing | «Chiedi a KidBox» su kidboxapp.com: risponde sul prodotto a chi non ha l'app. Risposte scritte nel browser, cache, poi Haiku; tetto 1 $/giorno; base di conoscenza in `functions/landingChat/knowledge.md` | — |

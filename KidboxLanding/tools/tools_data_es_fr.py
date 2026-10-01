@@ -252,17 +252,18 @@ ES = {
     },
     "assistente-ai": {
         "title": "Asistente de IA de la familia",
-        "short": "Un asistente que conoce el calendario, los gastos, la salud y los documentos de la familia, y actúa: crea eventos, tareas y gastos, y lee los documentos que importas.",
-        "lead": "No es un chat genérico: es un asistente con el contexto de tu familia, que a «¿cuándo le pusieron la antitetánica?» responde con la fecha, y convierte «apunta 40 € del dentista» en un gasto.",
+        "short": "Un asistente que conoce el calendario, los gastos, la salud y los documentos de la familia, y actúa: crea eventos, tareas y notas, llena la lista de la compra y pregunta en la familia quién puede encargarse de algo.",
+        "lead": "No es un chat genérico: es un asistente con el contexto de tu familia, que a «¿cuándo le pusieron la antitetánica?» responde con la fecha, y convierte «hace falta alguien que recoja a Marco el sábado a las 16:30» en una petición a la familia.",
         "steps": [
             ("Pregunta", "Con lenguaje natural, desde el móvil o la web. El asistente responde con vuestros datos, no con los de internet."),
-            ("Deja que actúe", "Eventos, tareas, gastos: los crea por ti y te los muestra antes de guardarlos."),
+            ("Deja que actúe", "Eventos, tareas, notas, la lista de la compra y peticiones como «pregúntale a Luca si puede comprar el regalo»: los crea por ti y te dice qué ha escrito."),
             ("Importa un documento", "Una factura o un informe: la IA lo lee y propone qué registrar — gasto, vencimiento, visita."),
         ],
         "faq": [
             ("¿Qué datos ve la IA?", "Solo los que eliges compartir, petición a petición; para el contexto de Salud puedes elegir un resumen o que te pregunte cada vez."),
             ("¿Está incluido en el plan Free?", "El plan Free tiene 5 mensajes de prueba, una sola vez; el uso continuado requiere Pro o Max."),
             ("¿Qué es la «mente proactiva»?", "Con Pro o Max, el asistente prepara por su cuenta un resumen por la mañana, un repaso semanal y un análisis mensual. En el Free agotarían los 5 mensajes de prueba en pocos días."),
+            ("¿Puede pedir ayuda a los demás por mí?", "Sí: «hace falta alguien para…» o «pregúntale a Luca si…» se convierten en una petición. Los familiares reciben una notificación y el primero que responde «Me encargo yo» se la queda; para quien no tiene la app, el asistente prepara un enlace para enviar. Si falta la hora, te la pregunta antes."),
         ],
     },
     "famiglia": {
@@ -528,17 +529,18 @@ FR = {
     },
     "assistente-ai": {
         "title": "Assistant IA de la famille",
-        "short": "Un assistant qui connaît le calendrier, les dépenses, la santé et les documents de la famille, et qui agit : il crée événements, tâches et dépenses, et lit les documents que vous importez.",
-        "lead": "Pas un chat générique : un assistant qui a le contexte de votre famille, qui répond à « quand a eu lieu le rappel antitétanique ? » avec la date, et qui transforme « note 40 € chez le dentiste » en dépense.",
+        "short": "Un assistant qui connaît le calendrier, les dépenses, la santé et les documents de la famille, et qui agit : il crée événements, tâches et notes, remplit la liste de courses et demande dans la famille qui peut se charger de quelque chose.",
+        "lead": "Pas un chat générique : un assistant qui a le contexte de votre famille, qui répond à « quand a eu lieu le rappel antitétanique ? » avec la date, et qui transforme « il faut quelqu'un pour récupérer Marco samedi à 16h30 » en demande à la famille.",
         "steps": [
             ("Demandez", "En langage naturel, depuis le téléphone ou le web. L'assistant répond avec vos données, pas avec celles d'internet."),
-            ("Laissez-le agir", "Événements, tâches, dépenses : il les crée pour vous et vous les montre avant d'enregistrer."),
+            ("Laissez-le agir", "Événements, tâches, notes, liste de courses et demandes comme « demande à Luca s'il peut acheter le cadeau » : il les crée pour vous et vous dit ce qu'il a enregistré."),
             ("Importez un document", "Une facture ou un compte rendu : l'IA le lit et propose quoi enregistrer — dépense, échéance, consultation."),
         ],
         "faq": [
             ("Quelles données l'IA voit-elle ?", "Uniquement celles que vous choisissez de partager, demande par demande ; pour le contexte Santé, vous pouvez choisir un résumé ou être interrogé à chaque fois."),
             ("Est-il inclus dans l'offre Free ?", "L'offre Free comprend 5 messages d'essai, une seule fois ; une utilisation continue nécessite Pro ou Max."),
             ("Qu'est-ce que l'« esprit proactif » ?", "Avec Pro ou Max, l'assistant prépare de lui-même un briefing le matin, un bilan hebdomadaire et une analyse mensuelle. Avec Free, ils épuiseraient les 5 messages d'essai en quelques jours."),
+            ("Peut-il demander de l'aide aux autres à ma place ?", "Oui : « il faut quelqu'un pour… » ou « demande à Luca si… » deviennent une demande. Les membres de la famille reçoivent une notification et le premier qui répond « Je m'en occupe » la prend ; pour ceux qui n'ont pas l'app, l'assistant prépare un lien à envoyer. S'il manque l'heure, il vous la demande d'abord."),
         ],
     },
     "famiglia": {
