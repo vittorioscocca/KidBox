@@ -1497,6 +1497,7 @@ final class SyncCenter: ObservableObject {
                     todo.updatedBy = dto.updatedBy ?? todo.updatedBy
                     
                     todo.assignedTo = dto.assignedTo
+                    todo.assignedExternalName = dto.assignedExternalName
                     todo.createdBy = dto.createdBy ?? todo.createdBy
                     todo.priorityRaw = dto.priority ?? 0
                     todo.visibilityScope = KBVisibilityScope.normalized(dto.visibilityScope)
@@ -1632,6 +1633,7 @@ final class SyncCenter: ObservableObject {
                             existing.doneBy = dto.doneBy
                             
                             existing.assignedTo = dto.assignedTo
+                            existing.assignedExternalName = dto.assignedExternalName
                             existing.priorityRaw = dto.priority ?? 0
                             existing.visibilityScope = KBVisibilityScope.normalized(dto.visibilityScope)
                             existing.visibilityMemberIds = dto.visibilityMemberIds ?? []
@@ -1689,6 +1691,7 @@ final class SyncCenter: ObservableObject {
                         created.doneBy = dto.doneBy
                         
                         created.assignedTo = dto.assignedTo
+                        created.assignedExternalName = dto.assignedExternalName
                         created.priorityRaw = dto.priority ?? 0
                         created.visibilityScope = KBVisibilityScope.normalized(dto.visibilityScope)
                         created.visibilityMemberIds = dto.visibilityMemberIds ?? []
@@ -1825,7 +1828,8 @@ extension TodoRemoteStore {
                 createdBy: data["createdBy"] as? String,
                 priority: data["priority"] as? Int,
                 visibilityScope: data["visibilityScope"] as? String,
-                visibilityMemberIds: data["visibilityMemberIds"] as? [String]
+                visibilityMemberIds: data["visibilityMemberIds"] as? [String],
+                assignedExternalName: data["assignedExternalName"] as? String
             )
         }
     }

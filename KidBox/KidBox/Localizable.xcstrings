@@ -23,6 +23,28 @@
         }
       }
     },
+    "%@ (fuori dall'app)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (outside the app)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (fuera de la app)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (hors de l'app)"
+          }
+        }
+      }
+    },
     "%@ chiede" : {
       "localizations" : {
         "en" : {

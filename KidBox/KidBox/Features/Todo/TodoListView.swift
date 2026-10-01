@@ -306,12 +306,13 @@ struct TodoListView: View {
                 }
                 
                 // Riga 2: assignee · scadenza
-                let hasAssignee = displayName(for: todo.assignedTo) != nil
+                let assignee = todo.assigneeDisplayName { displayName(for: $0) }
+                let hasAssignee = assignee != nil
                 let hasDue = todo.dueAt != nil
                 
                 if hasAssignee || hasDue {
                     HStack(spacing: 4) {
-                        if let name = displayName(for: todo.assignedTo) {
+                        if let name = assignee {
                             Image(systemName: "person.fill")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)

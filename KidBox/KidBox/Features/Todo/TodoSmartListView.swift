@@ -198,7 +198,7 @@ struct TodoSmartListView: View {
                     .foregroundStyle(.primary)
                 
                 HStack(spacing: 8) {
-                    if let name = displayName(for: todo.assignedTo) {
+                    if let name = todo.assigneeDisplayName(memberName: { displayName(for: $0) }) {
                         Label(name, systemImage: "person.fill")
                             .font(.caption)
                             .foregroundStyle(.secondary)

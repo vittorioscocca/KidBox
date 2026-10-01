@@ -1622,6 +1622,7 @@ export const translations = {
       withdrawHint: "Chi l'ha ricevuta non potrà più rispondere, nemmeno dal link.",
       withdrawConfirm: "Ritira",
       openTodo: "Apri il to-do",
+      externalAssignee: (name) => `${name} (fuori dall'app)`,
     },
   },
   en: {
@@ -3245,6 +3246,7 @@ export const translations = {
       withdrawHint: "People who received it won't be able to reply anymore, not even via the link.",
       withdrawConfirm: "Withdraw",
       openTodo: "Open the to-do",
+      externalAssignee: (name) => `${name} (outside the app)`,
     },
   },
   fr: {
@@ -4812,6 +4814,7 @@ export const translations = {
       withdrawHint: "Ceux qui l'ont reçue ne pourront plus répondre, même via le lien.",
       withdrawConfirm: "Retirer",
       openTodo: "Ouvrir la tâche",
+      externalAssignee: (name) => `${name} (hors de l'app)`,
     },
   },
   es: {
@@ -6379,6 +6382,7 @@ export const translations = {
       withdrawHint: "Quien la recibió ya no podrá responder, ni siquiera desde el enlace.",
       withdrawConfirm: "Retirar",
       openTodo: "Abrir la tarea",
+      externalAssignee: (name) => `${name} (fuera de la app)`,
     },
   },
 };

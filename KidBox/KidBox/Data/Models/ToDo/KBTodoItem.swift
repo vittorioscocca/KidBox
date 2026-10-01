@@ -48,6 +48,10 @@ final class KBTodoItem {
     var lastSyncError: String?
     
     var assignedTo: String?        // uid membro famiglia
+    /// Nome di chi l'ha presa da fuori dall'app, con una richiesta di famiglia
+    /// («Ci penso io» dal link): lì `assignedTo` è vuoto. Lo scrive solo il
+    /// server (functions/familyRequests.js). Opzionale per la migrazione.
+    var assignedExternalName: String?
     var createdBy: String?         // separato da updatedBy
     var priorityRaw: Int?
 

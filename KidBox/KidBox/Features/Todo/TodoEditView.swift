@@ -116,6 +116,11 @@ struct TodoEditView: View {
     
     private var assigneeLabel: String {
         guard let assignedTo else { return String(localized: "Nessuno") }
+        // Vuoto, non nil: è un to-do nato da una richiesta e preso da fuori
+        // dall'app (o dettato ad Alexa). Prima qui si vedeva un nome vuoto.
+        if assignedTo.isEmpty {
+            return editingTodo?.assigneeDisplayName(memberName: { _ in nil }) ?? String(localized: "Nessuno")
+        }
         if assignedTo == currentUID { return "Me" }
         return resolvedMemberName(uid: assignedTo)
     }

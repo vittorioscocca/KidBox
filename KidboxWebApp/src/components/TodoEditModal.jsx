@@ -56,6 +56,10 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
   const otherMembers = members.filter((m) => m.id !== user.uid);
 
   const assigneeLabel = () => {
+    // Vuoto (non nullo) = preso da fuori dall'app con una richiesta.
+    if (assignedTo === "" && (todo?.assignedExternalName || "").trim()) {
+      return t.requests.externalAssignee(todo.assignedExternalName.trim());
+    }
     if (!assignedTo) return t.todo.none;
     if (assignedTo === user.uid) return t.todo.me;
     return members.find((m) => m.id === assignedTo)?.displayName || t.todo.none;

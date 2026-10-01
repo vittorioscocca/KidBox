@@ -67,6 +67,8 @@ struct TodoRemoteDTO {
     let priority: Int?
     let visibilityScope: String?
     let visibilityMemberIds: [String]?
+    /// Chi l'ha presa da fuori dall'app (richiesta di famiglia). Solo lettura.
+    var assignedExternalName: String? = nil
 }
 
 enum TodoRemoteChange {
@@ -418,7 +420,8 @@ extension TodoRemoteStore {
                         createdBy: data["createdBy"] as? String,
                         priority: data["priority"] as? Int,
                         visibilityScope: data["visibilityScope"] as? String,
-                        visibilityMemberIds: data["visibilityMemberIds"] as? [String]
+                        visibilityMemberIds: data["visibilityMemberIds"] as? [String],
+                        assignedExternalName: data["assignedExternalName"] as? String
                     )
                     
                     if dto.childId.isEmpty {

@@ -277,7 +277,11 @@ export default function TodoPage() {
           {items.map((todo) => {
             const due = todo.dueAt?.toDate?.();
             const done = todo.doneAt?.toDate?.();
-            const assignee = assigneeName(todo.assignedTo);
+            // Preso da fuori dall'app con una richiesta di famiglia: nessun
+            // membro assegnato, il nome sta in `assignedExternalName`.
+            const external = !todo.assignedTo && (todo.assignedExternalName || "").trim();
+            const assignee =
+              assigneeName(todo.assignedTo) || (external ? t.requests.externalAssignee(external) : null);
             const isUrgent = (todo.priority ?? 0) === 1;
             const notes = (todo.notes || "").trim();
             return (
