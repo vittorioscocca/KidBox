@@ -58,8 +58,9 @@ sorgenti**, non dall'mtime.
 - **I prezzi non si scrivono mai** in un articolo: si linka `#prezzi`.
 - Nei confronti **nessuna app concorrente per nome**, né affermazioni sui loro
   piani.
-- Il piano Free copre due persone: dirlo quando un articolo parla di famiglie
-  con più adulti.
+- Nessun piano ha un limite di membri (verificato il 15/09/2026: `plans.json`
+  ha solo spazio e messaggi AI). Mai scrivere «gratis per due persone» o
+  simili; per i piani si linka `#prezzi`.
 - Note e liste sono visibili a **tutti** i membri, figli con account compresi:
   attenzione agli articoli su sorprese e regali.
 

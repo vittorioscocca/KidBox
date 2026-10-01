@@ -2107,6 +2107,119 @@ Once a year, line up every non-monthly home cost, record them as deadlines with 
 """,
         },
     },
+    {
+        "slug": "chiedere-aiuto-in-famiglia",
+        "category": "casa-e-faccende", "date": "2026-10-01",
+        "tools": ["to-do", "calendario", "famiglia"], "related": ["dividere-le-faccende-in-coppia", "carico-mentale-dei-genitori", "quando-un-partner-fa-di-piu"],
+        "it": {
+            "title": "«Chi prende Marco giovedì?» Chiedere aiuto in famiglia senza rincorrere nessuno",
+            "desc": "Perché la domanda nel gruppo di famiglia resta senza risposta, come si fa una richiesta che chiude il giro, e come chiedere anche ai nonni o alla babysitter che non hanno l'app.",
+            "body": """
+Martedì sera, nel gruppo di famiglia: «Giovedì alle 16:30 chi prende Marco a calcetto?». Tre persone la leggono. Una mette un pollice. Giovedì alle 16:20 o al campo ci sono in due, o non c'è nessuno, e il messaggio è sepolto sotto quaranta foto.
+
+Il problema non è la buona volontà. È che una domanda nel gruppo non ha un modo chiaro per chiudersi.
+
+## Perché la domanda nel gruppo non funziona
+
+- **Tutti la leggono, nessuno se la sente addosso.** Se la domanda è per tutti, ognuno pensa che risponderà qualcun altro.
+- **Un «ok» non è un impegno.** «Vedo se riesco» non dice a nessuno se può smettere di pensarci.
+- **La risposta sparisce.** Due giorni dopo nessuno ricorda chi aveva detto sì, e chi aveva chiesto ricomincia a chiedere.
+
+Chi ha fatto la domanda resta l'unico responsabile finché giovedì non è passato. È esattamente il [carico mentale](/blog/carico-mentale-dei-genitori) che voleva alleggerire.
+
+## Una richiesta che si chiude da sola
+
+Una richiesta funziona quando ha quattro pezzi:
+
+1. **Cosa**, scritto in modo che si capisca senza contesto: «Prendere Marco a calcetto, via Roma».
+2. **Quando**, con l'ora: non «giovedì pomeriggio».
+3. **A chi**: le persone che potrebbero davvero farlo, non tutto il gruppo.
+4. **Un sì e un no netti.** «Ci penso io» o «Non posso», niente vie di mezzo.
+
+E una regola semplice: **il primo che dice sì se la prende.** Gli altri sono liberi nello stesso istante, chi ha chiesto lo sa senza dover controllare, e non serve una trattativa.
+
+## Chiedere anche a chi non ha l'app
+
+Molte richieste vanno fuori dal nucleo: i nonni, la babysitter, la mamma di un compagno di squadra. Chiedere a loro dentro un'app che non hanno non funziona; chiedere su WhatsApp riporta al punto di partenza.
+
+La via di mezzo è un **link**: lo mandi dove già parlate, chi lo riceve lo apre nel browser, legge cosa serve e quando, e risponde con un tocco. La risposta torna da te, e la cosa da fare compare nella lista di tutta la famiglia con il nome di chi se l'è presa.
+
+## Prima di chiedere, guarda chi è già impegnato
+
+Chiedere a chi ha già un impegno alla stessa ora fa perdere tempo a tutti. Prima di scegliere a chi chiedere, guarda cosa c'è in [calendario](/strumenti/calendario) intorno a quell'ora e cosa ha già da fare ciascuno. Spesso la risposta giusta si vede prima ancora di chiedere.
+
+## Un sollecito, uno solo
+
+Se nessuno risponde, rincorrere tutti con tre messaggi è il modo più veloce per far odiare la domanda. Basta **un promemoria**, una volta sola, a chi non ha ancora risposto. E se alla fine nessuno può, meglio saperlo presto: c'è ancora tempo per chiedere a qualcun altro.
+
+## Come si fa in KidBox
+
+Nelle [cose da fare](/strumenti/to-do), quando ne crei una nuova visibile a tutta la famiglia, sotto «Assegnato a» c'è **«Chiedi a qualcuno…»**:
+
+- scegli uno o più familiari, che ricevono una notifica con «Ci penso io» e «Non posso»;
+- oppure accendi **«Qualcuno fuori dall'app»**: KidBox prepara un link da mandare su WhatsApp, e chi lo riceve risponde dal browser senza installare nulla. Se vuoi, il link vale anche come invito a entrare nella [famiglia](/strumenti/famiglia);
+- mentre scegli, KidBox ti mostra gli impegni in calendario intorno a quell'ora e, accanto a ogni familiare, le cose da fare che ha già in quella fascia.
+
+Il primo «Ci penso io» fa nascere la cosa da fare, già assegnata a chi l'ha presa, e a te arriva una notifica. Chi non ha risposto riceve un solo promemoria, mai di notte. Se nessuno può o la richiesta scade, lo sai subito, e finché nessuno l'ha presa puoi ritirarla.
+
+Il resto lo fa la lista: giovedì alle 16:20 non devi più chiederti chi va al campo.
+""",
+        },
+        "en": {
+            "title": "“Who's picking Marco up on Thursday?” Asking your family for help without chasing anyone",
+            "desc": "Why the question in the family group chat goes unanswered, how to make a request that closes the loop, and how to ask grandparents or the babysitter who don't have the app.",
+            "body": """
+Tuesday evening, in the family group chat: “Who's taking Marco to football on Thursday at 4:30?”. Three people read it. One sends a thumbs-up. On Thursday at 4:20 either two people turn up at the pitch, or nobody does, and the message is buried under forty photos.
+
+The problem isn't goodwill. It's that a question in a group has no clear way to close.
+
+## Why the group-chat question doesn't work
+
+- **Everyone reads it, nobody feels it's theirs.** If the question is for everyone, each person assumes someone else will answer.
+- **An “ok” isn't a commitment.** “I'll see if I can” doesn't let anybody stop thinking about it.
+- **The answer disappears.** Two days later nobody remembers who said yes, and whoever asked starts asking again.
+
+The person who asked stays the only one responsible until Thursday is over. That's exactly the [mental load](/en/blog/carico-mentale-dei-genitori) they were trying to lighten.
+
+## A request that closes by itself
+
+A request works when it has four parts:
+
+1. **What**, written so it makes sense without context: “Pick Marco up from football, Via Roma”.
+2. **When**, with the time: not “Thursday afternoon”.
+3. **Who**: the people who could actually do it, not the whole group.
+4. **A clear yes and no.** “I'll do it” or “I can't”, nothing in between.
+
+And one simple rule: **the first person to say yes takes it.** Everyone else is free at the same moment, the person who asked knows without checking, and there's nothing to negotiate.
+
+## Asking people who don't have the app
+
+Many requests go beyond the household: grandparents, the babysitter, a teammate's parent. Asking them inside an app they don't have doesn't work; asking on WhatsApp takes you back to square one.
+
+The middle ground is a **link**: you send it where you already talk, they open it in the browser, see what's needed and when, and answer with one tap. The answer comes back to you, and the task appears in the whole family's list with the name of whoever took it.
+
+## Before asking, check who's already busy
+
+Asking someone who already has something on at the same time wastes everyone's time. Before choosing who to ask, look at what's on the [calendar](/en/tools/calendario) around that time and what each person already has to do. Often the right answer is visible before you even ask.
+
+## One reminder, just one
+
+If nobody answers, chasing everyone with three messages is the fastest way to make people hate the question. **One reminder** is enough, just once, to whoever hasn't answered yet. And if in the end nobody can, it's better to know early: there's still time to ask someone else.
+
+## How it works in KidBox
+
+In [to-dos](/en/tools/to-do), when you create a new one visible to the whole family, under “Assigned to” there's **“Ask someone…”**:
+
+- pick one or more family members, who get a notification with “I'll do it” and “I can't”;
+- or switch on **“Someone outside the app”**: KidBox prepares a link to send on WhatsApp, and whoever receives it answers from the browser without installing anything. If you like, the link also works as an invite to join the [family](/en/tools/famiglia);
+- while you choose, KidBox shows what's on the calendar around that time and, next to each family member, the tasks they already have in that slot.
+
+The first “I'll do it” creates the task, already assigned to whoever took it, and you get a notification. Anyone who hasn't answered gets a single reminder, never at night. If nobody can make it or the request expires, you know straight away, and until someone takes it you can withdraw it.
+
+The list does the rest: on Thursday at 4:20 you no longer have to wonder who's going to the pitch.
+""",
+        },
+    },
 ]
 
 # Le altre categorie vivono in un modulo ciascuna, per tenere i file leggibili.

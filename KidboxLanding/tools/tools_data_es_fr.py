@@ -24,17 +24,20 @@ ES = {
     },
     "to-do": {
         "title": "Listas de tareas para la familia",
-        "short": "Listas compartidas, tareas asignadas a quien tiene que hacerlas y recordatorios en el momento justo.",
+        "short": "Listas compartidas, tareas asignadas a quien tiene que hacerlas y recordatorios en el momento justo. Y si no sabes quién puede, pídelo: también a quien no tiene la app.",
         "lead": "Las tareas de una familia no son de una sola persona: aquí se escriben una vez, se asignan y las marca quien las haya hecho.",
         "steps": [
             ("Crea una lista", "«Antes de las vacaciones», «Casa», «Colegio»: tantas como necesites, compartidas con la familia."),
-            ("Asigna y recuerda", "Cada tarea puede tener un responsable y un recordatorio: la notificación llega a quien debe hacerla, cuando debe hacerla."),
+            ("Asigna o pide", "Cada tarea puede tener un responsable y un recordatorio. Si no sabes quién puede, «Pedírselo a alguien…»: el primero que responde «Me encargo yo» se la queda, ya asignada."),
             ("Márcala desde donde estés", "Desde el móvil o desde la web: la lista es la misma."),
         ],
         "faq": [
             ("¿Las listas son por hijo o por familia?", "Por familia: todos los miembros ven todas las listas. Aun así puedes indicar a qué hijo se refiere una tarea."),
             ("¿El recordatorio también le llega al otro padre?", "Le llega a quien tiene asignada la tarea. Si no está asignada a nadie, lo reciben todos."),
             ("¿Funciona sin conexión?", "Sí: las listas se pueden leer y editar, y se sincronizan en cuanto vuelve la red."),
+            ("¿Puedo pedírselo a alguien que no tiene la app?", "Sí: con «Pedírselo a alguien…» envías un enlace, por ejemplo por WhatsApp. Quien lo recibe responde desde el navegador sin instalar nada y, si quieres, el enlace también sirve como invitación a la familia."),
+            ("¿Y si nadie responde?", "Quien aún no ha respondido recibe un solo recordatorio, nunca de noche. Si todos dicen que no o la petición caduca, quien la hizo recibe una notificación y, mientras nadie la haya cogido, puede retirarla."),
+            ("¿Cómo sé quién está libre?", "Mientras eliges a quién pedírselo, KidBox muestra lo que hay en el calendario a esa hora y, junto a cada familiar, las tareas que ya tiene en esa franja."),
         ],
     },
     "lista-della-spesa": {
@@ -297,17 +300,20 @@ FR = {
     },
     "to-do": {
         "title": "Listes de tâches pour la famille",
-        "short": "Des listes partagées, des tâches attribuées à ceux qui doivent les faire et des rappels au bon moment.",
+        "short": "Des listes partagées, des tâches attribuées à ceux qui doivent les faire et des rappels au bon moment. Et si vous ne savez pas qui peut, demandez : même à ceux qui n'ont pas l'app.",
         "lead": "Les tâches d'une famille n'appartiennent pas à une seule personne : ici, on les écrit une fois, on les attribue et celui qui les a faites les coche.",
         "steps": [
             ("Créez une liste", "« Avant les vacances », « Maison », « École » : autant qu'il en faut, partagées avec la famille."),
-            ("Attribuez et rappelez", "Chaque tâche peut avoir un responsable et un rappel : la notification arrive à la personne concernée, au moment voulu."),
+            ("Attribuez ou demandez", "Chaque tâche peut avoir un responsable et un rappel. Si vous ne savez pas qui peut, « Demander à quelqu'un… » : le premier qui répond « Je m'en occupe » la prend, déjà attribuée."),
             ("Cochez où que vous soyez", "Depuis le téléphone ou le web : c'est la même liste."),
         ],
         "faq": [
             ("Les listes sont-elles par enfant ou par famille ?", "Par famille : chaque membre voit toutes les listes. Vous pouvez quand même indiquer l'enfant concerné par une tâche."),
             ("Le rappel arrive-t-il aussi à l'autre parent ?", "Il arrive à la personne à qui la tâche est attribuée. Si elle n'est attribuée à personne, tout le monde le reçoit."),
             ("Ça marche hors connexion ?", "Oui : les listes restent lisibles et modifiables, et se synchronisent dès que le réseau revient."),
+            ("Puis-je demander à quelqu'un qui n'a pas l'app ?", "Oui : avec « Demander à quelqu'un… » vous envoyez un lien, par exemple sur WhatsApp. La personne répond depuis le navigateur sans rien installer et, si vous le souhaitez, le lien vaut aussi invitation à la famille."),
+            ("Et si personne ne répond ?", "Ceux qui n'ont pas encore répondu reçoivent une seule relance, jamais la nuit. Si tout le monde dit non ou si la demande expire, celui qui l'a faite reçoit une notification et, tant que personne ne l'a prise, il peut la retirer."),
+            ("Comment savoir qui est libre ?", "Pendant que vous choisissez à qui demander, KidBox montre ce qu'il y a au calendrier autour de cette heure et, à côté de chaque membre, les tâches qu'il a déjà sur ce créneau."),
         ],
     },
     "lista-della-spesa": {

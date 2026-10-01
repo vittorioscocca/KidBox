@@ -28,6 +28,7 @@ SLUGS = {
     # ── Casa e faccende ──────────────────────────────────────────────────
     "faccende-per-eta-bambini":            {"en": "age-appropriate-chores-for-kids",        "es": "tareas-del-hogar-segun-la-edad",          "fr": "taches-menageres-selon-l-age"},
     "dividere-le-faccende-in-coppia":      {"en": "splitting-chores-as-a-couple",           "es": "repartir-las-tareas-en-pareja",           "fr": "partager-les-taches-en-couple"},
+    "chiedere-aiuto-in-famiglia":          {"en": "asking-family-for-help",                 "es": "pedir-ayuda-en-familia",                  "fr": "demander-de-l-aide-en-famille"},
     "scadenze-di-casa-bollette-garanzie":  {"en": "household-deadlines-bills-warranties"},
     "faccende-e-adhd":                     {"en": "chores-and-adhd",                        "es": "tareas-del-hogar-y-tdah",                 "fr": "taches-menageres-et-tdah"},
     "faccende-tra-adulti":                 {"en": "chores-between-adults",                  "es": "tareas-entre-adultos",                    "fr": "taches-entre-adultes"},

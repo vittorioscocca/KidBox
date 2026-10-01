@@ -129,6 +129,11 @@
         "type": 301
       },
       {
+        "source": "/en/blog/chiedere-aiuto-in-famiglia",
+        "destination": "/en/blog/asking-family-for-help",
+        "type": 301
+      },
+      {
         "source": "/en/blog/co-genitorialita-a-distanza",
         "destination": "/en/blog/long-distance-co-parenting",
         "type": 301
@@ -654,6 +659,11 @@
         "type": 301
       },
       {
+        "source": "/es/blog/chiedere-aiuto-in-famiglia",
+        "destination": "/es/blog/pedir-ayuda-en-familia",
+        "type": 301
+      },
+      {
         "source": "/es/blog/co-genitorialita-a-distanza",
         "destination": "/es/blog/coparentalidad-a-distancia",
         "type": 301
@@ -956,6 +966,11 @@
       {
         "source": "/fr/blog/chat-di-famiglia-separata-da-whatsapp",
         "destination": "/fr/blog/chat-familial-separe-de-whatsapp",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/chiedere-aiuto-in-famiglia",
+        "destination": "/fr/blog/demander-de-l-aide-en-famille",
         "type": 301
       },
       {
