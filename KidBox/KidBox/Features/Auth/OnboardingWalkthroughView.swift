@@ -275,13 +275,7 @@ struct OnboardingWalkthroughView: View {
                             accentColor:    currentAccent,
                             iconColor:      currentIconColor,
                             modelContext:   modelContext,
-                            coordinator:    coordinator,
-                            onFinish: { _ in
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    bgOpacity = 0; textOpacity = 0; iconOpacity = 0; ctaScale = 0.88
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { onFinish() }
-                            }
+                            coordinator:    coordinator
                         )
                         .padding(.horizontal, 24)
                         .opacity(textOpacity)
@@ -296,7 +290,10 @@ struct OnboardingWalkthroughView: View {
                         .padding(.bottom, 32)
                 }
 
-                if isJoinPage || isLinkJoinPage || isInvitePage {
+                if isInvitePage {
+                    // I pulsanti sono nella barra fissa (safeAreaInset qui sotto).
+                    Spacer().frame(height: 16)
+                } else if isJoinPage || isLinkJoinPage {
                     // Queste pagine hanno i loro pulsanti dentro la card.
                     Spacer()
                         .frame(height: 56)
@@ -312,6 +309,23 @@ struct OnboardingWalkthroughView: View {
               .frame(minHeight: UIScreen.main.bounds.height - 40)
             }
             .scrollDismissesKeyboard(.interactively)
+            // Fissi in basso: in fondo alla pagina che scorreva si perdevano
+            // sotto condivisione, copia e QR.
+            .safeAreaInset(edge: .bottom) {
+                if isInvitePage {
+                    InviteFinishBar(
+                        accentColor: currentAccent,
+                        iconColor:   currentIconColor,
+                        background:  backgroundColor,
+                        onDone: { finishInvitePage() },
+                        onSkip: {
+                            AppAnalytics.onboardingInviteStepSkipped()
+                            finishInvitePage()
+                        }
+                    )
+                    .opacity(textOpacity)
+                }
+            }
 
             // Barra in alto (indietro, esci) DOPO la ScrollView: in uno ZStack
             // l'ultimo figlio sta sopra e riceve i tocchi. Prima stava sotto e
@@ -471,6 +485,14 @@ struct OnboardingWalkthroughView: View {
     }
 
     // MARK: - Navigation
+
+    /// Chiusura della pagina invito, comune a «Ho inviato il link» e «Farlo dopo».
+    private func finishInvitePage() {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            bgOpacity = 0; textOpacity = 0; iconOpacity = 0; ctaScale = 0.88
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { onFinish() }
+    }
 
     private func handleCTA() {
         // Si avanza solo a salvataggio riuscito: proseguire dopo un errore
@@ -1191,7 +1213,6 @@ private struct InviteOnboardingCard: View {
     let iconColor:      Color
     let modelContext:   ModelContext
     let coordinator:    AppCoordinator
-    let onFinish:       (Bool) -> Void
 
     @StateObject private var vm: InviteCodeViewModel
     @State private var didGenerate = false
@@ -1203,15 +1224,13 @@ private struct InviteOnboardingCard: View {
         accentColor: Color,
         iconColor: Color,
         modelContext: ModelContext,
-        coordinator: AppCoordinator,
-        onFinish: @escaping (Bool) -> Void
+        coordinator: AppCoordinator
     ) {
         self.cardBackground = cardBackground
         self.accentColor    = accentColor
         self.iconColor      = iconColor
         self.modelContext   = modelContext
         self.coordinator    = coordinator
-        self.onFinish       = onFinish
         _vm = StateObject(wrappedValue: InviteCodeViewModel(
             remote: InviteRemoteStore(),
             modelContext: modelContext,
@@ -1355,39 +1374,8 @@ private struct InviteOnboardingCard: View {
                 }
             }
 
-            Divider().padding(.vertical, 4)
-
-            // ── Bottoni di completamento ──
-            VStack(spacing: 10) {
-                Button {
-                    onFinish(true)
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                        Text("Ho inviato il link")
-                    }
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).frame(height: 52)
-                    .background(
-                        LinearGradient(colors: [iconColor, accentColor],
-                                       startPoint: .leading, endPoint: .trailing),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    AppAnalytics.onboardingInviteStepSkipped()
-                    onFinish(false)
-                } label: {
-                    Text("Farlo dopo →")
-                        .font(.system(size: 15))
-                        .foregroundStyle(.tertiary)
-                        .padding(.vertical, 6)
-                }
-                .buttonStyle(.plain)
-            }
+            // I bottoni di chiusura non stanno qui: sono fissi in fondo allo
+            // schermo (`InviteFinishBar`), fuori dalla ScrollView del wizard.
         }
         .padding(.vertical, 8)
         .onAppear {
@@ -1403,4 +1391,49 @@ private struct InviteOnboardingCard: View {
 
 #Preview {
     OnboardingWalkthroughView { print("done") }
+}
+
+// MARK: - Barra fissa della pagina invito
+
+/// «Ho inviato il link» e «Farlo dopo», fissi in fondo allo schermo. Lo sfondo
+/// pieno serve perché il contenuto della ScrollView ci scorre sotto.
+private struct InviteFinishBar: View {
+    let accentColor: Color
+    let iconColor: Color
+    let background: Color
+    let onDone: () -> Void
+    let onSkip: () -> Void
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Button(action: onDone) {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                    Text("Ho inviato il link")
+                }
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity).frame(height: 52)
+                .background(
+                    LinearGradient(colors: [iconColor, accentColor],
+                                   startPoint: .leading, endPoint: .trailing),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button(action: onSkip) {
+                Text("Farlo dopo →")
+                    .font(.system(size: 15))
+                    .foregroundStyle(.tertiary)
+                    .padding(.vertical, 6)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+        .frame(maxWidth: .infinity)
+        .background(background.overlay(alignment: .top) { Divider() })
+    }
 }
