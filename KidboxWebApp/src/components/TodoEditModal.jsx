@@ -6,7 +6,9 @@ import { useFamilyMembers } from "../hooks/useFamilyMembers";
 import { useTranslation } from "../i18n/LocaleContext";
 import { VISIBILITY_FAMILY, VISIBILITY_MEMBERS, normalizedVisibilityScope } from "../visibility";
 import { useFamily } from "../FamilyContext";
-import { createRequest } from "../services/requests";
+import { createRequest, requestAvailability } from "../services/requests";
+import { useTodos } from "../hooks/useTodos";
+import { useFamilyCollection } from "../hooks/useFamilyCollection";
 import Modal from "./Modal";
 import VisibilityPickerModal, { visibilityChipLabel } from "./VisibilityPickerModal";
 import { AskRequestRow, AskRequestView, RequestSentView } from "./FamilyRequests";
@@ -54,6 +56,9 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
   const [sending, setSending] = useState(false);
   const canAsk = !isEdit && Boolean(listId) && visibilityScope === VISIBILITY_FAMILY;
   const otherMembers = members.filter((m) => m.id !== user.uid);
+  // «Chi è libero»: to-do ed eventi servono solo quando si può chiedere.
+  const { todos: familyTodos } = useTodos(canAsk ? familyId : null, user.uid);
+  const { items: calendarEvents } = useFamilyCollection(familyId, "calendarEvents", { enabled: canAsk });
 
   const assigneeLabel = () => {
     // Vuoto (non nullo) = preso da fuori dall'app con una richiesta.
@@ -194,6 +199,16 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
       <AskRequestView
         initial={askDraft}
         members={otherMembers}
+        availability={
+          hasDate
+            ? requestAvailability({
+                around: new Date(dueDate),
+                todos: familyTodos,
+                events: calendarEvents,
+                uid: user.uid,
+              })
+            : null
+        }
         onBack={() => setView("main")}
         onConfirm={(d) => {
           setAskDraft(d);

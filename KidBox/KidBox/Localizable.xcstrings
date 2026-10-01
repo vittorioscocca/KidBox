@@ -49,6 +49,50 @@
         }
       }
     },
+    "Ha già «%@» alle %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already has “%@” at %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya tiene «%@» a las %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A déjà « %@ » à %@"
+          }
+        }
+      }
+    },
+    "In calendario, intorno alle %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On the calendar, around %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En el calendario, hacia las %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Au calendrier, vers %@"
+          }
+        }
+      }
+    },
     "–" : {
       "localizations" : {
         "en" : {

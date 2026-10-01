@@ -1623,6 +1623,9 @@ export const translations = {
       withdrawConfirm: "Ritira",
       openTodo: "Apri il to-do",
       externalAssignee: (name) => `${name} (fuori dall'app)`,
+      calendarAround: (time) => `In calendario, intorno alle ${time}`,
+      alreadyHas: (title, time) => `Ha già «${title}» alle ${time}`,
+      allDay: "Tutto il giorno",
     },
   },
   en: {
@@ -3247,6 +3250,9 @@ export const translations = {
       withdrawConfirm: "Withdraw",
       openTodo: "Open the to-do",
       externalAssignee: (name) => `${name} (outside the app)`,
+      calendarAround: (time) => `On the calendar, around ${time}`,
+      alreadyHas: (title, time) => `Already has “${title}” at ${time}`,
+      allDay: "All day",
     },
   },
   fr: {
@@ -4815,6 +4821,9 @@ export const translations = {
       withdrawConfirm: "Retirer",
       openTodo: "Ouvrir la tâche",
       externalAssignee: (name) => `${name} (hors de l'app)`,
+      calendarAround: (time) => `Au calendrier, vers ${time}`,
+      alreadyHas: (title, time) => `A déjà « ${title} » à ${time}`,
+      allDay: "Toute la journée",
     },
   },
   es: {
@@ -6383,6 +6392,9 @@ export const translations = {
       withdrawConfirm: "Retirar",
       openTodo: "Abrir la tarea",
       externalAssignee: (name) => `${name} (fuera de la app)`,
+      calendarAround: (time) => `En el calendario, hacia las ${time}`,
+      alreadyHas: (title, time) => `Ya tiene «${title}» a las ${time}`,
+      allDay: "Todo el día",
     },
   },
 };

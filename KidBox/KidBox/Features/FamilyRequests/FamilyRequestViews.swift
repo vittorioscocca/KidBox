@@ -47,13 +47,63 @@ private struct FamilyRequestNames {
 struct FamilyRequestAskSheet: View {
     @Binding var draft: FamilyRequestService.Draft?
     let members: [KBFamilyMember]
+    /// Scadenza del to-do con il suo orario, o `nil`: serve a «chi è libero».
+    let around: Date?
 
     @Environment(\.dismiss) private var dismiss
     @State private var work = FamilyRequestService.Draft()
+    @Query private var todos: [KBTodoItem]
+    @Query private var events: [KBCalendarEvent]
+
+    init(draft: Binding<FamilyRequestService.Draft?>, members: [KBFamilyMember], familyId: String, around: Date?) {
+        _draft = draft
+        self.members = members
+        self.around = around
+        let fid = familyId
+        _todos = Query(filter: #Predicate<KBTodoItem> { $0.familyId == fid && !$0.isDeleted && !$0.isDone })
+        _events = Query(filter: #Predicate<KBCalendarEvent> { $0.familyId == fid && !$0.isDeleted })
+    }
+
+    private var availability: FamilyRequestAvailability? {
+        FamilyRequestAvailability.compute(
+            around: around,
+            todos: todos,
+            events: events,
+            currentUid: Auth.auth().currentUser?.uid
+        )
+    }
+
+    private static func time(_ date: Date) -> String {
+        date.formatted(date: .omitted, time: .shortened)
+    }
 
     var body: some View {
+        let availability = availability
         NavigationStack {
             Form {
+                // Contesto, non attribuito a nessuno: gli eventi non dicono chi
+                // partecipa. Vedi `FamilyRequestAvailability`.
+                if let availability, !availability.events.isEmpty {
+                    Section {
+                        ForEach(availability.events) { item in
+                            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                                if item.isAllDay {
+                                    Text("Tutto il giorno")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    Text(verbatim: "\(Self.time(item.start))–\(Self.time(item.end))")
+                                        .font(.caption.monospacedDigit())
+                                        .foregroundStyle(.secondary)
+                                }
+                                Text(item.title)
+                            }
+                        }
+                    } header: {
+                        Text("In calendario, intorno alle \(Self.time(availability.around))")
+                    }
+                }
+
                 if members.isEmpty {
                     Section {
                         Text("Per ora in famiglia ci sei solo tu: chiedi a qualcuno fuori dall'app, con un link.")
@@ -66,8 +116,15 @@ struct FamilyRequestAskSheet: View {
                                 toggle(member.userId)
                             } label: {
                                 HStack {
-                                    Text(member.displayName ?? String(localized: "Membro"))
-                                        .foregroundStyle(.primary)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(member.displayName ?? String(localized: "Membro"))
+                                            .foregroundStyle(.primary)
+                                        if let first = availability?.busy[member.userId]?.first {
+                                            Text("Ha già «\(first.title)» alle \(Self.time(first.start))")
+                                                .font(.caption)
+                                                .foregroundStyle(.orange)
+                                        }
+                                    }
                                     Spacer()
                                     if work.recipients.contains(member.userId) {
                                         Image(systemName: "checkmark")

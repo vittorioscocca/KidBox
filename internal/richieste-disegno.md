@@ -326,10 +326,18 @@ esterno e almeno 2 famiglie passate a 2+ membri entrando da una richiesta.
    CANCELLA (non null: nelle query di intervallo null viene prima di ogni
    Timestamp). Push con lo stesso `type` e bottoni della richiesta: nessuna
    modifica ai client. Le rules vietano `nudgeAt`/`nudgedAt` alla creazione.
-6. Poi, dopo il sollecito: «chi è libero a quell'ora» nel foglio «Chiedi a…»
-   (deterministico, dal calendario), e per ultima l'azione «crea richiesta»
-   dell'assistente AI.
-7. Dopo, solo se la previsione regge: `grocery` ed `event`, l'assistente che
+6. ✅ **«Chi è libero a quell'ora»** (01/10/2026). Gli eventi del calendario
+   NON dicono chi partecipa (solo `childId` e `createdBy`, e chi li crea
+   spesso inserisce gli impegni di tutti): scelta dell'utente, si mostrano
+   come contesto non attribuito («In calendario, intorno alle 16:30»), e
+   accanto a ogni membro solo i suoi to-do assegnati, non fatti e con orario
+   («Ha già «Portare Sveva» alle 17:00»). Finestra ±1 ora, ripetizioni
+   espanse, visibilità rispettata. Solo se il to-do ha una scadenza con
+   orario. `FamilyRequestAvailability` (iOS e Android), `requestAvailability`
+   (web). Per renderlo davvero «chi è libero» servirebbero i partecipanti
+   negli eventi: scartato per ora.
+7. Per ultima l'azione «crea richiesta» dell'assistente AI.
+8. Dopo, solo se la previsione regge: `grocery` ed `event`, l'assistente che
    propone a chi chiedere, il connettore MCP come mittente (`createdVia`).
 
 ## Decisioni aperte

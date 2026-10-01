@@ -382,8 +382,9 @@ export function AskRequestRow({ draft, members, onEdit, onClear }) {
 }
 
 /** Vista «Chiedi a…» dentro la modale del to-do. */
-export function AskRequestView({ initial, members, onBack, onConfirm }) {
-  const { t } = useTranslation();
+export function AskRequestView({ initial, members, availability, onBack, onConfirm }) {
+  const { t, locale } = useTranslation();
+  const hhmm = (d) => d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
   const r = t.requests;
   const [work, setWork] = useState(() => initial || { ...emptyDraft(), askOutside: members.length === 0 });
 
@@ -405,6 +406,23 @@ export function AskRequestView({ initial, members, onBack, onConfirm }) {
       </div>
       <div className="modal-title">{r.askTitle}</div>
 
+      {/* Contesto, non attribuito a nessuno: gli eventi non dicono chi partecipa. */}
+      {availability && availability.events.length > 0 && (
+        <>
+          <div className="modal-label">{r.calendarAround(hhmm(availability.around))}</div>
+          <div className="modal-section">
+            {availability.events.map((e) => (
+              <div key={e.id} className="modal-row">
+                <span className="req-muted req-time">
+                  {e.isAllDay ? r.allDay : `${hhmm(e.start)}–${hhmm(e.end)}`}
+                </span>
+                <span className="req-grow">{e.title}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       {members.length === 0 ? (
         <p className="modal-hint">{r.onlyYou}</p>
       ) : (
@@ -413,7 +431,14 @@ export function AskRequestView({ initial, members, onBack, onConfirm }) {
           <div className="modal-section">
             {members.map((m) => (
               <div key={m.id} className="modal-row clickable" onClick={() => toggle(m.id)}>
-                <span>{m.displayName || r.familyMember}</span>
+                <span className="req-member">
+                  <span>{m.displayName || r.familyMember}</span>
+                  {availability?.busy[m.id]?.[0] && (
+                    <span className="req-busy">
+                      {r.alreadyHas(availability.busy[m.id][0].title, hhmm(availability.busy[m.id][0].start))}
+                    </span>
+                  )}
+                </span>
                 <span className={`modal-check ${work.recipients.includes(m.id) ? "on" : "off"}`}>✓</span>
               </div>
             ))}

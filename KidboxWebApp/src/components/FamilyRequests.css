@@ -202,3 +202,24 @@
 .req-actions + .modal-hint {
   margin-top: 12px;
 }
+
+/* «Chi è libero»: impegni vicini all'ora della richiesta. */
+.req-time {
+  min-width: 96px;
+}
+
+.req-grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.req-member {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.req-busy {
+  font-size: 0.78rem;
+  color: #d9822b;
+}

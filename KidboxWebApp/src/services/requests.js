@@ -25,6 +25,8 @@ import {
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../firebase";
 import { createInvite } from "./family";
+import { expandEvents } from "../calendarUtils";
+import { isVisibleTo } from "../visibility";
 
 export const REQUEST_LINK_BASE_URL = "https://kidboxapp.com/r";
 /** Senza scadenza la richiesta resta aperta due giorni. */
@@ -67,6 +69,50 @@ function base64url(bytes) {
   let s = "";
   bytes.forEach((b) => (s += String.fromCharCode(b)));
   return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/** Un'ora prima e un'ora dopo la scadenza. */
+const AVAILABILITY_MARGIN_MS = 3600 * 1000;
+
+/**
+ * «Chi è libero a quell'ora» nella vista «Chiedi a…».
+ *
+ * Gli eventi del calendario non dicono chi partecipa, quindi non si
+ * attribuiscono a nessuno: si mostrano come contesto. Gli unici impegni davvero
+ * di una persona sono i to-do assegnati a lei. Gemello di
+ * `FamilyRequestAvailability` su iOS e Android.
+ * @return {{around: Date, events: object[], busy: Object<string, object[]>}|null}
+ */
+export function requestAvailability({ around, todos, events, uid }) {
+  if (!around || Number.isNaN(around.getTime())) return null;
+  const from = new Date(around.getTime() - AVAILABILITY_MARGIN_MS);
+  const to = new Date(around.getTime() + AVAILABILITY_MARGIN_MS);
+
+  const eventItems = expandEvents(
+    events.filter((e) => !e.isDeleted && isVisibleTo(e, uid)),
+    from,
+    to
+  )
+    .map((e) => ({
+      id: `${e.id}|${e.startDate.toMillis()}`,
+      title: e.title || "",
+      start: e.startDate.toDate(),
+      end: e.endDate?.toDate?.() ?? e.startDate.toDate(),
+      isAllDay: Boolean(e.isAllDay),
+    }))
+    .sort((a, b) => (a.isAllDay === b.isAllDay ? a.start - b.start : a.isAllDay ? -1 : 1))
+    .slice(0, 4);
+
+  const busy = {};
+  todos.forEach((t) => {
+    // Un to-do «tutto il giorno» non è un impegno a un'ora precisa.
+    if (t.isDone || t.isDeleted || t.dueHasTime === false || !t.assignedTo) return;
+    const due = t.dueAt?.toDate?.();
+    if (!due || due < from || due > to || !isVisibleTo(t, uid)) return;
+    (busy[t.assignedTo] ||= []).push({ id: t.id, title: t.title || "", start: due });
+  });
+  Object.values(busy).forEach((list) => list.sort((a, b) => a.start - b.start));
+  return { around, events: eventItems, busy };
 }
 
 /** Dal documento Firestore a un oggetto comodo per le view. */

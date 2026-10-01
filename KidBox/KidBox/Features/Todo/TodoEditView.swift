@@ -389,7 +389,14 @@ struct TodoEditView: View {
             )
         }
         .sheet(isPresented: $showAskSheet) {
-            FamilyRequestAskSheet(draft: $askDraft, members: otherMembers)
+            FamilyRequestAskSheet(
+                draft: $askDraft,
+                members: otherMembers,
+                familyId: familyId,
+                // Solo con un orario: un to-do «tutto il giorno» non ha un'ora
+                // da confrontare con gli impegni degli altri.
+                around: hasDate && hasTime ? dueDate : nil
+            )
         }
         .sheet(item: $sentRequest, onDismiss: { dismiss() }) { created in
             FamilyRequestSentSheet(created: created)
