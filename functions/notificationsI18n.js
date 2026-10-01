@@ -82,6 +82,13 @@ const STRINGS = {
     "todo.reminderBodyWithList": "{title} — {list}",
     "todo.fallback": "Promemoria",
 
+    "request.title": "{name} chiede una mano",
+    "request.bodyWhen": "{title} · {when}",
+    "request.claimedTitle": "Ci pensa {name}",
+    "request.expiredTitle": "Nessuno ha risposto",
+    "request.allDeclinedTitle": "Nessuno può",
+    "request.allDeclinedBody": "{title} — chiedi a qualcuno fuori dall'app?",
+
     "wallet.ticketTitle": "🎟️ Nuovo biglietto nel Wallet",
     "wallet.ticketBody": "{who} · {kind}",
     "wallet.ticketBodyWithDate": "{who} · {kind} — {date}",
@@ -162,6 +169,13 @@ const STRINGS = {
     "todo.reminderBodyWithList": "{title} — {list}",
     "todo.fallback": "Reminder",
 
+    "request.title": "{name} is asking for a hand",
+    "request.bodyWhen": "{title} · {when}",
+    "request.claimedTitle": "{name} will take care of it",
+    "request.expiredTitle": "Nobody replied",
+    "request.allDeclinedTitle": "Nobody can make it",
+    "request.allDeclinedBody": "{title} — ask someone outside the app?",
+
     "wallet.ticketTitle": "🎟️ New ticket in Wallet",
     "wallet.ticketBody": "{who} · {kind}",
     "wallet.ticketBodyWithDate": "{who} · {kind} — {date}",
@@ -241,6 +255,13 @@ const STRINGS = {
     "todo.reminderBody": "{title}",
     "todo.reminderBodyWithList": "{title} — {list}",
     "todo.fallback": "Rappel",
+
+    "request.title": "{name} demande un coup de main",
+    "request.bodyWhen": "{title} · {when}",
+    "request.claimedTitle": "{name} s'en occupe",
+    "request.expiredTitle": "Personne n'a répondu",
+    "request.allDeclinedTitle": "Personne n'est disponible",
+    "request.allDeclinedBody": "{title} — demander à quelqu'un hors de l'app ?",
 
     "wallet.ticketTitle": "🎟️ Nouveau billet dans le Wallet",
     "wallet.ticketBody": "{who} · {kind}",
@@ -323,6 +344,14 @@ const STRINGS = {
     "todo.reminderBody": "{title}",
     "todo.reminderBodyWithList": "{title} — {list}",
     "todo.fallback": "Recordatorio",
+
+    "request.title": "{name} pide una mano",
+    "request.bodyWhen": "{title} · {when}",
+    "request.claimedTitle": "{name} se encarga",
+    "request.expiredTitle": "Nadie ha respondido",
+    "request.allDeclinedTitle": "Nadie puede",
+    "request.allDeclinedBody":
+      "{title} — ¿pedírselo a alguien fuera de la app?",
 
     "wallet.ticketTitle": "🎟️ Nuevo billete en el Wallet",
     "wallet.ticketBody": "{who} · {kind}",
@@ -468,6 +497,7 @@ module.exports = {
   SUPPORTED_LANGS,
   DEFAULT_LANG,
   normalizeLang,
+  intlLocale,
   t,
   walletKindLabel,
   formatLongDate,

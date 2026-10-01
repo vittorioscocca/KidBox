@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Una richiesta per te · KidBox</title>
+  <!--
+    Risposta a una RICHIESTA di famiglia («Chi prende Marco giovedì?») da chi
+    non ha l'app. Disegno in internal/richieste-disegno.md.
+
+    Link: /r?f={familyId}&r={requestId}#t={token}&k={segretoInvito}
+
+    Tutto ciò che sta dopo il # non viene mai inviato al server, né compare nei
+    log di hosting o nelle anteprime dei link di WhatsApp. Il token va a
+    `requestPublic` nel CORPO della POST; il segreto dell'invito non lascia mai
+    il browser: serve solo a costruire il link /join di sempre.
+
+    Niente statistiche di terze parti qui: la richiesta misura se stessa
+    (`external.openedAt` / `answeredAt` sul documento), quindi niente banner.
+  -->
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f2f0eb;
+      color: #1a1a1a;
+    }
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 32px 24px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,.08);
+    }
+    .logo { width: 64px; height: 64px; border-radius: 16px; margin-bottom: 16px; }
+    .asker { font-size: 15px; margin: 0 0 6px; color: #555; }
+    h1 { font-size: 24px; line-height: 1.25; margin: 0 0 8px; overflow-wrap: anywhere; }
+    .when { font-size: 15px; margin: 0 0 24px; color: #ff6b00; font-weight: 600; }
+    p { font-size: 15px; line-height: 1.5; margin: 0 0 16px; }
+    .muted { color: #666; font-size: 13px; }
+    label { display: block; text-align: left; font-size: 13px; color: #555; margin: 0 0 6px; }
+    input {
+      width: 100%; padding: 12px 14px; border-radius: 12px; font: inherit; font-size: 16px;
+      border: 1.5px solid rgba(0,0,0,.15); background: transparent; color: inherit; margin-bottom: 16px;
+    }
+    input:focus { outline: none; border-color: #ff6b00; }
+    .actions { display: flex; flex-direction: column; gap: 10px; }
+    .btn {
+      display: block; width: 100%;
+      padding: 14px 20px; border-radius: 14px; border: 0;
+      background: #ff6b00; color: #fff;
+      text-decoration: none; font: inherit; font-weight: 600; font-size: 16px; cursor: pointer;
+    }
+    .btn.secondary { background: transparent; color: #ff6b00; border: 1.5px solid #ff6b00; }
+    .btn[disabled] { opacity: .5; cursor: default; }
+    .error { color: #c62828; font-size: 14px; min-height: 20px; margin: 10px 0 0; }
+    .big { font-size: 40px; margin: 0 0 8px; }
+    .join { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(0,0,0,.08); }
+    .foot { margin: 20px 0 0; }
+    .foot a { color: inherit; }
+    [hidden] { display: none !important; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #121212; color: #f5f5f5; }
+      .card { background: #1e1e1e; box-shadow: none; }
+      .asker, label { color: #b0b0b0; }
+      .muted { color: #a0a0a0; }
+      input { border-color: rgba(255,255,255,.2); }
+      .join { border-top-color: rgba(255,255,255,.1); }
+      .error { color: #ef9a9a; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <img src="/icon.png" alt="KidBox" class="logo">
+
+    <section id="loading"><p class="muted" data-t="loading"></p></section>
+
+    <section id="ask" hidden>
+      <p class="asker" id="asker"></p>
+      <h1 id="title"></h1>
+      <p class="when" id="when" hidden></p>
+      <label for="name" data-t="nameLabel"></label>
+      <input id="name" autocomplete="given-name" maxlength="40">
+      <div class="actions">
+        <button class="btn" id="yes" type="button" data-t="yes"></button>
+        <button class="btn secondary" id="no" type="button" data-t="no"></button>
+      </div>
+      <p class="error" id="error" role="alert"></p>
+    </section>
+
+    <section id="done" hidden>
+      <p class="big" id="doneIcon"></p>
+      <h1 id="doneTitle"></h1>
+      <p id="doneText"></p>
+      <button class="btn secondary" id="changeMind" type="button" hidden data-t="changeMind"></button>
+    </section>
+
+    <section class="join" id="join" hidden>
+      <p data-t="joinText"></p>
+      <a class="btn" id="joinLink" href="/join" data-t="joinButton"></a>
+    </section>
+
+    <p class="muted foot"><a href="/" data-t="footer"></a></p>
+  </main>
+
+  <script>
+  (function () {
+    var STR = {
+      it: {
+        loading: "Un attimo…",
+        asks: "{name} ti chiede:",
+        asksAnon: "Ti chiedono:",
+        nameLabel: "Come ti chiami?",
+        yes: "Ci penso io",
+        no: "Non posso",
+        changeMind: "Ho cambiato idea: ci penso io",
+        nameRequired: "Scrivi il tuo nome, così sanno chi se ne occupa.",
+        network: "Non riesco a collegarmi. Riprova tra poco.",
+        yesTitle: "Grazie, ci pensi tu!",
+        yesText: "{name} lo vede subito su KidBox.",
+        noTitle: "Ok, nessun problema",
+        noText: "Lo diciamo a {name}.",
+        takenTitle: "Ci pensa già {name}",
+        takenText: "Qualcuno ha risposto prima di te.",
+        expiredTitle: "Richiesta scaduta",
+        expiredText: "Non serve più rispondere.",
+        cancelledTitle: "Richiesta ritirata",
+        cancelledText: "Chi te l'ha chiesta non ne ha più bisogno.",
+        invalidTitle: "Link non valido",
+        invalidText: "Il link è incompleto o non esiste più. Chiedi a chi te l'ha mandato di inviarlo di nuovo.",
+        joinText: "Vuoi vedere anche il resto (impegni, to-do, spesa)? Entra nella famiglia su KidBox.",
+        joinButton: "Entra nella famiglia",
+        footer: "KidBox · la famiglia organizzata, insieme",
+        someone: "chi te l'ha chiesto"
+      },
+      en: {
+        loading: "One moment…",
+        asks: "{name} is asking you:",
+        asksAnon: "You're being asked:",
+        nameLabel: "What's your name?",
+        yes: "I'll do it",
+        no: "I can't",
+        changeMind: "Changed my mind: I'll do it",
+        nameRequired: "Type your name so they know who's taking care of it.",
+        network: "Can't connect right now. Please try again shortly.",
+        yesTitle: "Thanks, it's yours!",
+        yesText: "{name} sees it on KidBox right away.",
+        noTitle: "OK, no problem",
+        noText: "We'll let {name} know.",
+        takenTitle: "{name} is already on it",
+        takenText: "Someone replied before you.",
+        expiredTitle: "Request expired",
+        expiredText: "No need to reply anymore.",
+        cancelledTitle: "Request withdrawn",
+        cancelledText: "The person who asked doesn't need it anymore.",
+        invalidTitle: "Invalid link",
+        invalidText: "The link is incomplete or no longer exists. Ask the sender to share it again.",
+        joinText: "Want to see the rest too (plans, to-dos, shopping)? Join the family on KidBox.",
+        joinButton: "Join the family",
+        footer: "KidBox · the family, organized together",
+        someone: "the person who asked"
+      },
+      fr: {
+        loading: "Un instant…",
+        asks: "{name} te demande :",
+        asksAnon: "On te demande :",
+        nameLabel: "Comment t'appelles-tu ?",
+        yes: "Je m'en occupe",
+        no: "Je ne peux pas",
+        changeMind: "J'ai changé d'avis : je m'en occupe",
+        nameRequired: "Écris ton prénom pour qu'on sache qui s'en occupe.",
+        network: "Connexion impossible. Réessaie dans un instant.",
+        yesTitle: "Merci, tu t'en occupes !",
+        yesText: "{name} le voit tout de suite sur KidBox.",
+        noTitle: "D'accord, pas de souci",
+        noText: "On le dit à {name}.",
+        takenTitle: "{name} s'en occupe déjà",
+        takenText: "Quelqu'un a répondu avant toi.",
+        expiredTitle: "Demande expirée",
+        expiredText: "Plus besoin de répondre.",
+        cancelledTitle: "Demande retirée",
+        cancelledText: "La personne qui l'a demandé n'en a plus besoin.",
+        invalidTitle: "Lien non valide",
+        invalidText: "Le lien est incomplet ou n'existe plus. Demande à la personne de te le renvoyer.",
+        joinText: "Tu veux voir le reste aussi (rendez-vous, tâches, courses) ? Rejoins la famille sur KidBox.",
+        joinButton: "Rejoindre la famille",
+        footer: "KidBox · la famille organisée, ensemble",
+        someone: "la personne qui l'a demandé"
+      },
+      es: {
+        loading: "Un momento…",
+        asks: "{name} te pide:",
+        asksAnon: "Te piden:",
+        nameLabel: "¿Cómo te llamas?",
+        yes: "Me encargo yo",
+        no: "No puedo",
+        changeMind: "He cambiado de idea: me encargo yo",
+        nameRequired: "Escribe tu nombre para que sepan quién se encarga.",
+        network: "No consigo conectarme. Inténtalo de nuevo en un momento.",
+        yesTitle: "¡Gracias, te encargas tú!",
+        yesText: "{name} lo ve enseguida en KidBox.",
+        noTitle: "Vale, no pasa nada",
+        noText: "Se lo decimos a {name}.",
+        takenTitle: "Ya se encarga {name}",
+        takenText: "Alguien respondió antes que tú.",
+        expiredTitle: "Solicitud caducada",
+        expiredText: "Ya no hace falta responder.",
+        cancelledTitle: "Solicitud retirada",
+        cancelledText: "Quien te lo pidió ya no lo necesita.",
+        invalidTitle: "Enlace no válido",
+        invalidText: "El enlace está incompleto o ya no existe. Pide que te lo envíen de nuevo.",
+        joinText: "¿Quieres ver también el resto (citas, tareas, compra)? Únete a la familia en KidBox.",
+        joinButton: "Unirme a la familia",
+        footer: "KidBox · la familia organizada, juntos",
+        someone: "quien te lo pidió"
+      }
+    };
+
+    var lang = (function () {
+      var list = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "it"];
+      for (var i = 0; i < list.length; i++) {
+        var code = String(list[i] || "").toLowerCase().split(/[-_]/)[0];
+        if (STR[code]) return code;
+      }
+      return "en";
+    })();
+    var S = STR[lang];
+    document.documentElement.lang = lang;
+
+    function tr(key, params) {
+      return (S[key] || STR.it[key] || key).replace(/\{(\w+)\}/g, function (m, k) {
+        return params && params[k] != null ? params[k] : m;
+      });
+    }
+    function $(id) { return document.getElementById(id); }
+    function show(id) {
+      ["loading", "ask", "done"].forEach(function (s) { $(s).hidden = s !== id; });
+    }
+    [].forEach.call(document.querySelectorAll("[data-t]"), function (el) {
+      el.textContent = tr(el.getAttribute("data-t"));
+    });
+
+    // Archivio del browser: può mancare o lanciare (navigazione privata).
+    function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+    function save(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+    var q = new URLSearchParams(location.search);
+    var h = new URLSearchParams(location.hash.slice(1));
+    var familyId = q.get("f") || "";
+    var requestId = q.get("r") || "";
+    var token = h.get("t") || "";
+    var inviteSecret = h.get("k") || "";
+
+    var clientId = load("kidbox:requestClient");
+    if (!clientId) {
+      clientId = "b" + Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
+      save("kidbox:requestClient", clientId);
+    }
+    $("name").value = load("kidbox:requestName") || "";
+
+    var requesterName = "";
+    var inviteId = null;
+
+    function call(body) {
+      body.familyId = familyId;
+      body.requestId = requestId;
+      body.token = token;
+      return fetch("/api/request", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(body)
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (json) {
+          json.httpStatus = res.status;
+          return json;
+        });
+      });
+    }
+
+    function formatWhen(ms, hasTime) {
+      var opts = {timeZone: "Europe/Rome", weekday: "long", day: "numeric", month: "long"};
+      if (hasTime) { opts.hour = "2-digit"; opts.minute = "2-digit"; }
+      try { return new Intl.DateTimeFormat(lang, opts).format(new Date(ms)); } catch (e) { return ""; }
+    }
+
+    function showJoin() {
+      if (!inviteId || !inviteSecret) return;
+      $("joinLink").href = "/join?familyId=" + encodeURIComponent(familyId) +
+        "&inviteId=" + encodeURIComponent(inviteId) +
+        "#k=" + encodeURIComponent(inviteSecret);
+      $("join").hidden = false;
+    }
+
+    function done(icon, titleKey, textKey, params) {
+      $("doneIcon").textContent = icon;
+      $("doneTitle").textContent = tr(titleKey, params);
+      $("doneText").textContent = tr(textKey, params);
+      show("done");
+      showJoin();
+    }
+
+    function render(req, answered) {
+      requesterName = req.requesterName || requesterName;
+      inviteId = req.inviteId || inviteId;
+      var who = requesterName || tr("someone");
+      if (req.status === "claimed") {
+        if (req.claimedByYou) return done("🙌", "yesTitle", "yesText", {name: who});
+        return done("👍", "takenTitle", "takenText", {name: req.claimedByName || "?"});
+      }
+      if (req.status === "expired") return done("⏳", "expiredTitle", "expiredText");
+      if (req.status === "cancelled") return done("✓", "cancelledTitle", "cancelledText");
+      if (answered === "no" && req.status === "open") {
+        done("👌", "noTitle", "noText", {name: who});
+        $("changeMind").hidden = false;
+        return;
+      }
+      $("asker").textContent = requesterName ? tr("asks", {name: requesterName}) : tr("asksAnon");
+      $("title").textContent = req.title;
+      if (req.dueAt) {
+        $("when").textContent = formatWhen(req.dueAt, req.dueHasTime);
+        $("when").hidden = !$("when").textContent;
+      }
+      show("ask");
+    }
+
+    function invalid() {
+      done("🔗", "invalidTitle", "invalidText");
+      $("join").hidden = true;
+    }
+
+    function answer(value) {
+      var name = $("name").value.trim();
+      $("error").textContent = "";
+      if (value === "yes" && !name) {
+        $("error").textContent = tr("nameRequired");
+        show("ask");
+        $("name").focus();
+        return;
+      }
+      if (name) save("kidbox:requestName", name);
+      $("yes").disabled = $("no").disabled = $("changeMind").disabled = true;
+      call({action: "respond", answer: value, name: name, clientId: clientId}).then(function (res) {
+        $("yes").disabled = $("no").disabled = $("changeMind").disabled = false;
+        if (res.httpStatus === 404) return invalid();
+        if (res.error === "name_required") {
+          show("ask");
+          $("error").textContent = tr("nameRequired");
+          return;
+        }
+        if (!res.request) { $("error").textContent = tr("network"); return; }
+        $("changeMind").hidden = true;
+        render(res.request, value);
+      }).catch(function () {
+        $("yes").disabled = $("no").disabled = $("changeMind").disabled = false;
+        $("error").textContent = tr("network");
+        show("ask");
+      });
+    }
+
+    $("yes").addEventListener("click", function () { answer("yes"); });
+    $("no").addEventListener("click", function () { answer("no"); });
+    $("changeMind").addEventListener("click", function () { show("ask"); answer("yes"); });
+
+    if (!familyId || !requestId || !token) return invalid();
+    call({action: "preview", clientId: clientId}).then(function (res) {
+      if (!res.request) return res.httpStatus === 404 || res.httpStatus === 400 ? invalid() : done("⚠️", "invalidTitle", "network");
+      render(res.request, null);
+    }).catch(function () {
+      done("⚠️", "invalidTitle", "network");
+    });
+  })();
+  </script>
+</body>
+</html>

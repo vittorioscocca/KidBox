@@ -471,6 +471,9 @@ const WEB_ROUTES = {
   new_loyalty_card: "/wallet",
   wallet_ticket_reminder: "/wallet",
   geofenceEvent: "/posizione",
+  // Le richieste («Chi prende Marco giovedì?») diventano to-do.
+  family_request: "/todo",
+  family_request_resolved: "/todo",
 };
 
 /**
@@ -5365,6 +5368,8 @@ const FAMILY_SUBCOLLECTIONS = [
   // ── Todo & lista spesa ─────────────────────────────────────────
   "todos",
   "groceries",
+  // ── Richieste («Chi prende…?») ─────────────────────────────────
+  "requests",
   // ── Calendario ─────────────────────────────────────────────────
   "calendarEvents",
   "calendarFeeds",
@@ -8239,3 +8244,20 @@ exports.saveCalendarFeed = calendarFeeds.saveCalendarFeed;
 exports.deleteCalendarFeed = calendarFeeds.deleteCalendarFeed;
 exports.refreshCalendarFeeds = calendarFeeds.refreshCalendarFeeds;
 exports.uploadCalendarFeedContent = calendarFeeds.uploadCalendarFeedContent;
+
+// Richieste («Chi prende Marco giovedì?»): domanda → primo «Io» → to-do.
+// Disegno in internal/richieste-disegno.md. Gli helper delle push restano qui
+// e il modulo li riceve, così token, lingua e pulizia hanno una sola copia.
+const familyRequests = require("./familyRequests").build({
+  getTokensForUsers,
+  buildDataOnlyMessage,
+  sendMulticastAndPrune,
+  resolveMemberName,
+  isActiveMember,
+  notFamilyMemberReason: NOT_FAMILY_MEMBER,
+});
+exports.respondToRequest = familyRequests.respondToRequest;
+exports.requestPublic = familyRequests.requestPublic;
+exports.onFamilyRequestCreated = familyRequests.onFamilyRequestCreated;
+exports.onFamilyRequestUpdated = familyRequests.onFamilyRequestUpdated;
+exports.expireFamilyRequests = familyRequests.expireFamilyRequests;

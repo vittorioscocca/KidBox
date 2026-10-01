@@ -190,6 +190,93 @@ async function check(nome, promessa) {
       assertFails(env.authenticatedContext("fuori").firestore()
           .doc(`families/${FAM}/calendarFeeds/f1`).get()));
 
+  // ── RICHIESTE («Chi prende Marco giovedì?») ────────
+  //
+  // `families/{familyId}/requests/{requestId}` la CREA il client di chi chiede,
+  // ma tutto quello che succede dopo — risposte, «il primo Io vince», il to-do
+  // che nasce, la scadenza — lo scrive solo il server (`respondToRequest`,
+  // `requestPublic`, `expireFamilyRequests`). Con il wildcard di famiglia un
+  // membro poteva marcarsi da solo come chi l'ha presa, o riaprire una
+  // richiesta già chiusa. Disegno in internal/richieste-disegno.md.
+  console.log("\n── RICHIESTE ──────────────────────────────────────");
+  const ORA = Date.now();
+  const richiesta = (extra = {}) => ({
+    kind: "todo",
+    title: "Prendere Marco",
+    dueAt: new Date(ORA + 2 * 24 * 3600 * 1000),
+    dueHasTime: true,
+    listId: "lista1",
+    childId: "",
+    createdBy: MEMBRO,
+    createdVia: "app",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    recipients: [UID],
+    expiresAt: new Date(ORA + 2 * 24 * 3600 * 1000),
+    status: "open",
+    external: {label: "Nonna", tokenHash: "a".repeat(64), inviteId: "inv-r1"},
+    ...extra,
+  });
+  const reqPath = (id) => `families/${FAM}/requests/${id}`;
+  await check("richiesta: il membro la crea",
+      assertSucceeds(dbMembro.doc(reqPath("r1")).set(richiesta())));
+  await check("richiesta: il membro la crea senza link esterno",
+      assertSucceeds(dbMembro.doc(reqPath("r2")).set(richiesta({external: null}))));
+  await check("richiesta: gli altri membri la leggono",
+      assertSucceeds(db.doc(reqPath("r1")).get()));
+  await check("richiesta: gli altri membri le elencano (LIST)",
+      assertSucceeds(db.collection(`families/${FAM}/requests`).get()));
+  await check("richiesta: chi è fuori dalla famiglia NON la legge",
+      assertFails(env.authenticatedContext("fuori").firestore().doc(reqPath("r1")).get()));
+  await check("attacco: chi è fuori dalla famiglia NON la crea",
+      assertFails(env.authenticatedContext("fuori").firestore().doc(reqPath("rx"))
+          .set(richiesta({createdBy: "fuori"}))));
+  await check("attacco: NON si crea a nome di un altro membro",
+      assertFails(dbMembro.doc(reqPath("r3")).set(richiesta({createdBy: UID}))));
+  await check("attacco: NON nasce già presa",
+      assertFails(dbMembro.doc(reqPath("r4")).set(richiesta({
+        status: "claimed", claimedBy: {type: "member", uid: MEMBRO}}))));
+  await check("attacco: NON nasce con risposte già scritte",
+      assertFails(dbMembro.doc(reqPath("r5")).set(richiesta({
+        responses: {[UID]: {answer: "yes"}}}))));
+  await check("attacco: NON nasce con un to-do già legato",
+      assertFails(dbMembro.doc(reqPath("r6")).set(richiesta({todoId: "t1"}))));
+  await check("attacco: NON nasce con una scadenza oltre 7 giorni",
+      assertFails(dbMembro.doc(reqPath("r7")).set(richiesta({
+        expiresAt: new Date(ORA + 30 * 24 * 3600 * 1000)}))));
+  await check("attacco: NON nasce già scaduta",
+      assertFails(dbMembro.doc(reqPath("r8")).set(richiesta({
+        expiresAt: new Date(ORA - 3600 * 1000)}))));
+  await check("attacco: NON si finge l'apertura del link",
+      assertFails(dbMembro.doc(reqPath("r9")).set(richiesta({
+        external: {label: "Nonna", tokenHash: "a".repeat(64), inviteId: "i", openedAt: new Date()}}))));
+  await check("attacco: NON si finge creata dal server (connettore)",
+      assertFails(dbMembro.doc(reqPath("r10")).set(richiesta({createdVia: "connector"}))));
+  await check("attacco: senza lista NON nasce (il to-do sarebbe invisibile su Android)",
+      assertFails(dbMembro.doc(reqPath("r11")).set(richiesta({listId: ""}))));
+  await check("attacco: un membro NON se la prende scrivendo il documento",
+      assertFails(db.doc(reqPath("r1")).update({
+        status: "claimed", claimedBy: {type: "member", uid: UID}})));
+  await check("attacco: un membro NON scrive la propria risposta dal client",
+      assertFails(db.doc(reqPath("r1")).update({
+        [`responses.${UID}`]: {answer: "yes"}})));
+  await check("attacco: un altro membro NON la ritira",
+      assertFails(db.doc(reqPath("r1")).update({status: "cancelled", updatedAt: new Date()})));
+  await check("attacco: chi ha chiesto NON cambia il testo dopo l'invio",
+      assertFails(dbMembro.doc(reqPath("r1")).update({title: "Altro"})));
+  await check("attacco: nemmeno chi ha chiesto la cancella",
+      assertFails(dbMembro.doc(reqPath("r1")).delete()));
+  await check("richiesta: chi ha chiesto la ritira finché è aperta",
+      assertSucceeds(dbMembro.doc(reqPath("r1")).update({
+        status: "cancelled", cancelledAt: new Date(), updatedAt: new Date()})));
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc(reqPath("r2")).update({
+      status: "claimed", claimedBy: {type: "member", uid: UID}, todoId: "t9"});
+  });
+  await check("attacco: una richiesta già presa NON si ritira (né si riapre)",
+      assertFails(dbMembro.doc(reqPath("r2")).update({
+        status: "cancelled", updatedAt: new Date()})));
+
   // ── POSIZIONE E STATO DELLE ZONE ───────────────────
   //
   // `locations/{uid}` (stato della condivisione, avatar) e `live/current`

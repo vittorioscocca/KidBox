@@ -1200,6 +1200,13 @@
         "destination": "/join.html"
       },
       {
+        "source": "/api/request",
+        "function": {
+          "functionId": "requestPublic",
+          "region": "europe-west1"
+        }
+      },
+      {
         "source": "/api/chat",
         "function": {
           "functionId": "landingChat",
