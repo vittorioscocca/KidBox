@@ -1,0 +1,35 @@
+# Novità macOS 2.3.9 — testi «Novità» per App Store Connect (Mac)
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 01/10/2026 sulle modifiche della 2.3.9: richieste di famiglia «Chiedi a qualcuno…» nei to-do (notifica con «Ci penso io» / «Non posso», il primo che accetta crea il to-do, link per chi non ha l'app con il suo nome nella lista), impegni della famiglia intorno a quell'ora mentre si chiede, l'assistente che trasforma «serve qualcuno per…» in una richiesta, campo di testo dell'assistente che cresce con le righe, bottoni di chiusura della pagina invito fissi in basso. Etichette tra virgolette = quelle del catalogo stringhe.
+
+## it
+
+• Nuove richieste di famiglia: nei to-do tocca «Chiedi a qualcuno…» e il primo che risponde «Ci penso io» se lo prende, e il to-do è suo. Puoi chiederlo anche a chi non ha l'app, con un link: il suo nome compare nella lista.
+• Mentre chiedi vedi gli impegni della famiglia intorno a quell'ora, così capisci subito chi è libero.
+• L'assistente capisce «serve qualcuno per Marco giovedì» e lo chiede in famiglia per te.
+• Nella chat con l'assistente il campo di testo si allarga mentre scrivi.
+• Nella pagina per invitare un familiare i pulsanti per proseguire sono sempre in vista.
+
+## en-GB
+
+• New family requests: in to-dos tap "Ask someone…" and the first person to answer "I'll do it" takes it on, and the to-do is theirs. You can ask people who don't have the app too, with a link: their name shows up in the list.
+• While you ask, you can see the family's plans around that time, so you know straight away who's free.
+• The assistant understands "someone needs to pick up Marco on Thursday" and asks the family for you.
+• In the assistant chat, the text box grows as you type.
+• On the page for inviting a family member, the buttons to continue are always in view.
+
+## es-ES
+
+• Nuevas peticiones en familia: en las tareas toca «Pedírselo a alguien…» y el primero que responde «Me encargo yo» se la queda, y la tarea es suya. También puedes pedírselo a quien no tiene la app, con un enlace: su nombre aparece en la lista.
+• Mientras pides, ves los compromisos de la familia en torno a esa hora, para saber enseguida quién está libre.
+• El asistente entiende «hace falta alguien para Marco el jueves» y lo pide a la familia por ti.
+• En el chat con el asistente, el campo de texto se amplía mientras escribes.
+• En la página para invitar a un familiar, los botones para continuar están siempre a la vista.
+
+## fr-FR
+
+• Nouvelles demandes en famille : dans les tâches, touchez « Demander à quelqu'un… » et le premier qui répond « Je m'en occupe » la prend, et la tâche est à lui. Vous pouvez aussi demander à quelqu'un qui n'a pas l'app, avec un lien : son nom apparaît dans la liste.
+• Pendant que vous demandez, vous voyez les engagements de la famille autour de cette heure, pour savoir tout de suite qui est libre.
+• L'assistant comprend « il faut quelqu'un pour Marco jeudi » et le demande à la famille pour vous.
+• Dans le chat avec l'assistant, le champ de texte s'agrandit pendant que vous écrivez.
+• Sur la page pour inviter un proche, les boutons pour continuer sont toujours visibles.
