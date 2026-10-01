@@ -15,7 +15,7 @@
  */
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
-import { ACTIONS_PROMPT } from "./aiActions";
+import { actionsPrompt } from "./aiActions";
 import { loadFacts, memorySection } from "./aiMemory";
 import { loadFamilyKey } from "./familyKey";
 import { decryptString } from "./noteCrypto";
@@ -339,7 +339,7 @@ export async function buildSystemPrompt({ familyId, userId, familyName, members,
 
   // Le azioni in coda: il modello deve vederle dopo i dati, così sa su che cosa
   // può agire davvero.
-  lines.push(`\n${ACTIONS_PROMPT}`);
+  lines.push(`\n${actionsPrompt()}`);
 
   return lines.filter(Boolean).join("\n");
 }

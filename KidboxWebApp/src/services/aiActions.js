@@ -22,6 +22,7 @@ import {
 import { db } from "../firebase";
 import { encryptString } from "./noteCrypto";
 import { resolveTodoListId } from "./todoTarget";
+import { createRequest } from "./requests";
 
 const START = "<<<KIDBOX_ACTIONS>>>";
 const END = "<<<END_KIDBOX_ACTIONS>>>";
@@ -35,14 +36,46 @@ ${START}
 [{"type":"grocery_add","items":["latte","pane"]}]
 ${END}
 
-Tipi supportati (date in ISO8601 UTC):
+Tipi supportati (date in ISO8601 con l'offset del fuso, vedi DATE E ORE):
 - grocery_add: {"type":"grocery_add","items":["..."],"category":"..."}
 - todo_add: {"type":"todo_add","title":"...","notes":"...","dueAt":"2026-05-17T09:00:00Z","childId":"...","listId":"..."}
 - event_add: {"type":"event_add","title":"...","startAt":"...","endAt":"...","isAllDay":false,"notes":"..."}
 - note_add: {"type":"note_add","title":"...","body":"..."}
 - health_reminder: {"type":"health_reminder","title":"...","dueAt":"..."}
+- request_add: {"type":"request_add","title":"...","dueAt":"...","notes":"...","askMembers":["Luca"],"askOutside":false,"outsideLabel":"Nonna"}
+
+RICHIESTE (request_add, non todo_add): quando l'utente cerca QUALCUNO che faccia una cosa («serve qualcuno per…», «chiedi a Luca se può…», «chi può prendere Marco?»). I familiari ricevono una notifica con «Ci penso io» / «Non posso» e il primo che accetta si prende il to-do. askMembers: i nomi dei familiari che l'utente ha indicato, come li ha scritti; omettilo per chiedere a tutti. askOutside true SOLO se l'utente nomina qualcuno che non è in famiglia (nonni, babysitter…), con outsideLabel = come lo chiama: l'app prepara un link da mandargli. dueAt con l'ora esatta: se l'utente dice solo «mattina», «pomeriggio» o «sera», chiedi l'ora e NON includere il blocco finché non la sai. A chi è fuori dall'app NON arriva nessuna notifica: di' che l'app prepara un link da mandargli. Non dire chi è libero o occupato: l'app non lo sa.
 
 NON dire "ho aggiunto" o "fatto" senza il blocco quando l'utente chiede un'aggiunta concreta.`;
+
+/**
+ * Fuso e prossimi giorni, da mettere davanti alle azioni.
+ *
+ * Senza, il modello scriveva l'ora italiana con la «Z» (UTC): un evento delle
+ * 16:30 finiva alle 18:30. E sbagliava il giorno della settimana («sabato» →
+ * il 4 invece del 3). Stesso testo su iOS e Android.
+ */
+export function actionsDateHeader(now = new Date()) {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Rome";
+  const off = -now.getTimezoneOffset();
+  const sign = off >= 0 ? "+" : "-";
+  const pad = (n) => String(Math.floor(Math.abs(n))).padStart(2, "0");
+  const offset = `${sign}${pad(off / 60)}:${pad(off % 60)}`;
+  const day = (d) =>
+    new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "numeric" }).format(d);
+  const today = new Intl.DateTimeFormat("it-IT", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  }).format(now);
+  const next = [];
+  for (let i = 1; i <= 7; i += 1) next.push(day(new Date(now.getTime() + i * 86_400_000)));
+  return `DATE E ORE: l'utente è nel fuso ${tz} (ora UTC${offset}). Scrivi ogni data con questo offset, es. "2026-10-03T16:30:00${offset}" per le 16:30 locali: MAI la Z.
+Oggi è ${today}. Prossimi giorni: ${next.join(", ")}.`;
+}
+
+/** Sezione azioni completa, con data e fuso di adesso. */
+export function actionsPrompt(now = new Date()) {
+  return `${actionsDateHeader(now)}\n${ACTIONS_PROMPT}`;
+}
 
 /**
  * Separa il blocco azioni dal testo da mostrare.
@@ -192,6 +225,69 @@ async function addNote({ familyId, uid, userName, familyKey, title, body }) {
 }
 
 /**
+ * Crea una richiesta («Chi prende Marco giovedì?») con lo stesso servizio
+ * della vista «Chiedi a…». I nomi detti dall'utente diventano account della
+ * famiglia; un nome che non si trova si dice nel riepilogo, e senza nessuno a
+ * cui chiedere la richiesta non parte. Gemello di `addRequest` su iOS/Android.
+ */
+async function addRequest({ action, familyId, uid, userName, members, familyName, defaultChildId, defaultListName, r }) {
+  const title = clean(action.title);
+  if (!title) return null;
+  const others = (members || []).filter((m) => m.id !== uid && !m.isDeleted);
+  const wanted = (action.askMembers || []).map(clean).filter(Boolean);
+  const recipients = [];
+  const unknown = [];
+  if (!wanted.length) {
+    recipients.push(...others);
+  } else {
+    for (const name of wanted) {
+      const key = name.toLowerCase();
+      const match = others.find((m) => {
+        const full = (m.displayName || "").trim().toLowerCase();
+        return full === key || full.split(" ")[0] === key;
+      });
+      if (match) recipients.push(match);
+      else unknown.push(name);
+    }
+  }
+  const askOutside = action.askOutside === true;
+  if (!recipients.length && !askOutside) return r.aiNotSentUnknown(unknown.join(", "));
+
+  // Una lista vera: il to-do nascerà lì alla prima risposta «Ci penso io».
+  const childId = action.childId ?? defaultChildId ?? "";
+  const listId = await resolveTodoListId({ familyId, childId, uid, listId: action.listId, defaultListName });
+  const outsideLabel = clean(action.outsideLabel);
+  try {
+    const created = await createRequest({
+      familyId,
+      childId,
+      listId,
+      uid,
+      title,
+      notes: clean(action.notes) || null,
+      isUrgent: false,
+      dueAt: parseDate(action.dueAt),
+      draft: {
+        recipients: recipients.map((m) => m.id),
+        askOutside,
+        outsideLabel,
+        includeInvite: action.includeInvite !== false,
+      },
+      familyName: familyName || "",
+      inviterDisplayName: userName || "",
+    });
+    const who = recipients.map((m) => (m.displayName || "").trim().split(" ")[0]).filter(Boolean);
+    if (askOutside) who.push(outsideLabel || r.outsideLower);
+    const lines = [r.aiSent(who.join(", "), title)];
+    if (unknown.length) lines.push(r.aiUnknown(unknown.join(", ")));
+    if (created.shareLink) lines.push(r.aiLink(created.shareLink));
+    return lines.join("\n");
+  } catch (err) {
+    return r.aiNotSent(err.message === "DUE_IN_PAST" ? r.dueInPast : err.message);
+  }
+}
+
+/**
  * Esegue le azioni e restituisce il riepilogo da mostrare, o `null` se non è
  * stato scritto nulla.
  *
@@ -209,6 +305,10 @@ export async function executeActions({
   loadFamilyKey,
   /** Nome della lista da creare se la famiglia non ne ha ancora nessuna. */
   defaultListName,
+  /** Per `request_add`: membri della famiglia, nome della famiglia, testi. */
+  members = [],
+  familyName = "",
+  requestTexts,
 }) {
   if (!actions.length) return null;
   const lines = [];
@@ -272,6 +372,22 @@ export async function executeActions({
             body: clean(action.body) || title,
           });
           lines.push(`Nota creata: «${title}».`);
+          break;
+        }
+        case "request_add": {
+          if (!requestTexts) break;
+          const line = await addRequest({
+            action,
+            familyId,
+            uid,
+            userName,
+            members,
+            familyName,
+            defaultChildId,
+            defaultListName,
+            r: requestTexts,
+          });
+          if (line) lines.push(line);
           break;
         }
         case "health_reminder": {

@@ -32,6 +32,12 @@ struct PlanningExecutableAction: Decodable {
     let isAllDay: Bool?
     let childId: String?
     let listId: String?
+    /// `request_add`: nomi dei familiari a cui chiedere (vuoto = tutti).
+    let askMembers: [String]?
+    /// `request_add`: chiedere anche fuori dall'app, con un link.
+    let askOutside: Bool?
+    let outsideLabel: String?
+    let includeInvite: Bool?
 
     init(
         type: String,
@@ -45,7 +51,11 @@ struct PlanningExecutableAction: Decodable {
         endAt: String? = nil,
         isAllDay: Bool? = nil,
         childId: String? = nil,
-        listId: String? = nil
+        listId: String? = nil,
+        askMembers: [String]? = nil,
+        askOutside: Bool? = nil,
+        outsideLabel: String? = nil,
+        includeInvite: Bool? = nil
     ) {
         self.type = type
         self.items = items
@@ -59,6 +69,10 @@ struct PlanningExecutableAction: Decodable {
         self.isAllDay = isAllDay
         self.childId = childId
         self.listId = listId
+        self.askMembers = askMembers
+        self.askOutside = askOutside
+        self.outsideLabel = outsideLabel
+        self.includeInvite = includeInvite
     }
 }
 
@@ -85,8 +99,32 @@ enum PlanningAIActionBlock {
         return PlanningAIProcessedReply(displayText: display, actions: actions)
     }
 
+    /// Fuso e prossimi giorni, davanti alle azioni. Senza, il modello scriveva
+    /// l'ora italiana con la «Z» (un evento delle 16:30 finiva alle 18:30) e
+    /// sbagliava il giorno della settimana. Stesso testo su Android e web.
+    static func dateHeader(now: Date = Date()) -> String {
+        let tz = TimeZone.current
+        let seconds = tz.secondsFromGMT(for: now)
+        let offset = String(format: "%@%02d:%02d", seconds >= 0 ? "+" : "-", abs(seconds) / 3600, (abs(seconds) % 3600) / 60)
+        let it = Locale(identifier: "it_IT")
+        let todayFmt = DateFormatter()
+        todayFmt.locale = it
+        todayFmt.dateFormat = "EEEE d MMMM yyyy"
+        let dayFmt = DateFormatter()
+        dayFmt.locale = it
+        dayFmt.dateFormat = "EEEE d/M"
+        let next = (1...7).compactMap { Calendar.current.date(byAdding: .day, value: $0, to: now) }.map(dayFmt.string(from:))
+        return """
+        DATE E ORE: l'utente è nel fuso \(tz.identifier) (ora UTC\(offset)). Scrivi ogni data con questo offset, \
+        es. "2026-10-03T16:30:00\(offset)" per le 16:30 locali: MAI la Z.
+        Oggi è \(todayFmt.string(from: now)). Prossimi giorni: \(next.joined(separator: ", ")).
+        """
+    }
+
     static var promptSection: String {
         """
+        \(dateHeader())
+
         AZIONI ESEGUIBILI (obbligatorio quando modifichi dati nell'app):
         Se confermi di aver aggiunto o modificato lista spesa, to-do, nota, calendario o promemoria salute, \
         includi SEMPRE alla fine del messaggio (l'app lo nasconde all'utente) un blocco JSON:
@@ -95,12 +133,22 @@ enum PlanningAIActionBlock {
         [{"type":"grocery_add","items":["latte","pane"]}]
         \(PlanningAIActionMarkers.end)
 
-        Tipi supportati (date in ISO8601 UTC):
+        Tipi supportati (date in ISO8601 con l'offset del fuso, vedi DATE E ORE):
         - grocery_add: {"type":"grocery_add","items":["..."],"category":"..."}
         - todo_add: {"type":"todo_add","title":"...","notes":"...","dueAt":"2026-05-17T09:00:00Z","childId":"...","listId":"..."}
         - event_add: {"type":"event_add","title":"...","startAt":"...","endAt":"...","isAllDay":false,"notes":"..."}
         - note_add: {"type":"note_add","title":"...","body":"..."}
         - health_reminder: {"type":"health_reminder","title":"...","dueAt":"..."}
+        - request_add: {"type":"request_add","title":"...","dueAt":"...","notes":"...","askMembers":["Luca"],"askOutside":false,"outsideLabel":"Nonna"}
+
+        RICHIESTE (request_add, non todo_add): quando l'utente cerca QUALCUNO che faccia una cosa \
+        («serve qualcuno per…», «chiedi a Luca se può…», «chi può prendere Marco?»). I familiari ricevono una notifica \
+        con «Ci penso io» / «Non posso» e il primo che accetta si prende il to-do. \
+        askMembers: i nomi dei familiari che l'utente ha indicato, come li ha scritti; omettilo per chiedere a tutti. \
+        askOutside true SOLO se l'utente nomina qualcuno che non è in famiglia (nonni, babysitter…), con outsideLabel = come lo chiama: \
+        l'app prepara un link da mandargli. dueAt con l'ora esatta: se l'utente dice solo «mattina», «pomeriggio» o «sera», \
+        chiedi l'ora e NON includere il blocco finché non la sai. A chi è fuori dall'app NON arriva nessuna notifica: \
+        di' che l'app prepara un link da mandargli. Non dire chi è libero o occupato: l'app non lo sa.
 
         NON dire "ho aggiunto" o "fatto" senza il blocco quando l'utente chiede un'aggiunta concreta.
 
@@ -164,6 +212,10 @@ final class PlanningActionExecutor {
                         lines.append("Nota creata: \"\(title)\".")
                     }
                 }
+            case "request_add":
+                if let line = await addRequest(action) {
+                    lines.append(line)
+                }
             case "health_reminder":
                 if let title = normalized(action.title) {
                     let due = parseDate(action.dueAt) ?? Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
@@ -226,6 +278,94 @@ final class PlanningActionExecutor {
             added += 1
         }
         return added > 0 ? added : nil
+    }
+
+    // MARK: - Richiesta di famiglia
+
+    /// Crea una richiesta («Chi prende Marco giovedì?») con lo stesso servizio
+    /// del foglio «Chiedi a…». I nomi detti dall'utente diventano account della
+    /// famiglia; un nome che non si trova si dice nel riepilogo, e senza
+    /// nessuno a cui chiedere la richiesta non parte.
+    private func addRequest(_ action: PlanningExecutableAction) async -> String? {
+        guard let title = normalized(action.title) else { return nil }
+        let fid = familyId
+        let me = uid
+        let members = ((try? modelContext.fetch(FetchDescriptor<KBFamilyMember>(
+            predicate: #Predicate { $0.familyId == fid && !$0.isDeleted }
+        ))) ?? []).filter { $0.userId != me }
+
+        let wanted = (action.askMembers ?? []).compactMap(normalized)
+        var recipients: [KBFamilyMember] = []
+        var unknown: [String] = []
+        if wanted.isEmpty {
+            recipients = members
+        } else {
+            for name in wanted {
+                let key = name.lowercased()
+                let match = members.first { m in
+                    let full = (m.displayName ?? "").lowercased()
+                    return full == key || full.split(separator: " ").first.map(String.init) == key
+                }
+                if let match { recipients.append(match) } else { unknown.append(name) }
+            }
+        }
+        let askOutside = action.askOutside == true
+        guard !recipients.isEmpty || askOutside else {
+            return String(localized: "Richiesta non inviata: non trovo in famiglia \(unknown.joined(separator: ", ")).")
+        }
+
+        // Una lista vera: il to-do nascerà lì alla prima risposta «Ci penso io».
+        // Se la famiglia non ne ha nessuna, il server ne crea una al momento.
+        let target = defaultTodoTarget(childId: action.childId, listId: action.listId)
+        let anyList = (try? modelContext.fetch(FetchDescriptor<KBTodoList>(
+            predicate: #Predicate { $0.familyId == fid && !$0.isDeleted }
+        )))?.first?.id
+        let listId = target.listId ?? anyList ?? UUID().uuidString
+
+        var draft = FamilyRequestService.Draft()
+        draft.recipients = recipients.map(\.userId)
+        draft.askOutside = askOutside
+        draft.outsideLabel = normalized(action.outsideLabel) ?? ""
+        draft.includeInvite = action.includeInvite ?? true
+
+        let familyName = (try? modelContext.fetch(FetchDescriptor<KBFamily>(
+            predicate: #Predicate { $0.id == fid }
+        )))?.first?.name ?? ""
+        let profileName = ((try? modelContext.fetch(FetchDescriptor<KBUserProfile>(
+            predicate: #Predicate { $0.uid == me }
+        )))?.first?.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let inviterName = (!profileName.isEmpty && profileName != "Utente")
+            ? profileName
+            : (Auth.auth().currentUser?.displayName ?? "")
+
+        do {
+            let created = try await FamilyRequestService.create(
+                familyId: familyId,
+                childId: target.childId,
+                listId: listId,
+                title: title,
+                notes: normalized(action.notes),
+                isUrgent: false,
+                dueAt: parseDate(action.dueAt),
+                dueHasTime: true,
+                draft: draft,
+                familyName: familyName,
+                inviterName: inviterName
+            )
+            var who = recipients.map { ($0.displayName ?? "").split(separator: " ").first.map(String.init) ?? "" }
+                .filter { !$0.isEmpty }
+            if askOutside { who.append(draft.outsideLabel.isEmpty ? String(localized: "qualcuno fuori dall'app") : draft.outsideLabel) }
+            var parts = [String(localized: "Richiesta inviata a \(who.joined(separator: ", ")): «\(title)».")]
+            if !unknown.isEmpty {
+                parts.append(String(localized: "Non trovo in famiglia: \(unknown.joined(separator: ", "))."))
+            }
+            if let link = created.shareLink {
+                parts.append(String(localized: "Link da mandare a chi non ha l'app: \(link)"))
+            }
+            return parts.joined(separator: "\n")
+        } catch {
+            return String(localized: "Richiesta non inviata: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Todo

@@ -336,7 +336,20 @@ esterno e almeno 2 famiglie passate a 2+ membri entrando da una richiesta.
    orario. `FamilyRequestAvailability` (iOS e Android), `requestAvailability`
    (web). Per renderlo davvero «chi è libero» servirebbero i partecipanti
    negli eventi: scartato per ora.
-7. Per ultima l'azione «crea richiesta» dell'assistente AI.
+7. ✅ **Azione AI `request_add`** (01/10/2026), nel blocco `KIDBOX_ACTIONS`
+   dei tre client (`PlanningAIActionBlock` iOS/Android, `aiActions.js` web):
+   `{"type":"request_add","title","dueAt","notes","askMembers":["Luca"],
+   "askOutside","outsideLabel"}`. Il client traduce i nomi in account (nome
+   intero o di battesimo), riporta quelli che non trova, e senza destinatari
+   non crea niente; con `askOutside` il riepilogo in chat porta il link.
+   Provato su Haiku: «serve qualcuno per…» → richiesta a tutti, «chiedi a
+   Luca…» → solo Luca, «sabato mattina» → chiede l'ora (3 su 3), to-do
+   semplice → resta `todo_add`. **Trovato e corretto per tutte le azioni**:
+   il prompt chiedeva date «ISO8601 UTC» senza dire il fuso, e il modello
+   scriveva l'ora italiana con la Z (eventi e to-do dell'assistente 2 ore
+   avanti) e sbagliava il giorno della settimana. Ora la sezione azioni apre
+   con fuso, offset attuale e i prossimi 7 giorni (`dateHeader` /
+   `actionsDateHeader`); Android legge anche gli offset (`OffsetDateTime`).
 8. Dopo, solo se la previsione regge: `grocery` ed `event`, l'assistente che
    propone a chi chiedere, il connettore MCP come mittente (`createdVia`).
 

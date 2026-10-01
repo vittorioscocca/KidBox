@@ -186,6 +186,9 @@ export default function Assistente({ variant = "page", onClose }) {
           loadFamilyKey: () =>
             loadFamilyKey({ familyId: currentFamilyId, userId: user.uid }),
           defaultListName: t.todo.defaultListName,
+          members,
+          familyName: currentFamily?.name || "",
+          requestTexts: t.requests,
         });
         setActionSummary(summary);
       }
