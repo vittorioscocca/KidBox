@@ -2484,22 +2484,34 @@ function storageQuotaBytesForPlan(plan) {
 const NOT_FAMILY_MEMBER = "not-family-member";
 
 /**
- * Verifica che l'utente sia davvero membro della famiglia richiesta.
+ * Verifica che l'utente faccia davvero parte della famiglia richiesta.
  *
  * CRITICO per le callable AI: il contatore quota è indicizzato su `familyId`,
  * che arriva dal client. Senza questo controllo basterebbe cambiare la stringa
  * a ogni chiamata per ottenere ogni volta un contatore vergine — cioè AI
- * illimitata a spese nostre. Stesso pattern già usato da getStorageUsage.
+ * illimitata a spese nostre. Lo usano anche prova Pro, acquisti e spazio.
+ *
+ * Stesso criterio di `isMemberOrOwner` nelle rules: membro attivo
+ * (`isActiveMember`: non cancellato E con `role`) oppure proprietario. Fino al
+ * 01/10/2026 bastava che il documento membro esistesse: passavano il membro
+ * revocato da Android (`isDeleted: true`) e il documento senza `role` ricreato
+ * dal rinomina dopo una revoca, mentre restava fuori il proprietario senza
+ * documento membro (iOS lo scrive best-effort dopo la famiglia) — e il suo
+ * client, ricevuto `NOT_FAMILY_MEMBER`, partiva con la verifica di revoca.
  * @param {string} uid
  * @param {string} familyId
  * @return {Promise<void>}
  */
 async function assertFamilyMember(uid, familyId) {
-  const memberSnap = await admin.firestore()
-      .collection("families").doc(familyId)
-      .collection("members").doc(uid).get();
-  if (!memberSnap.exists) {
-    logger.warn("AI callable: familyId non appartenente all'utente", {uid, familyId});
+  const familyRef = admin.firestore().collection("families").doc(familyId);
+  const memberSnap = await familyRef.collection("members").doc(uid).get();
+  // Il caso comune costa una lettura sola, come prima: il documento famiglia
+  // si legge solo se il documento membro non basta. `getStorageUsage` passa di
+  // qui e le sue letture contano (vedi /letture-firestore).
+  if (memberSnap.exists && isActiveMember(memberSnap.data())) return;
+  const familySnap = await familyRef.get();
+  if (!(familySnap.exists && familySnap.get("ownerUid") === uid)) {
+    logger.warn("Callable: familyId di una famiglia di cui l'utente non fa parte", {uid, familyId});
     // `details` è la parte che il client sa leggere: senza un motivo
     // macchina-leggibile un permission-denied è indistinguibile da un rifiuto
     // di piano, e il client continua a chiamare all'infinito una famiglia che
@@ -5073,16 +5085,7 @@ exports.getStorageUsage = onCall(
         throw new HttpsError("invalid-argument", "familyId richiesto.");
       }
 
-      const memberSnap = await admin.firestore()
-          .collection("families").doc(familyId)
-          .collection("members").doc(uid).get();
-      if (!memberSnap.exists) {
-        throw new HttpsError(
-            "permission-denied",
-            "Non sei membro di questa famiglia.",
-            {reason: NOT_FAMILY_MEMBER, familyId},
-        );
-      }
+      await assertFamilyMember(uid, familyId);
 
       const snap = await storageStatsRef(familyId).get();
       const legacy = snap.exists ? snap.data() : {};
@@ -5229,16 +5232,7 @@ exports.initStorageUsage = onCall(
         throw new HttpsError("invalid-argument", "familyId richiesto.");
       }
 
-      const memberSnap = await admin.firestore()
-          .collection("families").doc(familyId)
-          .collection("members").doc(uid).get();
-      if (!memberSnap.exists) {
-        throw new HttpsError(
-            "permission-denied",
-            "Non sei membro di questa famiglia.",
-            {reason: NOT_FAMILY_MEMBER, familyId},
-        );
-      }
+      await assertFamilyMember(uid, familyId);
 
       logger.info("initStorageUsage: starting", {uid, familyId});
 

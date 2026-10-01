@@ -2049,6 +2049,27 @@ exports.alexaSkill = onRequest(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Rifiuta chi non fa parte della famiglia. Stesso criterio di
+ * `isMemberOrOwner` nelle rules e di `assertFamilyMember` in index.js: membro
+ * attivo (non cancellato E con `role`) oppure proprietario. Fino al 01/10/2026
+ * bastava che il documento membro esistesse, quindi anche un membro revocato
+ * da Android (`isDeleted: true`) poteva generare un codice e collegare Alexa
+ * alla lista della spesa di una famiglia da cui era stato tolto.
+ * @param {string} familyId
+ * @param {string} uid
+ * @return {Promise<void>}
+ */
+async function assertActiveMember(familyId, uid) {
+  const familyRef = admin.firestore().collection("families").doc(familyId);
+  const memberSnap = await familyRef.collection("members").doc(uid).get();
+  const d = memberSnap.exists ? memberSnap.data() : null;
+  if (d && d.isDeleted !== true && typeof d.role === "string" && d.role.trim()) return;
+  const familySnap = await familyRef.get();
+  if (familySnap.exists && familySnap.get("ownerUid") === uid) return;
+  throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
+}
+
+/**
  * Genera un codice a 6 cifre non ancora in uso.
  * @return {Promise<string>}
  */
@@ -2075,10 +2096,7 @@ exports.createAlexaPairingCode = onCall(
         throw new HttpsError("invalid-argument", "familyId richiesto.");
       }
 
-      const memberSnap = await admin.firestore()
-          .collection("families").doc(familyId)
-          .collection("members").doc(uid).get();
-      if (!memberSnap.exists) throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
+      await assertActiveMember(familyId, uid);
 
       const code = await allocatePairingCode();
       const expiresAtMs = Date.now() + PAIRING_TTL_MS;
@@ -2143,10 +2161,7 @@ exports.getAlexaLinkStatus = onCall(
 
       // Stessa verifica di `createAlexaPairingCode`: senza, basterebbe passare
       // un familyId altrui per sapere chi in quella famiglia usa Alexa.
-      const memberSnap = await admin.firestore()
-          .collection("families").doc(familyId)
-          .collection("members").doc(uid).get();
-      if (!memberSnap.exists) throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
+      await assertActiveMember(familyId, uid);
 
       const db = admin.firestore();
       const [accounts, voices] = await Promise.all([
