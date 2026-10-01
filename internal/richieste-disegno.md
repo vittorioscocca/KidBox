@@ -170,6 +170,11 @@ mostrano «Anna (fuori dall'app)». Gli altri membri, su client vecchi, vedono
 un to-do non assegnato: accettabile, perché chi ha chiesto ha per forza il
 client nuovo.
 
+Fatto il 01/10/2026 su tutti e tre i client: il nome si mostra solo se
+`assignedTo` è vuoto, così una riassegnazione successiva a un membro vince
+senza dover cancellare il campo. Android: colonna Room `assignedExternalName`
+(versione 50).
+
 ## Notifiche
 
 Tre trigger nuovi, testi in `notificationsI18n.js` (4 lingue, lingua del
