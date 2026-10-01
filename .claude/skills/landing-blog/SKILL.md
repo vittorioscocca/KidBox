@@ -74,7 +74,11 @@ Document Intelligence propone solo: spesa, evento, to-do, nota, intervento
 veicolo, visita medica, vaccino, promemoria salute, rinomina documento.
 La posizione è continua o temporanea 2/3/8 ore, con zone e raggio regolabile
 (default 200 m). «Salva messaggio come to-do/evento/spesa/nota» **esiste solo su
-iOS**. Quando una frase descrive una funzione, verificala nel codice o in
+iOS**.
+L'assistente in chat crea eventi, to-do, note, lista della spesa, promemoria
+salute e richieste («chi prende Marco?»), **non spese**, e le esegue senza
+mostrarle prima (le spese le propone Document Intelligence da un documento
+importato). Corretto sulla landing il 01/10/2026. Quando una frase descrive una funzione, verificala nel codice o in
 `FEATURES.md` prima di scriverla in quattro lingue.
 
 ## Le regole italiane invecchiano
