@@ -298,6 +298,15 @@ final class AppDelegate: NSObject,
         }
         // ──────────────────────────────────────────────────────────────────
 
+        // ── Quick action richiesta di famiglia: Ci penso io / Non posso ─────
+        // «Ci penso io» apre l'app e il foglio con l'esito (lo fa l'handler);
+        // «Non posso» resta in background.
+        if await FamilyRequestActionHandler.handle(response: response) {
+            KBLog.auth.kbInfo("Family request quick action handled — skipping deep link")
+            return
+        }
+        // ──────────────────────────────────────────────────────────────────
+
         // ── Tap normale sulla notifica → deep link ─────────────────────────
         let notifType = userInfo["type"] as? String ?? "unknown"
         let notifKeys = userInfo.keys.map { "\($0)" }.sorted().joined(separator: ",")

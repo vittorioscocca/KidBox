@@ -43,6 +43,13 @@ struct TodoEditView: View {
     @State private var showAssigneePicker = false
     @State private var errorMessage: String? = nil
 
+    /// «Chiedi a…»: invece di assegnare, si chiede. Il to-do nasce quando
+    /// qualcuno risponde «Ci penso io». Vedi `FamilyRequestService`.
+    @State private var askDraft: FamilyRequestService.Draft? = nil
+    @State private var showAskSheet = false
+    @State private var sentRequest: FamilyRequestService.Created? = nil
+    @State private var isSending = false
+
     @State private var isVisibilitySheetPresented = false
     @State private var showVisibilityLockedAlert = false
     @State private var selectedVisibilityScope = KBVisibilityScope.family
@@ -131,7 +138,24 @@ struct TodoEditView: View {
     }
 
     private var canSave: Bool {
-        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSending
+    }
+
+    /// Si può chiedere solo creando un to-do visibile a tutta la famiglia: la
+    /// richiesta la vedono tutti i membri, e il to-do che ne nasce pure.
+    private var canAsk: Bool {
+        isNewTodo && KBVisibilityScope.normalized(selectedVisibilityScope) == KBVisibilityScope.family
+    }
+
+    /// «Luca, Maria e qualcuno fuori dall'app».
+    private var askSummary: String {
+        guard let askDraft else { return "" }
+        var parts = askDraft.recipients.map { resolvedMemberName(uid: $0) }
+        if askDraft.askOutside {
+            let label = askDraft.outsideLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+            parts.append(label.isEmpty ? String(localized: "qualcuno fuori dall'app") : label)
+        }
+        return parts.joined(separator: ", ")
     }
     
     var body: some View {
@@ -227,7 +251,7 @@ struct TodoEditView: View {
                             }
                         }
                     ))
-                    .disabled(!hasDate || dueDate == nil)
+                    .disabled(!hasDate || dueDate == nil || askDraft != nil)
                 }
                 .alert("Creare un promemoria?", isPresented: $showReminderAlert) {
                     Button("Sì") {
@@ -249,16 +273,54 @@ struct TodoEditView: View {
                 }
                 
                 if !isPrivateScope {
-                    Section("Assegnato a") {
-                        Button {
-                            showAssigneePicker = true
-                        } label: {
-                            HStack {
-                                Text(assigneeLabel)
-                                    .foregroundStyle(assignedTo == nil ? .secondary : .primary)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .foregroundStyle(.secondary)
+                    if askDraft != nil {
+                        Section {
+                            Button {
+                                showAskSheet = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: "hand.raised.fill")
+                                        .foregroundStyle(KBTheme.bubbleTint)
+                                    Text(askSummary)
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            Button("Non chiedere, assegna", role: .destructive) {
+                                askDraft = nil
+                            }
+                        } header: {
+                            Text("Chiedi a")
+                        } footer: {
+                            Text("Il to-do nasce quando qualcuno risponde «Ci penso io»: lo vedrete tutti.")
+                        }
+                    } else {
+                        Section {
+                            Button {
+                                showAssigneePicker = true
+                            } label: {
+                                HStack {
+                                    Text(assigneeLabel)
+                                        .foregroundStyle(assignedTo == nil ? .secondary : .primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            if canAsk {
+                                Button {
+                                    showAskSheet = true
+                                } label: {
+                                    Label("Chiedi a qualcuno…", systemImage: "hand.raised")
+                                }
+                            }
+                        } header: {
+                            Text("Assegnato a")
+                        } footer: {
+                            if canAsk {
+                                Text("Non sai chi può farlo? Chiedi: il primo che risponde «Ci penso io» se lo prende. Anche chi non ha l'app.")
                             }
                         }
                     }
@@ -270,7 +332,12 @@ struct TodoEditView: View {
                     Button {
                         Task { await save() }
                     } label: {
-                        Image(systemName: "checkmark")
+                        // Chiedendo parte una richiesta, non un to-do: si vede.
+                        if isSending {
+                            ProgressView()
+                        } else {
+                            Image(systemName: askDraft == nil ? "checkmark" : "paperplane.fill")
+                        }
                     }
                     .disabled(!canSave)
                 }
@@ -304,6 +371,7 @@ struct TodoEditView: View {
             }
             .onChange(of: selectedVisibilityScope) { _, _ in
                 if isPrivateScope, let uid = currentUID { assignedTo = uid }
+                if !canAsk { askDraft = nil }
             }
         }
         .sheet(isPresented: $showAssigneePicker) {
@@ -314,6 +382,12 @@ struct TodoEditView: View {
                 meDisplayName: meMember?.displayName,
                 members: otherMembers
             )
+        }
+        .sheet(isPresented: $showAskSheet) {
+            FamilyRequestAskSheet(draft: $askDraft, members: otherMembers)
+        }
+        .sheet(item: $sentRequest, onDismiss: { dismiss() }) { created in
+            FamilyRequestSentSheet(created: created)
         }
         .sheet(isPresented: $isVisibilitySheetPresented) {
             VisibilityPickerSheet(
@@ -437,6 +511,13 @@ struct TodoEditView: View {
             return hasTime ? d : kbStartOfDayReminderTime(d)
         }()
 
+        // «Chiedi a…»: niente to-do locale. Lo crea il server alla prima
+        // risposta «Ci penso io», nella lista di questo editor.
+        if let draft = askDraft, editingTodo == nil {
+            await sendRequest(draft: draft, title: trimmedTitle, notes: trimmedNotes, dueAt: resolvedDue)
+            return
+        }
+
         if let existing = editingTodo {
             // ✅ Update local fields
             existing.title = trimmedTitle
@@ -545,6 +626,59 @@ struct TodoEditView: View {
     }
 }
 
+
+// MARK: - Richiesta («Chiedi a…»)
+
+extension TodoEditView {
+
+    @MainActor
+    fileprivate func sendRequest(draft: FamilyRequestService.Draft, title: String, notes: String, dueAt: Date?) async {
+        isSending = true
+        defer { isSending = false }
+        do {
+            let created = try await FamilyRequestService.create(
+                familyId: familyId,
+                childId: childId,
+                listId: listId,
+                title: title,
+                notes: notes.isEmpty ? nil : notes,
+                isUrgent: isUrgent,
+                dueAt: dueAt,
+                dueHasTime: hasTime,
+                draft: draft,
+                familyName: familyNameForInvite(),
+                inviterName: inviterNameForInvite()
+            )
+            if created.shareLink != nil {
+                // Il foglio del link; alla sua chiusura si chiude anche l'editor.
+                sentRequest = created
+            } else {
+                dismiss()
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Nome della famiglia sull'invito, come in `InviteCodeViewModel`.
+    fileprivate func familyNameForInvite() -> String {
+        let fid = familyId
+        let desc = FetchDescriptor<KBFamily>(predicate: #Predicate { $0.id == fid })
+        return (try? modelContext.fetch(desc).first?.name) ?? ""
+    }
+
+    /// Nome di chi invita: il profilo locale, poi Firebase Auth.
+    fileprivate func inviterNameForInvite() -> String {
+        if let uid = currentUID {
+            let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
+            if let profile = try? modelContext.fetch(desc).first {
+                let name = (profile.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                if !name.isEmpty, name != "Utente" { return name }
+            }
+        }
+        return (Auth.auth().currentUser?.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
 
 // MARK: - Assignee Picker
 

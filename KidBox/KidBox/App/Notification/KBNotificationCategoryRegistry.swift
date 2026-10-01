@@ -18,7 +18,8 @@ enum KBNotificationCategoryRegistry {
         UNUserNotificationCenter.current().setNotificationCategories([
             TreatmentNotificationCategory.category,
             FitnessPlanNotificationCategory.category,
+            FamilyRequestNotificationCategory.category,
         ])
-        KBLog.app.kbDebug("Notification categories registered: terapie, piano fitness")
+        KBLog.app.kbDebug("Notification categories registered: terapie, piano fitness, richieste")
     }
 }

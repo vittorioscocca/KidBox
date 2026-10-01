@@ -210,6 +210,11 @@ struct RootHostView: View {
                 firstContent: invite.contentType
             )
         }
+        // Richiesta di famiglia aperta da una push o da una card in Home.
+        .sheet(item: $coordinator.presentedFamilyRequest) { ref in
+            FamilyRequestDetailSheet(familyId: ref.familyId, requestId: ref.requestId)
+                .environmentObject(coordinator)
+        }
         .alert(
             "Invito famiglia",
             isPresented: Binding(

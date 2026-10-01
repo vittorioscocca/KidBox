@@ -83,6 +83,8 @@ struct HomeView: View {
 
     // MARK: - Home carousel (foto famiglia + slide promozionali), circolare
     @State private var homeCarouselIndex: Int = 0
+    /// Richieste aperte della famiglia attiva («Chi prende Marco?»).
+    @State private var openFamilyRequests: [FamilyRequest] = []
     
     @Query(sort: \KBUserProfile.updatedAt, order: .reverse) private var profiles: [KBUserProfile]
     
@@ -421,6 +423,13 @@ struct HomeView: View {
                         homeCarouselDots
                     }
 
+                    // Richieste aperte («Chi prende Marco?»): sopra a tutto,
+                    // perché aspettano una risposta. Senza, la sezione non c'è.
+                    if hasFamily, !openFamilyRequests.isEmpty {
+                        FamilyRequestsHomeSection(familyId: activeFamilyId, requests: openFamilyRequests)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+
                     // Riepilogo: cosa c'è dentro le sezioni, prima delle sezioni.
                     // Vale per entrambe le modalità, lista e griglia.
                     // Finché la checklist è viva resta fuori, come le slide
@@ -584,6 +593,17 @@ struct HomeView: View {
         }
         .task(id: activeFamilyId) {
             await onboarding.refresh(modelContext: modelContext, familyId: activeFamilyId)
+        }
+        // Il listener vive quanto questo `for await`: si chiude da solo al
+        // cambio di famiglia o quando la Home esce di scena.
+        .task(id: activeFamilyId) {
+            // Si svuota solo cambiando famiglia: al ritorno dalla navigazione
+            // il task riparte, e svuotare farebbe sfarfallare la sezione.
+            if openFamilyRequests.first?.familyId != activeFamilyId { openFamilyRequests = [] }
+            guard !activeFamilyId.isEmpty else { return }
+            for await list in FamilyRequestService.observeOpen(familyId: activeFamilyId) {
+                withAnimation(.easeInOut(duration: 0.2)) { openFamilyRequests = list }
+            }
         }
         // Il ritorno alla radice dello stack è il momento che conta: l'utente ha
         // appena caricato il documento o creato l'evento, e la riga deve

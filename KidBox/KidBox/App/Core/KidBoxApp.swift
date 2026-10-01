@@ -260,6 +260,16 @@ struct KidBoxApp: App {
                             }
                             NotificationManager.shared.consumeDeepLink()
 
+                        case .familyRequest(let familyId, let requestId):
+                            KBLog.navigation.kbInfo("Deep link -> family request requestId=\(requestId)")
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.presentedFamilyRequest = FamilyRequestRef(
+                                    familyId: familyId,
+                                    requestId: requestId
+                                )
+                            }
+                            NotificationManager.shared.consumeDeepLink()
+
                         case .groceryItem(let familyId, _):
                             KBLog.navigation.kbInfo("Deep link -> open shopping list")
                             // ✅ Reset badge spesa

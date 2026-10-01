@@ -30,6 +30,7 @@ l'invito in astratto converte al 17% e la push generica allo 0%, e che il buco
 |---|---|---|
 | `kind` | `"todo"` | Unico tipo nella prima versione. Poi `"grocery"` («chi passa al supermercato?») ed `"event"`. |
 | `title` | string | In chiaro, come `todos.title` oggi (lo legge già il server per la push). |
+| `notes`, `priority` | string \| null, 0\|1 | Dall'editor; il server li copia nel to-do. La pagina del link **non** mostra le note. |
 | `dueAt` | Timestamp \| null | Copiato nel to-do. |
 | `dueHasTime` | bool | Come sul to-do. |
 | `listId` | string | **Obbligatorio.** La lista dell'editor da cui parte la richiesta. Vedi «Trappole». |
@@ -276,8 +277,25 @@ esterno e almeno 2 famiglie passate a 2+ membri entrando da una richiesta.
    rewrite `/api/request`. Prova end-to-end: richiesta presa dal link, to-do
    nato nella lista giusta con `assignedExternalName`, token sbagliato → 404,
    anteprima di una scaduta → `expired`.
-2. **iOS**: «Chiedi a…» nell'editor, card «Richieste aperte» in Home, push con
-   azioni.
+2. ✅ **iOS** — scritto e compilato il 01/10/2026 (iPhone e Mac Catalyst),
+   **non provato su device** (il simulatore non supera il login). Cartella
+   `Features/FamilyRequests/`:
+   - `FamilyRequestService`: modello, creazione (token + invito +
+     `setData`), risposta via callable, ritiro, listener legati a `.task`
+     (niente start/stop da onAppear), link salvati sul telefono di chi chiede
+     per «Invia di nuovo il link»;
+   - `FamilyRequestNotifications`: categoria `FAMILY_REQUEST` registrata in
+     `KBNotificationCategoryRegistry`; «Ci penso io» apre l'app e il foglio con
+     l'esito, «Non posso» resta in background e, se fallisce, lascia una
+     notifica locale per riprovare;
+   - `FamilyRequestViews`: foglio «Chiedi a…», foglio del link, card in Home
+     (esito nel banner globale: dopo un «Io» la card sparisce), dettaglio.
+   Editor: riga «Chiedi a qualcuno…» sotto «Assegnato a», solo per un to-do
+   nuovo visibile a tutta la famiglia; note e «urgente» passano al to-do (il
+   server li copia), il promemoria locale no. Un to-do «tutto il giorno» resta
+   chiedibile fino a fine giornata. Deep link `.familyRequest` →
+   `coordinator.presentedFamilyRequest` → foglio in `RootHostView`.
+   58 stringhe nuove nel catalogo con en/fr/es.
 3. **Android**, a parità (`/porting-android`).
 4. **Web app**: risposta da membro, poi creazione.
 5. Dopo, solo se la previsione regge: `grocery` ed `event`, l'assistente che

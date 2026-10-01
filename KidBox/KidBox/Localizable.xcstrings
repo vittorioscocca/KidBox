@@ -1,6 +1,50 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
+    "%@ (dal link)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (via the link)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (desde el enlace)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (via le lien)"
+          }
+        }
+      }
+    },
+    "%@ chiede" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is asking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pide"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ demande"
+          }
+        }
+      }
+    },
     "%@ sta condividendo la posizione" : {
       "localizations" : {
         "en" : {
@@ -138,6 +182,72 @@
         }
       }
     },
+    "Abbiamo avvisato chi hai scelto in famiglia. Ora manda il link a chi non ha l'app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We've notified the family members you chose. Now send the link to whoever doesn't have the app."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hemos avisado a quienes elegiste en la familia. Ahora envía el enlace a quien no tenga la app."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous avons prévenu les membres de la famille choisis. Envoyez maintenant le lien à ceux qui n'ont pas l'app."
+          }
+        }
+      }
+    },
+    "Accedi di nuovo per inviare la richiesta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in again to send the request."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuelve a iniciar sesión para enviar la solicitud."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnectez-vous pour envoyer la demande."
+          }
+        }
+      }
+    },
+    "Apri il to-do" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the to-do"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir la tarea"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir la tâche"
+          }
+        }
+      }
+    },
     "Attiva la prova Pro: altri %1$d messaggi e tutto il Pro per %2$d giorni, senza carta e senza rinnovo." : {
       "comment" : "Pro trial card body after the free AI messages (%1$d = AI messages in the trial, %2$d = trial days)",
       "localizations" : {
@@ -184,6 +294,94 @@
         }
       }
     },
+    "Chi l'ha ricevuta non potrà più rispondere, nemmeno dal link." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "People who received it won't be able to reply anymore, not even via the link."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quien la recibió ya no podrá responder, ni siquiera desde el enlace."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ceux qui l'ont reçue ne pourront plus répondre, même via le lien."
+          }
+        }
+      }
+    },
+    "Chiedi a" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedir a"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demander à"
+          }
+        }
+      }
+    },
+    "Chiedi a qualcuno…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask someone…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedírselo a alguien…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demander à quelqu'un…"
+          }
+        }
+      }
+    },
+    "Chiedi a…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedir a…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demander à…"
+          }
+        }
+      }
+    },
     "Chiedi di attivarla" : {
       "comment" : "Button: ask the family owner to start the Pro trial",
       "localizations" : {
@@ -203,6 +401,182 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Demander de l’activer"
+          }
+        }
+      }
+    },
+    "Ci pensa %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is on it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se encarga %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ s'en occupe"
+          }
+        }
+      }
+    },
+    "Ci pensa %@ (dal link)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is on it (via the link)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se encarga %@ (desde el enlace)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ s'en occupe (via le lien)"
+          }
+        }
+      }
+    },
+    "Ci pensa già %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is already on it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya se encarga %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ s'en occupe déjà."
+          }
+        }
+      }
+    },
+    "Ci pensi tu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're on it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te encargas tú"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous vous en occupez"
+          }
+        }
+      }
+    },
+    "Ci penso io" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I'll do it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me encargo yo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je m'en occupe"
+          }
+        }
+      }
+    },
+    "Come lo chiami? (es. Nonna)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What do you call them? (e.g. Grandma)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cómo lo llamas? (p. ej. Abuela)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment l'appelez-vous ? (ex. Mamie)"
+          }
+        }
+      }
+    },
+    "Con un link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With a link"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con un enlace"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec un lien"
+          }
+        }
+      }
+    },
+    "Copia il link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy the link"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar el enlace"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copier le lien"
           }
         }
       }
@@ -229,6 +603,50 @@
         }
       }
     },
+    "Fatto: è nei tuoi to-do, e in famiglia lo vedono tutti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done: it's in your to-dos, and everyone in the family can see it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hecho: está en tus tareas, y en la familia la ven todos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C'est fait : la tâche est dans les vôtres, et toute la famille la voit."
+          }
+        }
+      }
+    },
+    "Forse è stata ritirata, o non sei più in questa famiglia." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It may have been withdrawn, or you're no longer in this family."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quizá se retiró, o ya no estás en esta familia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elle a peut-être été retirée, ou vous ne faites plus partie de cette famille."
+          }
+        }
+      }
+    },
     "Gli itinerari di viaggio sono inclusi nella prova Pro" : {
       "comment" : "Pro trial card title from the travel plan lock",
       "localizations" : {
@@ -248,6 +666,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les itinéraires de voyage sont inclus dans l’essai Pro"
+          }
+        }
+      }
+    },
+    "Hai chiesto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You asked"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has pedido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez demandé"
+          }
+        }
+      }
+    },
+    "Hai detto: non posso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You said: I can't"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dijiste: no puedo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez dit : je ne peux pas"
           }
         }
       }
@@ -321,6 +783,116 @@
         }
       }
     },
+    "Il to-do nasce quando qualcuno risponde «Ci penso io»: lo vedrete tutti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The to-do is created when someone replies “I'll do it”: everyone will see it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tarea se crea cuando alguien responde «Me encargo yo»: la veréis todos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tâche est créée quand quelqu'un répond « Je m'en occupe » : tout le monde la verra."
+          }
+        }
+      }
+    },
+    "In attesa di una risposta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for a reply"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esperando una respuesta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En attente d'une réponse"
+          }
+        }
+      }
+    },
+    "Includi l'invito alla famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Include the family invite"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incluir la invitación a la familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inclure l'invitation à la famille"
+          }
+        }
+      }
+    },
+    "Invia di nuovo il link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send the link again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar el enlace de nuevo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renvoyer le lien"
+          }
+        }
+      }
+    },
+    "Invia il link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send the link"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar el enlace"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer le lien"
+          }
+        }
+      }
+    },
     "La prova gratuita la attiva chi ha creato la famiglia: %d giorni di Pro per tutti, senza carta. Puoi chiederlo con un tocco, riceverà una notifica." : {
       "comment" : "Pro trial card body for a member who is not the family owner (%d = trial days)",
       "localizations" : {
@@ -340,6 +912,182 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L’essai gratuit est activé par la personne qui a créé la famille : %d jours de Pro pour tous, sans carte. Demandez-le en un geste, elle recevra une notification."
+          }
+        }
+      }
+    },
+    "La scadenza è già passata: cambiala per chiedere." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The due date has already passed: change it to ask."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La fecha límite ya pasó: cámbiala para pedirlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'échéance est déjà passée : modifiez-la pour demander."
+          }
+        }
+      }
+    },
+    "Non chiedere, assegna" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't ask, assign"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pedir, asignar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne pas demander, attribuer"
+          }
+        }
+      }
+    },
+    "Non posso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can't"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No puedo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je ne peux pas"
+          }
+        }
+      }
+    },
+    "Non possono: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't make it: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pueden: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne peuvent pas : %@"
+          }
+        }
+      }
+    },
+    "Non può" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No puede"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne peut pas"
+          }
+        }
+      }
+    },
+    "Non riesco a inviare la risposta. Riprova tra poco." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't send your reply. Try again shortly."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo enviar la respuesta. Inténtalo de nuevo en un momento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'envoyer la réponse. Réessayez dans un instant."
+          }
+        }
+      }
+    },
+    "Non riesco a ritirarla: forse qualcuno l'ha appena presa." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't withdraw it: someone may have just taken it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo retirar: quizá alguien acaba de cogerla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de la retirer : quelqu'un vient peut-être de la prendre."
+          }
+        }
+      }
+    },
+    "Non sai chi può farlo? Chiedi: il primo che risponde «Ci penso io» se lo prende. Anche chi non ha l'app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not sure who can do it? Ask: the first to reply “I'll do it” takes it. Even people without the app."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿No sabes quién puede hacerlo? Pregunta: el primero que responda «Me encargo yo» se lo queda. También quien no tiene la app."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous ne savez pas qui peut s'en charger ? Demandez : le premier qui répond « Je m'en occupe » la prend. Même sans l'app."
           }
         }
       }
@@ -413,6 +1161,72 @@
         }
       }
     },
+    "Ora manda il link a chi vuoi: risponde dal browser, senza installare nulla." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now send the link to whoever you like: they reply from the browser, without installing anything."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora envía el enlace a quien quieras: responde desde el navegador, sin instalar nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyez maintenant le lien à qui vous voulez : la personne répond depuis le navigateur, sans rien installer."
+          }
+        }
+      }
+    },
+    "Per i nonni, la babysitter o chi non ha KidBox: mandi il link su WhatsApp e risponde dal browser." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For grandparents, the babysitter or anyone without KidBox: send the link on WhatsApp and they reply from the browser."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para los abuelos, la canguro o quien no tenga KidBox: envías el enlace por WhatsApp y responde desde el navegador."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour les grands-parents, la baby-sitter ou toute personne sans KidBox : envoyez le lien sur WhatsApp, elle répond depuis le navigateur."
+          }
+        }
+      }
+    },
+    "Per ora in famiglia ci sei solo tu: chiedi a qualcuno fuori dall'app, con un link." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For now you're the only one in the family: ask someone outside the app, with a link."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por ahora en la familia solo estás tú: pídeselo a alguien fuera de la app, con un enlace."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour l'instant, vous êtes seul dans la famille : demandez à quelqu'un hors de l'app, avec un lien."
+          }
+        }
+      }
+    },
     "Prova Pro" : {
       "localizations" : {
         "en" : {
@@ -481,6 +1295,160 @@
         }
       }
     },
+    "Puoi pensarci tu? «%@»\nRispondi qui, anche senza app: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can you take care of it? “%@”\nReply here, even without the app: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Puedes encargarte tú? «%@»\nResponde aquí, incluso sin la app: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu peux t'en occuper ? « %@ »\nRéponds ici, même sans l'app : %@"
+          }
+        }
+      }
+    },
+    "Qualcuno fuori dall'app" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Someone outside the app"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alguien fuera de la app"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelqu'un hors de l'app"
+          }
+        }
+      }
+    },
+    "qualcuno fuori dall'app" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "someone outside the app"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "alguien fuera de la app"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "quelqu'un hors de l'app"
+          }
+        }
+      }
+    },
+    "Qualcuno ha risposto prima di te." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Someone replied before you."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alguien respondió antes que tú."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelqu'un a répondu avant vous."
+          }
+        }
+      }
+    },
+    "Questa richiesta non è più aperta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This request is no longer open."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta solicitud ya no está abierta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette demande n'est plus ouverte."
+          }
+        }
+      }
+    },
+    "Ricevono una notifica con «Ci penso io» e «Non posso»." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "They get a notification with “I'll do it” and “I can't”."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reciben una notificación con «Me encargo yo» y «No puedo»."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ils reçoivent une notification avec « Je m'en occupe » et « Je ne peux pas »."
+          }
+        }
+      }
+    },
+    "Richiesta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solicitud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demande"
+          }
+        }
+      }
+    },
     "Richiesta inviata" : {
       "comment" : "Pro trial request already sent to the family owner",
       "localizations" : {
@@ -527,6 +1495,50 @@
         }
       }
     },
+    "Richiesta non disponibile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request unavailable"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solicitud no disponible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demande indisponible"
+          }
+        }
+      }
+    },
+    "Richiesta ritirata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request withdrawn"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solicitud retirada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demande retirée"
+          }
+        }
+      }
+    },
     "Riduci" : {
       "localizations" : {
         "en" : {
@@ -545,6 +1557,182 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réduire"
+          }
+        }
+      }
+    },
+    "Risponde dal browser, senza installare nulla." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "They reply from the browser, without installing anything."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Responde desde el navegador, sin instalar nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La personne répond depuis le navigateur, sans rien installer."
+          }
+        }
+      }
+    },
+    "Risponde dal browser, senza installare nulla. Dopo può entrare in famiglia: il link vale come invito per 7 giorni e una volta sola." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "They reply from the browser, without installing anything. Afterwards they can join the family: the link works as an invite for 7 days, once only."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Responde desde el navegador, sin instalar nada. Después puede unirse a la familia: el enlace vale como invitación durante 7 días y una sola vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La personne répond depuis le navigateur, sans rien installer. Ensuite, elle peut rejoindre la famille : le lien vaut invitation pendant 7 jours, une seule fois."
+          }
+        }
+      }
+    },
+    "Risposta non inviata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply not sent"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Respuesta no enviada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réponse non envoyée"
+          }
+        }
+      }
+    },
+    "Risposte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replies"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Respuestas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réponses"
+          }
+        }
+      }
+    },
+    "Ritira" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Withdraw"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer"
+          }
+        }
+      }
+    },
+    "Ritira la richiesta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Withdraw the request"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirar la solicitud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer la demande"
+          }
+        }
+      }
+    },
+    "Ritirare la richiesta?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Withdraw the request?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Retirar la solicitud?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer la demande ?"
+          }
+        }
+      }
+    },
+    "Scaduta: nessuno ha risposto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expired: nobody replied"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caducada: nadie respondió"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expirée : personne n'a répondu"
           }
         }
       }
@@ -656,6 +1844,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "et %lld autres"
+          }
+        }
+      }
+    },
+    "Tocca per riprovare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca para intentarlo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez pour réessayer."
+          }
+        }
+      }
+    },
+    "Tocca per riprovare: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to try again: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca para intentarlo de nuevo: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez pour réessayer : %@"
+          }
+        }
+      }
+    },
+    "Tu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tú"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous"
           }
         }
       }
@@ -3653,6 +4907,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "🔴 Compromis"
+          }
+        }
+      }
+    },
+    "🙋 Ci penso io" : {
+      "comment" : "Family request notification action: I'll do it",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🙋 I'll do it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🙋 Me encargo yo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🙋 Je m'en occupe"
           }
         }
       }

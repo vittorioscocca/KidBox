@@ -73,6 +73,8 @@ final class NotificationManager: NSObject, ObservableObject {
         case chat(familyId: String, messageId: String?)
         case familyLocation(familyId: String)
         case todo(familyId: String, childId: String, listId: String, todoId: String)
+        /// Richiesta di famiglia («Chi prende Marco?»): nuova o con l'esito.
+        case familyRequest(familyId: String, requestId: String)
         case groceryItem(familyId: String, itemId: String)
         case note(familyId: String, noteId: String)
         case calendarEvent(familyId: String, eventId: String)
@@ -215,6 +217,18 @@ final class NotificationManager: NSObject, ObservableObject {
             pendingDeepLink = .todo(familyId: familyId, childId: childId, listId: listId, todoId: todoId)
             KBLog.auth.kbInfo("DeepLink set for todo familyId=\(familyId) listId=\(listId) todoId=\(todoId)")
             
+        } else if type == FamilyRequestNotificationCategory.typeNew
+                    || type == FamilyRequestNotificationCategory.typeResolved {
+            guard
+                let familyId  = userInfo["familyId"]  as? String,
+                let requestId = userInfo["requestId"] as? String
+            else {
+                KBLog.auth.kbError("Invalid family request payload")
+                return
+            }
+            pendingDeepLink = .familyRequest(familyId: familyId, requestId: requestId)
+            KBLog.auth.kbInfo("DeepLink set for familyRequest familyId=\(familyId) requestId=\(requestId)")
+
         } else if type == "new_grocery_item" {
             guard
                 let familyId = userInfo["familyId"] as? String,

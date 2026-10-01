@@ -147,6 +147,9 @@ final class AppCoordinator: ObservableObject {
     /// ID del messaggio chat da evidenziare allo scroll, impostato da una notifica di menzione.
     /// Consumato da ChatView all'apertura.
     @Published var pendingChatMentionMessageId: String? = nil
+    /// Richiesta di famiglia da mostrare nel foglio di dettaglio: la apre il
+    /// tap su una push `family_request` o su una card in Home.
+    @Published var presentedFamilyRequest: FamilyRequestRef? = nil
     
     // MARK: - Appearance
     
