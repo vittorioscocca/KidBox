@@ -1074,30 +1074,19 @@ private struct PlanningAIChatInnerView: View {
                     .padding(.bottom, 8)
             }
             
-            HStack(alignment: .center, spacing: 10) {
-                // Input field — altezza fissa single-line, espande solo se l'utente
-                // va a capo (maxHeight: 100 come safety cap)
-                ZStack(alignment: .leading) {
-                    if vm.inputText.isEmpty {
-                        Text("Chiedi all'assistente…")
-                            .foregroundStyle(.tertiary)
-                            .font(.body)
-                            .padding(.leading, 14)
-                    }
-                    TextEditor(text: $vm.inputText)
-                        .font(.body)
-                        .scrollContentBackground(.hidden)
-                    // Altezza standard single-line: 20pt testo + 2×11pt padding = 42pt
-                    // maxHeight permette espansione solo se l'utente scrive più righe
-                        .frame(height: 42)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 0)
-                }
-                .frame(height: 42)
-                .background(
-                    RoundedRectangle(cornerRadius: 21)
-                        .fill(KBTheme.inputBackground(colorScheme))
-                )
+            HStack(alignment: .bottom, spacing: 10) {
+                // Input field — parte da una riga (42pt) e cresce con il testo
+                // fino a 6 righe, poi scorre dentro.
+                TextField("Chiedi all'assistente…", text: $vm.inputText, axis: .vertical)
+                    .font(.body)
+                    .lineLimit(1...6)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 11)
+                    .frame(minHeight: 42)
+                    .background(
+                        RoundedRectangle(cornerRadius: 21)
+                            .fill(KBTheme.inputBackground(colorScheme))
+                    )
                 
                 // Send button
                 Button {
@@ -1115,6 +1104,7 @@ private struct PlanningAIChatInnerView: View {
                 }
                 .disabled(vm.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.isLoading)
                 .animation(.easeInOut(duration: 0.15), value: vm.inputText)
+                .padding(.bottom, 2)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
