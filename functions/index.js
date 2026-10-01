@@ -5498,14 +5498,52 @@ async function deleteStoragePrefix(prefix) {
 }
 
 /**
- * Counts the number of active members in a family.
+ * Chi chiama ha titolo su questa famiglia? Stesso criterio di
+ * `isMemberOrOwner` nelle rules: proprietario (`ownerUid`) oppure membro
+ * attivo (`members/{uid}` non cancellato e con `role`, vedi `isActiveMember`).
+ *
+ * Mai dall'indice `users/{uid}/memberships`: le rules lo lasciano scrivere
+ * all'utente stesso, quindi non prova niente. Fino al 01/10/2026 `deleteFamily`
+ * non controllava affatto il chiamante e `deleteAccount` si fidava
+ * dell'indice: a chiunque conoscesse un `familyId` — che sta nei QR e nei link
+ * d'invito — bastava una chiamata per cancellare per intero una famiglia con
+ * un solo membro attivo.
+ *
  * @param {string} familyId
+ * @param {string} uid
+ * @return {Promise<{exists: boolean, isOwner: boolean, isMember: boolean}>}
+ */
+async function callerStandingInFamily(familyId, uid) {
+  const familyRef = admin.firestore().collection("families").doc(familyId);
+  const [familySnap, memberSnap] = await Promise.all([
+    familyRef.get(),
+    familyRef.collection("members").doc(uid).get(),
+  ]);
+  return {
+    exists: familySnap.exists,
+    isOwner: familySnap.exists && familySnap.get("ownerUid") === uid,
+    isMember: memberSnap.exists && isActiveMember(memberSnap.data()),
+  };
+}
+
+/**
+ * Quanti membri attivi ha la famiglia OLTRE a `uid`.
+ *
+ * Contare gli altri e non il totale: col totale un proprietario senza
+ * documento membro (o con il proprio soft-deleted) e un solo altro membro
+ * attivo davano 1, e la famiglia veniva cancellata con dentro qualcuno.
+ * Un documento legacy `{familyId}_{uid}` senza `uid` nei dati conta come
+ * «altro»: nel dubbio la famiglia non si cancella.
+ *
+ * @param {string} familyId
+ * @param {string} uid
  * @return {Promise<number>}
  */
-async function countActiveMembers(familyId) {
+async function countOtherActiveMembers(familyId, uid) {
   const snap = await admin.firestore()
       .collection("families").doc(familyId).collection("members").get();
-  return snap.docs.filter((d) => d.get("isDeleted") !== true).length;
+  return snap.docs.filter((d) => isActiveMember(d.data()) &&
+    d.id !== uid && memberUidFrom(d.data(), d.id, familyId) !== uid).length;
 }
 
 /**
@@ -5559,9 +5597,12 @@ async function transferFamilyOwnershipIfNeeded(familyId, leavingUid) {
   const currentOwner = familySnap.get("ownerUid");
   if (currentOwner !== leavingUid) return null;
 
+  // `isActiveMember` e non solo `isDeleted`: un documento senza `role` (il
+  // fantasma ricreato dal rinomina dopo una revoca) non ha `createdAt`, quindi
+  // finirebbe primo nell'ordinamento e diventerebbe proprietario.
   const membersSnap = await familyRef.collection("members").get();
   const candidates = membersSnap.docs
-      .filter((d) => d.id !== leavingUid && d.get("isDeleted") !== true)
+      .filter((d) => d.id !== leavingUid && isActiveMember(d.data()))
       .sort((a, b) => {
         const ta = a.get("createdAt")?.toMillis?.() ?? 0;
         const tb = b.get("createdAt")?.toMillis?.() ?? 0;
@@ -5701,14 +5742,30 @@ exports.deleteAccount = onCall(
       const newOwners = new Set();
 
       for (const familyId of familyIds) {
-        let memberCount = 0;
+        // L'indice qui sopra lo scrive anche l'utente: che una famiglia ci
+        // compaia non dice che ne faccia parte. Si decide dal documento
+        // famiglia e dal documento membro (vedi `callerStandingInFamily`).
+        let standing = null;
+        let others = null;
         try {
-          memberCount = await countActiveMembers(familyId);
+          standing = await callerStandingInFamily(familyId, uid);
+          others = await countOtherActiveMembers(familyId, uid);
         } catch (e) {
-          memberCount = 0;
+          // Prima un errore qui valeva «zero membri», e quindi cancellava la
+          // famiglia. Ora nel dubbio se ne esce soltanto (ramo sotto).
+          logger.error("deleteAccount: famiglia non verificabile, non la cancello",
+              {familyId, uid, err: String(e)});
         }
 
-        if (memberCount > 1) {
+        if (standing && !standing.isOwner && !standing.isMember) {
+          // warn e non error: è una richiesta respinta, non un guasto nostro.
+          logger.warn("deleteAccount: famiglia nell'indice senza titolo, ignorata",
+              {familyId, callerUid: uid});
+          await membershipsRef.doc(familyId).delete().catch(() => {});
+          continue;
+        }
+
+        if (others !== 0) {
           // La famiglia sopravvive agli altri membri: se ne esce solo lui.
           // L'ordine conta — il passaggio di proprietà legge ancora la lista
           // membri, quindi va fatto PRIMA di rimuovere il suo documento.
@@ -5791,26 +5848,37 @@ exports.deleteFamily = onCall(
       if (!uid) throw new HttpsError("unauthenticated", "Not authenticated");
 
       const familyId = request.data?.familyId;
-      if (!familyId) throw new HttpsError("invalid-argument", "familyId is required");
+      if (typeof familyId !== "string" || !familyId) {
+        throw new HttpsError("invalid-argument", "familyId is required");
+      }
 
       const db = admin.firestore();
       logger.info("deleteFamily started", {uid, familyId});
 
-      // Verify family exists
-      const familySnap = await db.collection("families").doc(familyId).get();
-      if (!familySnap.exists) {
+      const standing = await callerStandingInFamily(familyId, uid);
+      if (!standing.exists) {
         logger.warn("deleteFamily: family not found", {uid, familyId});
         return {ok: true, skipped: true};
+      }
+
+      // Solo il proprietario o un membro attivo. Tutti i client chiamano
+      // da dentro la famiglia (eliminazione dall'owner rimasto solo, pulizia
+      // della famiglia vuota dell'onboarding): nessuno esce prima di chiamare.
+      if (!standing.isOwner && !standing.isMember) {
+        // warn, non error: è una richiesta respinta al client, non un guasto nostro.
+        // L'allarme "errore applicativo" conta solo severity>=ERROR (vedi internal/monitoring.md).
+        logger.warn("deleteFamily: chiamante estraneo alla famiglia", {familyId, callerUid: uid});
+        throw new HttpsError("permission-denied", "Non fai parte di questa famiglia.");
       }
 
       // Anche se isDeleted=true, completa la pulizia (membership + subcollections)
       logger.info("deleteFamily: proceeding with cleanup", {uid, familyId});
 
-      const memberCount = await countActiveMembers(familyId);
-      if (memberCount > 1) {
+      const memberCount = await countOtherActiveMembers(familyId, uid);
+      if (memberCount > 0) {
         // warn, non error: è una richiesta respinta al client, non un guasto nostro.
         // L'allarme "errore applicativo" conta solo severity>=ERROR (vedi internal/monitoring.md).
-        logger.warn("TENTATIVO DI CANCELLAZIONE ILLEGALE", {familyId, memberCount, callerUid: uid});
+        logger.warn("TENTATIVO DI CANCELLAZIONE ILLEGALE", {familyId, otherActiveMembers: memberCount, callerUid: uid});
         throw new HttpsError(
             "failed-precondition",
             "La famiglia ha ancora altri membri attivi. Rimuovili prima di eliminare la famiglia.",
