@@ -17,8 +17,16 @@ Dalla root del repo:
 
 Il terzo comando carica il modulo ed esegue tutte le definizioni
 `onCall`/`onRequest`/`onSchedule`/trigger: una firma incompatibile esplode
-qui invece che in produzione. Deve risolvere senza errori (92 export al 26/09/2026, dopo le quattro dei calendari
-iscritti: se il numero cambia, dillo).
+qui invece che in produzione. Deve risolvere senza errori (104 export al 01/10/2026, dopo le sei delle
+richieste di famiglia: se il numero cambia, dillo).
+
+Un modulo nuovo che manda push (es. `familyRequests.js`) non ricopia gli helper
+di `index.js` (`getTokensForUsers`, `buildDataOnlyMessage`,
+`sendMulticastAndPrune`, `isActiveMember`): esporta una `build(deps)` e
+`index.js` gliela chiama passandoli. Una sola copia di token, lingua e pulizia.
+Le function create in un deploy ricevono gli eventi solo dopo un paio di
+minuti: un documento scritto subito dopo il deploy può non far scattare il
+trigger (non è un bug, si rifà la prova).
 
 Poi:
 

@@ -29,7 +29,7 @@ lo fa l'utente, le sessioni restano.
 ## Il settore del giorno
 
 Rotazione di 14 giorni nella tabella di `internal/qa/PIANO-TEST.md` (1 login e
-nucleo · 2 inviti e join · 3 documenti e Wallet · 4 calendario e to-do · 5 spesa,
+nucleo · 2 inviti e join · 3 documenti e Wallet · 4 calendario, to-do e richieste · 5 spesa,
 note e spese · 6 chat e foto · 7 password · 8 salute · 9 casa, veicoli, animali ·
 10 fuori casa · 11 AI e gating · 12 abbonamento · 13 backend · 14 web app e
 localizzazione). Se l'utente non dice quale, prendi quello che tocca e dillo.

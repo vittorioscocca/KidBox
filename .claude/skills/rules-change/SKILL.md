@@ -141,7 +141,8 @@ Il wildcard `{coll}/{docId}/{subpath=**}` dà lettura e scrittura ai membri su
 **ogni** sottocollezione, anche future. Le eccezioni sono elencate lì:
 `memberKeyBackups` (né lettura né scrittura: ha una regola sua), `geofences`,
 `geofenceEvents`, `geofenceState` e `calendarFeeds` (solo lettura: hanno una
-regola loro o le scrive una function). E `locations/{uid}/**` si scrive solo
+regola loro o le scrive una function), `requests` (dal 01/10/2026: il client
+crea e ritira, il resto lo scrive il server; vedi `/richieste`). E `locations/{uid}/**` si scrive solo
 se `docId == request.auth.uid` (dal 30/09/2026: prima un membro poteva spostare
 la posizione di un altro o spegnergli la condivisione).
 Una collezione nuova che deve scrivere solo il server va **aggiunta a

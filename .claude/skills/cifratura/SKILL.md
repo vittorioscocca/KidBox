@@ -15,6 +15,12 @@ Convenzione: il campo cifrato finisce in **`Enc`** — `textEnc`, `titleEnc`,
 `bookingCodeEnc`, `barcodeTextEnc`, `locationEnc`, `arrivalLocationEnc`.
 Se aggiungi un campo con contenuto scritto dall'utente, si chiama così anche lui.
 
+Non cifrati, per scelta: titoli e note dei to-do e le **richieste di
+famiglia** (01/10/2026), perché il server le legge per la push e per creare il
+to-do. Il link pubblico di una richiesta (`/r`) porta il token nel
+**frammento** (`#t=`) e il server ne tiene solo lo SHA-256, come il segreto
+degli inviti (`#k=`), che viaggia nello stesso frammento.
+
 Su un campo `*Enc` **non** si fanno query, **non** si costruiscono indici, **non**
 si scrivono log, e **nessuna Cloud Function può migrarlo**: un cambio di schema
 su un campo cifrato non è backfillabile dal server, va fatto dai client.

@@ -41,6 +41,7 @@ i suoi commit si vedono solo con `git -C KidBoxAndroid`.
 - `/ai` — purpose, modello, unità scalate e quote; le trappole di copilota, cache e max_tokens
 - `/abbonamenti-store` — Pro/Max mensili e annuali su App Store e Play: livelli, IVA, invio in revisione, verifica via API
 - `/prova-pro` — la prova Pro di 14 giorni: concessione, interruttore, regalo alle famiglie esistenti, dove vive il testo
+- `/richieste` — richieste di famiglia («chi prende Marco?»): primo «Ci penso io» → to-do, link per chi non ha l'app, sollecito, «chi è libero», azione AI
 
 ## Divisione del lavoro
 

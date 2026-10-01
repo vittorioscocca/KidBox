@@ -99,6 +99,16 @@ sola, e il ricevitore arma la successiva quando suona (`rearmAfterFire`).
   vuol dire dare a tutta la famiglia la lettura di quel calendario: il dialogo
   lo dice.
 
+## Gli eventi non hanno partecipanti
+
+`calendarEvents` ha `childId` e `createdBy`, **non** chi partecipa. Quindi «chi è
+libero alle 16?» non si calcola dagli eventi: attribuirli a chi li ha creati è
+sbagliato (spesso un genitore inserisce gli impegni di tutti). Nel «Chiedi a…»
+delle richieste (`/richieste`) gli eventi della fascia oraria si mostrano come
+contesto non attribuito, e accanto ai membri solo i to-do **assegnati** a loro.
+Aggiungere i partecipanti agli eventi è stato scartato il 01/10/2026: lavoro
+sui tre client e valore zero finché nessuno li compila.
+
 ## Cosa non fare
 
 - **OAuth con Google Calendar API o Microsoft Graph**: scartato due volte

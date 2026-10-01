@@ -113,6 +113,13 @@ traducono**.
   verifica automatica IONOS (voleva cancellare l'MX della posta).
 - hreflang e sitemap coprono **solo le traduzioni esistenti**; un indice blog
   vuoto in una lingua va in `noindex` e fuori da sitemap e hreflang.
+- **Dopo un articolo o una pagina nuova**: la sitemap la rigenera
+  `build_blog.py` (controllare che contenga l'URL in tutte le lingue con gli
+  hreflang). Google la rilegge da solo; per accelerare servono «Invia di nuovo
+  la sitemap» e «Richiedi indicizzazione» in Search Console, che **fa
+  l'utente**: il service account `ga4-reader` è «Limitata» con scope
+  `webmasters.readonly`. Con lui si può solo leggere lo stato
+  (`sitemaps` → `lastDownloaded`, URL Inspection → «sconosciuto a Google»).
 - **Mai rimettere `fbq` o `gtag` inline in una pagina**: Pixel e GA4 partono
   solo da `/assets/consent.js`, dopo il consenso, con finalità separate. Le
   pagine nuove includono quel file (i generatori lo fanno da soli), che porta

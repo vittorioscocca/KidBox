@@ -125,6 +125,32 @@ altrimenti un 500 costa un messaggio a vita a un utente Free.
    un blocco `thinking` e **cartella clinica e piano fitness fallirebbero tutte**
    con la risposta buona in mano. Vale anche per un blocco tool davanti.
 
+## Azioni dell'assistente (`KIDBOX_ACTIONS`)
+
+Il prompt di ogni client contiene la sezione azioni
+(`PlanningAIActionBlock` su iOS e Android, `aiActions.js` sul web) e il client
+esegue il blocco **subito, senza conferma**, poi riassume cosa ha scritto.
+Tipi: `grocery_add`, `todo_add`, `event_add`, `note_add`, `health_reminder`,
+`request_add` (richieste di famiglia, vedi `/richieste`). **Non esiste
+`expense_add`**: le spese le propone Document Intelligence.
+
+8. **Le date senza fuso.** Fino al 01/10/2026 la sezione chiedeva «ISO8601
+   UTC» senza dire dove fosse l'utente: il modello scriveva l'ora italiana con
+   la Z (un evento delle 16:30 finiva alle 18:30) e sbagliava il giorno della
+   settimana («sabato» → il 4 invece del 3). Ora la sezione apre con
+   `dateHeader` / `actionsDateHeader`: fuso, offset attuale, oggi e i prossimi
+   7 giorni, e chiede date con l'offset. Android legge gli offset
+   (`OffsetDateTime`, non solo `Instant.parse`). Se aggiungi un'azione con una
+   data, passa da lì.
+9. **Le regole di prompt si provano sul modello, non a intuito.** Script
+   usa-e-getta nello scratchpad che legge la sezione vera dal sorgente web,
+   chiama Haiku con la chiave di Secret Manager
+   (`gcloud secrets versions access latest --secret=ANTHROPIC_API_KEY`, mai
+   stampata) e stampa testo e blocco per 4-5 frasi tipiche, ripetendo i casi
+   ambigui. Il 01/10/2026 così si sono visti il fuso sbagliato e «riceverà una
+   notifica» detto a chi è fuori dall'app. Costa centesimi; i test li fa lo
+   sviluppatore, quindi pesano nel report dei costi (regola 12).
+
 ## Casi particolari
 
 - **Document Intelligence**: opt-in esplicito (default off), massimo 3 pagine PDF

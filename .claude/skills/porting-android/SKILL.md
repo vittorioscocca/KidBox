@@ -163,6 +163,14 @@ Per misurare davvero: il debug dell'SDK è già attivo, `adb logcat` mostra
 9. **Anteprima chat**: resta «Nuovo messaggio» di proposito. iOS decifra nella
    Notification Service Extension, Android non ha equivalente.
 
+**Sul telefono vero, cosa si può fare via `adb`.** `run-as` legge
+`shared_prefs/` e `databases/` della build di debug (es. il link di una
+richiesta salvato dal client). Se il telefono si blocca con PIN lo
+screenshot è nero (schermata protetta): **ci si ferma**, il PIN non si
+inserisce. Un clic che scrive su Firestore lo fa nella famiglia vera
+dell'account loggato: prima di creare dati visibili agli altri membri si
+chiede, o si usa una prova che non avvisa nessuno e si pulisce subito.
+
 ## Salute
 
 10. **Health Connect: mai nascondere una metrica quando il dato manca.** La v47
@@ -208,8 +216,18 @@ Per misurare davvero: il debug dell'SDK è già attivo, `adb logcat` mostra
 ## Prima di dire «fatto»
 
 - La stessa funzione esiste su iOS: confronta campi e testi, non a memoria.
-- Compila col JBR; l'utente committa e pubblica (`git -C KidBoxAndroid`).
+- Compila col JBR; dal 30/09/2026 committo io (`git -C KidBoxAndroid`, per
+  path), il push e la pubblicazione restano all'utente.
 - Test unitari: `./gradlew :app:testDebugUnitTest` col JBR, conteggio dagli XML
-  in `app/build/test-results/testDebugUnitTest/` (30 al 26/09/2026, 7 sono `EventRecurrenceTest`).
+  in `app/build/test-results/testDebugUnitTest/` (34 al 01/10/2026, 7 sono `EventRecurrenceTest`).
+- Se hai cambiato lo schema Room: nuova `Migration` registrata in
+  `DatabaseModule` **e** il json `app/schemas/…/<versione>.json` generato
+  (va committato). C'è `fallbackToDestructiveMigration()`: una migrazione
+  mancante non fa crash, **ricrea il database in silenzio** e la sync lo
+  ripopola, quindi «l'app parte» non prova niente. Prova vera sul telefono:
+  `adb exec-out run-as it.vittorioscocca.kidbox cat databases/kidbox.db`
+  (più `-wal` e `-shm`) in una cartella, poi `sqlite3`:
+  `PRAGMA user_version` = versione nuova, colonna presente, righe locali
+  conservate (la 49→50 del 01/10/2026 provata così).
 - Se hai toccato il manifest: reinstall, non aggiornamento.
 - Aggiorna `FEATURES.md` se la parità cambia.

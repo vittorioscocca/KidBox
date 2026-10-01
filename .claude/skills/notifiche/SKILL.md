@@ -233,6 +233,37 @@ Per misurare: leggere `geofenceEvents` della famiglia, ordinare per
 `timestamp`, contare tipi ripetuti, raffiche < 2 s e coppie uscita→rientro;
 i log di `onGeofenceEvent` dicono quali eventi sono stati scartati e perché.
 
+## Notifiche con azioni (richieste di famiglia, dal 01/10/2026)
+
+Una push con bottoni sotto: «Ci penso io» / «Non posso». Il dettaglio sta in
+`/richieste`; qui le regole che valgono per ogni notifica con azioni.
+
+- **iOS**: il server mette `aps.category`, il client registra la categoria in
+  `KBNotificationCategoryRegistry` (unico punto: `setNotificationCategories`
+  sostituisce tutto) e gestisce l'azione in `AppDelegate.didReceive` **prima**
+  del deep link. Un'azione che deve mostrare un esito va `.foreground`; una in
+  background, se fallisce, lascia una notifica locale di riprova invece di
+  perdersi. Le build senza categoria mostrano la notifica normale: innocuo.
+- **Android**: i bottoni esistono solo quando la notifica la costruisce
+  `onMessageReceived`, cioè con l'app aperta. Ad app chiusa la disegna il
+  sistema dal blocco `notification` e i bottoni non ci sono: **non** si passa
+  al data-only per averli. Un'azione che apre l'app va `PendingIntent.getActivity`
+  diretto (da Android 12 un receiver non può aprire un'Activity partendo da una
+  notifica); quella in background è un `BroadcastReceiver` con `goAsync()`.
+- Su HyperOS una notifica compressa non si espande via `adb`: per verificare i
+  bottoni si legge `adb shell dumpsys notification --noredact` (`actions=2` e
+  i titoli).
+- **Web**: `webpushOptions` (server) **e** il service worker
+  (`firebase-messaging-sw.js`, che calcola la rotta da sé) vanno cambiati
+  insieme, o il clic porta in posti diversi.
+
+**Promemoria programmati dal server con un campo-orario** (`nudgeAt` del
+sollecito, come `remindAt`): la query è `campo <= now`, e in Firestore `null`
+viene prima di ogni Timestamp. Dopo l'uso il campo si **cancella**
+(`FieldValue.delete()`), mai a `null`, o il documento viene ripescato a ogni
+giro. Consumarlo in transazione **prima** di mandare: al massimo un invio
+anche se due giri si sovrappongono.
+
 ## Broadcast e nudge
 
 Il **broadcast manuale dalla console** è deployato. Il motore di nudge

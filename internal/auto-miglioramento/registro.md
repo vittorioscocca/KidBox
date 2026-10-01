@@ -58,6 +58,14 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
 - **Data**: 23/09/2026.
 - **Se smentita**: oltre ad Android c'è **un'altra sorgente di `INVALID`** che non abbiamo ancora identificato, e va trovata **prima** di accendere l'enforcement, non dopo. Candidati da guardare in quel caso: build di sviluppo in uso, versioni vecchie ancora installate, la console admin.
 
+
+### 8. Richieste di famiglia («Chi prende Marco giovedì?»)
+- **Cambio**: «Chiedi a qualcuno…» nei to-do, con link per chi non ha l'app (`kidboxapp.com/r`) che porta l'invito alla famiglia, sollecito e azione AI. Server e web live dal 01/10/2026; iOS 2.3.9 (144) e Android da pubblicare insieme. Disegno: `internal/richieste-disegno.md`, skill `/richieste`.
+- **Previsione**: nei 28 giorni dopo l'uscita sugli store, **≥ 10 richieste con link esterno** (`external` non nullo) e **≥ 2 famiglie passate a 2+ membri** entrando da un invito nato da una richiesta (`external.inviteId` con `invites.usedAt`).
+- **Misura**: collection group `requests` (esclusi `config/internalUsers` e le famiglie `ZZZ-…`): conteggio per `createdAt` con `external`; per gli ingressi, gli `inviteId` di quelle richieste incrociati con `invites.usedAt` e i membri nuovi della famiglia. Le richieste misurano se stesse anche a metà: `external.openedAt` e `answeredAt`.
+- **Data**: 28 giorni dopo l'uscita sugli store. **Da fissare qui il giorno in cui escono** (nessuna data inventata prima).
+- **Se smentita** (meno di 5 richieste con link): le famiglie continuano a chiedere direttamente su WhatsApp e il problema non era il motivo dell'invito; prima di altro lavoro sulle richieste, chiedere a 2-3 famiglie vere come si sono organizzate l'ultima volta che serviva qualcuno.
+
 ---
 
 ## Chiuse

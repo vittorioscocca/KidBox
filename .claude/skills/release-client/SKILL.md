@@ -6,8 +6,16 @@ description: Preparare una release iOS o Android di KidBox — note «Novità» 
 ## Il confine, prima di tutto
 
 **I client li pubblica l'utente.** Io scrivo i testi, li applico via API dove si
-può, e preparo. Dal 30/09/2026 committo e pusho io anche iOS e Android (vedi
-`CLAUDE.md`); la pubblicazione sugli store resta sua. Non tocco mai:
+può, e preparo. Dal 30/09/2026 committo io anche iOS e Android (vedi
+`CLAUDE.md`); il push solo quando lo dice l'utente (su `main` fa partire Xcode
+Cloud), e la pubblicazione sugli store resta sua.
+
+**Pubblicare iOS e Android insieme** quando una funzione introduce push nuove
+con deep link (es. le richieste di famiglia, iOS 2.3.9): le build vecchie
+ricevono la notifica ma il tap non apre niente, e i membri sull'altra
+piattaforma non possono rispondere. Dirlo all'utente prima della release.
+
+Non tocco mai:
 
 - `CURRENT_PROJECT_VERSION` e `MARKETING_VERSION` **di mia iniziativa**. Dal
   30/09/2026 li scrivo io, ma solo coi numeri che mi dà l'utente, in tutti e 5

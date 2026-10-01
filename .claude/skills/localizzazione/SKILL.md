@@ -27,7 +27,18 @@ quando le sue stringhe sono nel catalogo con en/fr/es.
 
 1. **Mai riscrivere `Localizable.xcstrings` con `json.dump`.** Rimescola
    l'ordine delle chiavi e cambia `{}`: 23 000 righe di diff su una modifica di
-   tre stringhe. Solo sostituzioni di testo mirate.
+   tre stringhe. Solo sostituzioni di testo mirate: una voce nuova si inserisce
+   **come testo** prima della prima chiave che la segue (confronto senza
+   maiuscole), con lo stesso formato di Xcode, poi `json.loads` per verificare
+   e un diff `--diff-algorithm=histogram` che deve avere solo righe aggiunte.
+   Xcode, alla prima apertura, riordina con il suo criterio e aggiunge i
+   `comment` di `NSLocalizedString`: è un diff di sole posizioni; controllato
+   che nessuna traduzione cambi (confronto delle chiavi in JSON), si committa
+   così. Stessa regola per `KidboxLanding/tools/i18n/*.json` (liste allineate
+   ai segmenti EN): sostituire le stringhe al loro posto, mai `json.dump`
+   (cambia l'indentazione di tutto il file).
+   Le stringhe che non vanno tradotte (un intervallo «16:00–17:00») si scrivono
+   `Text(verbatim:)`, o diventano chiavi `%@–%@` inutili nel catalogo.
 2. **`String` invece di `LocalizedStringKey`.** SwiftUI localizza solo i
    letterali passati come `LocalizedStringKey`: un letterale italiano che entra
    in una view custom con proprietà `String` **non viene nemmeno estratto da
