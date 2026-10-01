@@ -304,7 +304,13 @@ esterno e almeno 2 famiglie passate a 2+ membri entrando da una richiesta.
    (`dumpsys` li mostra, HyperOS non si lascia espandere via adb).
    Differenze da iOS: niente scadenza «tutto il giorno» (l'editor Android ha
    sempre l'orario); i bottoni sulla notifica solo ad app aperta.
-4. **Web app**: risposta da membro, poi creazione.
+4. ✅ **Web app** — live il 01/10/2026: «Chiedi a qualcuno…» nella modale del
+   to-do, richieste aperte in Home sopra la dashboard, modale di dettaglio
+   (rispondi, ritira, rimanda il link, apri il to-do → `/todo?lista=<id>`).
+   La push web apre `/?richiesta=<id>&famiglia=<id>` (sia `webpushOptions`
+   sul server sia il service worker, che calcola la rotta da sé). Componenti
+   provati in un banco Vite con dati finti; la Home da utente loggato no
+   (serve un accesso).
 5. Dopo, solo se la previsione regge: `grocery` ed `event`, l'assistente che
    propone a chi chiedere, il connettore MCP come mittente (`createdVia`).
 

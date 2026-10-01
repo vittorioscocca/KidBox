@@ -4,9 +4,12 @@ import { todosCol } from "../hooks/useTodos";
 import { useAuth } from "../AuthContext";
 import { useFamilyMembers } from "../hooks/useFamilyMembers";
 import { useTranslation } from "../i18n/LocaleContext";
-import { VISIBILITY_MEMBERS, normalizedVisibilityScope } from "../visibility";
+import { VISIBILITY_FAMILY, VISIBILITY_MEMBERS, normalizedVisibilityScope } from "../visibility";
+import { useFamily } from "../FamilyContext";
+import { createRequest } from "../services/requests";
 import Modal from "./Modal";
 import VisibilityPickerModal, { visibilityChipLabel } from "./VisibilityPickerModal";
+import { AskRequestRow, AskRequestView, RequestSentView } from "./FamilyRequests";
 
 function toLocalInputValue(date) {
   const pad = (n) => String(n).padStart(2, "0");
@@ -18,6 +21,7 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
   const { user } = useAuth();
   const { t } = useTranslation();
   const members = useFamilyMembers(familyId);
+  const { currentFamily } = useFamily();
 
   // Come `canEditVisibility` in TodoEditView: la cambia solo chi ha creato il
   // to-do (o chiunque, se il documento è legacy senza createdBy).
@@ -39,9 +43,17 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
   const [visibilityMemberIds, setVisibilityMemberIds] = useState(
     todo?.visibilityMemberIds ?? []
   );
-  const [view, setView] = useState("main"); // main | assignee | visibility
+  const [view, setView] = useState("main"); // main | assignee | visibility | ask
   const [visibilityLocked, setVisibilityLocked] = useState(false);
   const [error, setError] = useState(null);
+  // «Chiedi a…»: invece del to-do si crea una richiesta; il to-do lo crea il
+  // server alla prima risposta «Ci penso io», in questa lista. Solo per un
+  // to-do nuovo visibile a tutta la famiglia, come su iOS e Android.
+  const [askDraft, setAskDraft] = useState(null);
+  const [sentRequest, setSentRequest] = useState(null);
+  const [sending, setSending] = useState(false);
+  const canAsk = !isEdit && Boolean(listId) && visibilityScope === VISIBILITY_FAMILY;
+  const otherMembers = members.filter((m) => m.id !== user.uid);
 
   const assigneeLabel = () => {
     if (!assignedTo) return t.todo.none;
@@ -49,9 +61,39 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
     return members.find((m) => m.id === assignedTo)?.displayName || t.todo.none;
   };
 
+  const sendRequest = async (trimmed) => {
+    setSending(true);
+    setError(null);
+    try {
+      const created = await createRequest({
+        familyId,
+        childId,
+        listId,
+        uid: user.uid,
+        title: trimmed,
+        notes: notes.trim() || null,
+        isUrgent,
+        dueAt: hasDate ? new Date(dueDate) : null,
+        draft: askDraft,
+        familyName: currentFamily?.name || "",
+        inviterDisplayName: user.displayName || "",
+      });
+      if (created.shareLink) setSentRequest(created);
+      else onClose();
+    } catch (err) {
+      setError(err.message === "DUE_IN_PAST" ? t.requests.dueInPast : err.message || t.requests.sendFailed);
+    } finally {
+      setSending(false);
+    }
+  };
+
   const save = async () => {
     const trimmed = title.trim();
     if (!trimmed) return;
+    if (askDraft && canAsk) {
+      await sendRequest(trimmed);
+      return;
+    }
     const id = isEdit ? todo.id : crypto.randomUUID();
     const finalMemberIds = visibilityScope === VISIBILITY_MEMBERS ? visibilityMemberIds : [];
     try {
@@ -132,6 +174,31 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
     );
   }
 
+  if (sentRequest) {
+    return (
+      <RequestSentView
+        created={sentRequest}
+        title={title.trim()}
+        dueAt={hasDate ? new Date(dueDate) : null}
+        onDone={onClose}
+      />
+    );
+  }
+
+  if (view === "ask") {
+    return (
+      <AskRequestView
+        initial={askDraft}
+        members={otherMembers}
+        onBack={() => setView("main")}
+        onConfirm={(d) => {
+          setAskDraft(d);
+          setView("main");
+        }}
+      />
+    );
+  }
+
   if (view === "visibility") {
     return (
       <VisibilityPickerModal
@@ -142,6 +209,7 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
         onConfirm={(scope, ids) => {
           setVisibilityScope(scope);
           setVisibilityMemberIds(ids);
+          if (scope !== VISIBILITY_FAMILY) setAskDraft(null);
           setView("main");
         }}
         onClose={() => setView("main")}
@@ -155,8 +223,8 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
         <button className="modal-icon-btn" onClick={onClose}>
           ✕
         </button>
-        <button className="modal-save-btn" disabled={!title.trim()} onClick={save}>
-          ✓
+        <button className="modal-save-btn" disabled={!title.trim() || sending} onClick={save}>
+          {sending ? "…" : askDraft && canAsk ? "➤" : "✓"}
         </button>
       </div>
       <div className="modal-title">
@@ -215,12 +283,22 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
         </div>
       </div>
 
-      <div className="modal-label">{t.todo.assignedTo}</div>
+      <div className="modal-label">{askDraft && canAsk ? t.requests.askSection : t.todo.assignedTo}</div>
       <div className="modal-section">
-        <div className="modal-row clickable" onClick={() => setView("assignee")}>
-          <span>{assigneeLabel()}</span>
-          <span>›</span>
-        </div>
+        {!(askDraft && canAsk) && (
+          <div className="modal-row clickable" onClick={() => setView("assignee")}>
+            <span>{assigneeLabel()}</span>
+            <span>›</span>
+          </div>
+        )}
+        {canAsk && (
+          <AskRequestRow
+            draft={askDraft}
+            members={otherMembers}
+            onEdit={() => setView("ask")}
+            onClear={() => setAskDraft(null)}
+          />
+        )}
       </div>
     </Modal>
   );

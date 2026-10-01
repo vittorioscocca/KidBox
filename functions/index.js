@@ -471,9 +471,9 @@ const WEB_ROUTES = {
   new_loyalty_card: "/wallet",
   wallet_ticket_reminder: "/wallet",
   geofenceEvent: "/posizione",
-  // Le richieste («Chi prende Marco giovedì?») diventano to-do.
-  family_request: "/todo",
-  family_request_resolved: "/todo",
+  // Le richieste («Chi prende Marco giovedì?»): vedi `webpushOptions`.
+  family_request: "/",
+  family_request_resolved: "/",
 };
 
 /**
@@ -485,7 +485,14 @@ const WEB_ROUTES = {
  * @return {object} opzioni `webpush` con link di destinazione e icona.
  */
 function webpushOptions(data) {
-  const route = (data && WEB_ROUTES[data.type]) || "/";
+  let route = (data && WEB_ROUTES[data.type]) || "/";
+  // Una richiesta di famiglia si apre in Home, nella sua modale: la rotta
+  // generica (/todo) porterebbe in una pagina dove la richiesta non c'è.
+  if (data && data.requestId &&
+      (data.type === "family_request" || data.type === "family_request_resolved")) {
+    route = `/?richiesta=${encodeURIComponent(data.requestId)}` +
+      `&famiglia=${encodeURIComponent(data.familyId || "")}`;
+  }
   return {
     fcmOptions: {link: `${WEB_APP_BASE_URL}${route}`},
     notification: {

@@ -1,0 +1,204 @@
+/* Richieste di famiglia: card in Home e modale. Arancio = --accent, come la
+   pagina pubblica kidboxapp.com/r. */
+
+.req-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.req-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%);
+  padding: 12px;
+}
+
+.req-card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.req-icon {
+  font-size: 1.3rem;
+  line-height: 1.4;
+}
+
+.req-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.req-kicker {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.req-title {
+  font-weight: 700;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.req-when {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.req-sub,
+.req-muted {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.req-chevron {
+  color: var(--muted);
+  align-self: center;
+}
+
+.req-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.req-actions.column {
+  flex-direction: column;
+}
+
+/* In colonna `flex: 1` schiaccerebbe i bottoni a altezza zero, e il testo
+   sotto ci finirebbe sopra. */
+.req-actions.column .req-btn {
+  flex: none;
+}
+
+.req-emoji {
+  margin-right: 6px;
+}
+
+.req-btn {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.req-btn.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.req-btn.danger {
+  border-color: #e53e3e;
+  color: #e53e3e;
+}
+
+.req-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.req-link {
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.req-link.danger,
+.req-danger-text {
+  color: #e53e3e;
+}
+
+.req-notice {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--text) 85%, transparent);
+  color: var(--bg);
+  font-size: 0.9rem;
+}
+
+.req-status {
+  color: var(--muted);
+}
+
+.req-status.ok {
+  color: #27ae60;
+  font-weight: 600;
+}
+
+.req-detail-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+}
+
+.req-detail-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.req-confirm p {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+}
+
+.req-ask-row > span:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.req-ask-label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.req-ask-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.req-inline-field {
+  margin: 0;
+  width: 100%;
+}
+
+.req-sent {
+  text-align: center;
+}
+
+.req-sent-icon {
+  font-size: 2.4rem;
+}
+
+/* `.modal-hint` ha un margine superiore negativo pensato per stare sotto un
+   campo: dopo i bottoni risalirebbe sopra «Copia il link». */
+.req-sent .modal-hint,
+.req-actions + .modal-hint {
+  margin-top: 12px;
+}

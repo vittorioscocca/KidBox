@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { doc, serverTimestamp, setDoc, writeBatch } from "firebase/firestore";
 import { db } from "../firebase";
 import { useFamily } from "../FamilyContext";
@@ -35,7 +36,12 @@ export default function TodoPage() {
   const members = useFamilyMembers(currentFamilyId);
 
   // Una sola selezione: o un filtro, o un elenco.
-  const [selection, setSelection] = useState({ type: "filter", key: "tutti" });
+  // `?lista=<id>` arriva da «Apri il to-do» di una richiesta di famiglia.
+  const [searchParams] = useSearchParams();
+  const [selection, setSelection] = useState(() => {
+    const list = searchParams.get("lista");
+    return list ? { type: "list", key: list } : { type: "filter", key: "tutti" };
+  });
   const [showNewList, setShowNewList] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState(null);

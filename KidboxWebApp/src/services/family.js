@@ -118,6 +118,9 @@ export async function createInvite({ familyId, familyName, inviterDisplayName, u
   return {
     inviteId,
     expiresAt,
+    // Lo usa il link delle richieste (`#t=…&k=<segreto>`), che porta con sé
+    // l'invito senza passare dal `/join` di questo link.
+    secret: secretB64url,
     shareLink: inviteShareLink({ familyId, inviteId, secret: secretB64url }),
     qrPayload: `kidbox://join?familyId=${familyId}&inviteId=${inviteId}&secret=${secretB64url}`,
   };

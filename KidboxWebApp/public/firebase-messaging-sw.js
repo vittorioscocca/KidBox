@@ -45,7 +45,14 @@ const ROUTES = {
   geofenceEvent: "/posizione",
 };
 
-const routeFor = (data) => ROUTES[data?.type] || "/";
+const routeFor = (data) => {
+  // Una richiesta di famiglia si apre in Home, nella sua modale (stessa rotta
+  // di `webpushOptions` in functions/index.js).
+  if ((data?.type === "family_request" || data?.type === "family_request_resolved") && data.requestId) {
+    return `/?richiesta=${encodeURIComponent(data.requestId)}&famiglia=${encodeURIComponent(data.familyId || "")}`;
+  }
+  return ROUTES[data?.type] || "/";
+};
 
 /**
  * Messaggi in background.

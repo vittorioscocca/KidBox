@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useFamily } from "../FamilyContext";
 import { useAuth } from "../AuthContext";
 import { useTranslation } from "../i18n/LocaleContext";
@@ -19,6 +19,7 @@ import {
   startOfDayMillis,
   weeklyReport,
 } from "../services/fitnessPlan";
+import { RequestsHomeSection } from "../components/FamilyRequests";
 import "./Home.css";
 
 /** Riquadro con intestazione cliccabile e fino a quattro righe di anteprima. */
@@ -40,8 +41,19 @@ function Widget({ icon, title, badge, onOpen, children, empty }) {
 }
 
 export default function Home() {
-  const { currentFamily, currentFamilyId } = useFamily();
+  const { currentFamily, currentFamilyId, selectFamily } = useFamily();
   const { user } = useAuth();
+  // Push web di una richiesta: `/?richiesta=<id>&famiglia=<id>` (functions/index.js).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pushRequestId = searchParams.get("richiesta");
+  const pushFamilyId = searchParams.get("famiglia");
+  useEffect(() => {
+    if (pushFamilyId && currentFamilyId && pushFamilyId !== currentFamilyId) selectFamily(pushFamilyId);
+  }, [pushFamilyId, currentFamilyId, selectFamily]);
+  const clearPushRequest = useCallback(
+    () => setSearchParams({}, { replace: true }),
+    [setSearchParams]
+  );
   const { t, locale } = useTranslation();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -282,6 +294,16 @@ export default function Home() {
       </div>
 
       {error && <p className="error">{error}</p>}
+
+      {/* Richieste aperte («Chi prende Marco?»): sopra a tutto, perché
+          aspettano una risposta. Senza richieste non disegna niente. */}
+      {currentFamilyId && (
+        <RequestsHomeSection
+          familyId={currentFamilyId}
+          openRequestId={!pushFamilyId || pushFamilyId === currentFamilyId ? pushRequestId : null}
+          onOpenHandled={clearPushRequest}
+        />
+      )}
 
       <div className="dashboard">
         <Widget
