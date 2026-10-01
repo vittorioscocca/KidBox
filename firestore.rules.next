@@ -469,7 +469,8 @@ service cloud.firestore {
           && request.resource.data.expiresAt <= request.time + duration.value(169, 'h')
           && !request.resource.data.keys().hasAny([
             'responses', 'claimedBy', 'claimedAt', 'todoId',
-            'resolvedAt', 'allDeclinedAt', 'cancelledAt'
+            'resolvedAt', 'allDeclinedAt', 'cancelledAt',
+            'nudgeAt', 'nudgedAt'
           ])
           && (request.resource.data.get('external', null) == null
             || (request.resource.data.external.keys().hasOnly(['label', 'tokenHash', 'inviteId'])

@@ -8268,3 +8268,4 @@ exports.requestPublic = familyRequests.requestPublic;
 exports.onFamilyRequestCreated = familyRequests.onFamilyRequestCreated;
 exports.onFamilyRequestUpdated = familyRequests.onFamilyRequestUpdated;
 exports.expireFamilyRequests = familyRequests.expireFamilyRequests;
+exports.nudgeFamilyRequests = familyRequests.nudgeFamilyRequests;

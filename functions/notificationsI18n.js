@@ -87,6 +87,7 @@ const STRINGS = {
     "request.claimedTitle": "Ci pensa {name}",
     "request.expiredTitle": "Nessuno ha risposto",
     "request.allDeclinedTitle": "Nessuno può",
+    "request.nudgeTitle": "{name} aspetta ancora una risposta",
     "request.allDeclinedBody": "{title} — chiedi a qualcuno fuori dall'app?",
 
     "wallet.ticketTitle": "🎟️ Nuovo biglietto nel Wallet",
@@ -174,6 +175,7 @@ const STRINGS = {
     "request.claimedTitle": "{name} will take care of it",
     "request.expiredTitle": "Nobody replied",
     "request.allDeclinedTitle": "Nobody can make it",
+    "request.nudgeTitle": "{name} is still waiting for an answer",
     "request.allDeclinedBody": "{title} — ask someone outside the app?",
 
     "wallet.ticketTitle": "🎟️ New ticket in Wallet",
@@ -261,6 +263,7 @@ const STRINGS = {
     "request.claimedTitle": "{name} s'en occupe",
     "request.expiredTitle": "Personne n'a répondu",
     "request.allDeclinedTitle": "Personne n'est disponible",
+    "request.nudgeTitle": "{name} attend encore une réponse",
     "request.allDeclinedBody": "{title} — demander à quelqu'un hors de l'app ?",
 
     "wallet.ticketTitle": "🎟️ Nouveau billet dans le Wallet",
@@ -350,6 +353,7 @@ const STRINGS = {
     "request.claimedTitle": "{name} se encarga",
     "request.expiredTitle": "Nadie ha respondido",
     "request.allDeclinedTitle": "Nadie puede",
+    "request.nudgeTitle": "{name} todavía espera una respuesta",
     "request.allDeclinedBody":
       "{title} — ¿pedírselo a alguien fuera de la app?",
 

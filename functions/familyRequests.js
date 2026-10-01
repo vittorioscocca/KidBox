@@ -157,6 +157,88 @@ function formatWhen(date, hasTime, lang) {
   }
 }
 
+// ── Sollecito ───────────────────────────────────────────────────────────────
+//
+// Chi non ha ancora risposto riceve un solo promemoria: alle 19:00 del giorno
+// della richiesta, o 3 ore dopo se è nata dalle 16 in poi. Mai di notte (fra
+// le 21:30 e le 8:00 slitta alle 8) e mai a ridosso della scadenza: per una
+// richiesta che scade presto arriva a metà del tempo, e se nemmeno quello ha
+// senso non arriva. Scelta dell'utente del 01/10/2026.
+
+const NUDGE_EVENING_HOUR = 19;
+const NUDGE_LATE_FROM_HOUR = 16;
+const NUDGE_AFTER_MS = 3 * 3600 * 1000;
+const NUDGE_QUIET_FROM_MIN = 21 * 60 + 30;
+const NUDGE_QUIET_TO_MIN = 8 * 60;
+const NUDGE_MARGIN_MS = 30 * 60 * 1000;
+
+/**
+ * Data e ora di Roma di un istante.
+ * @param {number} ms
+ * @return {{y: number, mo: number, d: number, h: number, mi: number}}
+ */
+function romeParts(ms) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(new Date(ms));
+  const get = (type) => Number(parts.find((p) => p.type === type).value);
+  return {y: get("year"), mo: get("month"), d: get("day"), h: get("hour"), mi: get("minute")};
+}
+
+/**
+ * L'istante delle `h:mi` di Roma nel giorno di Roma di `ms` (più `addDays`).
+ * Il processo gira in UTC: senza correggere lo scarto le 19 diventerebbero le
+ * 21 d'estate.
+ * @param {number} ms
+ * @param {number} h
+ * @param {number} mi
+ * @param {number} addDays
+ * @return {number}
+ */
+function romeAt(ms, h, mi, addDays = 0) {
+  const p = romeParts(ms);
+  const guess = Date.UTC(p.y, p.mo - 1, p.d + addDays, h, mi);
+  const w = romeParts(guess);
+  return guess - (Date.UTC(w.y, w.mo - 1, w.d, w.h, w.mi) - guess);
+}
+
+/**
+ * Vero fra le 21:30 e le 8:00 di Roma.
+ * @param {number} ms
+ * @return {boolean}
+ */
+function inQuietHours(ms) {
+  const p = romeParts(ms);
+  const min = p.h * 60 + p.mi;
+  return min >= NUDGE_QUIET_FROM_MIN || min < NUDGE_QUIET_TO_MIN;
+}
+
+/**
+ * Quando sollecitare chi non ha risposto, o `null` se non ha senso.
+ * @param {number} createdMs
+ * @param {?number} expiresMs
+ * @return {?number}
+ */
+function computeNudgeAt(createdMs, expiresMs) {
+  const created = romeParts(createdMs);
+  let at = created.h < NUDGE_LATE_FROM_HOUR ?
+    romeAt(createdMs, NUDGE_EVENING_HOUR, 0) :
+    createdMs + NUDGE_AFTER_MS;
+  if (inQuietHours(at)) {
+    const p = romeParts(at);
+    const lateEvening = p.h * 60 + p.mi >= NUDGE_QUIET_FROM_MIN;
+    at = romeAt(at, 8, 0, lateEvening ? 1 : 0);
+  }
+  if (expiresMs != null && at > expiresMs - NUDGE_MARGIN_MS) {
+    // Scade prima: a metà del tempo, se ne resta abbastanza e non è notte.
+    const mid = createdMs + (expiresMs - createdMs) / 2;
+    if (mid - createdMs < NUDGE_MARGIN_MS || inQuietHours(mid)) return null;
+    at = Math.round(mid);
+  }
+  return at;
+}
+
 /**
  * Lista in cui far nascere il to-do, letta DENTRO la transazione.
  *
@@ -517,6 +599,14 @@ function build(deps) {
           return;
         }
 
+        // Il sollecito si programma qui e non nel client: vale anche per le
+        // richieste create dalle build già pubblicate.
+        const nudgeAt = computeNudgeAt(msOf(data.createdAt) ?? Date.now(), msOf(data.expiresAt));
+        if (nudgeAt) {
+          await event.data.ref.update({nudgeAt: admin.firestore.Timestamp.fromMillis(nudgeAt)})
+              .catch((e) => logger.warn("onFamilyRequestCreated: sollecito non programmato", {requestId, error: e.message}));
+        }
+
         const requesterName = await resolveMemberName(familyId, data.createdBy);
         const due = data.dueAt ? data.dueAt.toDate() : null;
         await pushTo(targets, (lang) => ({
@@ -599,17 +689,81 @@ function build(deps) {
       },
   );
 
+  /**
+   * Sollecito: una push, una volta sola, ai membri a cui si è chiesto e che non
+   * hanno ancora risposto. Stesso `type` e stessi bottoni della push nuova,
+   * così i client già pubblicati la aprono e la gestiscono senza modifiche.
+   *
+   * `nudgeAt` si CANCELLA dopo l'uso, non si mette a null: nelle query di
+   * intervallo `null` viene prima di ogni Timestamp, e `nudgeAt <= now`
+   * ripescherebbe il documento a ogni giro (la trappola di `remindAt`).
+   */
+  const nudgeFamilyRequests = onSchedule(
+      {schedule: "every 15 minutes", timeZone: TZ, region: REGION, timeoutSeconds: 120},
+      async () => {
+        const db = admin.firestore();
+        const {FieldValue, Timestamp} = admin.firestore;
+        const snap = await db.collectionGroup("requests")
+            .where("status", "==", "open")
+            .where("nudgeAt", "<=", Timestamp.now())
+            .limit(100)
+            .get();
+        let sent = 0;
+        for (const doc of snap.docs) {
+          if (doc.ref.parent.parent?.parent?.id !== "families") continue;
+          const familyId = doc.ref.parent.parent.id;
+          // Prima si consuma, poi si manda: al massimo un sollecito, anche se
+          // due giri dello scheduler si sovrappongono.
+          const data = await db.runTransaction(async (tx) => {
+            const fresh = await tx.get(doc.ref);
+            const d = fresh.data();
+            if (!d || !d.nudgeAt) return null;
+            tx.update(doc.ref, {nudgeAt: FieldValue.delete(), nudgedAt: FieldValue.serverTimestamp()});
+            const due = (msOf(d.nudgeAt) ?? Infinity) <= Date.now();
+            const open = d.status === "open" && (msOf(d.expiresAt) ?? Infinity) > Date.now();
+            return due && open ? d : null;
+          }).catch((e) => {
+            logger.warn("nudgeFamilyRequests: non consumato", {path: doc.ref.path, error: e.message});
+            return null;
+          });
+          if (!data) continue;
+
+          const answered = new Set(Object.keys(data.responses || {}));
+          const asked = [...new Set((Array.isArray(data.recipients) ? data.recipients : [])
+              .filter((uid) => typeof uid === "string" && uid && uid !== data.createdBy && !answered.has(uid)))];
+          if (asked.length === 0) continue;
+          const famRef = db.collection("families").doc(familyId);
+          const memberSnaps = await db.getAll(...asked.map((uid) => famRef.collection("members").doc(uid)));
+          const pending = asked.filter((uid, i) =>
+            isActiveMember(memberSnaps[i].exists ? memberSnaps[i].data() : null));
+          if (pending.length === 0) continue;
+
+          const requesterName = await resolveMemberName(familyId, data.createdBy);
+          const due = data.dueAt ? data.dueAt.toDate() : null;
+          await pushTo(pending, (lang) => ({
+            title: tn(lang, "request.nudgeTitle", {name: firstName(requesterName) || requesterName}),
+            body: due ?
+              tn(lang, "request.bodyWhen", {title: data.title, when: formatWhen(due, data.dueHasTime !== false, lang)}) :
+              data.title,
+          }), {type: "family_request", familyId, requestId: doc.id}, "nudgeFamilyRequests");
+          sent++;
+        }
+        if (snap.size > 0) logger.info("nudgeFamilyRequests", {candidate: snap.size, sent});
+      },
+  );
+
   return {
     respondToRequest,
     requestPublic,
     onFamilyRequestCreated,
     onFamilyRequestUpdated,
     expireFamilyRequests,
+    nudgeFamilyRequests,
   };
 }
 
 module.exports = {
   build,
   // Per i test: la logica pura senza Firestore.
-  _internals: {applyResponse, sha256hex, tokenMatches, firstName, cleanName, allRecipientsDeclined, formatWhen, publicView},
+  _internals: {computeNudgeAt, romeAt, applyResponse, sha256hex, tokenMatches, firstName, cleanName, allRecipientsDeclined, formatWhen, publicView},
 };

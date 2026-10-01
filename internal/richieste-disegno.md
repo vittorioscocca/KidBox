@@ -316,7 +316,20 @@ esterno e almeno 2 famiglie passate a 2+ membri entrando da una richiesta.
    sul server sia il service worker, che calcola la rotta da sé). Componenti
    provati in un banco Vite con dati finti; la Home da utente loggato no
    (serve un accesso).
-5. Dopo, solo se la previsione regge: `grocery` ed `event`, l'assistente che
+5. ✅ **Sollecito** (01/10/2026, scelta dell'utente: «parti dal sollecito»):
+   chi non ha ancora risposto riceve UNA push alle 19:00 del giorno della
+   richiesta, o 3 ore dopo se è nata dalle 16 in poi; mai fra le 21:30 e le
+   8:00 (slitta alle 8), e per le richieste che scadono prima a metà del
+   tempo (o niente, se resta meno di mezz'ora o cade di notte). `nudgeAt` lo
+   scrive `onFamilyRequestCreated` (vale anche per le build già pubblicate),
+   `nudgeFamilyRequests` ogni 15 minuti lo consuma in transazione e lo
+   CANCELLA (non null: nelle query di intervallo null viene prima di ogni
+   Timestamp). Push con lo stesso `type` e bottoni della richiesta: nessuna
+   modifica ai client. Le rules vietano `nudgeAt`/`nudgedAt` alla creazione.
+6. Poi, dopo il sollecito: «chi è libero a quell'ora» nel foglio «Chiedi a…»
+   (deterministico, dal calendario), e per ultima l'azione «crea richiesta»
+   dell'assistente AI.
+7. Dopo, solo se la previsione regge: `grocery` ed `event`, l'assistente che
    propone a chi chiedere, il connettore MCP come mittente (`createdVia`).
 
 ## Decisioni aperte

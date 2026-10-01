@@ -250,6 +250,8 @@ async function check(nome, promessa) {
   await check("attacco: NON si finge l'apertura del link",
       assertFails(dbMembro.doc(reqPath("r9")).set(richiesta({
         external: {label: "Nonna", tokenHash: "a".repeat(64), inviteId: "i", openedAt: new Date()}}))));
+  await check("attacco: NON nasce con un sollecito già programmato (lo decide il server)",
+      assertFails(dbMembro.doc(reqPath("r12")).set(richiesta({nudgeAt: new Date()}))));
   await check("attacco: NON si finge creata dal server (connettore)",
       assertFails(dbMembro.doc(reqPath("r10")).set(richiesta({createdVia: "connector"}))));
   await check("attacco: senza lista NON nasce (il to-do sarebbe invisibile su Android)",
