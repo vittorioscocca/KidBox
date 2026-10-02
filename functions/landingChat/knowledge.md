@@ -74,9 +74,12 @@ ha i propri bambini, dati, viaggi e impostazioni, completamente separati.
   contenuto.
 - I dati non vengono venduti; i dati di salute e di posizione non vengono
   condivisi con terzi per pubblicità.
-- Le funzioni AI inviano al server solo i dati necessari a rispondere, e solo
-  quando l'utente le usa. Le risposte sanitarie dell'AI sono informative e non
-  sostituiscono il medico.
+- L'assistente AI si attiva solo col consenso esplicito. A ogni domanda il
+  telefono gli manda la memoria di quello che la famiglia tiene in KidBox (salute
+  e testo dei documenti compresi), che passa dai server KidBox ad Anthropic per
+  generare la risposta; Anthropic non usa questi dati per addestrare i modelli.
+  Password, numeri dei documenti d'identità e posizione non partono mai. Le
+  risposte sanitarie dell'AI sono informative e non sostituiscono il medico.
 - Informativa completa: https://kidboxapp.com/privacy — Termini:
   https://kidboxapp.com/terms
 
@@ -89,8 +92,10 @@ prossime scadenze e per le dosi dei farmaci, storico sanitario completo sempre a
 portata di mano.
 - **Cartella clinica**: un documento riepilogativo, generato dall'AI, da
   mostrare al medico.
-- **Chiedi all'AI** sui dati sanitari: spiega esami e referti in linguaggio
-  semplice. Informativa, non sostituisce il pediatra o il medico.
+- **Chiedi all'AI** sui dati sanitari: i pulsanti AI di Salute aprono
+  l'assistente di famiglia già centrato sulla persona, sulla visita o sull'esame.
+  Spiega esami e referti in linguaggio semplice. Informativa, non sostituisce il
+  pediatra o il medico.
 - **Apple Salute (iPhone) e Health Connect (Android)**: KidBox può leggere passi,
   battito, pressione, saturazione, calorie attive, allenamenti e distanza.
 - **Piano Alimentare** (solo Pro e Max): menù settimanale creato dall'AI in base
@@ -194,12 +199,15 @@ password, estensione di condivisione (per mandare file a KidBox da altre app).
 ## Intelligenza artificiale
 
 KidBox ha diversi agenti AI, ognuno nella sezione che conosce:
-- **Assistente di famiglia**: chat che conosce calendario, to-do, spesa, spese,
-  viaggi, animali, casa, garage, note e salute della famiglia. Risponde a domande
-  («quando è la prossima visita di Marco?», «quanto abbiamo speso a maggio?») e
-  agisce: crea eventi, to-do, articoli della spesa, spese. Risponde nella lingua
-  dell'utente e ricorda le conversazioni precedenti.
-- **Consulente di salute**: le chat «Chiedi all'AI» in Salute.
+- **Assistente di famiglia**: un solo assistente con la memoria di tutta l'app:
+  calendario, to-do, spesa, spese, note, salute di tutta la famiglia con i
+  referti, testo letto dai documenti, wallet, casa, garage, animali, viaggi e chat.
+  Si apre dalla Home e dai pulsanti «Chiedi all'AI» di Salute, già centrato sulla
+  persona. Risponde a domande («quando è la prossima visita di Marco?», «quanto
+  abbiamo speso dal veterinario quest'anno?») e agisce: crea eventi, to-do, note,
+  articoli della spesa, promemoria salute e richieste («chi prende Marco?»). Le
+  spese non le crea: le propone Document Intelligence dai documenti importati.
+  Risponde nella lingua dell'utente e ricorda le conversazioni precedenti.
 - **Pianificatore di viaggi**: in Viaggi (Pro e Max).
 - **Piano Alimentare** e **Piano Fitness**: in Salute (Pro e Max).
 - **Document Intelligence**: legge documenti e propone azioni.
