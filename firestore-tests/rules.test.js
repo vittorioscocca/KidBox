@@ -8,6 +8,8 @@ const {
 
 const PROJECT_ID = "kidbox-rules-test";
 const RULES = fs.readFileSync("/Users/vscocca/KidBox/firestore.rules", "utf8");
+// Versione in attesa (vedi testa del file): le chat AI solo cifrate.
+const RULES_NEXT = fs.readFileSync("/Users/vscocca/KidBox/firestore.rules.next", "utf8");
 
 let env;
 let pass = 0;
@@ -735,6 +737,83 @@ async function check(nome, promessa) {
   await check("membro: può ancora aggiornare il proprio documento",
       assertSucceeds(dbNuovo.doc(`families/${FAM}/members/${NUOVO}`)
           .update({displayName: "Nuovo"})));
+
+  // ── CHAT AI (users/{uid}/aiConversations) ──────────
+  //
+  // Oggi si scrivono come vogliono i client (le build installate mandano il
+  // testo in chiaro). `firestore.rules.next` le vuole cifrate: lo stesso giro
+  // gira su entrambi, con le forme esatte delle scritture di iOS e del web.
+  console.log("\n── CHAT AI (users/{uid}/aiConversations) ──────────");
+  const ALTRO = "estraneo-chat";
+  const chatChiaro = {
+    conversationId: "planning-agent-" + FAM, familyId: FAM, childId: FAM,
+    visitId: "planning-agent-" + FAM, providerRaw: "claude", ownerUserId: UID,
+    isDeleted: false, summary: null,
+    messages: [{id: "m1", roleRaw: "user", content: "Quando è la visita?", createdAt: new Date()}],
+  };
+  const chatCifrata = {
+    conversationId: "planning-agent-" + FAM, familyId: FAM, childId: FAM,
+    visitId: "planning-agent-" + FAM, providerRaw: "claude", ownerUserId: UID,
+    isDeleted: false, summary: deleteField(), summaryEnc: "QUJDREVG",
+    messages: [{id: "m1", roleRaw: "user", contentEnc: "QUJDREVG", createdAt: new Date()}],
+  };
+  const chatPath = `users/${UID}/aiConversations/claude__planning-agent-${FAM}`;
+  await check("chat AI (oggi): il proprietario scrive in chiaro, come le build installate",
+      assertSucceeds(db.doc(chatPath).set(chatChiaro, {merge: true})));
+  await check("chat AI (oggi): il proprietario scrive cifrato",
+      assertSucceeds(db.doc(chatPath).set(chatCifrata, {merge: true})));
+  await check("chat AI (oggi): un altro utente NON la legge",
+      assertFails(env.authenticatedContext(ALTRO).firestore().doc(chatPath).get()));
+
+  const envChat = await initializeTestEnvironment({
+    projectId: PROJECT_ID + "-next",
+    firestore: {rules: RULES_NEXT, host: "127.0.0.1", port: 8080},
+  });
+  const legacyPath = `users/${UID}/aiConversations/claude__health-overview-v2-figlio`;
+  await envChat.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc(legacyPath).set({
+      familyId: FAM, visitId: "health-overview-v2-figlio", isDeleted: false,
+      summary: "Riassunto in chiaro",
+      messages: [{id: "v1", roleRaw: "user", content: "vecchio", createdAt: new Date()}],
+    });
+  });
+  const nx = envChat.authenticatedContext(UID).firestore();
+  await check("chat AI (next): NON passa la scrittura in chiaro di una build iOS vecchia",
+      assertFails(nx.doc(chatPath).set(chatChiaro, {merge: true})));
+  await check("chat AI (next): NON passa un riassunto in chiaro",
+      assertFails(nx.doc(chatPath).set({...chatCifrata, summary: "in chiaro"}, {merge: true})));
+  await check("chat AI (next): passa la conversazione cifrata (iOS e web nuovi)",
+      assertSucceeds(nx.doc(chatPath).set(chatCifrata, {merge: true})));
+  await check("chat AI (next): passa la ricifratura di un documento vecchio (web)",
+      assertSucceeds(nx.doc(legacyPath).set({
+        messages: [{id: "v1", roleRaw: "user", contentEnc: "QUJD", createdAt: new Date()}],
+        summary: deleteField(), summaryEnc: "QUJD",
+      }, {merge: true})));
+  await envChat.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc(legacyPath).set({summary: "di nuovo in chiaro",
+      messages: [{id: "v1", roleRaw: "user", content: "vecchio", createdAt: new Date()}]}, {merge: true});
+  });
+  await check("chat AI (next): passa isDeleted su un documento ancora in chiaro",
+      assertSucceeds(nx.doc(legacyPath).set({isDeleted: true, updatedAt: new Date()}, {merge: true})));
+  await check("chat AI (next): passa lo svuotamento («Nuova conversazione»)",
+      assertSucceeds(nx.doc(chatPath).set({messages: [], summary: null}, {merge: true})));
+  await check("chat AI (next): il proprietario la legge",
+      assertSucceeds(nx.doc(chatPath).get()));
+  await check("chat AI (next): un altro utente NON la scrive",
+      assertFails(envChat.authenticatedContext(ALTRO).firestore().doc(chatPath)
+          .set(chatCifrata, {merge: true})));
+
+  // I due file restano identici fuori dai blocchi marcati: ogni altra modifica
+  // va scritta in entrambi.
+  const senzaBlocchi = (t) => t
+      .replace(/^[\s\S]*?(?=rules_version)/, "")
+      .replace(/\n[ \t]*\/\/ BEGIN aiConversations-next(-fn)?\n[\s\S]*?\/\/ END aiConversations-next(-fn)?\n/g, "\n")
+      .replace(/\n[ \t]*match \/aiConversations\/\{conversationId\} \{\n[^\n]*\n[ \t]*\}\n/, "\n")
+      .replace(/\n\s*\n/g, "\n");
+  await check("firestore.rules.next non diverge da firestore.rules fuori dai blocchi marcati",
+      senzaBlocchi(RULES) === senzaBlocchi(RULES_NEXT) ? Promise.resolve() :
+        Promise.reject(new Error("i due file divergono: riportare la modifica in entrambi")));
+  await envChat.cleanup();
 
   console.log(`\n══ Risultato: ${pass} superati, ${fail} falliti ══\n`);
   await env.cleanup();
