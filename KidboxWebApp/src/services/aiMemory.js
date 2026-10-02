@@ -10,18 +10,28 @@
  * L'estrazione parte dopo la compattazione, sui messaggi che stanno per essere
  * archiviati: è l'unico momento in cui c'è una conversazione conclusa da
  * riassumere, ed è dove la fa anche iOS.
+ *
+ * Cifratura (dal 02/10/2026): il testo del fatto può viaggiare cifrato con la
+ * chiave di famiglia (`contentEnc`, formato di iOS e Android). La lettura
+ * capisce entrambi i formati; la scrittura cifra con l'interruttore
+ * `ai_conversations_encrypted` acceso, e allora i fatti ancora in chiaro si
+ * riscrivono cifrati la prima volta che si leggono. Senza chiave non si scrive.
  */
 import {
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDocs,
   serverTimestamp,
   setDoc,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "../firebase";
+import { auth, db } from "../firebase";
 import { askAssistant } from "./aiChat";
+import { aiConversationsEncrypted } from "./featureFlags";
+import { loadFamilyKey } from "./familyKey";
+import { decryptString, encryptString } from "./noteCrypto";
 
 /** Categorie ammesse, uguali a `MemoryFactCategory`. Una riga con una categoria
  *  fuori elenco viene scartata, come su iOS. */
@@ -62,21 +72,66 @@ const factsCol = (familyId) => collection(db, "families", familyId, "memoryFacts
 
 const millis = (value) => (value?.toMillis ? value.toMillis() : null);
 
+/** Chiave della famiglia, o null se su questo browser non c'è. */
+async function familyKeyOrNull(familyId) {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return null;
+  try {
+    return await loadFamilyKey({ familyId, userId: uid });
+  } catch {
+    return null;
+  }
+}
+
+/** Testo del fatto per Firestore: un solo formato per volta. */
+async function contentFields(content, familyKey) {
+  return familyKey
+    ? { contentEnc: await encryptString(content, familyKey), content: deleteField() }
+    : { content, contentEnc: deleteField() };
+}
+
+/** Famiglie i cui fatti in chiaro sono già stati ricifrati in questa sessione. */
+const reencrypted = new Set();
+
 /** I fatti della famiglia, dal più vecchio: è l'ordine in cui si tagliano. */
 export async function loadFacts(familyId) {
   try {
-    const snap = await getDocs(factsCol(familyId));
-    return snap.docs
-      .map((d) => ({ docId: d.id, ...d.data() }))
+    const [snap, familyKey] = await Promise.all([getDocs(factsCol(familyId)), familyKeyOrNull(familyId)]);
+    const rows = await Promise.all(
+      snap.docs.map(async (d) => {
+        const f = d.data();
+        let content = typeof f.content === "string" ? f.content : null;
+        const legacyPlain = !(typeof f.contentEnc === "string" && f.contentEnc);
+        if (!legacyPlain) {
+          // Un blob che non si apre fa saltare il fatto.
+          content = familyKey ? await decryptString(f.contentEnc, familyKey).catch(() => null) : null;
+        }
+        return {
+          docId: d.id,
+          id: f.id || d.id,
+          content,
+          category: CATEGORIES.has(f.categoryRaw) ? f.categoryRaw : "altro",
+          createdAt: millis(f.createdAt) ?? 0,
+          legacyPlain,
+        };
+      })
+    );
+    const facts = rows
       .filter((f) => typeof f.content === "string" && f.content.length > 0)
-      .map((f) => ({
-        docId: f.docId,
-        id: f.id || f.docId,
-        content: f.content,
-        category: CATEGORIES.has(f.categoryRaw) ? f.categoryRaw : "altro",
-        createdAt: millis(f.createdAt) ?? 0,
-      }))
       .sort((a, b) => a.createdAt - b.createdAt);
+    if (familyKey && aiConversationsEncrypted() && !reencrypted.has(familyId)) {
+      reencrypted.add(familyId);
+      facts
+        .filter((f) => f.legacyPlain)
+        .forEach(async (f) => {
+          try {
+            await setDoc(doc(factsCol(familyId), f.docId), await contentFields(f.content, familyKey), { merge: true });
+          } catch {
+            // Riprova alla prossima sessione.
+          }
+        });
+    }
+    return facts;
   } catch {
     return [];
   }
@@ -181,12 +236,16 @@ export async function extractAndStore({ familyId, messages, conversationId, isSu
       }
     }
 
+    // Acceso l'interruttore, senza chiave lancia: niente fatti in chiaro.
+    const familyKey = aiConversationsEncrypted()
+      ? await loadFamilyKey({ familyId, userId: auth.currentUser?.uid })
+      : null;
     for (const fact of toInsert) {
       const id = crypto.randomUUID();
       await setDoc(doc(factsCol(familyId), id), {
         id,
         familyId,
-        content: fact.content,
+        ...(await contentFields(fact.content, familyKey)),
         categoryRaw: fact.category,
         sourceConversationId: conversationId || null,
         createdAt: Timestamp.now(),
