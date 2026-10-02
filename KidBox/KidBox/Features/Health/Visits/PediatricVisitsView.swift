@@ -39,10 +39,8 @@ struct PediatricVisitsView: View {
     // ── AI ──
     @State private var showAIConsent     = false
     @State private var showAIChat        = false
-    @State private var aiSelectedVisits: [KBMedicalVisit] = []
-    @State private var aiSelectedPeriod: PeriodFilter = .all
-    @State private var aiSubjectName     = ""
-    @State private var aiScopeId_        = ""
+    /// Le visite si chiedono all'assistente unico, centrato su questa persona.
+    @State private var aiFocus: AgentFocus?
     
     private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
     
@@ -192,14 +190,9 @@ struct PediatricVisitsView: View {
             AIConsentSheet { showAIChat = true }
         }
         .sheetOrMacPush(isPresented: $showAIChat) {
-            PediatricVisitsAIChatView(
-                subjectName:     aiSubjectName,
-                visibleVisits:   aiSelectedVisits,
-                selectedPeriod:  aiSelectedPeriod,
-                customStartDate: aiSelectedPeriod == .custom ? customStartDate : nil,
-                customEndDate:   aiSelectedPeriod == .custom ? customEndDate   : nil,
-                scopeId:         aiScopeId_
-            )
+            if let aiFocus {
+                AgentChatSheet(focus: aiFocus)
+            }
         }
         .confirmationDialog(
             "Eliminare \(selectedIds.count) visit\(selectedIds.count == 1 ? "a" : "e")?",
@@ -492,25 +485,10 @@ struct PediatricVisitsView: View {
     
     // MARK: - AI
     
-    private func buildAiScopeId(for person: PediatricPerson, period _: PeriodFilter) -> String {
-        let base: String
-        switch person {
-        case .child(let c):  base = "visits-child-v2-\(c.id)"
-        case .member(let m): base = "visits-member-v2-\(m.id)"
-        }
-        return base
-    }
-    
     private func handleAskAI(person: PediatricPerson, visits _: [KBMedicalVisit], period: PeriodFilter) {
         KBLog.ai.kbInfo("handleAskAI START period=\(period.rawValue) filteredVisits=\(filteredVisits.count)")
         guard !filteredVisits.isEmpty else { return }
-        switch person {
-        case .child(let c):  aiSubjectName = c.name
-        case .member(let m): aiSubjectName = m.displayName ?? "Membro della famiglia"
-        }
-        aiScopeId_       = buildAiScopeId(for: person, period: period)
-        aiSelectedVisits = filteredVisits
-        aiSelectedPeriod = period
+        aiFocus = AgentFocus(personId: person.personId, personName: person.name, scope: .visits)
         if !AISettings.shared.consentGiven { showAIConsent = true; return }
         showAIChat = true
     }

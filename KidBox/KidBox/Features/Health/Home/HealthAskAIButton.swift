@@ -9,10 +9,6 @@ struct HealthAskAIButton: View {
 
     let subjectName: String
     let subjectId:   String
-    let exams:       [KBMedicalExam]
-    let visits:      [KBMedicalVisit]
-    let treatments:  [KBTreatment]
-    let vaccines:    [KBVaccine]
 
     @State private var showConsent = false
     @State private var showChat    = false
@@ -33,14 +29,8 @@ struct HealthAskAIButton: View {
             AIConsentSheet { showChat = true }
         }
         .sheetOrMacPush(isPresented: $showChat) {
-            HealthAIChatView(
-                subjectName: subjectName,
-                subjectId:   subjectId,
-                exams:       exams,
-                visits:      visits,
-                treatments:  treatments,
-                vaccines:    vaccines
-            )
+            // L'assistente unico, centrato su questa persona: i dati li legge da sé.
+            AgentChatSheet(focus: AgentFocus(personId: subjectId, personName: subjectName, scope: .person))
         }
     }
 

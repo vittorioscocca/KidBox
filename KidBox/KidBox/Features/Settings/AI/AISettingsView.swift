@@ -201,14 +201,14 @@ struct AISettingsView: View {
                             .tag(pref)
                         }
                     } label: {
-                        Label("Contesto chat Salute", systemImage: "heart.text.clipboard")
+                        Label("Quando supera un messaggio", systemImage: "brain.head.profile")
                     }
                     .pickerStyle(.inline)
                     .listRowBackground(cardBackground)
                 } header: {
-                    Text("Chat Salute AI")
+                    Text("Memoria dell'assistente")
                 } footer: {
-                    Text("Con profili sanitari molto ampi, KidBox può inviare tutti i referti o un riassunto. Puoi cambiare questa scelta in qualsiasi momento; se scegli «Chiedi ogni volta», vedrai il dialogo prima di ogni invio.")
+                    Text("Di solito tutto quello che avete in KidBox sta in un messaggio. Con molti documenti e referti l'assistente può mandarli tutti per intero, e costa più messaggi, oppure tenere interi quelli che c'entrano con la domanda e accorciare gli altri. Con «Chiedi ogni volta» scegli tu prima di ogni invio.")
                         .font(.caption)
                 }
             }

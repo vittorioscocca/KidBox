@@ -29,7 +29,15 @@ struct AskAIButton: View {
             AIConsentSheet { showChat = true }
         }
         .sheetOrMacPush(isPresented: $showChat) {
-            MedicalAIChatView(visit: visit, child: child)
+            AgentChatSheet(focus: AgentFocus(
+                personId: child.id,
+                personName: child.name,
+                scope: .visit(id: visit.id),
+                detail: String(
+                    format: NSLocalizedString("Visita del %@", comment: "Assistant focus label: visit date"),
+                    visit.date.formatted(.dateTime.day().month(.abbreviated).year().locale(kbDeviceLocale()))
+                )
+            ))
         }
     }
     

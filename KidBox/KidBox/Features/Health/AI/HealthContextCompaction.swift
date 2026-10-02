@@ -13,7 +13,9 @@ enum HealthContextSendMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-/// Preferenza utente per la chat Salute (Impostazioni AI + scelta nel dialog).
+/// Cosa mandare all'assistente quando la sua memoria supera un messaggio
+/// (Impostazioni AI + scelta nel dialog). Nata per la chat Salute, dal 02/10/2026
+/// vale per l'assistente unico.
 enum HealthContextSendPreference: String, CaseIterable, Identifiable {
     case askEachTime
     case fullAccuracy
@@ -25,18 +27,18 @@ enum HealthContextSendPreference: String, CaseIterable, Identifiable {
         switch self {
         case .askEachTime: return "Chiedi ogni volta"
         case .fullAccuracy: return "Massima accuratezza"
-        case .compactSummary: return "Contesto riassunto"
+        case .compactSummary: return "Contesto ridotto"
         }
     }
 
     var detail: LocalizedStringKey {
         switch self {
         case .askEachTime:
-            return "Con contesto ampio mostra la scelta prima di ogni invio."
+            return "Quando la memoria supera un messaggio, scegli tu prima di inviare."
         case .fullAccuracy:
-            return "Invia sempre tutti i referti e i dati sanitari completi."
+            return "Manda sempre tutti i documenti e i referti per intero: può costare più messaggi."
         case .compactSummary:
-            return "Usa un riassunto del profilo sanitario per risparmiare messaggi."
+            return "Tiene interi i documenti che c'entrano con la domanda e accorcia gli altri: costa meno messaggi."
         }
     }
 

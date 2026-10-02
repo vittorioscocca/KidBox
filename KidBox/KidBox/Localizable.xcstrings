@@ -49,6 +49,371 @@
         }
       }
     },
+    "Chiedi di tutta la famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask about the whole family"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preguntar sobre toda la familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poser une question sur toute la famille"
+          }
+        }
+      }
+    },
+    "Ci sono controlli da prenotare?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are there any check-ups to book?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Hay revisiones por reservar?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Y a-t-il des contrôles à réserver ?"
+          }
+        }
+      }
+    },
+    "Ci sono esami, vaccini o visite da fare?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are any exams, vaccines or visits coming up?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Hay exámenes, vacunas o visitas pendientes?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Y a-t-il des examens, des vaccins ou des visites à faire ?"
+          }
+        }
+      }
+    },
+    "Ci sono scadenze sanitarie urgenti?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are there any urgent health deadlines?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Hay plazos de salud urgentes?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Y a-t-il des échéances de santé urgentes ?"
+          }
+        }
+      }
+    },
+    "Ci sono valori fuori norma negli esami di %@?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are any of %@'s exam results out of range?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Hay valores fuera de rango en los exámenes de %@?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Y a-t-il des valeurs anormales dans les examens de %@ ?"
+          }
+        }
+      }
+    },
+    "Con tutti i documenti per intero questa domanda supera un messaggio. Con il contesto ridotto restano interi i documenti che c'entrano con la domanda e gli altri vengono accorciati. La scelta resta come preferenza: puoi cambiarla in Impostazioni AI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With every document in full, this question uses more than one message. With the reduced context, the documents related to your question stay complete and the others are shortened. Your choice is saved as a preference: you can change it in AI Settings."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con todos los documentos completos, esta pregunta supera un mensaje. Con el contexto reducido, los documentos relacionados con la pregunta se mantienen completos y los demás se acortan. La elección se guarda como preferencia: puedes cambiarla en Ajustes de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec tous les documents en entier, cette question dépasse un message. Avec le contexte réduit, les documents liés à la question restent complets et les autres sont raccourcis. Ce choix est enregistré comme préférence : vous pouvez le modifier dans Réglages IA."
+          }
+        }
+      }
+    },
+    "Conosco tutto quello che avete in KidBox: calendario, to-do, spesa, note, spese, documenti, la salute di tutti, casa, veicoli, animali e viaggi.\nChiedimi qualsiasi cosa." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I know everything you keep in KidBox: calendar, to-dos, shopping list, notes, expenses, documents, everyone's health, home, vehicles, pets and trips.\nAsk me anything."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conozco todo lo que guardas en KidBox: calendario, tareas, compra, notas, gastos, documentos, la salud de todos, casa, vehículos, mascotas y viajes.\nPregúntame lo que quieras."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je connais tout ce que vous gardez dans KidBox : calendrier, tâches, courses, notes, dépenses, documents, la santé de chacun, maison, véhicules, animaux et voyages.\nDemandez-moi ce que vous voulez."
+          }
+        }
+      }
+    },
+    "Contesto ridotto" : {
+      "comment" : "AI settings: reduced context option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reduced context"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexto reducido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexte réduit"
+          }
+        }
+      }
+    },
+    "Contesto ridotto (%lld messaggi)" : {
+      "comment" : "Assistant context choice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reduced context (%lld messages)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexto reducido (%lld mensajes)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexte réduit (%lld messages)"
+          }
+        }
+      }
+    },
+    "Contesto ridotto (1 messaggio)" : {
+      "comment" : "Assistant context choice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reduced context (1 message)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexto reducido (1 mensaje)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexte réduit (1 message)"
+          }
+        }
+      }
+    },
+    "Conversazione non inizializzata." : {
+      "comment" : "Assistant error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversation not ready."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversación no inicializada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversation non initialisée."
+          }
+        }
+      }
+    },
+    "Cosa devo fare adesso?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What should I do now?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué tengo que hacer ahora?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Que dois-je faire maintenant ?"
+          }
+        }
+      }
+    },
+    "Cosa dice il referto?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What does the report say?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué dice el informe?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Que dit le compte rendu ?"
+          }
+        }
+      }
+    },
+    "Cosa ho in programma questa settimana?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What do I have planned this week?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué tengo previsto esta semana?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qu'est-ce que j'ai de prévu cette semaine ?"
+          }
+        }
+      }
+    },
+    "Cosa significano questi valori?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What do these values mean?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué significan estos valores?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Que signifient ces valeurs ?"
+          }
+        }
+      }
+    },
+    "Di solito tutto quello che avete in KidBox sta in un messaggio. Con molti documenti e referti l'assistente può mandarli tutti per intero, e costa più messaggi, oppure tenere interi quelli che c'entrano con la domanda e accorciare gli altri. Con «Chiedi ogni volta» scegli tu prima di ogni invio." : {
+      "comment" : "AI settings footer: assistant memory",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usually everything you keep in KidBox fits in one message. With many documents and reports, the assistant can send them all in full, which costs more messages, or keep in full the ones related to your question and shorten the rest. With “Ask every time” you choose before each send."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normalmente todo lo que guardáis en KidBox cabe en un mensaje. Con muchos documentos e informes, el asistente puede enviarlos todos completos, lo que cuesta más mensajes, o mantener completos los relacionados con tu pregunta y acortar los demás. Con «Preguntar cada vez» eliges tú antes de cada envío."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "D'habitude, tout ce que vous gardez dans KidBox tient dans un message. Avec beaucoup de documents et de comptes rendus, l'assistant peut tous les envoyer en entier, ce qui coûte plus de messages, ou garder en entier ceux liés à votre question et raccourcir les autres. Avec « Demander à chaque fois », vous choisissez avant chaque envoi."
+          }
+        }
+      }
+    },
     "Ha già «%@» alle %@" : {
       "localizations" : {
         "en" : {
@@ -67,6 +432,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A déjà « %@ » à %@"
+          }
+        }
+      }
+    },
+    "Ho spazio libero domani pomeriggio?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Am I free tomorrow afternoon?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Tengo hueco mañana por la tarde?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suis-je libre demain après-midi ?"
+          }
+        }
+      }
+    },
+    "Impossibile preparare il contesto di pianificazione." : {
+      "comment" : "Assistant load error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't prepare the assistant's context."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido preparar el contexto del asistente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de préparer le contexte de l'assistant."
           }
         }
       }
@@ -115,6 +526,74 @@
         }
       }
     },
+    "Manda sempre tutti i documenti e i referti per intero: può costare più messaggi." : {
+      "comment" : "AI settings: full accuracy detail",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always sends every document and report in full: it may cost more messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía siempre todos los documentos e informes completos: puede costar más mensajes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoie toujours tous les documents et comptes rendus en entier : cela peut coûter plusieurs messages."
+          }
+        }
+      }
+    },
+    "Memoria dell'assistente" : {
+      "comment" : "AI settings section: assistant memory",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistant memory"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memoria del asistente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mémoire de l'assistant"
+          }
+        }
+      }
+    },
+    "Memoria molto ampia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Very large memory"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memoria muy amplia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mémoire très volumineuse"
+          }
+        }
+      }
+    },
     "Non trovo in famiglia: %@." : {
       "localizations" : {
         "en" : {
@@ -133,6 +612,166 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Introuvable dans la famille : %@."
+          }
+        }
+      }
+    },
+    "Parto da qui, ma conosco tutto quello che avete in KidBox: chiedimi anche altro." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I'm starting from here, but I know everything you keep in KidBox: ask me anything else too."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empiezo desde aquí, pero conozco todo lo que guardas en KidBox: pregúntame también otras cosas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je pars d'ici, mais je connais tout ce que vous gardez dans KidBox : demandez-moi aussi autre chose."
+          }
+        }
+      }
+    },
+    "Quali esami sono ancora da fare?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which exams are still to be done?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué exámenes quedan por hacer?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quels examens restent à faire ?"
+          }
+        }
+      }
+    },
+    "Quali to-do sono ancora aperti?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which to-dos are still open?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué tareas siguen abiertas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelles tâches sont encore ouvertes ?"
+          }
+        }
+      }
+    },
+    "Quando la memoria supera un messaggio, scegli tu prima di inviare." : {
+      "comment" : "AI settings: ask each time detail",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the memory exceeds one message, you choose before sending."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando la memoria supera un mensaje, eliges tú antes de enviar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand la mémoire dépasse un message, vous choisissez avant l'envoi."
+          }
+        }
+      }
+    },
+    "Quando supera un messaggio" : {
+      "comment" : "AI settings: picker label for large memory",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When it exceeds one message"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando supera un mensaje"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand elle dépasse un message"
+          }
+        }
+      }
+    },
+    "Riassumimi la salute di %@" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summarize %@'s health"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resúmeme la salud de %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Résumez-moi la santé de %@"
+          }
+        }
+      }
+    },
+    "Riassumimi le ultime visite di %@" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summarize %@'s latest visits"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resúmeme las últimas visitas de %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Résumez-moi les dernières visites de %@"
           }
         }
       }
@@ -199,6 +838,166 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Demande non envoyée : %@ introuvable dans la famille."
+          }
+        }
+      }
+    },
+    "Spiegami l'ultimo referto" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explain the latest report"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explícame el último informe"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expliquez-moi le dernier compte rendu"
+          }
+        }
+      }
+    },
+    "Spiegami questa visita" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explain this visit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explícame esta visita"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expliquez-moi cette visite"
+          }
+        }
+      }
+    },
+    "Tiene interi i documenti che c'entrano con la domanda e accorcia gli altri: costa meno messaggi." : {
+      "comment" : "AI settings: reduced context detail",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keeps in full the documents related to your question and shortens the others: it costs fewer messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantiene completos los documentos relacionados con tu pregunta y acorta los demás: cuesta menos mensajes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Garde en entier les documents liés à votre question et raccourcit les autres : cela coûte moins de messages."
+          }
+        }
+      }
+    },
+    "Visita del %@" : {
+      "comment" : "Assistant focus label: visit date",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visit on %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visita del %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visite du %@"
+          }
+        }
+      }
+    },
+    "Visite di %@" : {
+      "comment" : "Assistant focus label: visits of a person",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visits of %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visitas de %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visites de %@"
+          }
+        }
+      }
+    },
+    "· Calendario, salute, documenti e altro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· Calendar, health, documents and more"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· Calendario, salud, documentos y más"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· Calendrier, santé, documents et plus"
+          }
+        }
+      }
+    },
+    "È tutto nella norma?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Is everything normal?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Está todo normal?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Est-ce que tout est normal ?"
           }
         }
       }

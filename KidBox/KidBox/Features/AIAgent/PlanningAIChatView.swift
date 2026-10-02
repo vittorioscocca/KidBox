@@ -26,248 +26,35 @@ import SwiftUI
 import SwiftData
 import FirebaseAuth
 
-// MARK: - Entry point (gestisce il caricamento dei dati da SwiftData)
+// MARK: - Entry point
 
+/// L'assistente unico. Dalla Home si apre senza focus; da Salute si apre in un
+/// foglio (`AgentChatSheet`) già centrato su una persona, una visita o un esame.
+/// I dati non passano più da qui: il ViewModel li legge dal quaderno di schede
+/// (`AgentMemoryBook`) a ogni domanda.
 struct PlanningAIChatView: View {
 
     /// Se valorizzato (o da notifica), mostrato come primo messaggio assistente in chat.
     var initialMessage: String? = nil
+    /// Da dove si apre l'assistente (pulsanti di Salute); `nil` = Home.
+    var focus: AgentFocus? = nil
 
     @Environment(\.modelContext)  private var modelContext
-    @Environment(\.colorScheme)   private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
     // Osservato, non letto dal singleton: al cold start da notifica la view
     // appare PRIMA che `loadPlan()` finisca, quindi `currentPlan` è ancora al
     // default `.free`. Senza osservazione il body non si aggiorna quando il
     // piano arriva, e la chat resta su uno spinner bianco per sempre.
     @EnvironmentObject private var subscriptionManager: KBSubscriptionManager
-    
-    // ── Family ────────────────────────────────────────────────────
+
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
-    @Query private var members: [KBFamilyMember]
-    
-    // ── Planning data queries ─────────────────────────────────────
-    @Query private var allCalendarEvents: [KBCalendarEvent]
-    @Query private var allTodos:          [KBTodoItem]
-    @Query private var allRoutines:       [KBRoutine]
-    @Query private var allRoutineChecks:  [KBRoutineCheck]
-    @Query private var allTreatments:     [KBTreatment]
-    @Query private var allVisits:         [KBMedicalVisit]
-    @Query private var allVaccines:       [KBVaccine]
-    @Query private var allChildren:       [KBChild]
-    
-    // ── Memoria famiglia ─────────────────────────────────────────
-    @Query(sort: \KBNote.updatedAt, order: .reverse)         private var allNotes:    [KBNote]
-    @Query(sort: \KBExpense.date, order: .reverse)           private var allExpenses: [KBExpense]
-    @Query                                                   private var allExpCats:  [KBExpenseCategory]
-    @Query(sort: \KBGroceryItem.createdAt, order: .reverse)  private var allGrocery:  [KBGroceryItem]
-    @Query(sort: \KBChatMessage.createdAt, order: .reverse)  private var allChat:     [KBChatMessage]
-    @Query(sort: \KBDocument.updatedAt, order: .reverse)     private var allDocuments: [KBDocument]
-    @Query(sort: \KBWalletTicket.updatedAt, order: .reverse) private var allWalletTickets: [KBWalletTicket]
-    
-    @Query(sort: \KBPet.name) private var allPets: [KBPet]
-    @Query(sort: \KBPetEvent.date, order: .reverse) private var allPetEvents: [KBPetEvent]
-    @Query(sort: \KBHomeItem.name) private var allHomeItems: [KBHomeItem]
-    @Query(sort: \KBHousePayment.name) private var allHousePayments: [KBHousePayment]
-    @Query(sort: \KBVehicle.name) private var allVehicles: [KBVehicle]
-    @Query(sort: \KBVehicleEvent.date, order: .reverse) private var allVehicleEvents: [KBVehicleEvent]
-    
-    // ── Pediatria avanzata ────────────────────────────────────────
-    // allVisits e allVaccines già presenti sopra — riutilizzati
-    @Query private var allProfiles:  [KBPediatricProfile]
-    @Query(sort: \KBMedicalExam.updatedAt, order: .reverse) private var allExamsAdv: [KBMedicalExam]
-    
+
     private var family: KBFamily? {
         ActiveFamilyResolver.family(from: families, activeFamilyId: coordinator.activeFamilyId)
     }
     private var familyId: String { family?.id ?? "" }
     private var familyName: String { family?.name ?? "Famiglia" }
-    
-    // ── Derived collections ───────────────────────────────────────
-    
-    private var memberNames: [String: String] {
-        Dictionary(uniqueKeysWithValues:
-                    members
-            .filter { $0.familyId == familyId }
-            .compactMap { m -> (String, String)? in
-                guard let name = m.displayName else { return nil }
-                return (m.userId, name)
-            }
-        )
-    }
-    
-    private var childNames: [String: String] {
-        Dictionary(uniqueKeysWithValues:
-                    allChildren
-            .filter { $0.familyId == familyId }
-            .map { ($0.id, $0.name) }
-        )
-    }
-    
-    private var upcomingEvents: [KBCalendarEvent] {
-        let now     = Date()
-        let horizon = Calendar.current.date(byAdding: .day, value: 14, to: now) ?? now
-        let uid = Auth.auth().currentUser?.uid
-        return allCalendarEvents.filter {
-            $0.familyId == familyId && !$0.isDeleted && $0.isVisible(to: uid) &&
-            $0.startDate >= now && $0.startDate <= horizon
-        }.sorted { $0.startDate < $1.startDate }
-    }
-    
-    private var openTodos: [KBTodoItem] {
-        allTodos.filter { $0.familyId == familyId && !$0.isDeleted && !$0.isDone }
-    }
-    
-    private var activeRoutines: [KBRoutine] {
-        allRoutines.filter { $0.familyId == familyId && !$0.isDeleted && $0.isActive }
-    }
-    
-    private var todayChecks: Set<String> {
-        let today = Date().kbDayKey()
-        return Set(
-            allRoutineChecks
-                .filter { $0.familyId == familyId && $0.dayKey == today }
-                .map { $0.routineId }
-        )
-    }
-    
-    private var activeTreatments: [KBTreatment] {
-        allTreatments.filter {
-            $0.familyId == familyId && !$0.isDeleted && $0.isActive && $0.petId.isEmpty
-        }
-    }
-    
-    private var visitsWithNextDate: [KBMedicalVisit] {
-        allVisits.filter { $0.familyId == familyId && !$0.isDeleted && $0.nextVisitDate != nil }
-    }
-    
-    private var visitsWithPendingExams: [KBMedicalVisit] {
-        allVisits.filter { v in
-            v.familyId == familyId && !v.isDeleted &&
-            v.prescribedExams.contains { $0.deadline != nil }
-        }
-    }
-    
-    private var upcomingVaccines: [KBVaccine] {
-        allVaccines.filter {
-            $0.familyId == familyId && !$0.isDeleted &&
-            ($0.status == .scheduled || $0.status == .planned)
-        }
-    }
-    
-    // ── Memoria famiglia ─────────────────────────────────────────
-    
-    private var recentNotes: [KBNote] {
-        Array(allNotes
-            .filter { $0.familyId == familyId && !$0.isDeleted }
-            .prefix(10))
-    }
-    
-    private var recentExpenses: [KBExpense] {
-        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
-        return allExpenses.filter {
-            $0.familyId == familyId && !$0.isDeleted && $0.date >= cutoff
-        }
-    }
-    
-    private var expenseCategoryNames: [String: String] {
-        Dictionary(uniqueKeysWithValues:
-                    allExpCats
-            .filter { $0.familyId == familyId && !$0.isDeleted }
-            .map { ($0.id, $0.name) }
-        )
-    }
-    
-    private var pendingGroceryItems: [KBGroceryItem] {
-        allGrocery.filter {
-            $0.familyId == familyId && !$0.isDeleted && !$0.isPurchased
-        }
-    }
-    
-    private var recentChatMessages: [KBChatMessage] {
-        Array(allChat
-            .filter { $0.familyId == familyId && !$0.isDeleted && $0.type == .text }
-            .prefix(20))
-    }
 
-    private var recentDocuments: [KBDocument] {
-        Array(allDocuments
-            .filter { $0.familyId == familyId && !$0.isDeleted }
-            .prefix(10))
-    }
-
-    private var recentWalletTickets: [KBWalletTicket] {
-        Array(allWalletTickets
-            .filter { $0.familyId == familyId && !$0.isDeleted }
-            .prefix(10))
-    }
-    
-    private var contextPets: [KBPet] {
-        allPets.filter { $0.familyId == familyId && !$0.isDeleted }
-    }
-    
-    private var contextPetEvents: [KBPetEvent] {
-        Array(allPetEvents.filter { $0.familyId == familyId && !$0.isDeleted }.prefix(50))
-    }
-    
-    private var contextHomeItems: [KBHomeItem] {
-        allHomeItems.filter { $0.familyId == familyId && !$0.isDeleted }
-    }
-
-    private var contextHousePayments: [KBHousePayment] {
-        allHousePayments.filter { $0.familyId == familyId && !$0.isDeleted }
-    }
-    
-    private var contextVehicles: [KBVehicle] {
-        allVehicles.filter { $0.familyId == familyId && !$0.isDeleted }
-    }
-    
-    private var contextVehicleEvents: [KBVehicleEvent] {
-        Array(allVehicleEvents.filter { $0.familyId == familyId && !$0.isDeleted }.prefix(50))
-    }
-    
-    // ── Pediatria avanzata ────────────────────────────────────────
-    
-    private var pediatricProfiles: [String: KBPediatricProfile] {
-        Dictionary(uniqueKeysWithValues:
-                    allProfiles
-            .filter { $0.familyId == familyId }
-            .map { ($0.childId, $0) }
-        )
-    }
-    
-    private var allVisitsForChildren: [KBMedicalVisit] {
-        // Riusa allVisits già fetchata sopra — nessuna query duplicata
-        allVisits.filter { $0.familyId == familyId && !$0.isDeleted }
-    }
-    
-    private var allExamsForChildren: [KBMedicalExam] {
-        allExamsAdv.filter { $0.familyId == familyId && !$0.isDeleted }
-    }
-    
-    private var allVaccinesForChildren: [KBVaccine] {
-        // Riusa allVaccines già fetchata sopra — nessuna query duplicata
-        allVaccines.filter { $0.familyId == familyId && !$0.isDeleted }
-    }
-    
-    // ── Today briefing stats ──────────────────────────────────────
-    
-    private var todayEvents: [KBCalendarEvent] {
-        let uid = Auth.auth().currentUser?.uid
-        return allCalendarEvents.filter {
-            $0.familyId == familyId && !$0.isDeleted && $0.isVisible(to: uid) &&
-            Calendar.current.isDateInToday($0.startDate)
-        }.sorted { $0.startDate < $1.startDate }
-    }
-    
-    private var urgentTodos: [KBTodoItem] {
-        openTodos.filter { ($0.priorityRaw ?? 0) == 1 || ($0.dueAt.map { $0 < Date() } ?? false) }
-    }
-    
-    private var todayDosesCount: Int {
-        activeTreatments.reduce(0) { $0 + $1.scheduleTimes.count }
-    }
-    
     // ── ViewModel — opzionale, creato una sola volta in .task ─────
     // Segue il pattern di HealthAIChatView: @State opzionale + .task
     // così SwiftUI mantiene viva l'istanza per tutta la vita della view
@@ -277,23 +64,14 @@ struct PlanningAIChatView: View {
     /// I pulsanti di abbonamento restano visibili a tutti: chi non ha creato la
     /// famiglia riceve la spiegazione al tocco, non un pulsante mancante.
     @State private var showOwnerOnly = false
-    
+
     var body: some View {
         Group {
             if !subscriptionManager.isAIAccessible {
                 // ── Piano Free: schermata locked ─────────────────────
                 aiLockedView
             } else if let vm {
-                PlanningAIChatInnerView(
-                    vm:               vm,
-                    familyId:         familyId,
-                    familyName:       familyName,
-                    todayEvents:      todayEvents,
-                    urgentTodosCount: urgentTodos.count,
-                    todayDosesCount:  todayDosesCount,
-                    memberNames:      memberNames,
-                    childNames:       childNames
-                )
+                PlanningAIChatInnerView(vm: vm, familyId: familyId)
             } else {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -315,43 +93,18 @@ struct PlanningAIChatView: View {
             guard !familyId.isEmpty else { return }
             guard vm == nil else { return }
             let newVM = PlanningAIChatViewModel(
-                familyId:               familyId,
-                familyName:             familyName,
-                memberNames:            memberNames,
-                horizonDays:            14,
-                calendarEvents:         upcomingEvents,
-                openTodos:              openTodos,
-                activeRoutines:         activeRoutines,
-                todayChecks:            todayChecks,
-                childNames:             childNames,
-                activeTreatments:       activeTreatments,
-                visitsWithNextDate:     visitsWithNextDate,
-                visitsWithPendingExams: visitsWithPendingExams,
-                upcomingVaccines:       upcomingVaccines,
-                recentNotes:            recentNotes,
-                recentExpenses:         recentExpenses,
-                expenseCategoryNames:   expenseCategoryNames,
-                pendingGroceryItems:    pendingGroceryItems,
-                recentChatMessages:     recentChatMessages,
-                recentDocuments:        recentDocuments,
-                recentWalletTickets:    recentWalletTickets,
-                children:               allChildren.filter { $0.familyId == familyId },
-                pediatricProfiles:      pediatricProfiles,
-                allVisits:              allVisitsForChildren,
-                allExams:               allExamsForChildren,
-                allVaccines:            allVaccinesForChildren,
-                pets:                   contextPets,
-                petEvents:              contextPetEvents,
-                homeItems:              contextHomeItems,
-                housePayments:          contextHousePayments,
-                vehicles:               contextVehicles,
-                vehicleEvents:          contextVehicleEvents,
-                modelContext:           modelContext
+                familyId:     familyId,
+                familyName:   familyName,
+                focus:        focus,
+                modelContext: modelContext
             )
             vm = newVM
             await Task.yield()
             await newVM.loadOrCreateConversation()
 
+            // Il briefing e gli insight sono della Home: aperto da Salute
+            // l'assistente non li mette davanti alla domanda sulla persona.
+            guard focus == nil else { return }
             let healthInsight = HealthPatternAnalyzerService.shared.consumeUnreadInsightIfNeeded(
                 familyId: familyId,
                 modelContext: modelContext
@@ -366,9 +119,9 @@ struct PlanningAIChatView: View {
             }
         }
     }
-    
+
     // MARK: - AI locked view (piano Free)
-    
+
     private var aiLockedView: some View {
         VStack(spacing: 24) {
             Spacer()
@@ -409,6 +162,31 @@ struct PlanningAIChatView: View {
     }
 }
 
+// MARK: - Sheet da Salute
+
+/// L'assistente aperto dai pulsanti di Salute: lo stesso della Home, in un
+/// foglio, già centrato sulla persona, la visita o l'esame che si sta guardando.
+struct AgentChatSheet: View {
+
+    let focus: AgentFocus
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ModalNavContainer {
+            PlanningAIChatView(focus: focus)
+                .toolbar {
+                    #if !targetEnvironment(macCatalyst)
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Chiudi") { dismiss() }
+                    }
+                    #endif
+                }
+        }
+        .onAppear { AppAnalytics.screenView(name: "salute_ai") }
+    }
+}
+
 // MARK: - Inner view (riceve il ViewModel già costruito)
 
 private struct PlanningAIChatInnerView: View {
@@ -418,13 +196,26 @@ private struct PlanningAIChatInnerView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var coordinator: AppCoordinator
     
-    let familyId:         String
-    let familyName:       String
-    let todayEvents:      [KBCalendarEvent]
-    let urgentTodosCount: Int
-    let todayDosesCount:  Int
-    let memberNames:      [String: String]
-    let childNames:       [String: String]
+    let familyId: String
+
+    // ── Briefing del giorno e nomi: dallo snapshot del quaderno ───
+    private var todayEventsCount: Int {
+        guard let snap = vm.snapshot else { return 0 }
+        let window = DateInterval(start: Calendar.current.startOfDay(for: Date()), duration: 86_400)
+        return snap.events.reduce(0) { $0 + $1.occurrences(in: window).count }
+    }
+
+    private var urgentTodosCount: Int {
+        vm.openTodos.filter { ($0.priorityRaw ?? 0) == 1 || ($0.dueAt.map { $0 < Date() } ?? false) }.count
+    }
+
+    private var todayDosesCount: Int {
+        vm.activeTreatments.reduce(0) { $0 + $1.scheduleTimes.count }
+    }
+
+    private var childNames: [String: String] {
+        Dictionary(vm.children.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
+    }
     
     // ── AI Settings ───────────────────────────────────────────────
     @ObservedObject private var aiSettings = AISettings.shared
@@ -473,6 +264,13 @@ private struct PlanningAIChatInnerView: View {
                 VStack(spacing: 0) {
                     // Provider badge
                     providerBadge
+
+                    // Focus da Salute: si può togliere e chiedere di tutto
+                    if let focus = vm.focus {
+                        focusChip(focus)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+                    }
                     
                     // Today briefing pill strip
                     briefingStrip
@@ -560,6 +358,31 @@ private struct PlanningAIChatInnerView: View {
             Button("Cancella", role: .destructive) { vm.clearConversation() }
             Button("Annulla", role: .cancel) { }
         }
+        // Quaderno più grande di un messaggio: la stessa scelta della chat Salute.
+        .confirmationDialog(
+            "Memoria molto ampia",
+            isPresented: $vm.showContextModeChoice,
+            titleVisibility: .visible
+        ) {
+            Button("Massima accuratezza (\(vm.choiceFullUnits) messaggi)") {
+                vm.confirmSend(mode: .fullAccuracy)
+            }
+            Button(vm.choiceReducedUnits == 1
+                   ? NSLocalizedString("Contesto ridotto (1 messaggio)", comment: "Assistant context choice")
+                   : String(format: NSLocalizedString("Contesto ridotto (%lld messaggi)", comment: "Assistant context choice"), vm.choiceReducedUnits)) {
+                vm.confirmSend(mode: .compactSummary)
+            }
+            Button("Annulla", role: .cancel) {
+                vm.cancelPendingSend()
+            }
+        } message: {
+            Text("Con tutti i documenti per intero questa domanda supera un messaggio. Con il contesto ridotto restano interi i documenti che c'entrano con la domanda e gli altri vengono accorciati. La scelta resta come preferenza: puoi cambiarla in Impostazioni AI.")
+        }
+        .onChange(of: vm.showContextModeChoice) { wasShown, isShown in
+            if wasShown && !isShown && !vm.pendingSendText.isEmpty {
+                vm.cancelPendingSend()
+            }
+        }
         .onChange(of: vm.actionExecutionSummary) { _, summary in
             guard let summary, !summary.isEmpty else { return }
             actionResultIsError = false
@@ -608,7 +431,7 @@ private struct PlanningAIChatInnerView: View {
                 .foregroundStyle(tint)
             Text("Assistente AI KidBox")
                 .font(.caption.bold())
-            Text("· Calendario, to-do, salute")
+            Text("· Calendario, salute, documenti e altro")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -618,6 +441,33 @@ private struct PlanningAIChatInnerView: View {
         .background(tint.opacity(0.06))
     }
     
+    // MARK: - Focus chip
+
+    private func focusChip(_ focus: AgentFocus) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "heart.text.clipboard")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(tint)
+            Text(focus.label)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(KBTheme.primaryText(colorScheme))
+                .lineLimit(1)
+            Button {
+                withAnimation { vm.clearFocus() }
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Chiedi di tutta la famiglia"))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Capsule().fill(tint.opacity(0.10)))
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     // MARK: - AI disabled state
     
     private var aiDisabledState: some View {
@@ -695,10 +545,10 @@ private struct PlanningAIChatInnerView: View {
                 )
                 
                 // Eventi oggi
-                if !todayEvents.isEmpty {
+                if todayEventsCount > 0 {
                     briefingChip(
                         icon: "clock",
-                        label: "\(todayEvents.count) event\(todayEvents.count == 1 ? "o" : "i") oggi",
+                        label: "\(todayEventsCount) event\(todayEventsCount == 1 ? "o" : "i") oggi",
                         color: .blue
                     )
                 }
@@ -765,7 +615,15 @@ private struct PlanningAIChatInnerView: View {
                 Text("Ciao, sono il tuo assistente")
                     .font(.headline)
                     .foregroundStyle(KBTheme.primaryText(colorScheme))
-                Text("Conosco il tuo calendario, i to-do, le cure, visite ed esami, i documenti, il wallet, le note, le spese e le scadenze sanitarie.\nChiedimi qualsiasi cosa.")
+                // Un `Text` per ramo: il ternario fra due letterali diventa una
+                // `String` e salterebbe il catalogo delle traduzioni.
+                Group {
+                    if vm.focus == nil {
+                        Text("Conosco tutto quello che avete in KidBox: calendario, to-do, spesa, note, spese, documenti, la salute di tutti, casa, veicoli, animali e viaggi.\nChiedimi qualsiasi cosa.")
+                    } else {
+                        Text("Parto da qui, ma conosco tutto quello che avete in KidBox: chiedimi anche altro.")
+                    }
+                }
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -816,11 +674,12 @@ private struct PlanningAIChatInnerView: View {
     }
     
     private var quickStartChips: some View {
-        let suggestions = [
-            "Cosa ho in programma questa settimana?",
-            "Ci sono scadenze sanitarie urgenti?",
-            "Quali to-do sono ancora aperti?",
-            "Ho spazio libero domani pomeriggio?"
+        // `String`: il testo diventa il messaggio inviato all'AI.
+        let suggestions = vm.focus?.suggestions ?? [
+            NSLocalizedString("Cosa ho in programma questa settimana?", comment: "Assistant suggestion"),
+            NSLocalizedString("Ci sono scadenze sanitarie urgenti?", comment: "Assistant suggestion"),
+            NSLocalizedString("Quali to-do sono ancora aperti?", comment: "Assistant suggestion"),
+            NSLocalizedString("Ho spazio libero domani pomeriggio?", comment: "Assistant suggestion"),
         ]
         
         return VStack(spacing: 8) {
@@ -1119,7 +978,9 @@ private struct PlanningAIChatInnerView: View {
     private var quickInputChips: some View {
         // `String` (non `LocalizedStringKey`): il testo del chip diventa anche il
         // messaggio inviato all'AI (`vm.inputText = chip`), quindi passa da NSLocalizedString.
-        let chips = [
+        // Aperto da Salute: le domande a tema anche con lo storico, che nella
+        // conversazione unica di famiglia c'è quasi sempre.
+        let chips = vm.focus?.suggestions ?? [
             NSLocalizedString("Crea un evento", comment: "AI quick chip"),
             NSLocalizedString("Aggiungi to-do", comment: "AI quick chip"),
             NSLocalizedString("Mostra scadenze", comment: "AI quick chip"),

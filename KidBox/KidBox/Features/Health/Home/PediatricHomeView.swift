@@ -324,11 +324,7 @@ struct PediatricHomeView: View {
         .overlay(alignment: .bottomTrailing) {
             HealthAskAIButton(
                 subjectName: subjectName,
-                subjectId:   childId,
-                exams:       allExams,
-                visits:      allVisits,
-                treatments:  activeTreatments,
-                vaccines:    allVaccines
+                subjectId:   childId
             )
             .padding(.trailing, 20)
             .padding(.bottom, 32)

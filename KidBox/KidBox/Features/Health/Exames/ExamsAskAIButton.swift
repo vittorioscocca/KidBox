@@ -16,6 +16,17 @@ struct ExamsAskAIButton: View {
     
     private var isEmpty: Bool { scope.exams.isEmpty }
 
+    /// L'assistente unico, centrato sull'esame o sugli esami della persona.
+    private var focus: AgentFocus {
+        let personId = scope.exams.first?.childId ?? ""
+        switch scope {
+        case .single(let e):
+            return AgentFocus(personId: personId, personName: subjectName, scope: .exam(id: e.id), detail: e.name.trimmingCharacters(in: .whitespacesAndNewlines))
+        case .all:
+            return AgentFocus(personId: personId, personName: subjectName, scope: .exams)
+        }
+    }
+
     private var accessibilityLabel: String {
         switch scope {
         case .single(let e): return "Chiedi all'AI sull'esame \(e.name)"
@@ -52,7 +63,7 @@ struct ExamsAskAIButton: View {
             AIConsentSheet { showChat = true }
         }
         .sheetOrMacPush(isPresented: $showChat) {
-            PediatricExamsAIChatView(subjectName: subjectName, scope: scope)
+            AgentChatSheet(focus: focus)
         }
     }
     

@@ -11,9 +11,12 @@ import Foundation
 enum HealthContextBuilder {
 
     /// Chat Salute include azioni pianificazione (to-do, spesa, calendario). Cartella clinica: solo dati sanitari.
+    /// Scheda dell'assistente: solo i dati, senza ruolo né chiusura — il ruolo e
+    /// il blocco azioni li mette una volta sola l'assistente unico.
     enum Purpose {
         case healthChat
         case clinicalRecord
+        case agentMemory
     }
 
     // MARK: - Main entry point
@@ -29,6 +32,10 @@ enum HealthContextBuilder {
         documentsByVisitId: [String: [KBDocument]] = [:],
         documentsByTreatmentId: [String: [KBDocument]] = [:],
         refertoMaxChars: Int? = HealthAiDocumentText.standardRefertoMaxChars,
+        /// Limite per singolo referto (id documento → caratteri, 0 = solo il
+        /// titolo). Vince su `refertoMaxChars` per i documenti che elenca: serve
+        /// all'assistente per dividere un budget fra tutti i referti della famiglia.
+        refertoMaxCharsByDocId: [String: Int]? = nil,
         healthSnapshot: KBHealthImportSnapshot? = nil,
         subjectBirthDate: Date? = nil,
         visitsForWearableContext: [KBMedicalVisit] = [],
@@ -67,6 +74,8 @@ enum HealthContextBuilder {
             NON usare né menzionare: veicoli, garage, casa, animali domestici, lista spesa, to-do generici, calendario famiglia, viaggi.
             Usa esclusivamente i dati sotto per integrare la cartella clinica.
             """)
+        case .agentMemory:
+            break
         }
         
         // ── Profilo persona ──────────────────────────────────────────────────
@@ -94,6 +103,7 @@ enum HealthContextBuilder {
             treatments,
             documentsByTreatmentId: documentsByTreatmentId,
             refertoMaxChars: refertoMaxChars,
+            refertoMaxCharsByDocId: refertoMaxCharsByDocId,
             to: &lines
         )
         
@@ -106,6 +116,7 @@ enum HealthContextBuilder {
             sortedVisits,
             documentsByVisitId: documentsByVisitId,
             refertoMaxChars: refertoMaxChars,
+            refertoMaxCharsByDocId: refertoMaxCharsByDocId,
             to: &lines
         )
         
@@ -117,6 +128,7 @@ enum HealthContextBuilder {
             sortedExams,
             documentsByExamId: documentsByExamId,
             refertoMaxChars: refertoMaxChars,
+            refertoMaxCharsByDocId: refertoMaxCharsByDocId,
             to: &lines
         )
 
@@ -142,6 +154,8 @@ enum HealthContextBuilder {
             """)
         case .clinicalRecord:
             lines.append("\n--- FINE DATI CLINICI ---")
+        case .agentMemory:
+            break
         }
         
         let prompt = lines.joined(separator: "\n")
@@ -155,6 +169,7 @@ enum HealthContextBuilder {
         _ treatments: [KBTreatment],
         documentsByTreatmentId: [String: [KBDocument]],
         refertoMaxChars: Int?,
+        refertoMaxCharsByDocId: [String: Int]?,
         to lines: inout [String]
     ) {
         guard !treatments.isEmpty else { return }
@@ -176,13 +191,13 @@ enum HealthContextBuilder {
             let docs = (documentsByTreatmentId[t.id] ?? [])
                 .filter { $0.extractionStatus == .completed && $0.hasExtractedText }
             for doc in docs {
-                let clean = HealthAiDocumentText.prepareExtractedTextForAI(
-                    doc.extractedText,
-                    maxChars: refertoMaxChars
-                )
-                guard !clean.isEmpty else { continue }
-                lines.append("  Referto allegato (\(doc.title)):")
-                lines.append("  \(clean)")
+                lines.append(contentsOf: refertoLines(
+                    doc,
+                    label: "Referto allegato",
+                    indent: "  ",
+                    refertoMaxChars: refertoMaxChars,
+                    refertoMaxCharsByDocId: refertoMaxCharsByDocId
+                ))
             }
         }
         KBLog.ai.kbDebug("HealthContextBuilder treatments appended count=\(treatments.count)")
@@ -230,6 +245,7 @@ enum HealthContextBuilder {
         _ visits: [KBMedicalVisit],
         documentsByVisitId: [String: [KBDocument]],
         refertoMaxChars: Int?,
+        refertoMaxCharsByDocId: [String: Int]?,
         to lines: inout [String]
     ) {
         guard !visits.isEmpty else { return }
@@ -285,13 +301,13 @@ enum HealthContextBuilder {
             let docs = (documentsByVisitId[visit.id] ?? [])
                 .filter { $0.extractionStatus == .completed && $0.hasExtractedText }
             for doc in docs {
-                let clean = HealthAiDocumentText.prepareExtractedTextForAI(
-                    doc.extractedText,
-                    maxChars: refertoMaxChars
-                )
-                guard !clean.isEmpty else { continue }
-                lines.append("Referto allegato (\(doc.title)):")
-                lines.append(clean)
+                lines.append(contentsOf: refertoLines(
+                    doc,
+                    label: "Referto allegato",
+                    indent: "",
+                    refertoMaxChars: refertoMaxChars,
+                    refertoMaxCharsByDocId: refertoMaxCharsByDocId
+                ))
             }
         }
         KBLog.ai.kbDebug("HealthContextBuilder visits appended count=\(visits.count)")
@@ -303,6 +319,7 @@ enum HealthContextBuilder {
         _ exams: [KBMedicalExam],
         documentsByExamId: [String: [KBDocument]],
         refertoMaxChars: Int?,
+        refertoMaxCharsByDocId: [String: Int]?,
         to lines: inout [String]
     ) {
         guard !exams.isEmpty else { return }
@@ -328,20 +345,39 @@ enum HealthContextBuilder {
             let docs = (documentsByExamId[exam.id] ?? [])
                 .filter { $0.extractionStatus == .completed && $0.hasExtractedText }
             for doc in docs {
-                let clean = HealthAiDocumentText.prepareExtractedTextForAI(
-                    doc.extractedText,
-                    maxChars: refertoMaxChars
-                )
-                guard !clean.isEmpty else { continue }
-                lines.append("  Referto (\(doc.title)):")
-                lines.append("  \(clean)")
+                lines.append(contentsOf: refertoLines(
+                    doc,
+                    label: "Referto",
+                    indent: "  ",
+                    refertoMaxChars: refertoMaxChars,
+                    refertoMaxCharsByDocId: refertoMaxCharsByDocId
+                ))
             }
         }
         KBLog.ai.kbDebug("HealthContextBuilder exams appended count=\(exams.count)")
     }
     
     // MARK: - Private helpers
-    
+
+    /// Le righe di un referto allegato. Senza limite per documento il testo è
+    /// quello di sempre (`refertoMaxChars`); con il limite a 0 resta il titolo,
+    /// così il modello sa che il referto esiste anche se il testo non c'è.
+    private static func refertoLines(
+        _ doc: KBDocument,
+        label: String,
+        indent: String,
+        refertoMaxChars: Int?,
+        refertoMaxCharsByDocId: [String: Int]?
+    ) -> [String] {
+        let maxChars = refertoMaxCharsByDocId?[doc.id] ?? refertoMaxChars
+        if maxChars == 0 {
+            return ["\(indent)\(label) (\(doc.title)): testo non incluso per spazio"]
+        }
+        let clean = HealthAiDocumentText.prepareExtractedTextForAI(doc.extractedText, maxChars: maxChars)
+        guard !clean.isEmpty else { return [] }
+        return ["\(indent)\(label) (\(doc.title)):", "\(indent)\(clean)"]
+    }
+
     private static func formatDate(_ date: Date) -> String {
         let f = DateFormatter()
         f.locale = kbDeviceLocale()
