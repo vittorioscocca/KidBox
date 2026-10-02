@@ -25,7 +25,7 @@ e si deploya subito: le rules vanno live **prima** del client che ne dipende.
 (`aiConversationWriteIsEncrypted`, `memoryFactWriteIsEncrypted`; i fatti escono
 dalle scritture del wildcard). Ogni differenza col file in produzione sta fra
 `// BEGIN next:<nome>` e `// END next:<nome>`, anche dentro un'espressione. Si
-promuove insieme all'interruttore Remote Config `ai_conversations_encrypted`,
+promuove insieme all'interruttore Remote Config `text_encryption_enabled`,
 quando le build iOS e Android che cifrano sono diffuse
 (`internal/assistente-unico.md`). La suite ha un test che fallisce se i due file
 divergono fuori dai blocchi marcati: promuovendo, togli i marcatori e il test.

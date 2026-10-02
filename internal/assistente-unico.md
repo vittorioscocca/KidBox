@@ -151,11 +151,20 @@ Qui non c'è il rischio di cancellazione (ogni fatto è un documento suo): un
 client vecchio semplicemente non vede i fatti cifrati. Nel `.next` i fatti
 escono dalle scritture del wildcard di famiglia e hanno una regola loro.
 
+E per il **testo letto dei documenti** (`families/{id}/documents`,
+`extractedTextEnc`, compreso l'OCR dei documenti d'identità del Wallet), che
+scrivono iOS e Android e il web solo legge. Qui **niente regola**, di proposito:
+ogni modifica a un documento (rinomina, spostamento, stato dell'OCR) riscrive
+anche il testo dalla copia locale, quindi una regola che rifiutasse il chiaro
+impedirebbe alle build vecchie di modificare i documenti. Una build vecchia che
+rimette il testo in chiaro viene ricifrata dal primo client nuovo che legge il
+documento (senza toccare `updatedAt`); finita la transizione resta cifrato.
+
 | Tappa | Cosa | Stato |
 |---|---|---|
-| 1 | iOS, Android e web **leggono** entrambi i formati; scrivono in chiaro finché l'interruttore Remote Config `ai_conversations_encrypted` è spento | web live, iOS e Android nelle prossime build |
+| 1 | iOS, Android e web **leggono** entrambi i formati; scrivono in chiaro finché l'interruttore Remote Config `text_encryption_enabled` è spento | web live, iOS e Android nelle prossime build |
 | 2 | Build iOS e Android diffuse (criterio di `/rules-change`: GA4 `platform × appVersion` a 7 giorni) | da fare |
-| 3 | Accendere `ai_conversations_encrypted` **e** promuovere `firestore.rules.next` (rifiuta le scritture in chiaro) | da fare, insieme |
+| 3 | Accendere `text_encryption_enabled` **e** promuovere `firestore.rules.next` (rifiuta le scritture in chiaro) | da fare, insieme |
 
 Perché non subito: le build iOS installate riscrivono l'array dei messaggi
 intero a ogni avvio (`reconcileAIChat`) e scartano quelli che non sanno

@@ -17,10 +17,13 @@ Se aggiungi un campo con contenuto scritto dall'utente, si chiama così anche lu
 
 **Chat AI** (`users/{uid}/aiConversations`): `contentEnc` nei messaggi e
 `summaryEnc`, ma la scrittura cifrata si accende con l'interruttore Remote Config
-`ai_conversations_encrypted` insieme a `firestore.rules.next` — fino ad allora i
+`text_encryption_enabled` insieme a `firestore.rules.next` — fino ad allora i
 client leggono entrambi i formati e scrivono in chiaro. Tappe e motivo in
 `internal/assistente-unico.md`. Stesso interruttore e stesso `.next` per i
-**`memoryFacts`** di famiglia (`contentEnc`), che scrivono anche Android.
+**`memoryFacts`** di famiglia (`contentEnc`), che scrivono anche Android. Stesso
+interruttore ma **senza regola** per il testo letto dei documenti
+(`extractedTextEnc`): le build vecchie riscrivono il testo a ogni modifica del
+documento, e i client nuovi lo ricifrano leggendolo.
 
 Non cifrati, per scelta: titoli e note dei to-do e le **richieste di
 famiglia** (01/10/2026), perché il server le legge per la push e per creare il
