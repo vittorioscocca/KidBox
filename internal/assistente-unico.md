@@ -145,10 +145,16 @@ e `summaryEnc`, cifrati con la chiave della famiglia della conversazione, nello
 stesso formato delle note. Il server non li legge: `deleteAccount` cancella la
 collezione e basta.
 
+Stesso schema, stesso interruttore, per i **fatti della memoria di famiglia**
+(`families/{id}/memoryFacts`, `contentEnc`): li scrivono iOS, Android e web.
+Qui non c'è il rischio di cancellazione (ogni fatto è un documento suo): un
+client vecchio semplicemente non vede i fatti cifrati. Nel `.next` i fatti
+escono dalle scritture del wildcard di famiglia e hanno una regola loro.
+
 | Tappa | Cosa | Stato |
 |---|---|---|
-| 1 | iOS e web **leggono** entrambi i formati; scrivono in chiaro finché l'interruttore Remote Config `ai_conversations_encrypted` è spento | web live, iOS nella prossima build |
-| 2 | Build iOS diffusa (criterio di `/rules-change`: GA4 `platform × appVersion` a 7 giorni) | da fare |
+| 1 | iOS, Android e web **leggono** entrambi i formati; scrivono in chiaro finché l'interruttore Remote Config `ai_conversations_encrypted` è spento | web live, iOS e Android nelle prossime build |
+| 2 | Build iOS e Android diffuse (criterio di `/rules-change`: GA4 `platform × appVersion` a 7 giorni) | da fare |
 | 3 | Accendere `ai_conversations_encrypted` **e** promuovere `firestore.rules.next` (rifiuta le scritture in chiaro) | da fare, insieme |
 
 Perché non subito: le build iOS installate riscrivono l'array dei messaggi

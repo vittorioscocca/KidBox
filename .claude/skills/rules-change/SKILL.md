@@ -20,10 +20,13 @@ un avviso in testa, e `rules.test.js` gira su entrambi (secondo ambiente con un
 modifica va scritta in tutti e due.** Un allargamento invece è retrocompatibile
 e si deploya subito: le rules vanno live **prima** del client che ne dipende.
 
-**`.next` in attesa dal 02/10/2026:** `users/{uid}/aiConversations` accetta
-solo scritture cifrate (`aiConversationWriteIsEncrypted`, blocchi marcati
-`aiConversations-next`). Si promuove insieme all'interruttore Remote Config
-`ai_conversations_encrypted`, quando la build iOS che cifra è diffusa
+**`.next` in attesa dal 02/10/2026:** `users/{uid}/aiConversations` e
+`families/{id}/memoryFacts` accettano solo scritture cifrate
+(`aiConversationWriteIsEncrypted`, `memoryFactWriteIsEncrypted`; i fatti escono
+dalle scritture del wildcard). Ogni differenza col file in produzione sta fra
+`// BEGIN next:<nome>` e `// END next:<nome>`, anche dentro un'espressione. Si
+promuove insieme all'interruttore Remote Config `ai_conversations_encrypted`,
+quando le build iOS e Android che cifrano sono diffuse
 (`internal/assistente-unico.md`). La suite ha un test che fallisce se i due file
 divergono fuori dai blocchi marcati: promuovendo, togli i marcatori e il test.
 

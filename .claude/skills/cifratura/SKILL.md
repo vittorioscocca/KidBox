@@ -19,7 +19,8 @@ Se aggiungi un campo con contenuto scritto dall'utente, si chiama così anche lu
 `summaryEnc`, ma la scrittura cifrata si accende con l'interruttore Remote Config
 `ai_conversations_encrypted` insieme a `firestore.rules.next` — fino ad allora i
 client leggono entrambi i formati e scrivono in chiaro. Tappe e motivo in
-`internal/assistente-unico.md`. I `memoryFacts` di famiglia restano in chiaro.
+`internal/assistente-unico.md`. Stesso interruttore e stesso `.next` per i
+**`memoryFacts`** di famiglia (`contentEnc`), che scrivono anche Android.
 
 Non cifrati, per scelta: titoli e note dei to-do e le **richieste di
 famiglia** (01/10/2026), perché il server le legge per la push e per creare il
