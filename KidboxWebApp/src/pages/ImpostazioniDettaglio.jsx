@@ -202,7 +202,7 @@ function AssistentePage() {
       </Group>
       {prefs?.aiEnabled && (
         <Group label={s.healthContext}>
-          <StackRow icon="🩺" tint="green" hint={s.healthContextFooter}>
+          <StackRow icon="🧠" tint="green" hint={s.healthContextFooter}>
             <span className="set-options">
               {HEALTH_CONTEXT_PREFS.map((option) => (
                 <button

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import AIFab from "./AIFab";
+import { AssistantContext } from "./AssistantContext";
 import Assistente from "../pages/Assistente";
 import { useTranslation } from "../i18n/LocaleContext";
 import { featureFirstUse, screenView, trackAppOpen } from "../services/analytics";
@@ -34,11 +35,11 @@ const SCREENS = {
 };
 
 /**
- * Sezioni con un'AI propria, dove il pulsante dell'assistente di famiglia non
- * compare: due cerchi uguali nello stesso angolo, per due chat diverse, non si
- * distinguerebbero. Salute ha le sue chat (e Piano Alimentare e Fitness vivono
- * dentro Salute), Viaggi costruisce l'itinerario con l'AI, `/assistente` è la
- * chat stessa. Una sezione nuova con la sua AI va aggiunta qui.
+ * Sezioni con un pulsante AI proprio, dove quello generico non compare: due
+ * cerchi uguali nello stesso angolo non si distinguerebbero. Salute ha i suoi
+ * (salute, visite, esami), che aprono **lo stesso** assistente già centrato
+ * sulla persona; Viaggi costruisce l'itinerario con l'AI; `/assistente` è la
+ * chat stessa. Una sezione nuova con un pulsante suo va aggiunta qui.
  */
 const OWN_AI_PREFIXES = ["/salute", "/viaggi", "/assistente"];
 
@@ -57,9 +58,12 @@ export default function Layout() {
      mentre l'assistente sta rispondendo (o eseguendo azioni) non deve
      interrompere niente, e riaprirlo ritrova la chat dov'era. */
   const [assistantMounted, setAssistantMounted] = useState(false);
+  /** Da dove si è aperto: null dal pulsante generico, la persona da Salute. */
+  const [assistantFocus, setAssistantFocus] = useState(null);
   const showAssistantFab = !hasOwnAI(location.pathname);
 
-  const openAssistant = () => {
+  const openAssistant = (focus = null) => {
+    setAssistantFocus(focus);
     setAssistantMounted(true);
     setAssistantOpenOn(location.pathname);
   };
@@ -86,6 +90,7 @@ export default function Layout() {
   }, [location.pathname]);
 
   return (
+    <AssistantContext.Provider value={{ openAssistant }}>
     <div className="app-shell">
       <Sidebar />
       <main className="app-content">
@@ -93,7 +98,7 @@ export default function Layout() {
       </main>
 
       {showAssistantFab && !assistantOpen && (
-        <AIFab label={t.assistant.fabLabel} onClick={openAssistant} />
+        <AIFab label={t.assistant.fabLabel} onClick={() => openAssistant()} />
       )}
 
       {assistantMounted && (
@@ -108,10 +113,16 @@ export default function Layout() {
             aria-label={t.assistant.fabLabel}
             onClick={(e) => e.stopPropagation()}
           >
-            <Assistente variant="panel" onClose={closeAssistant} />
+            <Assistente
+              variant="panel"
+              onClose={closeAssistant}
+              focus={assistantFocus}
+              onClearFocus={() => setAssistantFocus(null)}
+            />
           </div>
         </div>
       )}
     </div>
+    </AssistantContext.Provider>
   );
 }

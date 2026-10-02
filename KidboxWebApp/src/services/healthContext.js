@@ -41,7 +41,7 @@ export function frequencyLabel(t, locale = "it") {
 
 /* ── Blocchi ─────────────────────────────────────────────────────────────── */
 
-function appendTreatments(treatments, lines, locale) {
+function appendTreatments(treatments, lines, locale, refertiFor) {
   if (treatments.length === 0) return;
   lines.push(`\n--- CURE ATTIVE (${treatments.length}) ---`);
   for (const t of treatments) {
@@ -56,6 +56,7 @@ function appendTreatments(treatments, lines, locale) {
     }
     if (nonEmpty(t.notes)) line += ` — ${t.notes}`;
     lines.push(line);
+    if (refertiFor) lines.push(...refertiFor(`treatment:${t.id}`, "  ", "Referto allegato"));
   }
 }
 
@@ -85,7 +86,7 @@ function appendVaccines(vaccines, lines, locale) {
   }
 }
 
-function appendVisits(visits, lines, locale) {
+function appendVisits(visits, lines, locale, refertiFor) {
   if (visits.length === 0) return;
   lines.push(`\n--- VISITE MEDICHE (${visits.length}) ---`);
   visits.forEach((visit, index) => {
@@ -121,10 +122,11 @@ function appendVisits(visits, lines, locale) {
       if (nonEmpty(visit.nextVisitReason)) nl += ` — ${visit.nextVisitReason}`;
       lines.push(nl);
     }
+    if (refertiFor) lines.push(...refertiFor(`visit:${visit.id}`, "", "Referto allegato"));
   });
 }
 
-function appendExams(exams, lines, locale, refertoMaxChars) {
+function appendExams(exams, lines, locale, refertoMaxChars, refertiFor) {
   if (exams.length === 0) return;
   lines.push(`\n--- ESAMI (${exams.length}) ---`);
   const now = Date.now();
@@ -141,6 +143,7 @@ function appendExams(exams, lines, locale, refertoMaxChars) {
       line += ` — Risultato: ${truncate(exam.resultText, refertoMaxChars)}`;
     }
     lines.push(line);
+    if (refertiFor) lines.push(...refertiFor(`exam:${exam.id}`, "  ", "Referto"));
   }
 }
 
@@ -176,12 +179,15 @@ export function buildHealthContext({
   refertoMaxChars = 1200,
   locale = "it",
   purpose = "clinicalRecord",
+  refertiFor = null,
 }) {
   const lines = [];
 
-  // Due usi, due intestazioni: la chat parla al genitore, la cartella clinica è
-  // materiale grezzo per un altro prompt. Il corpo dei dati è identico.
-  lines.push(
+  // Tre usi: la chat parla al genitore, la cartella clinica è materiale grezzo
+  // per un altro prompt, la scheda dell'assistente unico (`agentMemory`) è solo
+  // dati — il ruolo e le azioni li mette una volta sola l'assistente. Il corpo
+  // dei dati è identico.
+  if (purpose !== "agentMemory") lines.push(
     purpose === "healthChat"
       ? [
           "Sei un assistente medico informativo integrato nell'app KidBox, pensata per genitori.",
@@ -223,20 +229,21 @@ export function buildHealthContext({
   const urgent = pending.filter((e) => e.isUrgent);
   if (urgent.length > 0) lines.push(`Esami urgenti: ${urgent.length}`);
 
-  appendTreatments(treatments, lines, locale);
+  appendTreatments(treatments, lines, locale, refertiFor);
   appendVaccines(vaccines, lines, locale);
-  appendVisits([...visits].sort((a, b) => (b.date || 0) - (a.date || 0)), lines, locale);
+  appendVisits([...visits].sort((a, b) => (b.date || 0) - (a.date || 0)), lines, locale, refertiFor);
   appendExams(
     [...exams].sort((a, b) => (a.deadline || Infinity) - (b.deadline || Infinity)),
     lines,
     locale,
-    refertoMaxChars
+    refertoMaxChars,
+    refertiFor
   );
 
   if (purpose === "healthChat") {
     lines.push("\n--- FINE CONTESTO SALUTE ---");
     lines.push("Rispondi alle domande usando le informazioni sopra.");
-  } else {
+  } else if (purpose !== "agentMemory") {
     lines.push("\n--- FINE DATI CLINICI ---");
   }
   return lines.join("\n");

@@ -185,12 +185,14 @@ export async function deleteConversation({ uid, docId }) {
  * La quota è applicata dal server: qui non si finge alcun controllo di piano,
  * si mostra soltanto il contatore che il server restituisce.
  */
-export async function askAssistant({ messages, systemPrompt, familyId }) {
+export async function askAssistant({ messages, systemPrompt, familyId, purpose }) {
   const callable = httpsCallable(functions, "askAI", { timeout: 120_000 });
   const { data } = await callable({
     messages: messages.map((m) => ({ role: m.role, content: m.content })),
     systemPrompt,
     familyId,
+    // `familyAgent` riconosce l'assistente in log e analytics del server.
+    ...(purpose ? { purpose } : {}),
   });
   if (!data || typeof data.reply !== "string") {
     throw new Error("Risposta dell'assistente non valida.");
@@ -244,6 +246,17 @@ export async function summarizeConversation({ messages, familyId }) {
 
 /** Prefisso dell'id del messaggio-riassunto, come su iOS (`summary-{id}`). */
 export const SUMMARY_PREFIX = "summary-";
+
+/**
+ * Lo storico che parte con una domanda all'assistente: l'eventuale riassunto più
+ * gli ultimi 6 messaggi, come su iOS e Android. Mandare tutta la conversazione
+ * farebbe crescere il costo a ogni scambio, con la memoria già nel prompt.
+ */
+export function recentPayload(messages) {
+  const summary = messages.find((m) => m.id?.startsWith(SUMMARY_PREFIX));
+  const rest = messages.filter((m) => !m.id?.startsWith(SUMMARY_PREFIX)).slice(-6);
+  return summary ? [summary, ...rest] : rest;
+}
 
 /** Contatore d'uso senza inviare un messaggio. */
 export async function fetchUsage(familyId) {

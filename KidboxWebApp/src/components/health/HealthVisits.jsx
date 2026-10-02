@@ -16,11 +16,10 @@ import {
   visitStatusInfo,
   visitTag,
 } from "../../services/health";
-import HealthAIChat from "./HealthAIChat";
 import HealthAttachments from "./HealthAttachments";
 import PeriodFilter, { emptyPeriod, inPeriod } from "./PeriodFilter";
 import AIFab from "../AIFab";
-import { HEALTH_SCOPES, visitsSystemPrompt } from "../../services/healthChat";
+import { useAssistant } from "../AssistantContext";
 import {
   DetailRow,
   Field,
@@ -54,7 +53,6 @@ export default function HealthVisits({
   userId,
   subject,
   visits,
-  treatments,
   attachments,
   h,
   locale,
@@ -67,7 +65,7 @@ export default function HealthVisits({
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState(null);
   const [period, setPeriod] = useState(emptyPeriod);
-  const [chatOpen, setChatOpen] = useState(false);
+  const { openAssistant } = useAssistant();
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -231,32 +229,14 @@ export default function HealthVisits({
         </div>
       )}
 
+      {/* L'assistente unico, centrato sulle visite di questa persona. */}
       <AIFab
         label={h.chat.askVisits}
         disabled={visits.length === 0}
-        onClick={() => setChatOpen(true)}
+        onClick={() =>
+          openAssistant({ personId: subject.id, personName: subject.name, scope: "visits" })
+        }
       />
-
-      {chatOpen && (
-        <HealthAIChat
-          uid={userId}
-          familyId={familyId}
-          kind="visits"
-          subjectId={subject.id}
-          scopeId={HEALTH_SCOPES.visits(subject.id, subject.kind)}
-          systemPrompt={visitsSystemPrompt({
-            subjectName: subject.name,
-            birthDate: subject.birthDate,
-            // La chat parte dalle visite filtrate a schermo, come su iOS: se hai
-            // ristretto la lista, è di quelle che stai chiedendo.
-            visits: filtered,
-            treatments: treatments || [],
-          })}
-          title={`${h.chat.askVisits} · ${subject.name}`}
-          h={h}
-          onClose={() => setChatOpen(false)}
-        />
-      )}
 
       {editing && (
         <VisitModal

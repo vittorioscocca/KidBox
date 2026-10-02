@@ -24,6 +24,7 @@
 import {
   collection,
   doc,
+  getDocs,
   onSnapshot,
   query,
   serverTimestamp,
@@ -723,6 +724,38 @@ function readProfile(snap, childId) {
     emergencyContacts: parseJsonList(d.emergencyContactsJSON),
     isDeleted: Boolean(d.isDeleted),
     updatedAt: millis(d.updatedAt),
+  };
+}
+
+/**
+ * Tutti i dati sanitari della famiglia in una lettura sola, per l'assistente
+ * (`memoryBook.js`): visite, esami, cure (di persone e animali), vaccini e
+ * schede mediche, nella stessa forma che usano le schermate di Salute. Una
+ * collezione che non si riesce a leggere torna vuota invece di far fallire
+ * tutto.
+ */
+export async function loadFamilyHealth(familyId) {
+  const read = async (ref, reader) => {
+    try {
+      const snap = await getDocs(ref);
+      return snap.docs.map(reader).filter((r) => r && !r.isDeleted);
+    } catch {
+      return [];
+    }
+  };
+  const [visits, exams, treatments, vaccines, profiles] = await Promise.all([
+    read(visitsCol(familyId), readVisit),
+    read(examsCol(familyId), readExam),
+    read(treatmentsCol(familyId), readTreatment),
+    read(vaccinesCol(familyId), readVaccine),
+    read(profilesCol(familyId), (snap) => readProfile(snap, snap.id)),
+  ]);
+  return {
+    visits,
+    exams,
+    treatments,
+    vaccines,
+    profiles: Object.fromEntries(profiles.map((p) => [p.childId, p])),
   };
 }
 

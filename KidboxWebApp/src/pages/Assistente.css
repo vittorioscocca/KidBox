@@ -145,6 +145,86 @@ button.ai-history-item {
   flex: 1;
 }
 
+/* Focus da Salute: su chi si parte. Si toglie per chiedere di tutta la famiglia. */
+.ai-focus-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 14px 0;
+  padding: 5px 10px;
+  align-self: flex-start;
+  font-size: 0.82rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.ai-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  width: min(380px, 100%);
+}
+
+.ai-suggestion {
+  text-align: left;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.ai-suggestion:hover {
+  border-color: var(--accent);
+}
+
+.ai-suggestions-row {
+  flex-direction: row;
+  width: auto;
+  margin: 0;
+  padding: 8px 14px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ai-suggestions-row .ai-suggestion {
+  flex: none;
+  white-space: nowrap;
+  border-radius: 999px;
+}
+
+.ai-suggestion:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Scelta «accurata / ridotta» quando la memoria supera un messaggio: la stessa
+   della chat Salute sul telefono. Sta sopra il campo, non in un popup. */
+.ai-choice {
+  margin: 0 14px 10px;
+  padding: 12px 14px;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.ai-choice p {
+  margin: 6px 0 10px;
+}
+
+.ai-choice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .ai-messages {
   flex: 1;
   min-height: 0;
@@ -300,6 +380,13 @@ button.ai-history-item {
   display: flex;
   justify-content: flex-end;
   background: rgba(0, 0, 0, 0.35);
+}
+
+/* `display: flex` vince sull'attributo `hidden`: senza questa regola il
+   pannello chiuso restava a schermo, e lo storico non nascondeva la chat. */
+.ai-panel-overlay[hidden],
+.ai-chat[hidden] {
+  display: none;
 }
 
 .ai-panel-sheet {

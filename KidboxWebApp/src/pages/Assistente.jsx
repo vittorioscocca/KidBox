@@ -4,6 +4,7 @@ import { useAuth } from "../AuthContext";
 import { useTranslation } from "../i18n/LocaleContext";
 import { useFamilyMembers } from "../hooks/useFamilyMembers";
 import { useChildren } from "../hooks/useChildren";
+import { usePlan } from "../hooks/usePlan";
 import {
   askAssistant,
   compactionStep,
@@ -11,15 +12,18 @@ import {
   deleteConversation,
   fetchUsage,
   listenConversations,
+  recentPayload,
   saveConversation,
   startNewSession,
   summarizeConversation,
   SUMMARY_PREFIX,
 } from "../services/aiChat";
-import { buildSystemPrompt } from "../services/aiContext";
+import { loadMemorySnapshot, planContext } from "../services/memoryBook";
+import { loadSettings, setHealthContextSendPreference } from "../services/settings";
 import { executeActions, processReply } from "../services/aiActions";
 import { extractAndStore } from "../services/aiMemory";
 import { loadFamilyKey } from "../services/familyKey";
+import { aiMessageSent } from "../services/analytics";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import MarkdownText from "../components/MarkdownText";
@@ -46,15 +50,19 @@ async function pendingGroceryNames(familyId) {
 }
 
 /**
- * L'assistente di famiglia. Non è più una voce della barra laterale: lo apre
- * il pulsante flottante (`AIFab`) montato dal `Layout`, in un pannello a
- * destra (`variant="panel"`). La rotta `/assistente` resta per i vecchi link e
- * mostra la stessa chat a tutta pagina.
+ * L'assistente unico. Non è più una voce della barra laterale: lo apre il
+ * pulsante flottante (`AIFab`) montato dal `Layout`, in un pannello a destra
+ * (`variant="panel"`), e da Salute lo aprono i pulsanti di salute, visite ed
+ * esami con un `focus` sulla persona. La rotta `/assistente` resta per i
+ * vecchi link e mostra la stessa chat a tutta pagina.
+ *
+ * Il contesto è il quaderno di schede (`memoryBook.js`), ricostruito a ogni
+ * domanda; disegno in `internal/assistente-unico.md`.
  *
  * Nel pannello non c'è spazio per storico e chat affiancati: lo storico prende
  * il posto della chat finché non si sceglie una sessione.
  */
-export default function Assistente({ variant = "page", onClose }) {
+export default function Assistente({ variant = "page", onClose, focus = null, onClearFocus }) {
   const isPanel = variant === "panel";
   const { currentFamilyId, currentFamily } = useFamily();
   const { user } = useAuth();
@@ -62,6 +70,7 @@ export default function Assistente({ variant = "page", onClose }) {
   const a = t.assistant;
   const members = useFamilyMembers(currentFamilyId);
   const children = useChildren(currentFamilyId);
+  const currentPlan = usePlan({ familyId: currentFamilyId, uid: user?.uid });
 
   const [conversations, setConversations] = useState([]);
   /** null = sessione corrente; altrimenti il docId di un archivio in lettura. */
@@ -72,6 +81,8 @@ export default function Assistente({ variant = "page", onClose }) {
   const [usage, setUsage] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [actionSummary, setActionSummary] = useState(null);
+  /** Domanda in attesa della scelta «accurata / ridotta»: `{ text, plan }`. */
+  const [pendingChoice, setPendingChoice] = useState(null);
   const scrollRef = useRef(null);
   /**
    * Ultimo scalino di quota a cui si è compattato. Vive quanto la pagina, come
@@ -130,14 +141,77 @@ export default function Assistente({ variant = "page", onClose }) {
     return first.content.length > 60 ? `${first.content.slice(0, 60)}…` : first.content;
   };
 
-  const send = async () => {
-    const text = draft.trim();
+  /**
+   * Prepara il contesto e decide quanto mandare. Se il quaderno completo sta in
+   * un messaggio parte subito; se no vale la stessa preferenza della chat
+   * Salute (`aiPrefs.healthContextSendPreference`), e con «Chiedi ogni volta»
+   * la domanda aspetta la scelta senza essere ancora salvata.
+   */
+  const send = async (preset) => {
+    const text = (preset ?? draft).trim();
     if (!text || sending || !currentFamilyId || !user) return;
 
     setError(null);
     setSending(true);
     setDraft("");
+    try {
+      const snapshot = await loadMemorySnapshot({
+        familyId: currentFamilyId,
+        userId: user.uid,
+        familyName: currentFamily?.name || "la famiglia",
+        members,
+        children,
+      });
+      const plan = planContext(snapshot, {
+        question: text,
+        focus,
+        history: recentPayload(current?.messages ?? []),
+        locale,
+      });
+      if (!plan.reducedPrompt || plan.fullUnits <= 1) {
+        await deliver(text, plan.fullPrompt);
+        return;
+      }
+      const preference = await loadSettings(user.uid)
+        .then((st) => st.healthContextSendPreference)
+        .catch(() => "ask_each_time");
+      if (preference === "full_accuracy") await deliver(text, plan.fullPrompt);
+      else if (preference === "compact_summary") await deliver(text, plan.reducedPrompt);
+      else {
+        setPendingChoice({ text, plan });
+        setSending(false);
+      }
+    } catch (err) {
+      setError(err.message || a.genericError);
+      setSending(false);
+    }
+  };
 
+  /** Scelta dal riquadro: diventa la preferenza, come sul telefono. */
+  const choose = async (mode) => {
+    const choice = pendingChoice;
+    if (!choice || !user) return;
+    setPendingChoice(null);
+    setSending(true);
+    setHealthContextSendPreference(user.uid, mode).catch(() => {});
+    try {
+      await deliver(
+        choice.text,
+        mode === "full_accuracy" ? choice.plan.fullPrompt : choice.plan.reducedPrompt
+      );
+    } catch (err) {
+      setError(err.message || a.genericError);
+      setSending(false);
+    }
+  };
+
+  /** Annullato: la domanda torna nel campo, non si perde. */
+  const cancelChoice = () => {
+    if (pendingChoice && !draft.trim()) setDraft(pendingChoice.text);
+    setPendingChoice(null);
+  };
+
+  const deliver = async (text, systemPrompt) => {
     const outgoing = {
       id: newId(),
       role: "user",
@@ -158,30 +232,28 @@ export default function Assistente({ variant = "page", onClose }) {
         createdAt,
       });
 
-      const systemPrompt = await buildSystemPrompt({
-        familyId: currentFamilyId,
-        userId: user.uid,
-        familyName: currentFamily?.name || "la famiglia",
-        members,
-        children,
-      });
-
       const result = await askAssistant({
-        messages: history,
+        messages: recentPayload(history),
         systemPrompt,
         familyId: currentFamilyId,
+        purpose: "familyAgent",
       });
+      // Come su iOS e Android: col focus di Salute vale come la vecchia chat
+      // Salute, così la serie dell'evento resta confrontabile con quella di prima.
+      aiMessageSent(focus ? "salute" : "assistente", currentPlan || "unknown");
 
       // Il blocco azioni si esegue e sparisce dal testo, come su iOS: nella
       // chat resta solo quello che l'utente deve leggere.
       const { displayText, actions } = processReply(result.reply);
       if (actions.length) {
+        // Il to-do creato da Salute va alla persona del focus, se è un figlio.
+        const focusChild = children.find((c) => c.id === focus?.personId);
         const summary = await executeActions({
           actions,
           familyId: currentFamilyId,
           uid: user.uid,
           userName: user.displayName ?? null,
-          defaultChildId: children[0]?.id ?? "",
+          defaultChildId: focusChild?.id ?? children[0]?.id ?? "",
           pendingGroceryNames: await pendingGroceryNames(currentFamilyId),
           loadFamilyKey: () =>
             loadFamilyKey({ familyId: currentFamilyId, userId: user.uid }),
@@ -314,6 +386,21 @@ export default function Assistente({ variant = "page", onClose }) {
     if (openArchiveId === conversation.docId) setOpenArchiveId(null);
   };
 
+  const focusLabel = focus
+    ? focus.scope === "visits"
+      ? a.focusVisits(focus.personName)
+      : focus.scope === "exams"
+        ? a.focusExams(focus.personName)
+        : a.focusHealth(focus.personName)
+    : null;
+  const focusSuggestions = focus
+    ? focus.scope === "visits"
+      ? a.suggestVisits(focus.personName)
+      : focus.scope === "exams"
+        ? a.suggestExams(focus.personName)
+        : a.suggestPerson(focus.personName)
+    : [];
+
   const quotaLabel = useMemo(() => {
     if (!usage || !usage.dailyLimit) return null;
     return a.quota(usage.usageToday, usage.dailyLimit);
@@ -407,6 +494,20 @@ export default function Assistente({ variant = "page", onClose }) {
             </div>
           )}
 
+          {focusLabel && !isArchive && (
+            <div className="ai-focus-chip">
+              <span>🩺 {focusLabel}</span>
+              <button
+                className="link-btn"
+                onClick={onClearFocus}
+                aria-label={a.focusClear}
+                title={a.focusClear}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {actionSummary && (
             <div className="ai-action-summary">
               <span>✅ {actionSummary}</span>
@@ -419,7 +520,16 @@ export default function Assistente({ variant = "page", onClose }) {
               <div className="ai-empty">
                 <div className="empty-icon">🧠</div>
                 <strong>{a.emptyTitle}</strong>
-                <p>{a.emptyHint}</p>
+                <p>{focus ? a.focusHint : a.emptyHint}</p>
+                {focusSuggestions.length > 0 && (
+                  <div className="ai-suggestions">
+                    {focusSuggestions.map((q) => (
+                      <button key={q} className="ai-suggestion" onClick={() => send(q)}>
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               messages.map((m) => (
@@ -448,6 +558,36 @@ export default function Assistente({ variant = "page", onClose }) {
             )}
           </div>
 
+          {pendingChoice && !isArchive && (
+            <div className="ai-choice" role="dialog" aria-label={a.choiceTitle}>
+              <strong>{a.choiceTitle}</strong>
+              <p>{a.choiceMessage}</p>
+              <div className="ai-choice-actions">
+                <button className="pw-btn-primary" onClick={() => choose("full_accuracy")}>
+                  {a.choiceFull(pendingChoice.plan.fullUnits)}
+                </button>
+                <button className="docs-btn" onClick={() => choose("compact_summary")}>
+                  {a.choiceReduced(pendingChoice.plan.reducedUnits)}
+                </button>
+                <button className="link-btn" onClick={cancelChoice}>
+                  {a.choiceCancel}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* La conversazione è una sola e quasi mai vuota: aperto da Salute, i
+              suggerimenti a tema restano sopra il campo anche con lo storico. */}
+          {focusSuggestions.length > 0 && messages.length > 0 && !isArchive && !pendingChoice && (
+            <div className="ai-suggestions ai-suggestions-row">
+              {focusSuggestions.map((q) => (
+                <button key={q} className="ai-suggestion" disabled={sending} onClick={() => send(q)}>
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
+
           {!isArchive && (
             <form
               className="ai-composer"
@@ -460,7 +600,7 @@ export default function Assistente({ variant = "page", onClose }) {
                 rows={1}
                 placeholder={a.placeholder}
                 value={draft}
-                disabled={sending}
+                disabled={sending || Boolean(pendingChoice)}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => {
                   // Invio manda, Maiusc+Invio va a capo: è quello che ci si

@@ -41,9 +41,8 @@ import HealthClinicalRecord from "../components/health/HealthClinicalRecord";
 import HealthMealPlan from "../components/health/HealthMealPlan";
 import HealthFitnessPlan from "../components/health/HealthFitnessPlan";
 import HealthTimeline from "../components/health/HealthTimeline";
-import HealthAIChat from "../components/health/HealthAIChat";
 import AIFab from "../components/AIFab";
-import { HEALTH_SCOPES, healthSystemPrompt } from "../services/healthChat";
+import { useAssistant } from "../components/AssistantContext";
 import "./Salute.css";
 
 const SUBJECT_KEY = "kidbox:healthSubjectId";
@@ -80,7 +79,7 @@ export default function Salute() {
     else next.delete("modulo");
     setSearchParams(next, { replace: true });
   };
-  const [chatOpen, setChatOpen] = useState(false);
+  const { openAssistant } = useAssistant();
   const [error, setError] = useState(null);
 
   const [visits, setVisits] = useState([]);
@@ -176,7 +175,6 @@ export default function Salute() {
     setVaccines([]);
     setProfile(null);
     openModuleKey(null);
-    setChatOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subjectId]);
 
@@ -372,33 +370,14 @@ export default function Salute() {
 
           <p className="pw-hint">{h.appleHealthOnlyOnPhone}</p>
 
+          {/* L'assistente unico, centrato su questa persona: i dati li legge da sé. */}
           <AIFab
             label={h.chat.askHealth}
             disabled={!hasHealthData}
-            onClick={() => setChatOpen(true)}
+            onClick={() =>
+              openAssistant({ personId: subject.id, personName: subject.name, scope: "person" })
+            }
           />
-
-          {chatOpen && (
-            <HealthAIChat
-              uid={user?.uid}
-              familyId={currentFamilyId}
-              kind="health"
-              subjectId={subject.id}
-              scopeId={HEALTH_SCOPES.health(subject.id)}
-              systemPrompt={healthSystemPrompt({
-                subjectName: subject.name,
-                visits,
-                exams,
-                treatments: active,
-                vaccines,
-                profile,
-                locale,
-              })}
-              title={`${h.chat.askHealth} · ${subject.name}`}
-              h={h}
-              onClose={() => setChatOpen(false)}
-            />
-          )}
         </>
       )}
     </div>

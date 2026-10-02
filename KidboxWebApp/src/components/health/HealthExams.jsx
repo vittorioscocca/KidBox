@@ -13,11 +13,10 @@ import {
   examTag,
   saveExam,
 } from "../../services/health";
-import HealthAIChat from "./HealthAIChat";
 import HealthAttachments from "./HealthAttachments";
 import PeriodFilter, { emptyPeriod, inPeriod } from "./PeriodFilter";
 import AIFab from "../AIFab";
-import { HEALTH_SCOPES, examsSystemPrompt } from "../../services/healthChat";
+import { useAssistant } from "../AssistantContext";
 import {
   DetailRow,
   Field,
@@ -58,7 +57,7 @@ export default function HealthExams({
   const [statusFilter, setStatusFilter] = useState(null);
   const [search, setSearch] = useState("");
   const [period, setPeriod] = useState(emptyPeriod);
-  const [chatOpen, setChatOpen] = useState(false);
+  const { openAssistant } = useAssistant();
 
   const now = Date.now();
 
@@ -198,25 +197,14 @@ export default function HealthExams({
         </div>
       )}
 
+      {/* L'assistente unico, centrato sugli esami di questa persona. */}
       <AIFab
         label={h.chat.askExams}
         disabled={exams.length === 0}
-        onClick={() => setChatOpen(true)}
+        onClick={() =>
+          openAssistant({ personId: subject.id, personName: subject.name, scope: "exams" })
+        }
       />
-
-      {chatOpen && (
-        <HealthAIChat
-          uid={userId}
-          familyId={familyId}
-          kind="exams"
-          subjectId={subject.id}
-          scopeId={HEALTH_SCOPES.exams(subject.id)}
-          systemPrompt={examsSystemPrompt({ subjectName: subject.name, exams: shown })}
-          title={`${h.chat.askExams} · ${subject.name}`}
-          h={h}
-          onClose={() => setChatOpen(false)}
-        />
-      )}
 
       {editing && (
         <ExamModal
