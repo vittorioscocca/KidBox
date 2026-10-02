@@ -14,6 +14,13 @@
 //  array nel documento (testo leggero), con merge a livello di conversazione
 //  via Last-Writer-Wins su `updatedAt`.
 //
+//  Cifratura (dal 02/10/2026): testo dei messaggi e riassunto possono viaggiare
+//  cifrati con la chiave della famiglia della conversazione (`contentEnc`,
+//  `summaryEnc`, stesso formato delle note e del web). La lettura capisce sempre
+//  entrambi i formati; la scrittura cifra quando è acceso l'interruttore remoto
+//  `ai_conversations_encrypted`, che si accende insieme alle rules che
+//  rifiutano il chiaro (`firestore.rules.next`).
+//
 
 import Foundation
 import FirebaseFirestore
@@ -74,13 +81,25 @@ final class AIChatRemoteStore {
                           userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
         }
 
-        let messagesPayload: [[String: Any]] = conversation.sortedMessages.map { m in
-            [
+        // Cifrate solo a interruttore acceso (`KBFeatureFlags`): finché le build
+        // vecchie sono in giro riscriverebbero in chiaro l'intero array,
+        // cancellando i messaggi che non sanno leggere. Acceso, senza chiave di
+        // famiglia `encryptString` lancia: meglio non sincronizzare che caricare
+        // il testo in chiaro.
+        let encrypt = KBFeatureFlags.isAIConversationEncryptionEnabled
+        let fid = conversation.familyId
+        let messagesPayload: [[String: Any]] = try conversation.sortedMessages.map { m in
+            var row: [String: Any] = [
                 "id": m.id,
                 "roleRaw": m.roleRaw,
-                "content": m.content,
                 "createdAt": Timestamp(date: m.createdAt)
             ]
+            if encrypt {
+                row["contentEnc"] = try NoteCryptoService.encryptString(m.content, familyId: fid, userId: uid)
+            } else {
+                row["content"] = m.content
+            }
+            return row
         }
 
         var data: [String: Any] = [
@@ -96,7 +115,19 @@ final class AIChatRemoteStore {
             "isDeleted": false,
             "messages": messagesPayload
         ]
-        data["summary"] = conversation.summary as Any
+        // Un solo formato per volta: il campo dell'altro si cancella, o la lettura
+        // (che preferisce `summaryEnc`) troverebbe un riassunto vecchio.
+        if encrypt {
+            data["summary"] = FieldValue.delete()
+            if let summary = conversation.summary, !summary.isEmpty {
+                data["summaryEnc"] = try NoteCryptoService.encryptString(summary, familyId: fid, userId: uid)
+            } else {
+                data["summaryEnc"] = FieldValue.delete()
+            }
+        } else {
+            data["summary"] = conversation.summary as Any
+            data["summaryEnc"] = FieldValue.delete()
+        }
         data["summaryUpdatedAt"] = conversation.summaryUpdatedAt.map { Timestamp(date: $0) } as Any
 
         try await ref(uid: uid, docId: conversation.remoteDocId).setData(data, merge: true)
@@ -107,14 +138,29 @@ final class AIChatRemoteStore {
 
     private func decode(_ doc: DocumentSnapshot) -> AIConversationDTO? {
         guard let data = doc.data() else { return nil }
+        let familyId = data["familyId"] as? String ?? ""
+        let uid = Auth.auth().currentUser?.uid ?? ""
+
+        /// Campo cifrato se c'è, altrimenti il vecchio in chiaro. Un blob che non
+        /// si apre torna nil: il messaggio si salta (l'inbound fa un'unione e non
+        /// cancella mai i messaggi locali), mai una stringa vuota al suo posto.
+        func open(_ enc: Any?, _ plain: Any?) -> String? {
+            if let enc = enc as? String, !enc.isEmpty {
+                return try? NoteCryptoService.decryptString(enc, familyId: familyId, userId: uid)
+            }
+            return plain as? String
+        }
 
         let rawMessages = data["messages"] as? [[String: Any]] ?? []
         let messages: [AIMessageDTO] = rawMessages.compactMap { m in
             guard let id = m["id"] as? String,
                   let roleRaw = m["roleRaw"] as? String,
-                  let content = m["content"] as? String else { return nil }
+                  let content = open(m["contentEnc"], m["content"]) else { return nil }
             let createdAt = (m["createdAt"] as? Timestamp)?.dateValue() ?? Date.distantPast
             return AIMessageDTO(id: id, roleRaw: roleRaw, content: content, createdAt: createdAt)
+        }
+        if messages.count < rawMessages.count {
+            KBLog.sync.kbError("[AIChatRemote] decode: \(rawMessages.count - messages.count) messaggi non decifrati docId=\(doc.documentID)")
         }
 
         return AIConversationDTO(
@@ -126,7 +172,7 @@ final class AIChatRemoteStore {
             ownerUserId: data["ownerUserId"] as? String ?? "",
             createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
             updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date.distantPast,
-            summary: data["summary"] as? String,
+            summary: open(data["summaryEnc"], data["summary"]),
             summaryUpdatedAt: (data["summaryUpdatedAt"] as? Timestamp)?.dateValue(),
             summarizedMessageCount: data["summarizedMessageCount"] as? Int ?? 0,
             isDeleted: data["isDeleted"] as? Bool ?? false,
