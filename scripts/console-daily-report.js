@@ -6,6 +6,7 @@
  *   node scripts/console-daily-report.js           # report testuale
  *   node scripts/console-daily-report.js --json    # stesso contenuto, in JSON
  *   node scripts/console-daily-report.js --day 2026-09-13
+ *   node scripts/console-daily-report.js --cohorts-from 2026-10-05   # coorti da quella settimana
  *
  * Complementare a `ga4-daily-report.js`: GA4 dice cosa fanno gli utenti nelle
  * app, qui c'è quello che GA4 non sa — la base installata (Auth), la struttura
@@ -23,9 +24,14 @@
  *
  * Privacy: il report contiene solo aggregati. Niente email, nomi, uid o id di
  * famiglia — i dati per-utente restano nella console, dietro login.
+ *
+ * Unica fonte esterna: la spesa Meta per settimana (`weeklySpend` di
+ * meta-ads-daily-report.js, token nel Portachiavi), per il costo per famiglia
+ * vera delle coorti. Se manca, quella colonna dice «n/d» e il resto esce uguale.
  */
 
 const { execFileSync } = require("node:child_process");
+const { weeklySpend } = require("./meta-ads-daily-report.js");
 
 const PROJECT = "kidbox-42cd7";
 const TZ = "Europe/Rome";
@@ -209,7 +215,7 @@ async function main() {
   const trialRows = await call(tok, `${FS}:runQuery`, {
     structuredQuery: {
       from: [{ collectionId: "trials" }],
-      select: { fields: [{ fieldPath: "startedAt" }, { fieldPath: "endedAt" }, { fieldPath: "convertedAt" }, { fieldPath: "convertedDuringTrial" }] },
+      select: { fields: [{ fieldPath: "familyId" }, { fieldPath: "startedAt" }, { fieldPath: "endedAt" }, { fieldPath: "convertedAt" }, { fieldPath: "convertedDuringTrial" }] },
     },
   }).catch(() => []);
   const trialDocs = trialRows.filter((r) => r.document).map((r) => r.document.fields || {});
@@ -240,6 +246,13 @@ async function main() {
   }
   const sizes = Object.values(perFamily).map((f) => f.n);
   const external = Object.values(perFamily).filter((f) => !f.internal);
+  // Prove in famiglie VERE con 2+ membri: è lì che la disponibilità a pagare
+  // conta (scommessa 9 del registro). La prova va anche a chi crea la famiglia
+  // e non torna più, quindi la conversione sul totale sembra sempre zero.
+  const in2plus = (f) => {
+    const fam = perFamily[f.familyId?.stringValue];
+    return Boolean(fam && !fam.internal && fam.n >= 2);
+  };
   out.families = {
     total: famTotal,
     createdYesterday: famYesterday,
@@ -262,6 +275,8 @@ async function main() {
       ended: trialDocs.filter((f) => f.endedAt).length,
       converted: trialDocs.filter((f) => f.convertedAt).length,
       convertedDuringTrial: trialDocs.filter((f) => f.convertedDuringTrial?.booleanValue).length,
+      ended2plus: trialDocs.filter((f) => f.endedAt && in2plus(f)).length,
+      converted2plus: trialDocs.filter((f) => f.convertedAt && in2plus(f)).length,
     },
   };
 
@@ -273,7 +288,12 @@ async function main() {
   // e famiglie senza membri fuori. Il 27/09/2026: settimana del 14/09 1 su 29
   // (3%), settimana del 21/09 4 su 36 (11%) dopo wizard a 2 pagine, invito a 7
   // giorni e recupero dell'invito dopo l'installazione.
-  const cohortFrom = shiftDay(mondayOf(yesterday), -35);
+  // `--cohorts-from` sceglie la prima settimana (la verifica della scommessa 9
+  // parte dal 05/10/2026). Le famiglie nate dopo ieri restano fuori, come la
+  // spesa: tutto il report si ferma a ieri.
+  const cohortsFromArg = args[args.indexOf("--cohorts-from") + 1];
+  const cohortFrom = args.includes("--cohorts-from") && cohortsFromArg ? mondayOf(cohortsFromArg) : shiftDay(mondayOf(yesterday), -35);
+  const cohortTo = Date.parse(romeMidnight(shiftDay(yesterday, 1)));
   const famCreated = await call(tok, `${FS}:runQuery`, {
     structuredQuery: {
       from: [{ collectionId: "families" }],
@@ -288,7 +308,7 @@ async function main() {
     const fid = d.name.split("/").pop();
     const created = tsMillis(d.fields?.createdAt);
     const fam = perFamily[fid];
-    if (!created || !fam || fam.internal) continue;
+    if (!created || created >= cohortTo || !fam || fam.internal) continue;
     const week = mondayOf(new Date(created).toLocaleDateString("sv-SE", { timeZone: TZ }));
     const c = (cohorts[week] = cohorts[week] || { week, families: 0, grown: 0, daysToSecond: [] });
     c.families += 1;
@@ -299,6 +319,37 @@ async function main() {
     }
   }
   out.cohorts = Object.values(cohorts).sort((a, b) => a.week.localeCompare(b.week));
+
+  // 2-ter. Costo per famiglia vera della coorte: spesa Meta della settimana ÷
+  // famiglie nate quella settimana che hanno trovato un secondo membro. Misura
+  // grezza, perché dà alla pubblicità tutte le famiglie della settimana; ma
+  // senza spesa ne nascono pochissime (1-6 registrazioni a settimana ad agosto
+  // e a inizio settembre, a spesa zero). Al 02/10/2026: fino al 14/09, 538 €
+  // per 10 famiglie vere (54 € l'una); settimana del 21/09, 38 € per 6 (6 €).
+  // Il totale conta solo le settimane complete: quella di ieri è in corso.
+  const spendByWeek = await weeklySpend(cohortFrom, yesterday);
+  if (!spendByWeek) out.notes.push("Spesa Meta per settimana non disponibile (token o Marketing API): costo per famiglia vera n/d.");
+  const currentWeek = mondayOf(yesterday);
+  for (const c of out.cohorts) {
+    c.spend = spendByWeek ? spendByWeek[c.week] || 0 : null;
+    c.costPerGrown = c.spend != null && c.grown > 0 ? c.spend / c.grown : null;
+    c.complete = c.week < currentWeek;
+  }
+  const completeCohorts = out.cohorts.filter((c) => c.complete);
+  const completeSpend = spendByWeek
+    ? Object.entries(spendByWeek).filter(([w]) => w >= cohortFrom && w < currentWeek).reduce((a, [, v]) => a + v, 0)
+    : null;
+  const completeGrown = completeCohorts.reduce((a, c) => a + c.grown, 0);
+  out.cohortCost = cohortFrom < currentWeek
+    ? {
+        from: cohortFrom,
+        to: shiftDay(currentWeek, -1),
+        spend: completeSpend == null ? null : Math.round(completeSpend * 100) / 100,
+        families: completeCohorts.reduce((a, c) => a + c.families, 0),
+        grown: completeGrown,
+        costPerGrown: completeSpend != null && completeGrown > 0 ? completeSpend / completeGrown : null,
+      }
+    : null;
 
   // 3. Rollup metrics (14 giorni): il rollup delle 03:15 chiude il giorno prima.
   const days = [];
@@ -434,6 +485,7 @@ async function main() {
 // ------------------------------------------------------------------ stampa
 const pad = (s, n) => String(s ?? "-").padEnd(n);
 const pct = (x) => (x == null ? "n/d" : `${Math.round(x * 100)}%`);
+const eur = (x) => `${x.toFixed(2).replace(".", ",")} €`;
 
 function print(o) {
   const L = [];
@@ -456,16 +508,23 @@ function print(o) {
   if (o.cohorts?.length) {
     L.push("");
     L.push("## Coorti settimanali: famiglie nate → con un secondo membro (senza le famiglie di prova)");
-    L.push(pad("settimana dal", 15) + pad("nate", 7) + pad("con 2+", 9) + pad("%", 7) + "giorni fino al 2° membro (mediana)");
+    L.push(pad("settimana dal", 15) + pad("nate", 7) + pad("con 2+", 9) + pad("%", 7) + pad("giorni al 2° (mediana)", 24) + pad("spesa Meta", 13) + "€ per famiglia vera");
     for (const c of o.cohorts) {
       const ds = [...c.daysToSecond].sort((a, b) => a - b);
       const med = ds.length ? ds[Math.floor(ds.length / 2)].toFixed(1) : "—";
-      L.push(pad(c.week, 15) + pad(c.families, 7) + pad(c.grown, 9) + pad(pct(c.families ? c.grown / c.families : null), 7) + med);
+      const cost = c.costPerGrown != null ? eur(c.costPerGrown) : c.spend == null ? "n/d" : "— (nessuna con 2+)";
+      L.push(pad(c.week, 15) + pad(c.families, 7) + pad(c.grown, 9) + pad(pct(c.families ? c.grown / c.families : null), 7) + pad(med, 24) + pad(c.spend == null ? "n/d" : eur(c.spend), 13) + cost + (c.complete ? "" : "  (in corso)"));
     }
     L.push("L'ultima settimana è incompleta e le coorti recenti maturano ancora: confronta ogni settimana con le precedenti ALLA STESSA ETÀ, non con il valore finale.");
+    const cc = o.cohortCost;
+    if (cc) {
+      L.push(`Settimane complete dal ${cc.from} al ${cc.to}: spesa Meta ${cc.spend == null ? "n/d" : eur(cc.spend)} · famiglie nate ${cc.families} · con 2+ membri ${cc.grown} → € per famiglia vera ${cc.costPerGrown == null ? "n/d" : eur(cc.costPerGrown)}.`);
+    }
+    L.push("€ per famiglia vera = spesa Meta della settimana ÷ famiglie di quella coorte con 2+ membri. È grezza: attribuisce alla pubblicità tutte le famiglie della settimana (a spesa zero ne nascevano pochissime). Una settimana con 1-2 famiglie vere è rumore: conta il totale delle settimane complete.");
   }
   L.push(`A pagamento: pro ${f.paying.pro} · max ${f.paying.max} · override console pro/max ${f.paying.overridePro}/${f.paying.overrideMax}`);
   L.push(`Prova Pro: in corso ${f.trial.active} · concesse ${f.trial.granted} (ieri ${f.trial.grantedYesterday}) · finite ${f.trial.ended} · convertite ${f.trial.converted} (di cui durante la prova ${f.trial.convertedDuringTrial}). La conversione si legge sulle prove FINITE, non su quelle in corso.`);
+  L.push(`Prova Pro nelle famiglie vere con 2+ membri: finite ${f.trial.ended2plus} · convertite ${f.trial.converted2plus}. È qui che si legge la disponibilità a pagare: la prova va anche a chi crea la famiglia e non torna più.`);
   L.push("");
 
   L.push("## Rollup attività (metrics/{date}, azioni di valore su Firestore) — 14 gg");

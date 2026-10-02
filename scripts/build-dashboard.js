@@ -70,7 +70,8 @@ const itShort = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : "");
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (n, dec = 0) => (n == null || Number.isNaN(n) ? "—" : Number(n).toLocaleString("it-IT", { minimumFractionDigits: dec, maximumFractionDigits: dec }));
-const eur = (n) => (n == null ? "—" : `${fmt(n, 2)} €`);
+// Spazio indivisibile: in colonna stretta il «€» non va a capo da solo.
+const eur = (n) => (n == null ? "—" : `${fmt(n, 2)} €`);
 const usd = (n) => (n == null ? "—" : `${fmt(n, 2)} $`);
 const pct = (x) => (x == null || Number.isNaN(x) ? "—" : `${Math.round(x * 100)}%`);
 const sum = (arr) => arr.reduce((a, b) => a + (Number(b) || 0), 0);
@@ -474,6 +475,8 @@ footer { font-size: 12.5px; color: var(--ink-3); display: grid; gap: 4px; }
   .flabel { text-align: left; }
 }
 @media (max-width: 480px) { .kpis { grid-template-columns: 1fr; } h1 { font-size: 24px; } }
+/* Coorti: sul telefono la barretta cede il posto al costo per famiglia vera. */
+@media (max-width: 600px) { .barcol { display: none; } }
 @media (prefers-reduced-motion: no-preference) { .ffill { transition: width .4s ease; } }
 </style>
 <div class="wrap">
@@ -507,10 +510,12 @@ footer { font-size: 12.5px; color: var(--ink-3); display: grid; gap: 4px; }
     `<p class="muted">Sequenziali: ogni gradino conta solo chi ha fatto anche i precedenti, nell'ordine, quindi la percentuale non supera mai il 100%. I due percorsi sono separati perché chi entra con un invito non passa dalla creazione della famiglia. «Invito generato» è quasi sempre il 100%: il wizard crea il link da solo, quindi non misura una condivisione; la condivisione si legge nel ramo di chi entra.</p>`
     : `<div class="card">${funnelChart(funnelSteps)}</div><p class="muted">Funnel sequenziale non disponibile oggi: questi sono contatori indipendenti per evento, non un percorso, e possono superare il 100%.</p>`}
     <div class="card"><h3>Famiglie che trovano un secondo membro <small>coorti per settimana di nascita · senza le famiglie di prova</small></h3>
-      ${C?.cohorts?.length ? `<div class="tablewrap"><table><tr><th>settimana dal</th><th class="n">nate</th><th class="n">con 2+ membri</th><th></th><th class="n">giorni fino al 2°</th></tr>
-      ${C.cohorts.map((c) => { const r = c.families ? c.grown / c.families : 0; const ds = [...c.daysToSecond].sort((a, b) => a - b); const med = ds.length ? fmt(ds[Math.floor(ds.length / 2)], 1) : "—"; return `<tr><td>${itDate(c.week)}</td><td class="n">${fmt(c.families)}</td><td class="n">${fmt(c.grown)} <span class="muted">${pct(r)}</span></td><td><div class="fbar" style="height:8px;min-width:90px"><div class="ffill" style="width:${Math.min(100, Math.round(r * 400))}%"></div></div></td><td class="n muted">${med}</td></tr>`; }).join("")}
+      ${C?.cohorts?.length ? `<div class="tablewrap"><table><tr><th>settimana dal</th><th class="n">nate</th><th class="n">con 2+ membri</th><th class="barcol"></th><th class="n">€ per famiglia vera</th><th class="n">spesa Meta</th><th class="n">giorni fino al 2°</th></tr>
+      ${C.cohorts.map((c) => { const r = c.families ? c.grown / c.families : 0; const ds = [...c.daysToSecond].sort((a, b) => a - b); const med = ds.length ? fmt(ds[Math.floor(ds.length / 2)], 1) : "—"; const cost = c.costPerGrown != null ? eur(c.costPerGrown) : c.spend == null ? "n/d" : "—"; return `<tr><td>${itDate(c.week)}${c.complete === false ? ` <span class="muted">in corso</span>` : ""}</td><td class="n">${fmt(c.families)}</td><td class="n">${fmt(c.grown)} <span class="muted">${pct(r)}</span></td><td class="barcol"><div class="fbar" style="height:8px;min-width:90px"><div class="ffill" style="width:${Math.min(100, Math.round(r * 400))}%"></div></div></td><td class="n">${cost}</td><td class="n muted">${c.spend == null ? "n/d" : eur(c.spend)}</td><td class="n muted">${med}</td></tr>`; }).join("")}
+      ${C.cohortCost ? `<tr><td><strong>settimane complete</strong></td><td class="n">${fmt(C.cohortCost.families)}</td><td class="n">${fmt(C.cohortCost.grown)} <span class="muted">${pct(C.cohortCost.families ? C.cohortCost.grown / C.cohortCost.families : null)}</span></td><td class="barcol"></td><td class="n"><strong>${C.cohortCost.costPerGrown == null ? "n/d" : eur(C.cohortCost.costPerGrown)}</strong></td><td class="n">${C.cohortCost.spend == null ? "n/d" : eur(C.cohortCost.spend)}</td><td></td></tr>` : ""}
       </table></div>
-      <p class="muted">È la stella polare vista per coorte: separa l'effetto dell'invito e dell'onboarding dal rumore del giorno e dal budget pubblicitario. L'ultima settimana è incompleta e le coorti recenti maturano ancora: confronta alla stessa età, non con il valore finale. La barra è in scala 0-25%.</p>` : `<p class="muted">${C ? "coorti non disponibili" : esc(results.console.error || "")}</p>`}
+      <p class="muted">È la stella polare vista per coorte: separa l'effetto dell'invito e dell'onboarding dal rumore del giorno e dal budget pubblicitario. L'ultima settimana è incompleta e le coorti recenti maturano ancora: confronta alla stessa età, non con il valore finale. La barra è in scala 0-25%.</p>
+      <p class="muted">€ per famiglia vera = spesa Meta della settimana ÷ famiglie di quella coorte con 2+ membri. È grezza: dà alla pubblicità tutte le famiglie della settimana (a spesa zero ne nascevano pochissime). Una settimana con 1-2 famiglie vere è rumore: conta la riga delle settimane complete. Soglia della scommessa 9: 10 € sulle coorti dal 05/10 al 25/10/2026.</p>` : `<p class="muted">${C ? "coorti non disponibili" : esc(results.console.error || "")}</p>`}
     </div>
     <div class="card"><h3>Landing: chi arriva e cosa fa <small>contatore nostro senza cookie, ultimi 7 gg · dal 16/09/2026</small></h3>
       ${C ? (lt7.views ? `<div class="tablewrap"><table><tr><th>sorgente</th><th class="n">aperture</th><th class="n">restati 10 s</th><th class="n">tap store</th><th class="n">store ÷ aperture</th></tr>
@@ -527,7 +532,7 @@ footer { font-size: 12.5px; color: var(--ink-3); display: grid; gap: 4px; }
       <div class="card"><h3>Utenti attivi per piattaforma <small>GA4</small></h3>
         ${G ? lineChart({ labels: days14, series: [{ name: "Android", values: activeBy("Android") }, { name: "iOS", values: activeBy("iOS") }, { name: "web", values: activeBy("web") }] }) : `<p class="muted">non disponibile</p>`}
         <div class="legend"><span style="--c:var(--s1)">Android</span><span style="--c:var(--s2)">iOS</span><span style="--c:var(--s3)">web</span></div></div>
-      <div class="card"><h3>Spesa Meta, € al giorno <small>una sola campagna attiva: Traffico Landing</small></h3>
+      <div class="card"><h3>Spesa Meta, € al giorno <small>tutte le campagne dell'account</small></h3>
         ${M ? lineChart({ labels: days14, series: [{ name: "spesa €", values: spend14 }], decimals: 2 }) : `<p class="muted">non disponibile</p>`}
         <div class="legend"><span style="--c:var(--s1)">spesa €</span></div></div>
       <div class="card"><h3>Costo AI, $ al giorno <small>Anthropic, fatturato</small></h3>

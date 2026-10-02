@@ -9,7 +9,9 @@
  * Terzo blocco della routine `kidbox-ga4-daily`, accanto a GA4 e console:
  * qui c'è quanto si spende e cosa dichiara Meta; l'incrocio con quello che
  * arriva davvero nell'app (first_open in GA4, registrazioni in Auth) lo fa
- * la routine, non questo script.
+ * la routine, non questo script. Unica eccezione: `weeklySpend`, esportata per
+ * `console-daily-report.js`, che calcola il costo per famiglia vera delle
+ * coorti (dal 02/10/2026).
  *
  * Account: act_26185514281057282 (EUR, Europe/Rome), portfolio PassBox,
  * condiviso con kidbox_app. Token: utente di sistema «Conversions API System
@@ -42,12 +44,16 @@ const KEY_ACTIONS = [
   ["lead", "lead"],
 ];
 
+function readToken() {
+  return execFileSync("security", ["find-generic-password", "-a", "kidbox", "-s", "meta-ads-token", "-w"], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
+}
+
 function token() {
   try {
-    return execFileSync("security", ["find-generic-password", "-a", "kidbox", "-s", "meta-ads-token", "-w"], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    }).trim();
+    return readToken();
   } catch {
     console.error(
       "Token Meta non trovato nel Portachiavi (voce «meta-ads-token», account «kidbox»).\n" +
@@ -89,6 +95,53 @@ function actionsMap(list) {
   const m = {};
   for (const a of list || []) m[a.action_type] = num(a.value);
   return m;
+}
+
+/** Lunedì della settimana di una data ISO (YYYY-MM-DD), come in console-daily-report.js. */
+function mondayOf(iso) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Spesa dell'account per settimana (dal lunedì alla domenica, Europe/Rome come
+ * l'account), da `fromDay` a `toDay` compresi: `{ "2026-09-21": 38.28, … }`.
+ * Una settimana senza consegne non compare: per chi legge vale 0.
+ *
+ * La usa `console-daily-report.js` per il costo per famiglia vera delle coorti.
+ * L'incrocio con le famiglie si fa lì; qui resta solo la fonte. Restituisce
+ * `null` se il token manca o Meta non risponde: chi chiama scrive «n/d» e va
+ * avanti, senza fermarsi.
+ */
+async function weeklySpend(fromDay, toDay) {
+  let tok;
+  try {
+    tok = readToken();
+  } catch {
+    return null;
+  }
+  try {
+    const out = {};
+    let after = null;
+    do {
+      const res = await get(tok, `${ACCOUNT}/insights`, {
+        fields: "spend",
+        time_range: { since: fromDay, until: toDay },
+        time_increment: "1",
+        limit: "100",
+        ...(after ? { after } : {}),
+      });
+      for (const r of res.data || []) {
+        const w = mondayOf(r.date_start);
+        out[w] = Math.round(((out[w] || 0) + num(r.spend)) * 100) / 100;
+      }
+      after = res.paging?.next ? res.paging?.cursors?.after : null;
+    } while (after);
+    return out;
+  } catch {
+    return null;
+  }
 }
 
 async function main() {
@@ -253,14 +306,18 @@ function print(o) {
   process.stdout.write(L.join("\n") + "\n");
 }
 
-main().catch((e) => {
-  console.error(`Errore Marketing API: ${e.message}`);
-  if (e.code === 190) {
-    console.error(
-      "Token non valido o revocato. Rigeneralo da Meta Business → Utenti di sistema → Conversions API System User → Genera token\n" +
-        "(app «KidBox Ads Reader», ads_read, scadenza mai) e salvalo con:\n" +
-        "  security add-generic-password -a kidbox -s meta-ads-token -w '<token>' -U"
-    );
-  }
-  process.exit(1);
-});
+module.exports = { weeklySpend };
+
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(`Errore Marketing API: ${e.message}`);
+    if (e.code === 190) {
+      console.error(
+        "Token non valido o revocato. Rigeneralo da Meta Business → Utenti di sistema → Conversions API System User → Genera token\n" +
+          "(app «KidBox Ads Reader», ads_read, scadenza mai) e salvalo con:\n" +
+          "  security add-generic-password -a kidbox -s meta-ads-token -w '<token>' -U"
+      );
+    }
+    process.exit(1);
+  });
+}

@@ -121,6 +121,16 @@ La **fidelizzazione a 7 giorni** nessuno script la legge (non è nella Reporting
 
 **Coorti settimanali** (sezione dello script console, card nel cruscotto): delle famiglie nate in una settimana, quante hanno trovato un secondo membro e dopo quanti giorni. È il modo di sapere se la stella polare cresce per merito dell'invito e dell'onboarding e non per la spesa pubblicitaria (che cambia quante famiglie nascono, non quante ne crescono). Riportala sempre come tabella corta, e confronta la settimana in corso con le precedenti **alla stessa età**: una coorte di tre giorni non si confronta con una di cinque settimane. Riferimenti al 27/09/2026 (coorti mature): settimana del 17/08 3%, del 24/08 9%, del 14/09 3%; la settimana del 21/09 era all'11% dopo pochi giorni. Nei giorni fino al 2° membro, 0 vuol dire «entrati insieme» (QR o link aperto subito): se la mediana resta a 0, l'invito a distanza non sta ancora funzionando.
 
+**€ per famiglia vera** (dal 02/10/2026: colonne «spesa Meta» ed «€ per famiglia vera» della tabella coorti, più la riga «Settimane complete dal … al …»; stessi numeri nella card del cruscotto). È la spesa Meta della settimana divisa per le famiglie di quella coorte con 2+ membri, ed è il numero che decide se aumentare la pubblicità. Il costo per installazione dichiarato da Meta non conta.
+- **Nel report** riporta sempre la riga delle **settimane complete**, e il valore per settimana solo dentro la tabella corta.
+- **Una settimana con 1-2 famiglie vere è rumore:** non commentare il suo costo da solo.
+- **La settimana in corso** ha la spesa parziale e la coorte che matura: niente giudizi.
+- **È grezza:** dà alla pubblicità tutte le famiglie della settimana. A spesa zero ne nascevano pochissime (1-6 registrazioni a settimana ad agosto e a inizio settembre), quindi è vicina al vero, ma non è un'attribuzione.
+- **Riferimenti al 02/10:** fino al 14/09, 54 € per famiglia vera; settimana del 21/09, 6,38 €; dal 06/07 al 27/09 in tutto, 35,84 €.
+- **Scommessa 9 del registro `/auto-miglioramento`:** soglia ≤ 10 € sulle coorti del 05/10, 12/10 e 19/10, verifica il 02/11/2026 con `--cohorts-from 2026-10-05`.
+- **Prove Pro:** la riga «Prova Pro nelle famiglie vere con 2+ membri: finite · convertite» è quella da citare per la disponibilità a pagare. La conversione sul totale delle prove sembra zero per costruzione, perché la prova va anche a chi crea la famiglia e non torna più.
+- **Se la colonna dice «n/d»:** il token Meta o la Marketing API non hanno risposto. Dillo nelle Note e non calcolarlo a mano.
+
 **Sintesi in 3 righe** — come sta andando: utenti attivi ieri e l'altro ieri per piattaforma (iOS / Android / web) contro la media 7gg; nuovi utenti; una frase sul trend a 14 giorni.
 
 **Funnel acquisizione (ieri, e altro ieri tra parentesi)**

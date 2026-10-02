@@ -66,6 +66,26 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
 - **Data**: 28 giorni dopo l'uscita sugli store. **Da fissare qui il giorno in cui escono** (nessuna data inventata prima).
 - **Se smentita** (meno di 5 richieste con link): le famiglie continuano a chiedere direttamente su WhatsApp e il problema non era il motivo dell'invito; prima di altro lavoro sulle richieste, chiedere a 2-3 famiglie vere come si sono organizzate l'ultima volta che serviva qualcuno.
 
+### 9. Il costo per famiglia vera è sceso davvero (decisione sulla pubblicità)
+- **Cambio**: nessuna modifica nuova. Si verifica se il calo della settimana del 21/09 è reale. I numeri:
+  - fino al 14/09: 538 € di Meta per 10 famiglie vere, cioè 54 € l'una;
+  - settimana del 21/09: 38,28 € per 6, cioè 6,38 €.
+
+  Il calo verrebbe dalle modifiche del 19-23/09: wizard a 2 pagine, invito a 7 giorni, invito che sopravvive all'installazione. Condizione: spesa Meta intorno ai 5 € al giorno (Android 2 €, Apple 3 €), stesse campagne a installazioni. Scritta il 02/10/2026, prima della prima coorte misurata (05/10). Contesto: la conversazione sul business del 02/10.
+- **Previsione**:
+  - **(a)** sulle coorti delle settimane del **05/10, 12/10 e 19/10/2026**, il costo per famiglia vera è **≤ 10 €**;
+  - **(b)** almeno **1** famiglia vera con 2+ membri **passa a pagamento** dopo la prova Pro.
+- **Misura**: il **02/11/2026** eseguire `node scripts/console-daily-report.js --day 2026-11-01 --cohorts-from 2026-10-05`.
+  - **(a)**: riga «Settimane complete dal 2026-10-05 al 2026-10-25 … € per famiglia vera», cioè spesa Meta delle tre settimane ÷ famiglie nate in quelle settimane che hanno 2+ membri.
+  - **(b)**: riga «Prova Pro nelle famiglie vere con 2+ membri: finite N · convertite M», con M ≥ 1.
+- **Data**: 02/11/2026.
+- **Non misurabile se**: per (a), la spesa delle tre settimane è sotto 60 € oppure nascono meno di 40 famiglie vere; per (b), le prove finite in famiglie con 2+ membri sono meno di 3.
+- **Decisione, scritta ora**:
+  - (a) e (b) confermate → test pubblicitario a 15 € al giorno per 4 settimane, con lo stesso messaggio (le richieste di famiglia) e la stessa misura.
+  - (a) confermata e (b) smentita → la spesa resta intorno ai 5 € al giorno e il lavoro va sul valore del Pro per le famiglie con 2+ membri, non sull'acquisizione.
+  - (a) smentita → niente aumenti di spesa; prima si rivedono messaggio, pubblico e posizionamenti degli annunci.
+- **Se smentita**: (a) il 21/09 era fortuna, e le modifiche all'invito non hanno cambiato quanto costa una famiglia vera; (b) le famiglie che contano non pagano per quello che il Pro offre oggi, come diceva la diagnosi del 28/09 sull'AI che usano in pochi.
+
 ---
 
 ## Chiuse
