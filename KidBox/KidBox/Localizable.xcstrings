@@ -49,1162 +49,25 @@
         }
       }
     },
-    "A ogni domanda, insieme a quello che scrivi, parte la memoria dell'assistente: quello che la famiglia tiene in KidBox. Calendario, to-do, spesa, note, spese, salute con i referti, testo letto dai documenti, wallet, casa, veicoli, animali, viaggi, ultimi messaggi della chat. Non partono mai password, numeri dei documenti d'identità e delle carte fedeltà, posizione, né le voci che un altro membro tiene solo per sé." : {
-      "comment" : "AI consent: what is sent (body)",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "With every question, together with what you type, the assistant's memory is sent: what your family keeps in KidBox. Calendar, to-dos, shopping, notes, expenses, health with reports, text read from documents, wallet, home, vehicles, pets, trips, the latest chat messages. Passwords, ID document and loyalty card numbers, location and items another member keeps to themselves are never sent."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Con cada pregunta, junto con lo que escribes, se envía la memoria del asistente: lo que la familia guarda en KidBox. Calendario, tareas, compra, notas, gastos, salud con los informes, texto leído de los documentos, wallet, casa, vehículos, mascotas, viajes, últimos mensajes del chat. Nunca se envían contraseñas, números de documentos de identidad y de tarjetas de fidelidad, ubicación, ni lo que otro miembro guarda solo para sí."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "À chaque question, avec ce que vous écrivez, part la mémoire de l'assistant : ce que la famille garde dans KidBox. Calendrier, tâches, courses, notes, dépenses, santé avec les comptes rendus, texte lu dans les documents, wallet, maison, véhicules, animaux, voyages, derniers messages du chat. Ne partent jamais : mots de passe, numéros des pièces d'identité et des cartes de fidélité, position, ni les éléments qu'un autre membre garde pour lui."
-          }
-        }
-      }
-    },
-    "Chiedi di tutta la famiglia" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ask about the whole family"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Preguntar sobre toda la familia"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Poser une question sur toute la famille"
-          }
-        }
-      }
-    },
-    "Ci sono controlli da prenotare?" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Are there any check-ups to book?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Hay revisiones por reservar?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Y a-t-il des contrôles à réserver ?"
-          }
-        }
-      }
-    },
-    "Ci sono esami, vaccini o visite da fare?" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Are any exams, vaccines or visits coming up?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Hay exámenes, vacunas o visitas pendientes?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Y a-t-il des examens, des vaccins ou des visites à faire ?"
-          }
-        }
-      }
-    },
-    "Ci sono scadenze sanitarie urgenti?" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Are there any urgent health deadlines?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Hay plazos de salud urgentes?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Y a-t-il des échéances de santé urgentes ?"
-          }
-        }
-      }
-    },
-    "Ci sono valori fuori norma negli esami di %@?" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Are any of %@'s exam results out of range?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Hay valores fuera de rango en los exámenes de %@?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Y a-t-il des valeurs anormales dans les examens de %@ ?"
-          }
-        }
-      }
-    },
-    "Con tutti i documenti per intero questa domanda supera un messaggio. Con il contesto ridotto restano interi i documenti che c'entrano con la domanda e gli altri vengono accorciati. La scelta resta come preferenza: puoi cambiarla in Impostazioni AI." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "With every document in full, this question uses more than one message. With the reduced context, the documents related to your question stay complete and the others are shortened. Your choice is saved as a preference: you can change it in AI Settings."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Con todos los documentos completos, esta pregunta supera un mensaje. Con el contexto reducido, los documentos relacionados con la pregunta se mantienen completos y los demás se acortan. La elección se guarda como preferencia: puedes cambiarla en Ajustes de IA."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avec tous les documents en entier, cette question dépasse un message. Avec le contexte réduit, les documents liés à la question restent complets et les autres sont raccourcis. Ce choix est enregistré comme préférence : vous pouvez le modifier dans Réglages IA."
-          }
-        }
-      }
-    },
-    "Conosco tutto quello che avete in KidBox: calendario, to-do, spesa, note, spese, documenti, la salute di tutti, casa, veicoli, animali e viaggi.\nChiedimi qualsiasi cosa." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I know everything you keep in KidBox: calendar, to-dos, shopping list, notes, expenses, documents, everyone's health, home, vehicles, pets and trips.\nAsk me anything."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conozco todo lo que guardas en KidBox: calendario, tareas, compra, notas, gastos, documentos, la salud de todos, casa, vehículos, mascotas y viajes.\nPregúntame lo que quieras."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je connais tout ce que vous gardez dans KidBox : calendrier, tâches, courses, notes, dépenses, documents, la santé de chacun, maison, véhicules, animaux et voyages.\nDemandez-moi ce que vous voulez."
-          }
-        }
-      }
-    },
-    "Contesto ridotto" : {
-      "comment" : "AI settings: reduced context option",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reduced context"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contexto reducido"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contexte réduit"
-          }
-        }
-      }
-    },
-    "Contesto ridotto (%lld messaggi)" : {
-      "comment" : "Assistant context choice",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reduced context (%lld messages)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contexto reducido (%lld mensajes)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contexte réduit (%lld messages)"
-          }
-        }
-      }
-    },
-    "Contesto ridotto (1 messaggio)" : {
-      "comment" : "Assistant context choice",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reduced context (1 message)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contexto reducido (1 mensaje)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contexte réduit (1 message)"
-          }
-        }
-      }
-    },
-    "Conversazione non inizializzata." : {
-      "comment" : "Assistant error",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conversation not ready."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conversación no inicializada."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conversation non initialisée."
-          }
-        }
-      }
-    },
-    "Cosa devo fare adesso?" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What should I do now?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Qué tengo que hacer ahora?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Que dois-je faire maintenant ?"
-          }
-        }
-      }
-    },
-    "Cosa dice il referto?" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What does the report say?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Qué dice el informe?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Que dit le compte rendu ?"
-          }
-        }
-      }
-    },
-    "Cosa ho in programma questa settimana?" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What do I have planned this week?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Qué tengo previsto esta semana?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qu'est-ce que j'ai de prévu cette semaine ?"
-          }
-        }
-      }
-    },
-    "Cosa resta salvato" : {
-      "comment" : "AI consent: what is stored",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What is stored"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qué se guarda"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce qui est conservé"
-          }
-        }
-      }
-    },
-    "Cosa significano questi valori?" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What do these values mean?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Qué significan estos valores?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Que signifient ces valeurs ?"
-          }
-        }
-      }
-    },
-    "Cosa viene inviato" : {
-      "comment" : "AI consent: what is sent",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What is sent"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qué se envía"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce qui est envoyé"
-          }
-        }
-      }
-    },
-    "Di solito tutto quello che avete in KidBox sta in un messaggio. Con molti documenti e referti l'assistente può mandarli tutti per intero, e costa più messaggi, oppure tenere interi quelli che c'entrano con la domanda e accorciare gli altri. Con «Chiedi ogni volta» scegli tu prima di ogni invio." : {
+    "Di solito tutto quello che avete in KidBox sta in un messaggio. Con molti documenti e referti l'assistente può mandarli tutti per intero, e costa più messaggi, oppure tenere interi quelli che c'entrano con la domanda e accorciare gli altri. Con «Chiedi ogni volta» scegli tu prima di ogni invio. Sul piano Free, e quando i messaggi rimasti non bastano, si usa sempre il contesto ridotto." : {
       "comment" : "AI settings footer: assistant memory",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usually everything you keep in KidBox fits in one message. With many documents and reports, the assistant can send them all in full, which costs more messages, or keep in full the ones related to your question and shorten the rest. With “Ask every time” you choose before each send."
+            "value" : "Usually everything you keep in KidBox fits in one message. With many documents and reports, the assistant can send them all in full, which costs more messages, or keep in full the ones related to your question and shorten the rest. With “Ask every time” you choose before each send. On the Free plan, and whenever your remaining messages aren't enough, the reduced context is always used."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Normalmente todo lo que guardáis en KidBox cabe en un mensaje. Con muchos documentos e informes, el asistente puede enviarlos todos completos, lo que cuesta más mensajes, o mantener completos los relacionados con tu pregunta y acortar los demás. Con «Preguntar cada vez» eliges tú antes de cada envío."
+            "value" : "Normalmente todo lo que guardáis en KidBox cabe en un mensaje. Con muchos documentos e informes, el asistente puede enviarlos todos completos, lo que cuesta más mensajes, o mantener completos los relacionados con tu pregunta y acortar los demás. Con «Preguntar cada vez» eliges tú antes de cada envío. Con el plan Free, y cuando los mensajes restantes no bastan, se usa siempre el contexto reducido."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "D'habitude, tout ce que vous gardez dans KidBox tient dans un message. Avec beaucoup de documents et de comptes rendus, l'assistant peut tous les envoyer en entier, ce qui coûte plus de messages, ou garder en entier ceux liés à votre question et raccourcir les autres. Avec « Demander à chaque fois », vous choisissez avant chaque envoi."
-          }
-        }
-      }
-    },
-    "Fornitore AI: Anthropic" : {
-      "comment" : "AI consent: provider",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI provider: Anthropic"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Proveedor de IA: Anthropic"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fournisseur IA : Anthropic"
-          }
-        }
-      }
-    },
-    "Ha già «%@» alle %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Already has “%@” at %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ya tiene «%@» a las %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A déjà « %@ » à %@"
-          }
-        }
-      }
-    },
-    "Ho spazio libero domani pomeriggio?" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Am I free tomorrow afternoon?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Tengo hueco mañana por la tarde?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suis-je libre demain après-midi ?"
-          }
-        }
-      }
-    },
-    "Impossibile preparare il contesto di pianificazione." : {
-      "comment" : "Assistant load error",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't prepare the assistant's context."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se ha podido preparar el contexto del asistente."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible de préparer le contexte de l'assistant."
-          }
-        }
-      }
-    },
-    "In calendario, intorno alle %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On the calendar, around %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En el calendario, hacia las %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Au calendrier, vers %@"
-          }
-        }
-      }
-    },
-    "L'AI fornisce spiegazioni e informazioni generali. Non sostituisce il tuo medico. Per qualsiasi decisione clinica, consulta sempre un professionista." : {
-      "comment" : "AI consent: not medical advice (body)",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The AI provides explanations and general information. It does not replace your doctor. For any clinical decision, always consult a professional."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La IA ofrece explicaciones e información general. No sustituye a tu médico. Para cualquier decisión clínica, consulta siempre a un profesional."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'IA fournit des explications et des informations générales. Elle ne remplace pas votre médecin. Pour toute décision clinique, consultez toujours un professionnel."
-          }
-        }
-      }
-    },
-    "L'assistente risponde quando gli scrivi. Briefing, recap e analisi mensile partono da soli solo se li attivi nelle impostazioni. Puoi revocare il consenso in qualsiasi momento da Impostazioni → Assistente AI." : {
-      "comment" : "AI consent: control (body)",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The assistant answers when you write to it. Briefings, recaps and the monthly analysis run on their own only if you turn them on in settings. You can withdraw consent at any time in Settings → AI Assistant."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El asistente responde cuando le escribes. Los briefings, resúmenes y el análisis mensual solo se envían solos si los activas en los ajustes. Puedes retirar el consentimiento en cualquier momento en Ajustes → Asistente IA."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'assistant répond quand vous lui écrivez. Les briefings, récaps et l'analyse mensuelle ne partent seuls que si vous les activez dans les réglages. Vous pouvez retirer votre consentement à tout moment dans Réglages → Assistant IA."
-          }
-        }
-      }
-    },
-    "Le conversazioni restano nel tuo account per ritrovarle sugli altri dispositivi, e qualche fatto utile emerso parlando resta nella memoria della famiglia. Puoi cancellare la conversazione dall'assistente." : {
-      "comment" : "AI consent: what is stored (body)",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conversations stay in your account so you can find them on your other devices, and a few useful facts that come up stay in the family's memory. You can delete the conversation from the assistant."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las conversaciones se quedan en tu cuenta para encontrarlas en tus otros dispositivos, y algunos datos útiles que surgen se quedan en la memoria de la familia. Puedes borrar la conversación desde el asistente."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les conversations restent dans votre compte pour les retrouver sur vos autres appareils, et quelques faits utiles évoqués restent dans la mémoire de la famille. Vous pouvez supprimer la conversation depuis l'assistant."
-          }
-        }
-      }
-    },
-    "Le risposte le genera Claude di Anthropic (Stati Uniti), passando dai server KidBox. Anthropic non usa questi dati per addestrare i suoi modelli e li tratta secondo la sua Privacy Policy." : {
-      "comment" : "AI consent: provider (body)",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Answers are generated by Anthropic's Claude (United States), through KidBox servers. Anthropic does not use this data to train its models and handles it under its Privacy Policy."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las respuestas las genera Claude de Anthropic (Estados Unidos), a través de los servidores de KidBox. Anthropic no usa estos datos para entrenar sus modelos y los trata según su política de privacidad."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les réponses sont générées par Claude d'Anthropic (États-Unis), en passant par les serveurs KidBox. Anthropic n'utilise pas ces données pour entraîner ses modèles et les traite selon sa politique de confidentialité."
-          }
-        }
-      }
-    },
-    "Link da mandare a chi non ha l'app: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link to send to people without the app: %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enlace para enviar a quien no tiene la app: %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lien à envoyer à ceux qui n'ont pas l'app : %@"
-          }
-        }
-      }
-    },
-    "Manda sempre tutti i documenti e i referti per intero: può costare più messaggi." : {
-      "comment" : "AI settings: full accuracy detail",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Always sends every document and report in full: it may cost more messages."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Envía siempre todos los documentos e informes completos: puede costar más mensajes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Envoie toujours tous les documents et comptes rendus en entier : cela peut coûter plusieurs messages."
-          }
-        }
-      }
-    },
-    "Memoria dell'assistente" : {
-      "comment" : "AI settings section: assistant memory",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Assistant memory"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Memoria del asistente"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mémoire de l'assistant"
-          }
-        }
-      }
-    },
-    "Memoria molto ampia" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Very large memory"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Memoria muy amplia"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mémoire très volumineuse"
-          }
-        }
-      }
-    },
-    "Non trovo in famiglia: %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not found in the family: %@."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No encuentro en la familia: %@."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Introuvable dans la famille : %@."
-          }
-        }
-      }
-    },
-    "Parto da qui, ma conosco tutto quello che avete in KidBox: chiedimi anche altro." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I'm starting from here, but I know everything you keep in KidBox: ask me anything else too."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Empiezo desde aquí, pero conozco todo lo que guardas en KidBox: pregúntame también otras cosas."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je pars d'ici, mais je connais tout ce que vous gardez dans KidBox : demandez-moi aussi autre chose."
-          }
-        }
-      }
-    },
-    "Puoi disattivarlo in qualsiasi momento. A ogni domanda l'assistente riceve la memoria di quello che la famiglia tiene in KidBox: password, numeri dei documenti e posizione esclusi." : {
-      "comment" : "AI settings: toggle footer",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You can turn it off at any time. With every question the assistant receives the memory of what your family keeps in KidBox: passwords, document numbers and location excluded."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Puedes desactivarlo en cualquier momento. Con cada pregunta el asistente recibe la memoria de lo que la familia guarda en KidBox: contraseñas, números de documentos y ubicación excluidos."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vous pouvez le désactiver à tout moment. À chaque question, l'assistant reçoit la mémoire de ce que la famille garde dans KidBox : mots de passe, numéros des documents et position exclus."
-          }
-        }
-      }
-    },
-    "Quali esami sono ancora da fare?" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Which exams are still to be done?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Qué exámenes quedan por hacer?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quels examens restent à faire ?"
-          }
-        }
-      }
-    },
-    "Quali to-do sono ancora aperti?" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Which to-dos are still open?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Qué tareas siguen abiertas?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quelles tâches sont encore ouvertes ?"
-          }
-        }
-      }
-    },
-    "Quando la memoria supera un messaggio, scegli tu prima di inviare." : {
-      "comment" : "AI settings: ask each time detail",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When the memory exceeds one message, you choose before sending."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cuando la memoria supera un mensaje, eliges tú antes de enviar."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quand la mémoire dépasse un message, vous choisissez avant l'envoi."
-          }
-        }
-      }
-    },
-    "Quando supera un messaggio" : {
-      "comment" : "AI settings: picker label for large memory",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When it exceeds one message"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cuando supera un mensaje"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quand elle dépasse un message"
-          }
-        }
-      }
-    },
-    "Riassumimi la salute di %@" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Summarize %@'s health"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resúmeme la salud de %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Résumez-moi la santé de %@"
-          }
-        }
-      }
-    },
-    "Riassumimi le ultime visite di %@" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Summarize %@'s latest visits"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resúmeme las últimas visitas de %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Résumez-moi les dernières visites de %@"
-          }
-        }
-      }
-    },
-    "Richiesta inviata a %@: «%@»." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Request sent to %@: “%@”."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solicitud enviada a %@: «%@»."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Demande envoyée à %@ : « %@ »."
-          }
-        }
-      }
-    },
-    "Richiesta non inviata: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Request not sent: %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solicitud no enviada: %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Demande non envoyée : %@"
-          }
-        }
-      }
-    },
-    "Richiesta non inviata: non trovo in famiglia %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Request not sent: I can't find %@ in the family."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solicitud no enviada: no encuentro a %@ en la familia."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Demande non envoyée : %@ introuvable dans la famille."
-          }
-        }
-      }
-    },
-    "Spiegami l'ultimo referto" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Explain the latest report"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Explícame el último informe"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expliquez-moi le dernier compte rendu"
-          }
-        }
-      }
-    },
-    "Spiegami questa visita" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Explain this visit"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Explícame esta visita"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expliquez-moi cette visite"
-          }
-        }
-      }
-    },
-    "Tiene interi i documenti che c'entrano con la domanda e accorcia gli altri: costa meno messaggi." : {
-      "comment" : "AI settings: reduced context detail",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keeps in full the documents related to your question and shortens the others: it costs fewer messages."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mantiene completos los documentos relacionados con tu pregunta y acorta los demás: cuesta menos mensajes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Garde en entier les documents liés à votre question et raccourcit les autres : cela coûte moins de messages."
-          }
-        }
-      }
-    },
-    "Visita del %@" : {
-      "comment" : "Assistant focus label: visit date",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Visit on %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Visita del %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Visite du %@"
-          }
-        }
-      }
-    },
-    "Visite di %@" : {
-      "comment" : "Assistant focus label: visits of a person",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Visits of %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Visitas de %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Visites de %@"
-          }
-        }
-      }
-    },
-    "· Calendario, salute, documenti e altro" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "· Calendar, health, documents and more"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "· Calendario, salud, documentos y más"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "· Calendrier, santé, documents et plus"
-          }
-        }
-      }
-    },
-    "È tutto nella norma?" : {
-      "comment" : "Assistant suggestion",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Is everything normal?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Está todo normal?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Est-ce que tout est normal ?"
+            "value" : "D'habitude, tout ce que vous gardez dans KidBox tient dans un message. Avec beaucoup de documents et de comptes rendus, l'assistant peut tous les envoyer en entier, ce qui coûte plus de messages, ou garder en entier ceux liés à votre question et raccourcir les autres. Avec « Demander à chaque fois », vous choisissez avant chaque envoi. Avec la formule Free, et quand les messages restants ne suffisent pas, le contexte réduit est toujours utilisé."
           }
         }
       }
@@ -1429,7 +292,30 @@
         }
       }
     },
+    "· Calendario, salute, documenti e altro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· Calendar, health, documents and more"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· Calendario, salud, documentos y más"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· Calendrier, santé, documents et plus"
+          }
+        }
+      }
+    },
     "· Calendario, to-do, salute" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5426,6 +4312,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Long terme ∞"
+          }
+        }
+      }
+    },
+    "A ogni domanda, insieme a quello che scrivi, parte la memoria dell'assistente: quello che la famiglia tiene in KidBox. Calendario, to-do, spesa, note, spese, salute con i referti, testo letto dai documenti, wallet, casa, veicoli, animali, viaggi, ultimi messaggi della chat. Non partono mai password, numeri dei documenti d'identità e delle carte fedeltà, posizione, né le voci che un altro membro tiene solo per sé." : {
+      "comment" : "AI consent: what is sent (body)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With every question, together with what you type, the assistant's memory is sent: what your family keeps in KidBox. Calendar, to-dos, shopping, notes, expenses, health with reports, text read from documents, wallet, home, vehicles, pets, trips, the latest chat messages. Passwords, ID document and loyalty card numbers, location and items another member keeps to themselves are never sent."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con cada pregunta, junto con lo que escribes, se envía la memoria del asistente: lo que la familia guarda en KidBox. Calendario, tareas, compra, notas, gastos, salud con los informes, texto leído de los documentos, wallet, casa, vehículos, mascotas, viajes, últimos mensajes del chat. Nunca se envían contraseñas, números de documentos de identidad y de tarjetas de fidelidad, ubicación, ni lo que otro miembro guarda solo para sí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À chaque question, avec ce que vous écrivez, part la mémoire de l'assistant : ce que la famille garde dans KidBox. Calendrier, tâches, courses, notes, dépenses, santé avec les comptes rendus, texte lu dans les documents, wallet, maison, véhicules, animaux, voyages, derniers messages du chat. Ne partent jamais : mots de passe, numéros des pièces d'identité et des cartes de fidélité, position, ni les éléments qu'un autre membre garde pour lui."
           }
         }
       }
@@ -10771,6 +9680,7 @@
       }
     },
     "Assistente AI Medico" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13957,6 +12867,7 @@
       }
     },
     "Chat Salute AI" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14662,6 +13573,28 @@
         }
       }
     },
+    "Chiedi di tutta la famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask about the whole family"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preguntar sobre toda la familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poser une question sur toute la famille"
+          }
+        }
+      }
+    },
     "Chiedi ogni volta" : {
       "localizations" : {
         "en" : {
@@ -15105,6 +14038,98 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ça y est. KidBox travaille maintenant pour votre famille."
+          }
+        }
+      }
+    },
+    "Ci sono controlli da prenotare?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are there any check-ups to book?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Hay revisiones por reservar?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Y a-t-il des contrôles à réserver ?"
+          }
+        }
+      }
+    },
+    "Ci sono esami, vaccini o visite da fare?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are any exams, vaccines or visits coming up?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Hay exámenes, vacunas o visitas pendientes?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Y a-t-il des examens, des vaccins ou des visites à faire ?"
+          }
+        }
+      }
+    },
+    "Ci sono scadenze sanitarie urgenti?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are there any urgent health deadlines?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Hay plazos de salud urgentes?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Y a-t-il des échéances de santé urgentes ?"
+          }
+        }
+      }
+    },
+    "Ci sono valori fuori norma negli esami di %@?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are any of %@'s exam results out of range?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Hay valores fuera de rango en los exámenes de %@?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Y a-t-il des valeurs anormales dans les examens de %@ ?"
           }
         }
       }
@@ -16556,6 +15581,7 @@
       }
     },
     "Con contesto ampio mostra la scelta prima di ogni invio." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -16600,6 +15626,7 @@
       }
     },
     "Con profili sanitari molto ampi, KidBox può inviare tutti i referti o un riassunto. Puoi cambiare questa scelta in qualsiasi momento; se scegli «Chiedi ogni volta», vedrai il dialogo prima di ogni invio." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -16617,6 +15644,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Avec des profils de santé très volumineux, KidBox peut envoyer tous les comptes rendus ou un résumé. Vous pouvez modifier ce choix à tout moment ; si vous choisissez « Demander à chaque fois », vous verrez la boîte de dialogue avant chaque envoi."
+          }
+        }
+      }
+    },
+    "Con tutti i documenti per intero questa domanda supera un messaggio. Con il contesto ridotto restano interi i documenti che c'entrano con la domanda e gli altri vengono accorciati. La scelta resta come preferenza: puoi cambiarla in Impostazioni AI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With every document in full, this question uses more than one message. With the reduced context, the documents related to your question stay complete and the others are shortened. Your choice is saved as a preference: you can change it in AI Settings."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con todos los documentos completos, esta pregunta supera un mensaje. Con el contexto reducido, los documentos relacionados con la pregunta se mantienen completos y los demás se acortan. La elección se guarda como preferencia: puedes cambiarla en Ajustes de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec tous les documents en entier, cette question dépasse un message. Avec le contexte réduit, les documents liés à la question restent complets et les autres sont raccourcis. Ce choix est enregistré comme préférence : vous pouvez le modifier dans Réglages IA."
           }
         }
       }
@@ -17264,6 +16313,7 @@
       }
     },
     "Conosco il tuo calendario, i to-do, le cure, visite ed esami, i documenti, il wallet, le note, le spese e le scadenze sanitarie.\nChiedimi qualsiasi cosa." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -17281,6 +16331,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Je connais votre calendrier, vos to-dos, vos traitements, visites et examens, vos documents, votre wallet, vos notes, vos dépenses et vos échéances de santé.\nDemandez-moi ce que vous voulez."
+          }
+        }
+      }
+    },
+    "Conosco tutto quello che avete in KidBox: calendario, to-do, spesa, note, spese, documenti, la salute di tutti, casa, veicoli, animali e viaggi.\nChiedimi qualsiasi cosa." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I know everything you keep in KidBox: calendar, to-dos, shopping list, notes, expenses, documents, everyone's health, home, vehicles, pets and trips.\nAsk me anything."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conozco todo lo que guardas en KidBox: calendario, tareas, compra, notas, gastos, documentos, la salud de todos, casa, vehículos, mascotas y viajes.\nPregúntame lo que quieras."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je connais tout ce que vous gardez dans KidBox : calendrier, tâches, courses, notes, dépenses, documents, la santé de chacun, maison, véhicules, animaux et voyages.\nDemandez-moi ce que vous voulez."
           }
         }
       }
@@ -17684,6 +16756,7 @@
       }
     },
     "Contesto chat Salute" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -17706,6 +16779,7 @@
       }
     },
     "Contesto riassunto" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -17723,6 +16797,75 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Contexte compact"
+          }
+        }
+      }
+    },
+    "Contesto ridotto" : {
+      "comment" : "AI settings: reduced context option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reduced context"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexto reducido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexte réduit"
+          }
+        }
+      }
+    },
+    "Contesto ridotto (%lld messaggi)" : {
+      "comment" : "Assistant context choice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reduced context (%lld messages)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexto reducido (%lld mensajes)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexte réduit (%lld messages)"
+          }
+        }
+      }
+    },
+    "Contesto ridotto (1 messaggio)" : {
+      "comment" : "Assistant context choice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reduced context (1 message)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexto reducido (1 mensaje)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexte réduit (1 message)"
           }
         }
       }
@@ -18077,6 +17220,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vérification…"
+          }
+        }
+      }
+    },
+    "Conversazione non inizializzata." : {
+      "comment" : "Assistant error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversation not ready."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversación no inicializada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversation non initialisée."
           }
         }
       }
@@ -18524,6 +17690,52 @@
         }
       }
     },
+    "Cosa devo fare adesso?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What should I do now?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué tengo que hacer ahora?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Que dois-je faire maintenant ?"
+          }
+        }
+      }
+    },
+    "Cosa dice il referto?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What does the report say?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué dice el informe?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Que dit le compte rendu ?"
+          }
+        }
+      }
+    },
     "Cosa dicono i visitatori" : {
       "localizations" : {
         "en" : {
@@ -18564,6 +17776,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ce que vous avez vraiment fait"
+          }
+        }
+      }
+    },
+    "Cosa ho in programma questa settimana?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What do I have planned this week?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué tengo previsto esta semana?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qu'est-ce que j'ai de prévu cette semaine ?"
           }
         }
       }
@@ -18609,6 +17844,75 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ce que vous pouvez dire"
+          }
+        }
+      }
+    },
+    "Cosa resta salvato" : {
+      "comment" : "AI consent: what is stored",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is stored"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qué se guarda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce qui est conservé"
+          }
+        }
+      }
+    },
+    "Cosa significano questi valori?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What do these values mean?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué significan estos valores?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Que signifient ces valeurs ?"
+          }
+        }
+      }
+    },
+    "Cosa viene inviato" : {
+      "comment" : "AI consent: what is sent",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is sent"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qué se envía"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce qui est envoyé"
           }
         }
       }
@@ -21264,6 +20568,29 @@
         }
       }
     },
+    "Di solito tutto quello che avete in KidBox sta in un messaggio. Con molti documenti e referti l'assistente può mandarli tutti per intero, e costa più messaggi, oppure tenere interi quelli che c'entrano con la domanda e accorciare gli altri. Con «Chiedi ogni volta» scegli tu prima di ogni invio." : {
+      "comment" : "AI settings footer: assistant memory",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usually everything you keep in KidBox fits in one message. With many documents and reports, the assistant can send them all in full, which costs more messages, or keep in full the ones related to your question and shorten the rest. With “Ask every time” you choose before each send."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normalmente todo lo que guardáis en KidBox cabe en un mensaje. Con muchos documentos e informes, el asistente puede enviarlos todos completos, lo que cuesta más mensajes, o mantener completos los relacionados con tu pregunta y acortar los demás. Con «Preguntar cada vez» eliges tú antes de cada envío."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "D'habitude, tout ce que vous gardez dans KidBox tient dans un message. Avec beaucoup de documents et de comptes rendus, l'assistant peut tous les envoyer en entier, ce qui coûte plus de messages, ou garder en entier ceux liés à votre question et raccourcir les autres. Avec « Demander à chaque fois », vous choisissez avant chaque envoi."
+          }
+        }
+      }
+    },
     "Di' ad Alexa:" : {
       "localizations" : {
         "en" : {
@@ -22565,6 +21892,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "C’est le dernier jour de votre essai Pro. Abonnez-vous pour garder l’espace supplémentaire, les planificateurs et l’assistant IA."
+          }
+        }
+      }
+    },
+    "È tutto nella norma?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Is everything normal?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Está todo normal?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Est-ce que tout est normal ?"
           }
         }
       }
@@ -25338,6 +24688,7 @@
       }
     },
     "Esami di %@" : {
+      "comment" : "Assistant focus label: exams of a person",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -27605,6 +26956,29 @@
         }
       }
     },
+    "Fornitore AI: Anthropic" : {
+      "comment" : "AI consent: provider",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI provider: Anthropic"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proveedor de IA: Anthropic"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fournisseur IA : Anthropic"
+          }
+        }
+      }
+    },
     "Forse è stata ritirata, o non sei più in questa famiglia." : {
       "localizations" : {
         "en" : {
@@ -29625,6 +28999,28 @@
         }
       }
     },
+    "Ha già «%@» alle %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already has “%@” at %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya tiene «%@» a las %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A déjà « %@ » à %@"
+          }
+        }
+      }
+    },
     "Hai chiesto" : {
       "localizations" : {
         "en" : {
@@ -30257,6 +29653,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "J'ai envoyé le lien"
+          }
+        }
+      }
+    },
+    "Ho spazio libero domani pomeriggio?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Am I free tomorrow afternoon?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Tengo hueco mañana por la tarde?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suis-je libre demain après-midi ?"
           }
         }
       }
@@ -32017,6 +31436,29 @@
         }
       }
     },
+    "Impossibile preparare il contesto di pianificazione." : {
+      "comment" : "Assistant load error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't prepare the assistant's context."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido preparar el contexto del asistente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de préparer le contexte de l'assistant."
+          }
+        }
+      }
+    },
     "Impossibile salvare la carta: %@" : {
       "comment" : "Loyalty card save error, %@ = underlying error description",
       "localizations" : {
@@ -32436,6 +31878,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Selon votre style%@, rythme %@, tranche d'âge %@"
+          }
+        }
+      }
+    },
+    "In calendario, intorno alle %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On the calendar, around %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En el calendario, hacia las %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Au calendrier, vers %@"
           }
         }
       }
@@ -34121,6 +33585,7 @@
       }
     },
     "Invia sempre tutti i referti e i dati sanitari completi." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -34782,6 +34247,29 @@
         }
       }
     },
+    "L'AI fornisce spiegazioni e informazioni generali. Non sostituisce il tuo medico. Per qualsiasi decisione clinica, consulta sempre un professionista." : {
+      "comment" : "AI consent: not medical advice (body)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The AI provides explanations and general information. It does not replace your doctor. For any clinical decision, always consult a professional."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La IA ofrece explicaciones e información general. No sustituye a tu médico. Para cualquier decisión clínica, consulta siempre a un profesional."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'IA fournit des explications et des informations générales. Elle ne remplace pas votre médecin. Pour toute décision clinique, consultez toujours un professionnel."
+          }
+        }
+      }
+    },
     "L'AI ha risposto in un formato non riconosciuto. Riprova: di solito al secondo tentativo va a buon fine." : {
       "comment" : "Fitness plan parse error",
       "localizations" : {
@@ -35132,6 +34620,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L'assistant construit un plan d'entraînement mensuel à partir de ce qui est déjà dans Santé : âge, poids, taille, comptes rendus médicaux, pathologies en cours, traitements et entraînements enregistrés."
+          }
+        }
+      }
+    },
+    "L'assistente risponde quando gli scrivi. Briefing, recap e analisi mensile partono da soli solo se li attivi nelle impostazioni. Puoi revocare il consenso in qualsiasi momento da Impostazioni → Assistente AI." : {
+      "comment" : "AI consent: control (body)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The assistant answers when you write to it. Briefings, recaps and the monthly analysis run on their own only if you turn them on in settings. You can withdraw consent at any time in Settings → AI Assistant."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El asistente responde cuando le escribes. Los briefings, resúmenes y el análisis mensual solo se envían solos si los activas en los ajustes. Puedes retirar el consentimiento en cualquier momento en Ajustes → Asistente IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'assistant répond quand vous lui écrivez. Les briefings, récaps et l'analyse mensuelle ne partent seuls que si vous les activez dans les réglages. Vous pouvez retirer votre consentement à tout moment dans Réglages → Assistant IA."
           }
         }
       }
@@ -36237,6 +35748,29 @@
         }
       }
     },
+    "Le conversazioni restano nel tuo account per ritrovarle sugli altri dispositivi, e qualche fatto utile emerso parlando resta nella memoria della famiglia. Puoi cancellare la conversazione dall'assistente." : {
+      "comment" : "AI consent: what is stored (body)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversations stay in your account so you can find them on your other devices, and a few useful facts that come up stay in the family's memory. You can delete the conversation from the assistant."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las conversaciones se quedan en tu cuenta para encontrarlas en tus otros dispositivos, y algunos datos útiles que surgen se quedan en la memoria de la familia. Puedes borrar la conversación desde el asistente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les conversations restent dans votre compte pour les retrouver sur vos autres appareils, et quelques faits utiles évoqués restent dans la mémoire de la famille. Vous pouvez supprimer la conversation depuis l'assistant."
+          }
+        }
+      }
+    },
     "Le cure verranno rimosse da tutti i dispositivi." : {
       "localizations" : {
         "en" : {
@@ -36454,6 +35988,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les mots de passe ne correspondent pas."
+          }
+        }
+      }
+    },
+    "Le risposte le genera Claude di Anthropic (Stati Uniti), passando dai server KidBox. Anthropic non usa questi dati per addestrare i suoi modelli e li tratta secondo la sua Privacy Policy." : {
+      "comment" : "AI consent: provider (body)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Answers are generated by Anthropic's Claude (United States), through KidBox servers. Anthropic does not use this data to train its models and handles it under its Privacy Policy."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las respuestas las genera Claude de Anthropic (Estados Unidos), a través de los servidores de KidBox. Anthropic no usa estos datos para entrenar sus modelos y los trata según su política de privacidad."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les réponses sont générées par Claude d'Anthropic (États-Unis), en passant par les serveurs KidBox. Anthropic n'utilise pas ces données pour entraîner ses modèles et les traite selon sa politique de confidentialité."
           }
         }
       }
@@ -36983,6 +36540,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lien Ajouter à Apple Wallet (facultatif)"
+          }
+        }
+      }
+    },
+    "Link da mandare a chi non ha l'app: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link to send to people without the app: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enlace para enviar a quien no tiene la app: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lien à envoyer à ceux qui n'ont pas l'app : %@"
           }
         }
       }
@@ -37675,6 +37254,29 @@
         }
       }
     },
+    "Manda sempre tutti i documenti e i referti per intero: può costare più messaggi." : {
+      "comment" : "AI settings: full accuracy detail",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always sends every document and report in full: it may cost more messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía siempre todos los documentos e informes completos: puede costar más mensajes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoie toujours tous les documents et comptes rendus en entier : cela peut coûter plusieurs messages."
+          }
+        }
+      }
+    },
     "Mantenere" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -38362,6 +37964,51 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Membre"
+          }
+        }
+      }
+    },
+    "Memoria dell'assistente" : {
+      "comment" : "AI settings section: assistant memory",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistant memory"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memoria del asistente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mémoire de l'assistant"
+          }
+        }
+      }
+    },
+    "Memoria molto ampia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Very large memory"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memoria muy amplia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mémoire très volumineuse"
           }
         }
       }
@@ -43480,6 +43127,28 @@
         }
       }
     },
+    "Non trovo in famiglia: %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not found in the family: %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No encuentro en la familia: %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Introuvable dans la famille : %@."
+          }
+        }
+      }
+    },
     "Nota" : {
       "localizations" : {
         "en" : {
@@ -47153,6 +46822,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DÉPART"
+          }
+        }
+      }
+    },
+    "Parto da qui, ma conosco tutto quello che avete in KidBox: chiedimi anche altro." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I'm starting from here, but I know everything you keep in KidBox: ask me anything else too."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empiezo desde aquí, pero conozco todo lo que guardas en KidBox: pregúntame también otras cosas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je pars d'ici, mais je connais tout ce que vous gardez dans KidBox : demandez-moi aussi autre chose."
           }
         }
       }
@@ -51859,7 +51550,31 @@
         }
       }
     },
+    "Puoi disattivarlo in qualsiasi momento. A ogni domanda l'assistente riceve la memoria di quello che la famiglia tiene in KidBox: password, numeri dei documenti e posizione esclusi." : {
+      "comment" : "AI settings: toggle footer",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can turn it off at any time. With every question the assistant receives the memory of what your family keeps in KidBox: passwords, document numbers and location excluded."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes desactivarlo en cualquier momento. Con cada pregunta el asistente recibe la memoria de lo que la familia guarda en KidBox: contraseñas, números de documentos y ubicación excluidos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez le désactiver à tout moment. À chaque question, l'assistant reçoit la mémoire de ce que la famille garde dans KidBox : mots de passe, numéros des documents et position exclus."
+          }
+        }
+      }
+    },
     "Puoi disattivarlo in qualsiasi momento. I dati inviati all'AI sono quelli che scegli di condividere, visita per visita." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -52124,6 +51839,52 @@
         }
       }
     },
+    "Quali esami sono ancora da fare?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which exams are still to be done?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué exámenes quedan por hacer?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quels examens restent à faire ?"
+          }
+        }
+      }
+    },
+    "Quali to-do sono ancora aperti?" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which to-dos are still open?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué tareas siguen abiertas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelles tâches sont encore ouvertes ?"
+          }
+        }
+      }
+    },
     "Quando" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -52257,6 +52018,29 @@
         }
       }
     },
+    "Quando la memoria supera un messaggio, scegli tu prima di inviare." : {
+      "comment" : "AI settings: ask each time detail",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the memory exceeds one message, you choose before sending."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando la memoria supera un mensaje, eliges tú antes de enviar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand la mémoire dépasse un message, vous choisissez avant l'envoi."
+          }
+        }
+      }
+    },
     "Quando spunti i prodotti e tocchi «Salva spesa», lo scontrino finisce qui: negozio, totale e cosa avevi preso." : {
       "localizations" : {
         "en" : {
@@ -52275,6 +52059,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quand tu coches les produits et touches « Enregistrer les courses », le ticket arrive ici : magasin, total et ce que tu as pris."
+          }
+        }
+      }
+    },
+    "Quando supera un messaggio" : {
+      "comment" : "AI settings: picker label for large memory",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When it exceeds one message"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando supera un mensaje"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand elle dépasse un message"
           }
         }
       }
@@ -54072,6 +53879,52 @@
         }
       }
     },
+    "Riassumimi la salute di %@" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summarize %@'s health"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resúmeme la salud de %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Résumez-moi la santé de %@"
+          }
+        }
+      }
+    },
+    "Riassumimi le ultime visite di %@" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summarize %@'s latest visits"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resúmeme las últimas visitas de %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Résumez-moi les dernières visites de %@"
+          }
+        }
+      }
+    },
     "Riassunto contesto sanitario…" : {
       "localizations" : {
         "en" : {
@@ -54671,6 +54524,28 @@
         }
       }
     },
+    "Richiesta inviata a %@: «%@»." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request sent to %@: “%@”."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solicitud enviada a %@: «%@»."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demande envoyée à %@ : « %@ »."
+          }
+        }
+      }
+    },
     "Richiesta inviata: chi ha creato la famiglia riceverà una notifica per attivare la prova." : {
       "comment" : "Confirmation after asking the family owner to start the Pro trial",
       "localizations" : {
@@ -54712,6 +54587,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Demande indisponible"
+          }
+        }
+      }
+    },
+    "Richiesta non inviata: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request not sent: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solicitud no enviada: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demande non envoyée : %@"
+          }
+        }
+      }
+    },
+    "Richiesta non inviata: non trovo in famiglia %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request not sent: I can't find %@ in the family."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solicitud no enviada: no encuentro a %@ en la familia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demande non envoyée : %@ introuvable dans la famille."
           }
         }
       }
@@ -56308,6 +56227,7 @@
       }
     },
     "Salute di %@" : {
+      "comment" : "Assistant focus label: health of a person",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -61162,6 +61082,52 @@
         }
       }
     },
+    "Spiegami l'ultimo referto" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explain the latest report"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explícame el último informe"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expliquez-moi le dernier compte rendu"
+          }
+        }
+      }
+    },
+    "Spiegami questa visita" : {
+      "comment" : "Assistant suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explain this visit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explícame esta visita"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expliquez-moi cette visite"
+          }
+        }
+      }
+    },
     "SpO₂" : {
       "localizations" : {
         "en" : {
@@ -62800,6 +62766,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nous vous prévenons quand un membre importe un document, ajoute une dépense, écrit dans le chat ou qu'une échéance approche. Vous pouvez choisir à tout moment quelles notifications recevoir dans les Réglages."
+          }
+        }
+      }
+    },
+    "Tiene interi i documenti che c'entrano con la domanda e accorcia gli altri: costa meno messaggi." : {
+      "comment" : "AI settings: reduced context detail",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keeps in full the documents related to your question and shortens the others: it costs fewer messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantiene completos los documentos relacionados con tu pregunta y acorta los demás: cuesta menos mensajes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Garde en entier les documents liés à votre question et raccourcit les autres : cela coûte moins de messages."
           }
         }
       }
@@ -65591,6 +65580,7 @@
       }
     },
     "Usa un riassunto del profilo sanitario per risparmiare messaggi." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -66948,6 +66938,29 @@
         }
       }
     },
+    "Visita del %@" : {
+      "comment" : "Assistant focus label: visit date",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visit on %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visita del %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visite du %@"
+          }
+        }
+      }
+    },
     "Visita di controllo il %@" : {
       "localizations" : {
         "en" : {
@@ -67098,6 +67111,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Visites"
+          }
+        }
+      }
+    },
+    "Visite di %@" : {
+      "comment" : "Assistant focus label: visits of a person",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visits of %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visitas de %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visites de %@"
           }
         }
       }

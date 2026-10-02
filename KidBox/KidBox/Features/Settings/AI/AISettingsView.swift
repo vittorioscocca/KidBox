@@ -208,7 +208,7 @@ struct AISettingsView: View {
                 } header: {
                     Text("Memoria dell'assistente")
                 } footer: {
-                    Text("Di solito tutto quello che avete in KidBox sta in un messaggio. Con molti documenti e referti l'assistente può mandarli tutti per intero, e costa più messaggi, oppure tenere interi quelli che c'entrano con la domanda e accorciare gli altri. Con «Chiedi ogni volta» scegli tu prima di ogni invio.")
+                    Text("Di solito tutto quello che avete in KidBox sta in un messaggio. Con molti documenti e referti l'assistente può mandarli tutti per intero, e costa più messaggi, oppure tenere interi quelli che c'entrano con la domanda e accorciare gli altri. Con «Chiedi ogni volta» scegli tu prima di ogni invio. Sul piano Free, e quando i messaggi rimasti non bastano, si usa sempre il contesto ridotto.")
                         .font(.caption)
                 }
             }
@@ -944,7 +944,7 @@ struct UpgradeSheetView: View {
     // MARK: - Legal footer
     private var legalFooter: some View {
         let privacyURL = URL(string: "https://kidboxapp.com/privacy.html")!
-        let termsURL   = URL(string: "https://vittorioscocca.github.io/KidBox/terms/")!
+        let termsURL   = URL(string: "https://kidboxapp.com/terms.html")!
         
         return VStack(spacing: 6) {
             Group {

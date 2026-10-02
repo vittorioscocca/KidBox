@@ -69,6 +69,8 @@ final class PlanningAIChatViewModel: ObservableObject {
     private var lastCompactionThreshold: Int = 0
     private var usageTodaySnapshot: Int = 0
     private var dailyLimitSnapshot: Int = 0
+    /// Periodo della quota (`lifetime` = bonus Free); nil finché il server non risponde.
+    private var quotaPeriodSnapshot: AIQuotaPeriod?
 
     /// Documenti da far leggere (OCR) a ogni apertura: pochi, perché ogni
     /// lettura parte subito in parallelo. Alle aperture successive tocca agli altri.
@@ -111,6 +113,13 @@ final class PlanningAIChatViewModel: ObservableObject {
             snapshot = snap
             enqueuePendingExtractions(snapshot: snap)
             subscribeToAIChatSync()
+            // Quanti messaggi restano: decide se il contesto ridotto parte da solo.
+            Task { [weak self] in
+                guard let usage = try? await AIService.shared.fetchUsage() else { return }
+                self?.usageTodaySnapshot = usage.usageToday
+                self?.dailyLimitSnapshot = usage.dailyLimit
+                self?.quotaPeriodSnapshot = usage.period
+            }
 
             contextPrepared = true
             KBLog.ai.kbInfo("PlanningAIChatVM ready docs=\(snap.documents.count) events=\(snap.events.count) facts=\(snap.memoryFacts.count)")
@@ -171,6 +180,10 @@ final class PlanningAIChatViewModel: ObservableObject {
             await performSend(text: trimmed, systemPrompt: plan.fullPrompt, mode: "full")
             return
         }
+        if mustUseReduced(fullUnits: plan.fullUnits) {
+            await performSend(text: trimmed, systemPrompt: reduced, mode: "reduced-auto")
+            return
+        }
         switch AISettings.shared.healthContextSendPreference {
         case .askEachTime:
             pendingPlan = plan
@@ -183,6 +196,17 @@ final class PlanningAIChatViewModel: ObservableObject {
         case .compactSummary:
             await performSend(text: trimmed, systemPrompt: reduced, mode: "reduced")
         }
+    }
+
+    /// Contesto ridotto senza chiedere, qualunque sia la preferenza: sul Free,
+    /// dove i messaggi sono 5 in tutto, e sugli altri piani quando il completo
+    /// costerebbe più dei messaggi rimasti (il server lo rifiuterebbe per intero).
+    /// Stessa regola su Android e web.
+    private func mustUseReduced(fullUnits: Int) -> Bool {
+        let period = quotaPeriodSnapshot ?? (KBSubscriptionManager.shared.currentPlan == .free ? .lifetime : nil)
+        if period == .lifetime { return true }
+        guard dailyLimitSnapshot > 0 else { return false }
+        return dailyLimitSnapshot - usageTodaySnapshot < fullUnits
     }
 
     /// Scelta dal dialogo: diventa la preferenza, come nella chat Salute.
@@ -269,6 +293,7 @@ final class PlanningAIChatViewModel: ObservableObject {
 
             usageTodaySnapshot = response.usageToday
             dailyLimitSnapshot = response.dailyLimit
+            quotaPeriodSnapshot = response.period
 
             try await compactIfNeeded(conversation: conversation)
             try? modelContext.save()
