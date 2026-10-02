@@ -9,7 +9,9 @@ Intelligence (immagini), e la chat della landing (`landingChat`, funzione HTTP
 separata, senza login).
 
 `purpose` noti: `clinicalRecord`, `mealPlan`, `fitnessPlan`, `fitnessAdjust`,
-`fitnessCopilot` (più l'assistente generico, che non ne passa nessuno).
+`fitnessCopilot`, `familyAgent` (l'assistente unico, dal 02/10/2026: serve
+**solo** a riconoscerlo in log e analytics, modello e unità sono quelli della
+chat). Le build vecchie e la compattazione non ne passano nessuno.
 
 ## Due assi indipendenti, da non confondere
 
@@ -150,6 +152,55 @@ Tipi: `grocery_add`, `todo_add`, `event_add`, `note_add`, `health_reminder`,
    ambigui. Il 01/10/2026 così si sono visti il fuso sbagliato e «riceverà una
    notifica» detto a chi è fuori dall'app. Costa centesimi; i test li fa lo
    sviluppatore, quindi pesano nel report dei costi (regola 12).
+
+## L'assistente unico (`familyAgent`)
+
+Un solo assistente — Home, pulsante flottante del web, pulsanti AI di Salute —
+con la memoria di tutta l'app. Disegno completo in `internal/assistente-unico.md`;
+codice in `AgentMemoryBook.swift` / `AgentMemoryBook.kt` / `memoryBook.js` e nei
+`PlanningAIChatViewModel` (sul web `Assistente.jsx`).
+
+- **Il contesto è un quaderno di schede** markdown (`<indice>` + una `<scheda>`
+  per sezione), costruito **sul dispositivo** a ogni domanda dai dati locali,
+  senza chiamate AI. Le schede salute riusano il builder della chat Salute con
+  lo scopo `agentMemory` (solo dati, niente ruolo né azioni). Mai nel quaderno:
+  password, numeri e codici dei documenti d'identità (il loro testo OCR non
+  entra mai), carte fedeltà, posizione. Le voci «solo per me» degli altri no.
+- **Il focus va in cima e in fondo al prompt.** Provato su Haiku: solo in fondo,
+  «cosa devo fare adesso?» aperto da una visita tornava 2 volte su 4 con le cose
+  della famiglia; in cima e in fondo, 4 su 4. La riga ha esempi di domande senza
+  soggetto: scritta solo come regola, Haiku la ignorava.
+- **Il modello non fa i conti.** Regola «oggi è X, domani è Y» (sbagliava
+  «domani»), età e prossimo compleanno precalcolati in `famiglia.md` («compie 1
+  anno» a una bambina di tre), «domani» calcolato col calendario e non +24 ore.
+- **Le regole del prompt sono lo stesso testo sulle tre piattaforme**: chi ne
+  cambia una le cambia tutte e tre, insieme alle finestre (7 giorni indietro e
+  60 avanti di calendario, 90 giorni di spese, 30 messaggi di chat…).
+- **Budget.** Completo = ogni testo letto per intero. Se supera un messaggio
+  vale la preferenza `healthContextSendPreference` («Memoria dell'assistente»
+  nelle impostazioni): chiedi / massima accuratezza / contesto ridotto. Il
+  ridotto non fa riassunti AI: misura lo **scheletro** (tutti i testi a zero) e
+  divide lo spazio fra i testi — allegati del focus fino a 12.000, pertinenti
+  alla domanda fino a 4.000, gli altri fino a 1.500 — poi un secondo giro col
+  resto.
+  **Trappola del 02/10/2026:** in una famiglia vera (30 esami, 88 documenti) lo
+  scheletro da solo era 50.449 caratteri, oltre un messaggio, e il ridotto
+  costava 2 messaggi pur promettendone 1. Ora il ridotto paga i messaggi che
+  servono allo scheletro e li riempie di testi; se sfora (righe degli allegati
+  indentate una per una) toglie lo sforamento dal budget e riprova, al massimo
+  3 giri; un ridotto che costa quanto il completo non si propone.
+- **Una conversazione sola per famiglia** (`planning-agent-{familyId}`): il
+  focus cambia il contesto, non lo storico. Per questo i suggerimenti a tema non
+  possono stare solo nella schermata vuota, che non si vede quasi mai.
+- **Analytics:** `ai_message_sent` con `agent_type` = `salute` se aperto con un
+  focus, `assistente` altrimenti, così la serie resta confrontabile con le
+  vecchie chat Salute.
+- **Prove di prompt:** script nello scratchpad che carica `memoryBook.js` con
+  Vite (`createServer` + `ssrLoadModule`, con `globalThis.self = globalThis`
+  prima dell'import), costruisce il quaderno da dati finti e chiama Haiku con la
+  chiave di Secret Manager (mai stampata), come al punto 9. Per misurare una
+  famiglia vera senza chiamare il modello: nella web app in locale, da console,
+  `loadMemorySnapshot` + `planContext` (solo letture).
 
 ## Casi particolari
 

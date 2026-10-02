@@ -96,6 +96,7 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 | Piano Alimentare | Menù settimanale AI da età, peso, obiettivi, referti, allergie | € |
 | Piano Fitness | Allenamenti AI, calendario, promemoria, sedute chiuse da Health, storico e report settimanale; a fine mese consuntivo e «mese successivo» generato sui risultati (storico in `previousCycles`; il web lo conserva ma non genera ancora la continuazione) | € |
 | Analisi mensile | Pattern sulla storia sanitaria dei figli, ad app chiusa | € |
+| Chiedi all'AI | I pulsanti AI di salute della persona, visite, singola visita ed esami (sul web: persona, visite, esami) aprono l'**assistente di famiglia** già centrato lì, con etichetta che si può togliere e domande a tema; le vecchie chat Salute separate non si aprono più (dal 02/10/2026) | € (5 messaggi una tantum sul Free) |
 
 ### Casa, veicoli, animali
 | Funzione | Cosa fa | Piano |
@@ -114,7 +115,7 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 | Funzione | Cosa fa | Piano |
 |---|---|---|
 | Alexa | Spesa e to-do dettati agli Echo; **solo `it-IT`** | F |
-| Assistente di famiglia | Chat AI che conosce i dati e crea eventi, to-do, note, voci della lista della spesa, promemoria salute e richieste («chi prende Marco?»). Le **spese** non le crea: le propone Document Intelligence dai documenti importati | € (5 messaggi una tantum sul Free) |
+| Assistente di famiglia | **Un solo assistente** (Home, pulsante flottante del web, pulsanti di Salute) con la memoria di tutta l'app: un quaderno di schede markdown costruito sul dispositivo a ogni domanda (calendario con le ricorrenze, to-do, spesa, note, spese, salute di figli e adulti con i referti letti, documenti col testo OCR, wallet senza numeri, casa, veicoli, animali, viaggi, chat). Mai password, numeri dei documenti d'identità, posizione. Se la memoria supera un messaggio vale la preferenza «Memoria dell'assistente» (chiedi / massima accuratezza / contesto ridotto). Crea eventi, to-do, note, voci della lista della spesa, promemoria salute e richieste («chi prende Marco?»); le **spese** non le crea: le propone Document Intelligence. Disegno in `internal/assistente-unico.md` | € (5 messaggi una tantum sul Free) |
 | Document Intelligence | Importi una fattura o un referto: l'AI legge e propone azioni | € |
 | Mente proattiva | Briefing mattutino, recap settimanale, analisi mensile | € |
 | Chat della landing | «Chiedi a KidBox» su kidboxapp.com: risponde sul prodotto a chi non ha l'app. Risposte scritte nel browser, cache, poi Haiku; tetto 1 $/giorno; base di conoscenza in `functions/landingChat/knowledge.md` | — |
