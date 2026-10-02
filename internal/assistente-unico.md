@@ -136,3 +136,26 @@ blocco azioni (`KIDBOX_ACTIONS`) come prima.
 | iOS | `Features/AIAgent/AgentMemoryBook.swift` | `PlanningAIChatViewModel` / `PlanningAIChatView` (`AgentFocus`) |
 | Android | `ui/screens/ai/planning/AgentMemoryBook.kt` | `PlanningAIChatViewModel` / `PlanningAIChatScreen` |
 | Web | `src/services/memoryBook.js` | `src/pages/Assistente.jsx` (`AssistantFocusContext`) |
+
+## Cifratura delle conversazioni (dal 02/10/2026, a tappe)
+
+Le conversazioni stanno in `users/{uid}/aiConversations` (iOS e web; Android le
+tiene solo sul telefono). Testo dei messaggi e riassunto passano a `contentEnc`
+e `summaryEnc`, cifrati con la chiave della famiglia della conversazione, nello
+stesso formato delle note. Il server non li legge: `deleteAccount` cancella la
+collezione e basta.
+
+| Tappa | Cosa | Stato |
+|---|---|---|
+| 1 | iOS e web **leggono** entrambi i formati; scrivono in chiaro finché l'interruttore Remote Config `ai_conversations_encrypted` è spento | web live, iOS nella prossima build |
+| 2 | Build iOS diffusa (criterio di `/rules-change`: GA4 `platform × appVersion` a 7 giorni) | da fare |
+| 3 | Accendere `ai_conversations_encrypted` **e** promuovere `firestore.rules.next` (rifiuta le scritture in chiaro) | da fare, insieme |
+
+Perché non subito: le build iOS installate riscrivono l'array dei messaggi
+intero a ogni avvio (`reconcileAIChat`) e scartano quelli che non sanno
+leggere, quindi cancellerebbero da Firestore i messaggi cifrati scritti altrove.
+Con la regola attiva la loro scrittura viene negata: smettono di sincronizzare
+le chat AI, non perdono niente e non caricano niente in chiaro. Dopo
+l'accensione i documenti vecchi si ricifrano dai client (iOS alla
+riconciliazione, il web appena li legge); senza chiave non si scrive.
+

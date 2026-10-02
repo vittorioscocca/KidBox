@@ -20,6 +20,13 @@ un avviso in testa, e `rules.test.js` gira su entrambi (secondo ambiente con un
 modifica va scritta in tutti e due.** Un allargamento invece è retrocompatibile
 e si deploya subito: le rules vanno live **prima** del client che ne dipende.
 
+**`.next` in attesa dal 02/10/2026:** `users/{uid}/aiConversations` accetta
+solo scritture cifrate (`aiConversationWriteIsEncrypted`, blocchi marcati
+`aiConversations-next`). Si promuove insieme all'interruttore Remote Config
+`ai_conversations_encrypted`, quando la build iOS che cifra è diffusa
+(`internal/assistente-unico.md`). La suite ha un test che fallisce se i due file
+divergono fuori dai blocchi marcati: promuovendo, togli i marcatori e il test.
+
 L'ultimo `.next` (auto-iscrizione a `members/{uid}` solo con l'invito
 consumato, `joinedWithValidInvite`) è stato promosso il **01/10/2026** e il
 file tolto. Il criterio usato per promuoverlo, da riusare: (1) in produzione
