@@ -172,6 +172,15 @@ export default function Assistente({ variant = "page", onClose, focus = null, on
         await deliver(text, plan.fullPrompt);
         return;
       }
+      // Ridotto senza chiedere, qualunque sia la preferenza: sul Free, dove i
+      // messaggi sono 5 in tutto, e quando il completo costerebbe più dei
+      // messaggi rimasti (il server lo rifiuterebbe per intero). Come su iOS e
+      // Android.
+      const remaining = usage?.dailyLimit ? usage.dailyLimit - usage.usageToday : null;
+      if (usage?.period === "lifetime" || (remaining !== null && remaining < plan.fullUnits)) {
+        await deliver(text, plan.reducedPrompt);
+        return;
+      }
       const preference = await loadSettings(user.uid)
         .then((st) => st.healthContextSendPreference)
         .catch(() => "ask_each_time");
