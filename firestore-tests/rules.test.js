@@ -803,11 +803,40 @@ async function check(nome, promessa) {
       assertFails(envChat.authenticatedContext(ALTRO).firestore().doc(chatPath)
           .set(chatCifrata, {merge: true})));
 
+  // ── MEMORIA AI DI FAMIGLIA (families/{id}/memoryFacts) ──
+  console.log("\n── MEMORIA AI DI FAMIGLIA (memoryFacts) ───────────");
+  const fattoChiaro = {id: "f1", familyId: FAM, content: "Sveva non mangia verdura", categoryRaw: "abitudini"};
+  const fattoCifrato = {id: "f1", familyId: FAM, contentEnc: "QUJDREVG", content: deleteField(), categoryRaw: "abitudini"};
+  await check("memoria AI (oggi): un membro scrive un fatto in chiaro, come le build installate",
+      assertSucceeds(db.doc(`families/${FAM}/memoryFacts/f-oggi`).set(fattoChiaro)));
+  await envChat.withSecurityRulesDisabled(async (ctx) => {
+    const adm = ctx.firestore();
+    await adm.doc(`families/${FAM}`).set({name: "Rossi", ownerUid: UID, plan: "free"});
+    await adm.doc(`families/${FAM}/members/${UID}`).set({uid: UID, role: "owner", isDeleted: false});
+    await adm.doc(`families/${FAM}/memoryFacts/f-vecchio`).set(fattoChiaro);
+  });
+  await check("memoria AI (next): NON passa un fatto nuovo in chiaro",
+      assertFails(nx.doc(`families/${FAM}/memoryFacts/f-nuovo`).set(fattoChiaro)));
+  await check("memoria AI (next): passa un fatto nuovo cifrato",
+      assertSucceeds(nx.doc(`families/${FAM}/memoryFacts/f-nuovo`).set(fattoCifrato, {merge: true})));
+  await check("memoria AI (next): passa la ricifratura di un fatto vecchio",
+      assertSucceeds(nx.doc(`families/${FAM}/memoryFacts/f-vecchio`)
+          .set({contentEnc: "QUJD", content: deleteField()}, {merge: true})));
+  await check("memoria AI (next): il membro cancella un fatto (taglio dei più vecchi)",
+      assertSucceeds(nx.doc(`families/${FAM}/memoryFacts/f-nuovo`).delete()));
+  await check("memoria AI (next): il membro legge i fatti",
+      assertSucceeds(nx.collection(`families/${FAM}/memoryFacts`).get()));
+  await check("memoria AI (next): un estraneo NON scrive fatti",
+      assertFails(envChat.authenticatedContext(ALTRO).firestore()
+          .doc(`families/${FAM}/memoryFacts/f-estraneo`).set(fattoCifrato, {merge: true})));
+  await check("next: le altre sottocollezioni restano scrivibili dal wildcard",
+      assertSucceeds(nx.doc(`families/${FAM}/notes/n-next`).set({titleEnc: "QUJD"})));
+
   // I due file restano identici fuori dai blocchi marcati: ogni altra modifica
   // va scritta in entrambi.
   const senzaBlocchi = (t) => t
       .replace(/^[\s\S]*?(?=rules_version)/, "")
-      .replace(/\n[ \t]*\/\/ BEGIN aiConversations-next(-fn)?\n[\s\S]*?\/\/ END aiConversations-next(-fn)?\n/g, "\n")
+      .replace(/\n[ \t]*\/\/ BEGIN next:([\w-]+)\n[\s\S]*?\/\/ END next:\1\n/g, "\n")
       .replace(/\n[ \t]*match \/aiConversations\/\{conversationId\} \{\n[^\n]*\n[ \t]*\}\n/, "\n")
       .replace(/\n\s*\n/g, "\n");
   await check("firestore.rules.next non diverge da firestore.rules fuori dai blocchi marcati",

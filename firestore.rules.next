@@ -1,10 +1,12 @@
 // ⏳ VERSIONE FUTURA — non è questa che si deploya.
 //
-// Identica a `firestore.rules` tranne i blocchi marcati `aiConversations-next`:
-// le chat AI in `users/{uid}/aiConversations` si scrivono solo cifrate.
+// Identica a `firestore.rules` tranne i blocchi marcati `BEGIN next:`: le chat
+// AI in `users/{uid}/aiConversations` e i fatti della memoria di famiglia in
+// `families/{id}/memoryFacts` si scrivono solo cifrati.
 //
-// Le app iOS già installate scrivono i messaggi in chiaro: con questa regola
-// attiva smettono di sincronizzare le chat AI (restano sul telefono). Diventa
+// Le app già installate scrivono in chiaro: con questa regola attiva le build
+// iOS vecchie smettono di sincronizzare le chat AI (restano sul telefono) e
+// quelle iOS/Android vecchie non salvano più fatti nuovi sul server. Diventa
 // `firestore.rules` insieme all'interruttore Remote Config
 // `ai_conversations_encrypted`, quando la build iOS che cifra è diffusa
 // (criterio in `/rules-change`). Disegno in `internal/assistente-unico.md`.
@@ -23,7 +25,7 @@ service cloud.firestore {
         && request.auth.uid == "efw85HN41nb1rmslevC3wkFpVUo1";
     }
 
-    // BEGIN aiConversations-next-fn
+    // BEGIN next:aiConversations-fn
     // Una scrittura su `users/{uid}/aiConversations` non porta testo in chiaro.
     // Si guardano solo i campi che la scrittura tocca: segnare `isDeleted` su un
     // documento ancora in chiaro dev'essere possibile. Basta il primo messaggio:
@@ -36,7 +38,15 @@ service cloud.firestore {
               || d.get('messages', []).size() == 0
               || !('content' in d.messages[0]));
     }
-    // END aiConversations-next-fn
+
+    // Un fatto della memoria di famiglia non porta il testo in chiaro (`content`
+    // nei campi che la scrittura tocca). Cancellare resta libero ai membri.
+    function memoryFactWriteIsEncrypted() {
+      let d = request.resource.data;
+      let changed = resource == null ? d.keys() : d.diff(resource.data).affectedKeys();
+      return !changed.hasAny(['content']) || !(d.get('content', null) is string);
+    }
+    // END next:aiConversations-fn
 
     // ── APP HELPERS ────────────────────────────────────────
     function isSignedIn() {
@@ -218,7 +228,7 @@ service cloud.firestore {
       }
 
       // ── CHAT AI (private per-utente, sync cross-device) ────
-      // BEGIN aiConversations-next
+      // BEGIN next:aiConversations
       // ⏳ Regola in attesa: testo dei messaggi e riassunto solo cifrati
       // (`contentEnc`, `summaryEnc`). Le build iOS che non cifrano ancora
       // riscriverebbero in chiaro l'intero array e cancellerebbero i messaggi
@@ -229,7 +239,7 @@ service cloud.firestore {
         allow create, update: if isSignedIn() && request.auth.uid == uid
                               && aiConversationWriteIsEncrypted();
       }
-      // END aiConversations-next
+      // END next:aiConversations
 
       // ── PIANO ALIMENTARE (privato per-utente, sync cross-device) ──
       // Sta sotto `users` e non sotto `families` di proposito: contiene peso,
@@ -497,6 +507,16 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // BEGIN next:memoryFacts
+      // ⏳ Regola in attesa: i fatti della memoria AI solo cifrati (`contentEnc`).
+      // Esclusi dalle scritture del wildcard qui sotto, che altrimenti la
+      // scavalcherebbe (le rules sono in OR); la lettura resta al wildcard.
+      match /memoryFacts/{factId} {
+        allow delete: if isMemberOrOwner(familyId);
+        allow create, update: if isMemberOrOwner(familyId) && memoryFactWriteIsEncrypted();
+      }
+      // END next:memoryFacts
+
       // Il wildcard delle sottocollezioni: `{coll}` è il nome della prima
       // sottocollezione, `{subpath=**}` (che combacia anche con zero segmenti)
       // tutto ciò che sta più in fondo.
@@ -534,6 +554,9 @@ service cloud.firestore {
           && coll != 'memberKeyBackups'
           && coll != 'calendarFeeds'
           && coll != 'requests'
+          // BEGIN next:memoryFacts-excl
+          && coll != 'memoryFacts'
+          // END next:memoryFacts-excl
           && (coll != 'locations' || docId == request.auth.uid);
       }
     }
