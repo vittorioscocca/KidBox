@@ -8,7 +8,7 @@
 // iOS vecchie smettono di sincronizzare le chat AI (restano sul telefono) e
 // quelle iOS/Android vecchie non salvano più fatti nuovi sul server. Diventa
 // `firestore.rules` insieme all'interruttore Remote Config
-// `ai_conversations_encrypted`, quando la build iOS che cifra è diffusa
+// `text_encryption_enabled`, quando la build iOS che cifra è diffusa
 // (criterio in `/rules-change`). Disegno in `internal/assistente-unico.md`.
 //
 // Le altre modifiche si fanno su `firestore.rules` e si riportano qui:
