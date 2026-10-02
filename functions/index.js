@@ -2358,6 +2358,17 @@ function isFitnessAssistAskAI(data) {
 }
 
 /**
+ * L'assistente unico (Home e pulsanti di Salute), dal 02/10/2026. Serve solo a
+ * riconoscerlo in log e analytics: modello, unità, `max_tokens` e prompt
+ * caching restano quelli della chat. Disegno in internal/assistente-unico.md.
+ * @param {object} data body della callable
+ * @return {boolean}
+ */
+function isFamilyAgentAskAI(data) {
+  return data?.purpose === "familyAgent";
+}
+
+/**
  * Surface analytics per askAI.
  * @param {boolean} clinicalRecord
  * @param {boolean} mealPlan
@@ -2368,6 +2379,7 @@ function askAISurface(clinicalRecord, mealPlan, purpose) {
   if (clinicalRecord) return "clinicalRecord";
   if (mealPlan) return "mealPlan";
   if (isFitnessPlanAskAI({purpose}) || isFitnessAssistAskAI({purpose})) return purpose;
+  if (isFamilyAgentAskAI({purpose})) return purpose;
   return "chat";
 }
 
@@ -2382,6 +2394,7 @@ function askAIPurposeEcho(clinicalRecord, mealPlan, purpose) {
   if (clinicalRecord) return "clinicalRecord";
   if (mealPlan) return "mealPlan";
   if (isFitnessPlanAskAI({purpose}) || isFitnessAssistAskAI({purpose})) return purpose;
+  if (isFamilyAgentAskAI({purpose})) return purpose;
   return undefined;
 }
 
@@ -3018,7 +3031,7 @@ exports.askAI = onCall(
       logger.info("askAI request", {
         uid, familyId, usageCount, quota, msgCount: messages.length,
         totalChars, messageUnits, isLargeContext, clinicalRecord, mealPlan, fitnessPlan,
-        anthropicModel,
+        anthropicModel, purpose: purpose ?? null,
       });
 
       // Uno storico che finisce con l'assistente è un prefill per l'API, non
@@ -3142,7 +3155,7 @@ exports.askAI = onCall(
           cacheHitRatio: (inputTokens + cacheReadTokens) > 0 ?
             (cacheReadTokens / (inputTokens + cacheReadTokens)).toFixed(2) : "0",
           costUsd: costUsd.toFixed(6), clinicalRecord, mealPlan, fitnessPlan,
-          model: anthropicModel,
+          model: anthropicModel, purpose: purpose ?? null,
         });
       } catch (e) {
         // Tutto ciò che arriva qui è successo DOPO l'incremento: sovraccarico,
