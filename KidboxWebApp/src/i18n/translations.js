@@ -362,10 +362,8 @@ export const translations = {
 
       ai: "Assistente AI",
       aiEnabled: "Attiva assistente AI",
-      aiEnabledHint:
-        "Puoi disattivarlo in qualsiasi momento. I dati inviati all'AI sono quelli che scegli di condividere, visita per visita.",
-      aiConsent:
-        "Attivando l'assistente, i dati che scegli di condividere vengono inviati ai server KidBox per generare le risposte. Nessuna chiave API sul tuo dispositivo. Vuoi procedere?",
+      aiEnabledHint: "Puoi disattivarlo in qualsiasi momento. A ogni domanda l'assistente riceve la memoria di quello che la famiglia tiene in KidBox: password, numeri dei documenti e posizione esclusi.",
+      aiConsent: "Attivando l'assistente, a ogni domanda la memoria di quello che la famiglia tiene in KidBox, salute e documenti compresi, passa dai server KidBox ad Anthropic per generare la risposta. Password, numeri dei documenti d'identità e posizione non partono mai. Le conversazioni si salvano nel tuo account. Vuoi procedere?",
       aiUsage: "Utilizzo oggi",
       aiUsageOf: "di",
       aiMessages: "messaggi",
@@ -2014,10 +2012,8 @@ export const translations = {
 
       ai: "AI assistant",
       aiEnabled: "Enable AI assistant",
-      aiEnabledHint:
-        "You can turn it off at any time. The data sent to the AI is what you choose to share, visit by visit.",
-      aiConsent:
-        "By enabling the assistant, the data you choose to share is sent to KidBox servers to generate the answers. No API key on your device. Do you want to continue?",
+      aiEnabledHint: "You can turn it off at any time. With every question the assistant receives the memory of what your family keeps in KidBox: passwords, document numbers and location excluded.",
+      aiConsent: "By enabling the assistant, with every question the memory of what your family keeps in KidBox, health and documents included, goes from KidBox servers to Anthropic to generate the answer. Passwords, ID document numbers and location are never sent. Conversations are saved in your account. Do you want to continue?",
       aiUsage: "Usage today",
       aiUsageOf: "of",
       aiMessages: "messages",
@@ -3634,8 +3630,8 @@ export const translations = {
       voiceTranscriptionHint: "La transcription se fait sur l'appareil et nécessite iOS 26 ou une version ultérieure.",
       ai: "Assistant IA",
       aiEnabled: "Activer l'assistant IA",
-      aiEnabledHint: "Vous pouvez le désactiver à tout moment. Les données envoyées à l'IA sont celles que vous choisissez de partager, visite par visite.",
-      aiConsent: "En activant l'assistant, les données que vous choisissez de partager sont envoyées aux serveurs KidBox pour générer les réponses. Aucune clé API sur votre appareil. Voulez-vous continuer ?",
+      aiEnabledHint: "Vous pouvez le désactiver à tout moment. À chaque question, l'assistant reçoit la mémoire de ce que la famille garde dans KidBox : mots de passe, numéros des documents et position exclus.",
+      aiConsent: "En activant l'assistant, à chaque question la mémoire de ce que la famille garde dans KidBox, santé et documents compris, passe des serveurs KidBox à Anthropic pour générer la réponse. Les mots de passe, les numéros des pièces d'identité et la position ne partent jamais. Les conversations sont enregistrées dans votre compte. Voulez-vous continuer ?",
       aiUsage: "Utilisation aujourd'hui",
       aiUsageOf: "sur",
       aiMessages: "messages",
@@ -5219,8 +5215,8 @@ export const translations = {
       voiceTranscriptionHint: "La transcripción se hace en el dispositivo y requiere iOS 26 o posterior.",
       ai: "Asistente IA",
       aiEnabled: "Activar el asistente IA",
-      aiEnabledHint: "Puedes desactivarlo en cualquier momento. Los datos enviados a la IA son los que eliges compartir, visita por visita.",
-      aiConsent: "Al activar el asistente, los datos que elijas compartir se envían a los servidores de KidBox para generar las respuestas. Ninguna clave API en tu dispositivo. ¿Quieres continuar?",
+      aiEnabledHint: "Puedes desactivarlo en cualquier momento. Con cada pregunta el asistente recibe la memoria de lo que la familia guarda en KidBox: contraseñas, números de documentos y ubicación excluidos.",
+      aiConsent: "Al activar el asistente, con cada pregunta la memoria de lo que la familia guarda en KidBox, salud y documentos incluidos, pasa de los servidores de KidBox a Anthropic para generar la respuesta. Las contraseñas, los números de documentos de identidad y la ubicación nunca se envían. Las conversaciones se guardan en tu cuenta. ¿Quieres continuar?",
       aiUsage: "Uso hoy",
       aiUsageOf: "de",
       aiMessages: "mensajes",
