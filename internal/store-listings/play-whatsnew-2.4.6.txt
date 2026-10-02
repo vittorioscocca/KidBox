@@ -1,0 +1,12 @@
+<it-IT>
+• Entrare in una famiglia con un invito è più affidabile: l'ingresso si completa anche se esci dalla schermata a metà, e non compare più un errore quando in realtà sei già entrato.
+</it-IT>
+<en-US>
+• Joining a family with an invite is more reliable: it completes even if you leave the screen halfway, and you no longer see an error when you've actually already joined.
+</en-US>
+<fr-FR>
+• Rejoindre une famille avec une invitation est plus fiable : l'opération se termine même si vous quittez l'écran en cours de route, et aucune erreur ne s'affiche plus alors que vous avez déjà rejoint la famille.
+</fr-FR>
+<es-ES>
+• Entrar en una familia con una invitación es más fiable: se completa aunque salgas de la pantalla a mitad, y ya no aparece un error cuando en realidad ya has entrado.
+</es-ES>
