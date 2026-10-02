@@ -49,6 +49,29 @@
         }
       }
     },
+    "A ogni domanda, insieme a quello che scrivi, parte la memoria dell'assistente: quello che la famiglia tiene in KidBox. Calendario, to-do, spesa, note, spese, salute con i referti, testo letto dai documenti, wallet, casa, veicoli, animali, viaggi, ultimi messaggi della chat. Non partono mai password, numeri dei documenti d'identità e delle carte fedeltà, posizione, né le voci che un altro membro tiene solo per sé." : {
+      "comment" : "AI consent: what is sent (body)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With every question, together with what you type, the assistant's memory is sent: what your family keeps in KidBox. Calendar, to-dos, shopping, notes, expenses, health with reports, text read from documents, wallet, home, vehicles, pets, trips, the latest chat messages. Passwords, ID document and loyalty card numbers, location and items another member keeps to themselves are never sent."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con cada pregunta, junto con lo que escribes, se envía la memoria del asistente: lo que la familia guarda en KidBox. Calendario, tareas, compra, notas, gastos, salud con los informes, texto leído de los documentos, wallet, casa, vehículos, mascotas, viajes, últimos mensajes del chat. Nunca se envían contraseñas, números de documentos de identidad y de tarjetas de fidelidad, ubicación, ni lo que otro miembro guarda solo para sí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À chaque question, avec ce que vous écrivez, part la mémoire de l'assistant : ce que la famille garde dans KidBox. Calendrier, tâches, courses, notes, dépenses, santé avec les comptes rendus, texte lu dans les documents, wallet, maison, véhicules, animaux, voyages, derniers messages du chat. Ne partent jamais : mots de passe, numéros des pièces d'identité et des cartes de fidélité, position, ni les éléments qu'un autre membre garde pour lui."
+          }
+        }
+      }
+    },
     "Chiedi di tutta la famiglia" : {
       "localizations" : {
         "en" : {
@@ -368,6 +391,29 @@
         }
       }
     },
+    "Cosa resta salvato" : {
+      "comment" : "AI consent: what is stored",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is stored"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qué se guarda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce qui est conservé"
+          }
+        }
+      }
+    },
     "Cosa significano questi valori?" : {
       "comment" : "Assistant suggestion",
       "localizations" : {
@@ -391,6 +437,29 @@
         }
       }
     },
+    "Cosa viene inviato" : {
+      "comment" : "AI consent: what is sent",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is sent"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qué se envía"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce qui est envoyé"
+          }
+        }
+      }
+    },
     "Di solito tutto quello che avete in KidBox sta in un messaggio. Con molti documenti e referti l'assistente può mandarli tutti per intero, e costa più messaggi, oppure tenere interi quelli che c'entrano con la domanda e accorciare gli altri. Con «Chiedi ogni volta» scegli tu prima di ogni invio." : {
       "comment" : "AI settings footer: assistant memory",
       "localizations" : {
@@ -410,6 +479,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "D'habitude, tout ce que vous gardez dans KidBox tient dans un message. Avec beaucoup de documents et de comptes rendus, l'assistant peut tous les envoyer en entier, ce qui coûte plus de messages, ou garder en entier ceux liés à votre question et raccourcir les autres. Avec « Demander à chaque fois », vous choisissez avant chaque envoi."
+          }
+        }
+      }
+    },
+    "Fornitore AI: Anthropic" : {
+      "comment" : "AI consent: provider",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI provider: Anthropic"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proveedor de IA: Anthropic"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fournisseur IA : Anthropic"
           }
         }
       }
@@ -500,6 +592,98 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Au calendrier, vers %@"
+          }
+        }
+      }
+    },
+    "L'AI fornisce spiegazioni e informazioni generali. Non sostituisce il tuo medico. Per qualsiasi decisione clinica, consulta sempre un professionista." : {
+      "comment" : "AI consent: not medical advice (body)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The AI provides explanations and general information. It does not replace your doctor. For any clinical decision, always consult a professional."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La IA ofrece explicaciones e información general. No sustituye a tu médico. Para cualquier decisión clínica, consulta siempre a un profesional."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'IA fournit des explications et des informations générales. Elle ne remplace pas votre médecin. Pour toute décision clinique, consultez toujours un professionnel."
+          }
+        }
+      }
+    },
+    "L'assistente risponde quando gli scrivi. Briefing, recap e analisi mensile partono da soli solo se li attivi nelle impostazioni. Puoi revocare il consenso in qualsiasi momento da Impostazioni → Assistente AI." : {
+      "comment" : "AI consent: control (body)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The assistant answers when you write to it. Briefings, recaps and the monthly analysis run on their own only if you turn them on in settings. You can withdraw consent at any time in Settings → AI Assistant."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El asistente responde cuando le escribes. Los briefings, resúmenes y el análisis mensual solo se envían solos si los activas en los ajustes. Puedes retirar el consentimiento en cualquier momento en Ajustes → Asistente IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'assistant répond quand vous lui écrivez. Les briefings, récaps et l'analyse mensuelle ne partent seuls que si vous les activez dans les réglages. Vous pouvez retirer votre consentement à tout moment dans Réglages → Assistant IA."
+          }
+        }
+      }
+    },
+    "Le conversazioni restano nel tuo account per ritrovarle sugli altri dispositivi, e qualche fatto utile emerso parlando resta nella memoria della famiglia. Puoi cancellare la conversazione dall'assistente." : {
+      "comment" : "AI consent: what is stored (body)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversations stay in your account so you can find them on your other devices, and a few useful facts that come up stay in the family's memory. You can delete the conversation from the assistant."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las conversaciones se quedan en tu cuenta para encontrarlas en tus otros dispositivos, y algunos datos útiles que surgen se quedan en la memoria de la familia. Puedes borrar la conversación desde el asistente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les conversations restent dans votre compte pour les retrouver sur vos autres appareils, et quelques faits utiles évoqués restent dans la mémoire de la famille. Vous pouvez supprimer la conversation depuis l'assistant."
+          }
+        }
+      }
+    },
+    "Le risposte le genera Claude di Anthropic (Stati Uniti), passando dai server KidBox. Anthropic non usa questi dati per addestrare i suoi modelli e li tratta secondo la sua Privacy Policy." : {
+      "comment" : "AI consent: provider (body)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Answers are generated by Anthropic's Claude (United States), through KidBox servers. Anthropic does not use this data to train its models and handles it under its Privacy Policy."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las respuestas las genera Claude de Anthropic (Estados Unidos), a través de los servidores de KidBox. Anthropic no usa estos datos para entrenar sus modelos y los trata según su política de privacidad."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les réponses sont générées par Claude d'Anthropic (États-Unis), en passant par les serveurs KidBox. Anthropic n'utilise pas ces données pour entraîner ses modèles et les traite selon sa politique de confidentialité."
           }
         }
       }
@@ -634,6 +818,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Je pars d'ici, mais je connais tout ce que vous gardez dans KidBox : demandez-moi aussi autre chose."
+          }
+        }
+      }
+    },
+    "Puoi disattivarlo in qualsiasi momento. A ogni domanda l'assistente riceve la memoria di quello che la famiglia tiene in KidBox: password, numeri dei documenti e posizione esclusi." : {
+      "comment" : "AI settings: toggle footer",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can turn it off at any time. With every question the assistant receives the memory of what your family keeps in KidBox: passwords, document numbers and location excluded."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes desactivarlo en cualquier momento. Con cada pregunta el asistente recibe la memoria de lo que la familia guarda en KidBox: contraseñas, números de documentos y ubicación excluidos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez le désactiver à tout moment. À chaque question, l'assistant reçoit la mémoire de ce que la famille garde dans KidBox : mots de passe, numéros des documents et position exclus."
           }
         }
       }

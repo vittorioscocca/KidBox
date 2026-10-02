@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// One-time consent sheet shown before sending medical data to an AI provider.
+/// One-time consent sheet shown before the first message to the AI assistant.
 ///
 /// Must be presented before the first use of the AI chat feature.
 /// Records consent via `AIProviderSettings.recordConsent()`.
@@ -29,7 +29,7 @@ struct AIConsentSheet: View {
                             Image(systemName: "brain.head.profile")
                                 .font(.system(size: 52))
                                 .foregroundStyle(.blue)
-                            Text("Assistente AI Medico")
+                            Text("Assistente AI")
                                 .font(.title2.bold())
                             Text("Prima di continuare, leggi come funziona.")
                                 .font(.subheadline)
@@ -42,19 +42,27 @@ struct AIConsentSheet: View {
                     
                     Divider()
                     
-                    // What will be sent
+                    // Cosa parte a ogni domanda: dal 02/10/2026 la memoria di tutta
+                    // l'app (internal/assistente-unico.md), non più il solo contesto sanitario.
                     infoBlock(
                         icon: "arrow.up.doc.fill",
                         color: .orange,
                         title: "Cosa viene inviato",
-                        body: "Le tue domande e il contesto della tua famiglia (nomi, visite, farmaci, esami) vengono inviati ad Anthropic (claude.ai) per generare la risposta. Anthropic è il fornitore AI di terze parti utilizzato da KidBox."
+                        body: "A ogni domanda, insieme a quello che scrivi, parte la memoria dell'assistente: quello che la famiglia tiene in KidBox. Calendario, to-do, spesa, note, spese, salute con i referti, testo letto dai documenti, wallet, casa, veicoli, animali, viaggi, ultimi messaggi della chat. Non partono mai password, numeri dei documenti d'identità e delle carte fedeltà, posizione, né le voci che un altro membro tiene solo per sé."
                     )
                     
                     infoBlock(
                         icon: "building.2.fill",
                         color: .blue,
                         title: "Fornitore AI: Anthropic",
-                        body: "KidBox usa l'API di Anthropic per elaborare le richieste. I tuoi dati vengono trattati secondo la Privacy Policy di Anthropic, che garantisce protezioni equivalenti a quelle di KidBox."
+                        body: "Le risposte le genera Claude di Anthropic (Stati Uniti), passando dai server KidBox. Anthropic non usa questi dati per addestrare i suoi modelli e li tratta secondo la sua Privacy Policy."
+                    )
+                    
+                    infoBlock(
+                        icon: "tray.full.fill",
+                        color: .teal,
+                        title: "Cosa resta salvato",
+                        body: "Le conversazioni restano nel tuo account per ritrovarle sugli altri dispositivi, e qualche fatto utile emerso parlando resta nella memoria della famiglia. Puoi cancellare la conversazione dall'assistente."
                     )
                     
                     infoBlock(
@@ -68,7 +76,7 @@ struct AIConsentSheet: View {
                         icon: "hand.raised.fill",
                         color: .purple,
                         title: "Il tuo controllo",
-                        body: "Puoi revocare il consenso in qualsiasi momento da Impostazioni → Assistente AI. Ogni richiesta richiede un'azione esplicita da parte tua."
+                        body: "L'assistente risponde quando gli scrivi. Briefing, recap e analisi mensile partono da soli solo se li attivi nelle impostazioni. Puoi revocare il consenso in qualsiasi momento da Impostazioni → Assistente AI."
                     )
                     
                     // Provider info link
@@ -82,7 +90,7 @@ struct AIConsentSheet: View {
                         .font(.caption)
                         
                         Link("KidBox — Privacy Policy",
-                             destination: URL(string: "https://vittorioscocca.github.io/KidBox/privacy/")!)
+                             destination: URL(string: "https://kidboxapp.com/privacy.html")!)
                         .font(.caption)
                     }
                     .padding()
@@ -127,8 +135,8 @@ struct AIConsentSheet: View {
     private func infoBlock(
         icon: String,
         color: Color,
-        title: String,
-        body: String
+        title: LocalizedStringKey,
+        body: LocalizedStringKey
     ) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: icon)

@@ -112,7 +112,7 @@ struct AISettingsView: View {
                     }
 
                 } footer: {
-                    Text("Puoi disattivarlo in qualsiasi momento. I dati inviati all'AI sono quelli che scegli di condividere, visita per visita.")
+                    Text("Puoi disattivarlo in qualsiasi momento. A ogni domanda l'assistente riceve la memoria di quello che la famiglia tiene in KidBox: password, numeri dei documenti e posizione esclusi.")
                         .font(.caption)
                 }
             } else {
@@ -943,7 +943,7 @@ struct UpgradeSheetView: View {
     
     // MARK: - Legal footer
     private var legalFooter: some View {
-        let privacyURL = URL(string: "https://vittorioscocca.github.io/KidBox/privacy/")!
+        let privacyURL = URL(string: "https://kidboxapp.com/privacy.html")!
         let termsURL   = URL(string: "https://vittorioscocca.github.io/KidBox/terms/")!
         
         return VStack(spacing: 6) {
