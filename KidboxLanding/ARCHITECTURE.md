@@ -28,7 +28,7 @@ Tutto sotto `public/` (root di hosting):
 - **`public/sitemap.xml` + `robots.txt`** — generati da `scripts/build_sitemap.py` (lanciato anche dagli altri due generatori); una pagina statica nuova va aggiunta a `STATIC`.
 - **`public/tools-img/`** — screenshot ridotti in WebP per le pagine Strumenti, generati da `scripts/build_tools.py` a partire da `public/screenshots/`.
 
-> ⚠️ Le pagine legali esistono **anche** in `../docs/{privacy,terms,support,data-deletion}/index.html` (+ `../docs/privacy.md`), servite separatamente (es. GitHub Pages). Se aggiorni una policy, **allinea entrambe le copie**.
+> Le pagine legali vivono **solo** qui in `public/`. Le vecchie copie in `../docs/{privacy,terms,support,data-deletion}/index.html` sono rimandi a queste pagine (dal 02/10/2026), tenuti perché le build vecchie delle app linkano ancora lì: non si aggiornano e non si citano.
 
 ---
 
@@ -46,4 +46,4 @@ Tutto sotto `public/` (root di hosting):
 - Nessun framework / nessun bundler: modifica diretta dell'HTML, niente `npm`/build. Eccezione: le sezioni Strumenti e Blog si rigenerano con `python3 scripts/build_tools.py` e `python3 scripts/build_blog.py` (prendono stile, nav, store e footer da `index.html`/`index-en.html`, quindi vanno rilanciati entrambi anche dopo un ritocco a quelli).
 - `cleanUrls` è attivo: `/strumenti/calendario` serve `calendario.html`, e gli URL con `.html` reindirizzano a quelli puliti.
 - Nuovi screenshot → metti i PNG in `public/screenshots/<Sezione>/` e referenziali nell'HTML (beneficiano della cache immutabile).
-- Cambi a privacy/termini/data-deletion → aggiorna sia `public/*.html` sia `../docs/*/index.html` per non far divergere le due copie pubblicate.
+- Cambi a privacy/termini/data-deletion → solo `public/*.html` (ES/FR da `translate_html.py build`); i rimandi in `../docs/` non si toccano.
