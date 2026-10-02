@@ -125,8 +125,18 @@ final class DocumentRemoteStore {
         }
 
         // OCR fields are additive-only: avoid deleting remote OCR data when local dto has nil.
+        // Il testo letto si cifra con la chiave di famiglia (`extractedTextEnc`)
+        // quando è acceso l'interruttore remoto `text_encryption_enabled`; un solo
+        // formato per volta. Acceso, senza chiave `encryptString` lancia: meglio
+        // non sincronizzare il documento che caricare il testo in chiaro.
         if let extractedText = dto.extractedText, !extractedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            data["extractedText"] = extractedText
+            if KBFeatureFlags.isTextEncryptionEnabled {
+                data["extractedTextEnc"] = try NoteCryptoService.encryptString(extractedText, familyId: dto.familyId, userId: uid)
+                data["extractedText"] = FieldValue.delete()
+            } else {
+                data["extractedText"] = extractedText
+                data["extractedTextEnc"] = FieldValue.delete()
+            }
         }
         if let extractedTextUpdatedAt = dto.extractedTextUpdatedAt {
             data["extractedTextUpdatedAt"] = Timestamp(date: extractedTextUpdatedAt)
@@ -187,6 +197,35 @@ final class DocumentRemoteStore {
         KBLog.sync.kbInfo("Document delete completed familyId=\(familyId) docId=\(docId)")
     }
     
+    // MARK: - Testo letto cifrato
+
+    /// Testo letto di un documento remoto: `extractedTextEnc` se c'è, altrimenti
+    /// il vecchio `extractedText`. Un blob che non si apre torna nil (come «non
+    /// letto»): il merge in entrata non cancella mai il testo locale.
+    static func readExtractedText(_ data: [String: Any], familyId: String) -> (text: String?, legacyPlain: Bool) {
+        if let enc = data["extractedTextEnc"] as? String, !enc.isEmpty {
+            let uid = Auth.auth().currentUser?.uid ?? ""
+            return (try? NoteCryptoService.decryptString(enc, familyId: familyId, userId: uid), false)
+        }
+        let plain = data["extractedText"] as? String
+        return (plain, !(plain?.isEmpty ?? true))
+    }
+
+    /// Riscrive cifrato il testo letto di un documento ancora in chiaro, senza
+    /// toccare `updatedAt`: è manutenzione, non una modifica dell'utente.
+    static func encryptExtractedTextInPlace(familyId: String, docId: String, text: String) async {
+        guard let uid = Auth.auth().currentUser?.uid,
+              let enc = try? NoteCryptoService.encryptString(text, familyId: familyId, userId: uid) else { return }
+        do {
+            try await Firestore.firestore()
+                .collection("families").document(familyId)
+                .collection("documents").document(docId)
+                .setData(["extractedTextEnc": enc, "extractedText": FieldValue.delete()], merge: true)
+        } catch {
+            KBLog.sync.kbError("Document re-encrypt failed docId=\(docId)")
+        }
+    }
+
     // MARK: - INBOUND (Realtime)
     
     /// Starts a realtime listener for documents under a family.
@@ -231,6 +270,12 @@ final class DocumentRemoteStore {
                         return (data["updatedBy"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                     }()
                     
+                    let ocr = Self.readExtractedText(data, familyId: familyId)
+                    // A interruttore acceso il testo ancora in chiaro si riscrive cifrato.
+                    if ocr.legacyPlain, KBFeatureFlags.isTextEncryptionEnabled, let text = ocr.text {
+                        Task { await Self.encryptExtractedTextInPlace(familyId: familyId, docId: doc.documentID, text: text) }
+                    }
+
                     let dto = RemoteDocumentDTO(
                         id: doc.documentID,
                         familyId: familyId,
@@ -244,7 +289,7 @@ final class DocumentRemoteStore {
                         downloadURL: data["downloadURL"] as? String,
                         isDeleted: data["isDeleted"] as? Bool ?? false,
                         notes: data["notes"] as? String,
-                        extractedText: data["extractedText"] as? String,
+                        extractedText: ocr.text,
                         extractedTextUpdatedAt: (data["extractedTextUpdatedAt"] as? Timestamp)?.dateValue(),
                         extractionStatusRaw: data["extractionStatusRaw"] as? Int,
                         extractionError: data["extractionError"] as? String,

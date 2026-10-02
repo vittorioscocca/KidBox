@@ -58,7 +58,7 @@ struct RemoteMemoryFactDTO: Sendable {
 /// Cifratura (dal 02/10/2026): il testo del fatto può viaggiare cifrato con la
 /// chiave di famiglia (`contentEnc`, formato delle note). La lettura capisce
 /// entrambi i formati; la scrittura cifra con l'interruttore remoto
-/// `ai_conversations_encrypted` acceso, lo stesso delle chat AI, che si accende
+/// `text_encryption_enabled` acceso, lo stesso delle chat AI, che si accende
 /// insieme alle rules che rifiutano il chiaro (`firestore.rules.next`).
 final class MemoryFactRemoteStore {
 
@@ -101,7 +101,7 @@ final class MemoryFactRemoteStore {
         // Un solo formato per volta. Acceso l'interruttore, senza chiave di
         // famiglia `encryptString` lancia: meglio non sincronizzare il fatto che
         // caricarlo in chiaro.
-        if KBFeatureFlags.isAIConversationEncryptionEnabled {
+        if KBFeatureFlags.isTextEncryptionEnabled {
             let uid = Auth.auth().currentUser?.uid ?? ""
             data["contentEnc"] = try NoteCryptoService.encryptString(dto.content, familyId: dto.familyId, userId: uid)
             data["content"] = FieldValue.delete()
@@ -139,7 +139,7 @@ final class MemoryFactRemoteStore {
         let dtos = snap.documents.compactMap { Self.decode($0, familyId: familyId) }
 
         // A interruttore acceso i fatti ancora in chiaro si riscrivono cifrati.
-        if KBFeatureFlags.isAIConversationEncryptionEnabled {
+        if KBFeatureFlags.isTextEncryptionEnabled {
             for dto in dtos where dto.isLegacyPlain {
                 do {
                     try await upsert(dto: dto)

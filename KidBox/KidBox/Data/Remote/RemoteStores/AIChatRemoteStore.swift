@@ -18,7 +18,7 @@
 //  cifrati con la chiave della famiglia della conversazione (`contentEnc`,
 //  `summaryEnc`, stesso formato delle note e del web). La lettura capisce sempre
 //  entrambi i formati; la scrittura cifra quando è acceso l'interruttore remoto
-//  `ai_conversations_encrypted`, che si accende insieme alle rules che
+//  `text_encryption_enabled`, che si accende insieme alle rules che
 //  rifiutano il chiaro (`firestore.rules.next`).
 //
 
@@ -86,7 +86,7 @@ final class AIChatRemoteStore {
         // cancellando i messaggi che non sanno leggere. Acceso, senza chiave di
         // famiglia `encryptString` lancia: meglio non sincronizzare che caricare
         // il testo in chiaro.
-        let encrypt = KBFeatureFlags.isAIConversationEncryptionEnabled
+        let encrypt = KBFeatureFlags.isTextEncryptionEnabled
         let fid = conversation.familyId
         let messagesPayload: [[String: Any]] = try conversation.sortedMessages.map { m in
             var row: [String: Any] = [

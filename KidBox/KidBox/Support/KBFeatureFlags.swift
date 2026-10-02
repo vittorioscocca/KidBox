@@ -54,13 +54,14 @@ enum KBFeatureFlags {
     /// Spento finché Meta non pubblica l'app.
     private static let facebookLoginFallback = false
 
-    /// Chat AI cifrate su Firestore (`contentEnc`, `summaryEnc`). Spento finché la
-    /// build che le sa leggere non è diffusa: si accende insieme alla promozione
-    /// di `firestore.rules.next`, che da lì rifiuta le scritture in chiaro. Stessa
-    /// chiave del web; Android non sincronizza le chat AI.
-    static let aiConversationsEncryptedRemoteKey = "ai_conversations_encrypted"
-    static let aiConversationsEncryptedDefaultsKey = "kb_aiConversationsEncrypted"
-    private static let aiConversationsEncryptedFallback = false
+    /// Testi cifrati su Firestore con la chiave di famiglia: chat AI (`contentEnc`,
+    /// `summaryEnc`), memoria AI di famiglia (`contentEnc`) e testo letto dei
+    /// documenti (`extractedTextEnc`). Spento finché le build che li sanno leggere
+    /// non sono diffuse: si accende insieme alla promozione di
+    /// `firestore.rules.next`. Stessa chiave su Android e web.
+    static let textEncryptionRemoteKey = "text_encryption_enabled"
+    static let textEncryptionDefaultsKey = "kb_textEncryptionEnabled"
+    private static let textEncryptionFallback = false
 
     // MARK: - Lettura
 
@@ -73,9 +74,9 @@ enum KBFeatureFlags {
     }
 
     /// Le chat AI si scrivono cifrate. La lettura capisce sempre entrambi i formati.
-    static var isAIConversationEncryptionEnabled: Bool {
-        UserDefaults.standard.object(forKey: aiConversationsEncryptedDefaultsKey) as? Bool
-            ?? aiConversationsEncryptedFallback
+    static var isTextEncryptionEnabled: Bool {
+        UserDefaults.standard.object(forKey: textEncryptionDefaultsKey) as? Bool
+            ?? textEncryptionFallback
     }
 
     // MARK: - Remote Config
@@ -84,7 +85,7 @@ enum KBFeatureFlags {
         let config = RemoteConfig.remoteConfig()
         config.setDefaults([
             facebookLoginRemoteKey: NSNumber(value: facebookLoginFallback),
-            aiConversationsEncryptedRemoteKey: NSNumber(value: aiConversationsEncryptedFallback)
+            textEncryptionRemoteKey: NSNumber(value: textEncryptionFallback)
         ])
 
         let settings = RemoteConfigSettings()
@@ -111,9 +112,9 @@ enum KBFeatureFlags {
             try await remoteConfig.fetchAndActivate()
             let enabled = remoteConfig[facebookLoginRemoteKey].boolValue
             UserDefaults.standard.set(enabled, forKey: facebookLoginDefaultsKey)
-            let encrypted = remoteConfig[aiConversationsEncryptedRemoteKey].boolValue
-            UserDefaults.standard.set(encrypted, forKey: aiConversationsEncryptedDefaultsKey)
-            KBLog.auth.kbInfo("FeatureFlags: \(facebookLoginRemoteKey)=\(enabled) \(aiConversationsEncryptedRemoteKey)=\(encrypted)")
+            let encrypted = remoteConfig[textEncryptionRemoteKey].boolValue
+            UserDefaults.standard.set(encrypted, forKey: textEncryptionDefaultsKey)
+            KBLog.auth.kbInfo("FeatureFlags: \(facebookLoginRemoteKey)=\(enabled) \(textEncryptionRemoteKey)=\(encrypted)")
         } catch {
             // Nessun fallback qui: senza risposta resta l'ultimo valore noto,
             // che è già la scelta giusta dell'ultima volta.
