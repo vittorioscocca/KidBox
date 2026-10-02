@@ -90,6 +90,13 @@ stimato di 150 caratteri a documento non basta) toglie lo sforamento dal budget
 e ridistribuisce, al massimo 3 giri. Se la ridotta costerebbe quanto la
 completa, il dialogo non compare e parte la completa.
 
+**Ridotto automatico (dal 02/10/2026).** Qualunque sia la preferenza, parte la
+ridotta senza dialogo sul **Free** (quota `lifetime`: 5 messaggi in tutto, una
+domanda con la completa poteva costarli tutti) e sugli altri piani quando la
+completa costa **più dei messaggi rimasti**: il server la rifiuterebbe per
+intero (`current + delta > limit`). I client leggono la quota con `getAIUsage`
+all'apertura e la aggiornano a ogni risposta; le impostazioni lo dicono.
+
 Pertinenza = parole della domanda (≥ 4 lettere, senza articoli e preposizioni,
 senza accenti) trovate nel titolo, nel nome file, nella cartella o nel testo del
 documento, più tutti gli allegati della persona / visita / esame del focus.

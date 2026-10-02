@@ -189,6 +189,10 @@ codice in `AgentMemoryBook.swift` / `AgentMemoryBook.kt` / `memoryBook.js` e nei
   servono allo scheletro e li riempie di testi; se sfora (righe degli allegati
   indentate una per una) toglie lo sforamento dal budget e riprova, al massimo
   3 giri; un ridotto che costa quanto il completo non si propone.
+  **Ridotto automatico:** sul Free (quota `lifetime`) sempre, e altrove quando il
+  completo supera i messaggi rimasti (il server lo rifiuterebbe per intero):
+  niente dialogo, qualunque sia la preferenza. La quota la leggono i client con
+  `getAIUsage` all'apertura.
 - **Una conversazione sola per famiglia** (`planning-agent-{familyId}`): il
   focus cambia il contesto, non lo storico. Per questo i suggerimenti a tema non
   possono stare solo nella schermata vuota, che non si vede quasi mai.
