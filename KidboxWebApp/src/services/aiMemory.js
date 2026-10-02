@@ -14,7 +14,7 @@
  * Cifratura (dal 02/10/2026): il testo del fatto può viaggiare cifrato con la
  * chiave di famiglia (`contentEnc`, formato di iOS e Android). La lettura
  * capisce entrambi i formati; la scrittura cifra con l'interruttore
- * `ai_conversations_encrypted` acceso, e allora i fatti ancora in chiaro si
+ * `text_encryption_enabled` acceso, e allora i fatti ancora in chiaro si
  * riscrivono cifrati la prima volta che si leggono. Senza chiave non si scrive.
  */
 import {
@@ -29,7 +29,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { askAssistant } from "./aiChat";
-import { aiConversationsEncrypted } from "./featureFlags";
+import { textEncryptionEnabled } from "./featureFlags";
 import { loadFamilyKey } from "./familyKey";
 import { decryptString, encryptString } from "./noteCrypto";
 
@@ -119,7 +119,7 @@ export async function loadFacts(familyId) {
     const facts = rows
       .filter((f) => typeof f.content === "string" && f.content.length > 0)
       .sort((a, b) => a.createdAt - b.createdAt);
-    if (familyKey && aiConversationsEncrypted() && !reencrypted.has(familyId)) {
+    if (familyKey && textEncryptionEnabled() && !reencrypted.has(familyId)) {
       reencrypted.add(familyId);
       facts
         .filter((f) => f.legacyPlain)
@@ -237,7 +237,7 @@ export async function extractAndStore({ familyId, messages, conversationId, isSu
     }
 
     // Acceso l'interruttore, senza chiave lancia: niente fatti in chiaro.
-    const familyKey = aiConversationsEncrypted()
+    const familyKey = textEncryptionEnabled()
       ? await loadFamilyKey({ familyId, userId: auth.currentUser?.uid })
       : null;
     for (const fact of toInsert) {

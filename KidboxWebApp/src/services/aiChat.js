@@ -25,7 +25,7 @@
  * famiglia della conversazione (`contentEnc`, `summaryEnc`, stesso formato delle
  * note e di `AIChatRemoteStore` su iOS). La lettura capisce sempre entrambi i
  * formati. La scrittura cifra solo a interruttore acceso
- * (`ai_conversations_encrypted`): prima, le build iOS vecchie riscriverebbero
+ * (`text_encryption_enabled`): prima, le build iOS vecchie riscriverebbero
  * in chiaro l'array intero e cancellerebbero i messaggi che non sanno leggere.
  * Acceso, un documento ancora in chiaro appena letto si riscrive cifrato, e
  * senza chiave non si scrive niente: mai testo in chiaro come ripiego.
@@ -42,7 +42,7 @@ import {
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../firebase";
 import { loadFamilyKey } from "./familyKey";
-import { aiConversationsEncrypted } from "./featureFlags";
+import { textEncryptionEnabled } from "./featureFlags";
 import { decryptString, encryptString } from "./noteCrypto";
 
 const PROVIDER = "claude";
@@ -157,7 +157,7 @@ export function listenConversations({ uid, familyId, onChange, onError }) {
           )
           .sort((a, b) => b.updatedAt - a.updatedAt);
         onChange(rows);
-        if (familyKey && aiConversationsEncrypted()) {
+        if (familyKey && textEncryptionEnabled()) {
           all
             .filter((c) => c.legacyPlain && !migrated.has(c.docId))
             .forEach((c) => {
@@ -222,7 +222,7 @@ export async function saveConversation({
   const scope = scopeId || currentScopeId(familyId);
   // Acceso l'interruttore, senza chiave lancia MissingFamilyKeyError: meglio un
   // errore che il testo in chiaro.
-  const familyKey = aiConversationsEncrypted() ? await loadFamilyKey({ familyId, userId: uid }) : null;
+  const familyKey = textEncryptionEnabled() ? await loadFamilyKey({ familyId, userId: uid }) : null;
   await setDoc(
     doc(conversationsCol(uid), docIdFor(scope)),
     {

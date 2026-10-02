@@ -222,6 +222,19 @@ export async function loadMemorySnapshot({ familyId, userId, familyName, members
         .sort((a, b) => a.at - b.at)
     : null;
 
+  // Testo letto dei documenti: `extractedTextEnc` (chiave di famiglia) se c'è,
+  // altrimenti il vecchio `extractedText`. Senza chiave, o con un blob che non
+  // si apre, il documento risulta «non letto».
+  const readDocuments = await Promise.all(
+    documents.filter(visible).map(async (d) => {
+      let extractedText = typeof d.extractedText === "string" ? d.extractedText : null;
+      if (typeof d.extractedTextEnc === "string" && d.extractedTextEnc) {
+        extractedText = familyKey ? await decryptString(d.extractedTextEnc, familyKey).catch(() => null) : null;
+      }
+      return { ...d, extractedText };
+    })
+  );
+
   return {
     familyId,
     familyName,
@@ -240,8 +253,7 @@ export async function loadMemorySnapshot({ familyId, userId, familyName, members
       .sort((a, b) => b.when - a.when),
     notes: decryptedNotes,
     chat: decryptedChat,
-    documents: documents
-      .filter(visible)
+    documents: readDocuments
       .map((d) => ({ ...d, createdMs: toMillis(d.createdAt) ?? 0, updatedMs: toMillis(d.updatedAt) ?? 0 }))
       .sort((a, b) => b.updatedMs - a.updatedMs),
     folderNames: Object.fromEntries(folders.map((f) => [f.id, f.title])),

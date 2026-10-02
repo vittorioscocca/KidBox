@@ -28,14 +28,14 @@ const FACEBOOK_LOGIN_CACHE_KEY = "kb_facebookLoginEnabled";
 const FACEBOOK_LOGIN_FALLBACK = false;
 
 /**
- * Chat AI cifrate su Firestore (`contentEnc`, `summaryEnc`). Spento finché la
- * build iOS che le sa leggere non è diffusa: si accende insieme alla promozione
- * di `firestore.rules.next`, che da lì rifiuta le scritture in chiaro. Stessa
- * chiave di iOS (`KBFeatureFlags`).
+ * Testi cifrati su Firestore con la chiave di famiglia: chat AI, memoria AI di
+ * famiglia e testo letto dei documenti. Spento finché le build iOS e Android che
+ * li sanno leggere non sono diffuse: si accende insieme alla promozione di
+ * `firestore.rules.next`. Stessa chiave di iOS e Android (`KBFeatureFlags`).
  */
-export const AI_CONVERSATIONS_ENCRYPTED_REMOTE_KEY = "ai_conversations_encrypted";
-const AI_CONVERSATIONS_ENCRYPTED_CACHE_KEY = "kb_aiConversationsEncrypted";
-const AI_CONVERSATIONS_ENCRYPTED_FALLBACK = false;
+export const TEXT_ENCRYPTION_REMOTE_KEY = "text_encryption_enabled";
+const TEXT_ENCRYPTION_CACHE_KEY = "kb_textEncryptionEnabled";
+const TEXT_ENCRYPTION_FALLBACK = false;
 
 /**
  * Lettura immediata, senza rete: è quella con cui parte la schermata di login.
@@ -52,12 +52,12 @@ export function facebookLoginEnabled() {
 }
 
 /** Le chat AI si scrivono cifrate. La lettura capisce sempre entrambi i formati. */
-export function aiConversationsEncrypted() {
+export function textEncryptionEnabled() {
   try {
-    const cached = localStorage.getItem(AI_CONVERSATIONS_ENCRYPTED_CACHE_KEY);
-    return cached === null ? AI_CONVERSATIONS_ENCRYPTED_FALLBACK : cached === "true";
+    const cached = localStorage.getItem(TEXT_ENCRYPTION_CACHE_KEY);
+    return cached === null ? TEXT_ENCRYPTION_FALLBACK : cached === "true";
   } catch {
-    return AI_CONVERSATIONS_ENCRYPTED_FALLBACK;
+    return TEXT_ENCRYPTION_FALLBACK;
   }
 }
 
@@ -81,7 +81,7 @@ export async function refreshFeatureFlags() {
     const remoteConfig = getRemoteConfig(app);
     remoteConfig.defaultConfig = {
       [FACEBOOK_LOGIN_REMOTE_KEY]: FACEBOOK_LOGIN_FALLBACK,
-      [AI_CONVERSATIONS_ENCRYPTED_REMOTE_KEY]: AI_CONVERSATIONS_ENCRYPTED_FALLBACK,
+      [TEXT_ENCRYPTION_REMOTE_KEY]: TEXT_ENCRYPTION_FALLBACK,
     };
     // In sviluppo si rilegge a ogni avvio, così una modifica in console si
     // verifica subito; in produzione un'ora, come sui client nativi: il flag
@@ -90,10 +90,10 @@ export async function refreshFeatureFlags() {
 
     await fetchAndActivate(remoteConfig);
     const enabled = getValue(remoteConfig, FACEBOOK_LOGIN_REMOTE_KEY).asBoolean();
-    const encrypted = getValue(remoteConfig, AI_CONVERSATIONS_ENCRYPTED_REMOTE_KEY).asBoolean();
+    const encrypted = getValue(remoteConfig, TEXT_ENCRYPTION_REMOTE_KEY).asBoolean();
     try {
       localStorage.setItem(FACEBOOK_LOGIN_CACHE_KEY, String(enabled));
-      localStorage.setItem(AI_CONVERSATIONS_ENCRYPTED_CACHE_KEY, String(encrypted));
+      localStorage.setItem(TEXT_ENCRYPTION_CACHE_KEY, String(encrypted));
     } catch {
       // Storage negato: il valore vale per questa sessione e basta.
     }
