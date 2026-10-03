@@ -2266,6 +2266,7 @@ struct CalendarEventFormView: View {
             endDate   = p.isAllDay && p.endDate > p.startDate
                 ? p.endDate.addingTimeInterval(-1)
                 : p.endDate
+            if let c = p.category { category = c }
             selectedVisibilityScope = KBVisibilityScope.family
             selectedVisibilityMemberIds = []
         } else {

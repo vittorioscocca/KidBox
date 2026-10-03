@@ -49,6 +49,28 @@
         }
       }
     },
+    "Già nel calendario" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already in the calendar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya está en el calendario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déjà dans le calendrier"
+          }
+        }
+      }
+    },
     "Gli eventi arrivano con l'edizione della tua città: cerco quelli entro una sessantina di chilometri." : {
       "localizations" : {
         "en" : {

@@ -32,6 +32,8 @@ struct NewsView: View {
     /// Le offerte su misura mandano ad Anthropic dati della famiglia (bollette,
     /// spesa): passano dallo stesso consenso dell'assistente.
     @State private var showOffersConsent = false
+    /// Il «+» di un evento: «Nuovo evento» del calendario già compilato.
+    @State private var calendarPrefill: CalendarEventPrefill?
 
     let familyId: String
 
@@ -105,6 +107,15 @@ struct NewsView: View {
         .ownerOnlyAlert(isPresented: $showOwnerOnly)
         .sheet(item: $openedURL) { link in
             NewsSafariView(url: link.url).ignoresSafeArea()
+        }
+        .sheet(item: $calendarPrefill) { prefill in
+            CalendarEventFormView(
+                familyId: familyId,
+                initialDate: prefill.startDate,
+                event: nil,
+                prefill: prefill
+            )
+            .environment(\.modelContext, modelContext)
         }
         .sheet(isPresented: $showOffersConsent) {
             AIConsentSheet {
@@ -378,16 +389,12 @@ struct NewsView: View {
     private var eventsSection: some View {
         let events = vm.visibleEvents
         if !events.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                Label("Eventi vicino a te", systemImage: "ticket.fill")
-                    .font(.headline)
-                    .padding(.top, 4)
-                ForEach(events) { event in
-                    NewsEventCard(event: event) {
-                        open(event.url)
-                        AppAnalytics.newsItemOpened(kind: "event", category: "leisure", level: "city")
-                    }
-                }
+            NewsEventsSection(familyId: familyId, events: events) { event in
+                open(event.url)
+                AppAnalytics.newsItemOpened(kind: "event", category: "leisure", level: "city")
+            } onAdd: { event in
+                calendarPrefill = CalendarEventPrefill(newsEvent: event)
+                AppAnalytics.newsEventAddTapped()
             }
         }
     }
@@ -575,6 +582,78 @@ private struct NewsLockedView: View {
             }
             .padding(.horizontal, 20)
         }
+    }
+}
+
+// MARK: - Eventi verso il calendario
+
+/// Gli eventi vicini, ciascuno col suo «+» per il calendario KidBox. Legge gli
+/// eventi della famiglia per sapere quali ci sono già: stesso titolo (senza
+/// maiuscole e accenti) e stesso giorno d'inizio, qualunque orario si sia
+/// scelto salvando. Così la spunta compare anche all'altro genitore.
+private struct NewsEventsSection: View {
+    let events: [NewsEvent]
+    let onOpen: (NewsEvent) -> Void
+    let onAdd: (NewsEvent) -> Void
+
+    @Query private var calendarEvents: [KBCalendarEvent]
+
+    init(familyId: String, events: [NewsEvent],
+         onOpen: @escaping (NewsEvent) -> Void, onAdd: @escaping (NewsEvent) -> Void) {
+        self.events = events
+        self.onOpen = onOpen
+        self.onAdd = onAdd
+        let fid = familyId
+        _calendarEvents = Query(filter: #Predicate<KBCalendarEvent> { $0.familyId == fid && $0.isDeleted == false })
+    }
+
+    static func key(title: String, day: String) -> String {
+        let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+        return "\(t)|\(day)"
+    }
+
+    var body: some View {
+        let saved = Set(calendarEvents.map { Self.key(title: $0.title, day: NewsDates.key($0.startDate)) })
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Eventi vicino a te", systemImage: "ticket.fill")
+                .font(.headline)
+                .padding(.top, 4)
+            ForEach(events) { event in
+                NewsEventCard(
+                    event: event,
+                    isInCalendar: saved.contains(Self.key(title: event.title, day: event.startDate)),
+                    onOpen: { onOpen(event) },
+                    onAdd: { onAdd(event) }
+                )
+            }
+        }
+    }
+}
+
+extension CalendarEventPrefill {
+    /// Un evento delle Notizie: le edizioni danno solo le date, quindi tutto il
+    /// giorno, dal primo all'ultimo; Tempo libero; riassunto e link nelle note,
+    /// per ritrovare la fonte dal calendario.
+    init?(newsEvent e: NewsEvent) {
+        guard let start = NewsDates.date(e.startDate) else { return nil }
+        let lastDay = max(NewsDates.date(e.endDate) ?? start, start)
+        // Fine alla mezzanotte dopo l'ultimo giorno: il modulo toglie un secondo.
+        let end = Calendar.current.date(byAdding: .day, value: 1, to: lastDay) ?? lastDay
+        let notes = [e.summary, e.url]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n\n")
+        let place = e.place?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        self.init(
+            title: e.title,
+            notes: notes.isEmpty ? nil : notes,
+            location: place.isEmpty ? nil : place,
+            startDate: start,
+            endDate: end,
+            isAllDay: true,
+            category: .leisure
+        )
     }
 }
 

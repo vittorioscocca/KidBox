@@ -15,15 +15,18 @@ import UIKit
 
 /// I campi di un evento del telefono che passano alla scheda «Nuovo evento».
 /// Categoria, visibilità e promemoria restano da scegliere: sono cose di
-/// KidBox che Google non conosce.
+/// KidBox che Google non conosce. Lo usa anche il «+» degli eventi delle
+/// Notizie, che la categoria la sa già.
 struct CalendarEventPrefill: Identifiable {
     let id = UUID()
     let title:     String
     let notes:     String?
     let location:  String?
     let startDate: Date
+    /// Un tutto-il-giorno finisce alla mezzanotte dopo, come in EventKit.
     let endDate:   Date
     let isAllDay:  Bool
+    var category:  KBEventCategory? = nil
 
     init(_ event: DeviceCalendarEvent) {
         title     = event.title
@@ -32,6 +35,17 @@ struct CalendarEventPrefill: Identifiable {
         startDate = event.startDate
         endDate   = event.endDate
         isAllDay  = event.isAllDay
+    }
+
+    init(title: String, notes: String?, location: String?, startDate: Date, endDate: Date,
+         isAllDay: Bool, category: KBEventCategory?) {
+        self.title     = title
+        self.notes     = notes
+        self.location  = location
+        self.startDate = startDate
+        self.endDate   = endDate
+        self.isAllDay  = isAllDay
+        self.category  = category
     }
 }
 

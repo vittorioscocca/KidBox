@@ -91,7 +91,12 @@ struct NewsItemCard: View {
 
 struct NewsEventCard: View {
     let event: NewsEvent
+    /// Un evento con lo stesso titolo e lo stesso giorno c'è già nel calendario
+    /// KidBox: il «+» diventa una spunta.
+    var isInCalendar: Bool = false
     let onOpen: () -> Void
+    /// Il «+» in alto a destra: apre «Nuovo evento» già compilato.
+    var onAdd: (() -> Void)? = nil
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -144,12 +149,45 @@ struct NewsEventCard: View {
                             .multilineTextAlignment(.leading)
                     }
                 }
+                // Il titolo non deve finire sotto il «+».
+                .padding(.trailing, onAdd == nil ? 0 : 26)
                 Spacer(minLength: 0)
             }
             .padding(12)
             .background(RoundedRectangle(cornerRadius: 16).fill(KBTheme.cardBackground(colorScheme)))
         }
         .buttonStyle(.plain)
+        // Sopra la scheda e non dentro: un pulsante nell'etichetta di un altro
+        // pulsante si prenderebbe anche il tocco che apre l'evento.
+        .overlay(alignment: .topTrailing) {
+            if let onAdd { addButton(onAdd) }
+        }
+    }
+
+    @ViewBuilder
+    private func addButton(_ onAdd: @escaping () -> Void) -> some View {
+        let tint = isInCalendar ? KBTheme.green : NewsCategory.leisure.tint
+        let mark = Image(systemName: isInCalendar ? "checkmark" : "plus")
+            .font(.system(size: 13, weight: .bold))
+            .foregroundStyle(tint)
+            .frame(width: 30, height: 30)
+            .background(Circle().fill(tint.opacity(0.14)))
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
+        Group {
+            if isInCalendar {
+                // La spunta non fa niente: il tocco passa alla scheda e apre
+                // l'evento, come su Android.
+                mark
+                    .allowsHitTesting(false)
+                    .accessibilityLabel(Text("Già nel calendario"))
+            } else {
+                Button(action: onAdd) { mark }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Aggiungi al calendario"))
+            }
+        }
+        .padding(4)
     }
 
     private var start: Date? { NewsDates.date(event.startDate) }

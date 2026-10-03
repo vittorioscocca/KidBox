@@ -154,6 +154,12 @@ enum AppAnalytics {
         Analytics.logEvent("news_item_opened", parameters: ["kind": kind, "category": category, "level": level])
     }
 
+    /// Il «+» di un evento delle Notizie: apre «Nuovo evento» già compilato
+    /// (il salvataggio vero lo conta `content_created`).
+    static func newsEventAddTapped() {
+        Analytics.logEvent("news_event_add", parameters: nil)
+    }
+
     static func newsOffersSearched(offers: Int, units: Int) {
         Analytics.logEvent("news_offers_searched", parameters: ["offers": offers, "units": units])
     }
