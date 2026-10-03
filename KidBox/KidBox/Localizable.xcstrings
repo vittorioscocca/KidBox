@@ -5161,6 +5161,28 @@
         }
       }
     },
+    "Agevolazioni, contributi e scadenze per le famiglie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benefits, grants and deadlines for families"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayudas, subvenciones y plazos para familias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aides, allocations et échéances pour les familles"
+          }
+        }
+      }
+    },
     "Aggiorna" : {
       "localizations" : {
         "en" : {
@@ -6111,6 +6133,28 @@
         }
       }
     },
+    "Aggiungi la tua città" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add your city"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade tu ciudad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez votre ville"
+          }
+        }
+      }
+    },
     "Aggiungi le categorie (A, B, C, …) con le rispettive date." : {
       "localizations" : {
         "en" : {
@@ -6550,6 +6594,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajoutez un événement au calendrier"
+          }
+        }
+      }
+    },
+    "Aggiungi una bolletta in Casa o qualcosa alla lista della spesa: le offerte partono da lì." : {
+      "comment" : "News: offers need bills or grocery",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a bill under Home or something to the shopping list: offers start from there."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade una factura en Casa o algo a la lista de la compra: las ofertas parten de ahí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez une facture dans Maison ou un article à la liste de courses : les offres partent de là."
           }
         }
       }
@@ -8775,6 +8842,28 @@
         }
       }
     },
+    "Apre l'assistente di famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the family assistant"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre el asistente familiar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre l'assistant de la famille"
+          }
+        }
+      }
+    },
     "Apre la schermata per generare un codice invito" : {
       "localizations" : {
         "en" : {
@@ -9323,6 +9412,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "sujets"
+          }
+        }
+      }
+    },
+    "Argomenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Topics"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sujets"
+          }
+        }
+      }
+    },
+    "Argomenti, città e offerte su misura" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Topics, city and tailored offers"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temas, ciudad y ofertas a medida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sujets, ville et offres sur mesure"
           }
         }
       }
@@ -9900,6 +10033,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Activer les notifications"
+          }
+        }
+      }
+    },
+    "Attiva le notizie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on News"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activar las Noticias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activer les Actualités"
           }
         }
       }
@@ -10887,6 +11042,28 @@
         }
       }
     },
+    "Bollette, prezzi, mutui e tasse di casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bills, prices, mortgages and household taxes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Facturas, precios, hipotecas e impuestos del hogar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Factures, prix, crédits immobiliers et impôts du foyer"
+          }
+        }
+      }
+    },
     "Bollo" : {
       "localizations" : {
         "en" : {
@@ -10931,6 +11108,28 @@
         }
       }
     },
+    "Bonus" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benefits"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayudas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aides"
+          }
+        }
+      }
+    },
     "Bonus AI esaurito" : {
       "localizations" : {
         "en" : {
@@ -10971,6 +11170,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bonus IA gratuit"
+          }
+        }
+      }
+    },
+    "Bonus, scuola, salute ed eventi vicino a te, ogni giorno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benefits, school, health and events near you, every day"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayudas, escuela, salud y eventos cerca de ti, cada día"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aides, école, santé et événements près de chez vous, chaque jour"
+          }
+        }
+      }
+    },
+    "Bonus, scuola, salute, economia ed eventi vicino a te, cercati ogni giorno dall'AI con la loro fonte. Incluse nei piani Pro e Max." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benefits, school, health, money and events near you, found by AI every day with their sources. Included in the Pro and Max plans."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayudas, escuela, salud, economía y eventos cerca de ti, buscados cada día por la IA con su fuente. Incluidas en los planes Pro y Max."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aides, école, santé, économie et événements près de chez vous, trouvés chaque jour par l'IA avec leur source. Incluses dans les forfaits Pro et Max."
           }
         }
       }
@@ -11281,6 +11524,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Calendrier abonné"
+          }
+        }
+      }
+    },
+    "Calendario, iscrizioni, mense e trasporti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar, enrolment, school meals and transport"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendario, matrículas, comedores y transporte"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendrier, inscriptions, cantine et transports"
           }
         }
       }
@@ -12426,6 +12691,28 @@
         }
       }
     },
+    "Cerca di nuovo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar de nuevo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chercher à nouveau"
+          }
+        }
+      }
+    },
     "Cerca esame" : {
       "localizations" : {
         "en" : {
@@ -12598,6 +12885,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rechercher dans les notes"
+          }
+        }
+      }
+    },
+    "Cerca offerte da bollette e spesa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find offers from bills and shopping"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar ofertas a partir de facturas y compra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chercher des offres à partir des factures et des courses"
           }
         }
       }
@@ -14420,6 +14729,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ENVIRON"
+          }
+        }
+      }
+    },
+    "Circa %d messaggi AI · usa le bollette in Casa e la lista della spesa" : {
+      "comment" : "News: cost of personal offers",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About %d AI messages · uses the bills under Home and the shopping list"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unos %d mensajes de IA · usa las facturas de Casa y la lista de la compra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Environ %d messages IA · utilise les factures de Maison et la liste de courses"
           }
         }
       }
@@ -18668,6 +19000,50 @@
         }
       }
     },
+    "Crescita" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Growing up"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crianza"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grandir"
+          }
+        }
+      }
+    },
+    "Crescita ed educazione dei figli" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raising and educating children"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crecimiento y educación de los hijos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Développement et éducation des enfants"
+          }
+        }
+      }
+    },
     "Criceto" : {
       "localizations" : {
         "en" : {
@@ -19351,6 +19727,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Du %1$@ au %2$@"
+          }
+        }
+      }
+    },
+    "Dal %@" : {
+      "comment" : "News: start date badge",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desde el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dès le %@"
           }
         }
       }
@@ -21653,6 +22052,28 @@
         }
       }
     },
+    "Dove vivete" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where you live"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dónde vives"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Où vous habitez"
+          }
+        }
+      }
+    },
     "Dove vuoi andare?" : {
       "localizations" : {
         "en" : {
@@ -21937,6 +22358,51 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ECG"
+          }
+        }
+      }
+    },
+    "Economia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Money"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Economía"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Économie"
+          }
+        }
+      }
+    },
+    "Edizione di oggi: %d messaggi AI" : {
+      "comment" : "News: AI messages paid for today's edition",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's edition: %d AI messages"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edición de hoy: %d mensajes de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Édition du jour : %d messages IA"
           }
         }
       }
@@ -25481,6 +25947,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Événements et gardes"
+          }
+        }
+      }
+    },
+    "Eventi per famiglie entro 60 km." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Family events within 60 km."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eventos para familias a menos de 60 km."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Événements pour les familles à moins de 60 km."
+          }
+        }
+      }
+    },
+    "Eventi vicino a te" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Events near you"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eventos cerca de ti"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Événements près de chez vous"
+          }
+        }
+      }
+    },
+    "Eventi vicino a te e iniziative per famiglie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Events near you and initiatives for families"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eventos cerca de ti e iniciativas para familias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Événements près de chez vous et initiatives pour les familles"
           }
         }
       }
@@ -29502,6 +30034,29 @@
         }
       }
     },
+    "Hai usato tutti i messaggi AI della prova Pro: le notizie tornano con un abbonamento." : {
+      "comment" : "News: trial AI quota exhausted",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've used all the AI messages in the Pro trial: News comes back with a subscription."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has usado todos los mensajes de IA de la prueba Pro: las Noticias vuelven con una suscripción."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez utilisé tous les messages IA de l'essai Pro : les Actualités reviennent avec un abonnement."
+          }
+        }
+      }
+    },
     "Hai usato tutti i messaggi AI gratuiti inclusi nel piano Free. Passa a Pro per continuare a usare l'assistente." : {
       "localizations" : {
         "en" : {
@@ -31699,6 +32254,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réglages de l’app"
+          }
+        }
+      }
+    },
+    "Impostazioni delle notizie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "News settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes de las Noticias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réglages des Actualités"
           }
         }
       }
@@ -34894,6 +35471,29 @@
         }
       }
     },
+    "La famiglia ha finito i messaggi AI di oggi. Riprova domani." : {
+      "comment" : "News: daily AI quota reached",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The family has used up today's AI messages. Try again tomorrow."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La familia ha agotado los mensajes de IA de hoy. Vuelve a intentarlo mañana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La famille a épuisé les messages IA du jour. Réessayez demain."
+          }
+        }
+      }
+    },
     "La famiglia ha già 10 calendari iscritti." : {
       "localizations" : {
         "en" : {
@@ -35302,6 +35902,28 @@
         }
       }
     },
+    "La prima edizione del giorno richiede circa un minuto. Puoi uscire: la ritrovi pronta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The first edition of the day takes about a minute. You can leave: it'll be ready when you're back."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La primera edición del día tarda alrededor de un minuto. Puedes salir: la encontrarás lista."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La première édition du jour prend environ une minute. Vous pouvez quitter : elle sera prête à votre retour."
+          }
+        }
+      }
+    },
     "La proposta costa 3 messaggi AI." : {
       "localizations" : {
         "en" : {
@@ -35366,6 +35988,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Votre essai Pro est terminé. Toutes vos données restent : avec Pro, l’espace supplémentaire, les planificateurs et l’assistant IA reviennent."
+          }
+        }
+      }
+    },
+    "La ricerca sta impiegando più del solito. Riprova fra poco." : {
+      "comment" : "News: timeout",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The search is taking longer than usual. Try again shortly."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La búsqueda está tardando más de lo habitual. Vuelve a intentarlo en un momento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La recherche prend plus de temps que d'habitude. Réessayez dans un instant."
           }
         }
       }
@@ -35926,6 +36571,119 @@
         }
       }
     },
+    "Le notizie che servono alla tua famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The news your family needs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las noticias que necesita tu familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les actualités utiles à votre famille"
+          }
+        }
+      }
+    },
+    "Le notizie di oggi costano %1$d messaggi AI e alla famiglia ne restano %2$d. Riprova domani." : {
+      "comment" : "News: daily AI quota not enough",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's news costs %1$d AI messages and the family has %2$d left. Try again tomorrow."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las noticias de hoy cuestan %1$d mensajes de IA y a la familia le quedan %2$d. Vuelve a intentarlo mañana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les actualités du jour coûtent %1$d messages IA et il en reste %2$d à la famille. Réessayez demain."
+          }
+        }
+      }
+    },
+    "Le Notizie sono incluse nei piani Pro e Max." : {
+      "comment" : "News: plan required",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "News is included in the Pro and Max plans."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las Noticias están incluidas en los planes Pro y Max."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les Actualités sont incluses dans les forfaits Pro et Max."
+          }
+        }
+      }
+    },
+    "Le notizie sono sospese per qualche ora. Riprova più tardi." : {
+      "comment" : "News: feature switched off",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "News is paused for a few hours. Try again later."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las Noticias están suspendidas unas horas. Vuelve a intentarlo más tarde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les Actualités sont suspendues pour quelques heures. Réessayez plus tard."
+          }
+        }
+      }
+    },
+    "Le notizie vanno dal paese alla regione fino al comune, e gli eventi entro 60 km. Si salvano solo paese, regione e città, mai la posizione esatta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "News goes from your country to your region and town, with events within 60 km. Only country, region and city are saved, never your exact location."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las noticias van del país a la región hasta el municipio, y los eventos a menos de 60 km. Solo se guardan país, región y ciudad, nunca la ubicación exacta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les actualités vont du pays à la région jusqu'à la commune, et les événements à moins de 60 km. Seuls le pays, la région et la ville sont enregistrés, jamais la position exacte."
+          }
+        }
+      }
+    },
     "Le password 'Solo io' di altri utenti verranno ignorate: %lld." : {
       "localizations" : {
         "en" : {
@@ -35988,6 +36746,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les mots de passe ne correspondent pas."
+          }
+        }
+      }
+    },
+    "Le ricerche di oggi sono finite: riprova domani." : {
+      "comment" : "News: global daily budget reached",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's searches are used up: try again tomorrow."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las búsquedas de hoy se han agotado: vuelve a intentarlo mañana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les recherches du jour sont épuisées : réessayez demain."
+          }
+        }
+      }
+    },
+    "Le ricerche si pagano in messaggi AI, dalla quota della famiglia: ogni edizione al massimo 6 messaggi, e meno quando la leggono anche altre famiglie della tua zona. Incluse nei piani Pro e Max." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Searches are paid for in AI messages from the family's allowance: at most 6 messages per edition, and fewer when other families in your area read it too. Included in the Pro and Max plans."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las búsquedas se pagan en mensajes de IA, de la cuota de la familia: como máximo 6 mensajes por edición, y menos cuando también la leen otras familias de tu zona. Incluidas en los planes Pro y Max."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les recherches se paient en messages IA, sur le quota de la famille : au maximum 6 messages par édition, et moins quand d'autres familles de votre zone la lisent aussi. Incluses dans les forfaits Pro et Max."
+          }
+        }
+      }
+    },
+    "Le ricerche si pagano in messaggi AI: ogni edizione al massimo %d messaggi, e meno quando la leggono anche altre famiglie della tua zona." : {
+      "comment" : "News intro: cost in AI messages",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Searches are paid for in AI messages: at most %d messages per edition, and fewer when other families in your area read it too."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las búsquedas se pagan en mensajes de IA: como máximo %d mensajes por edición, y menos cuando también la leen otras familias de tu zona."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les recherches se paient en messages IA : au maximum %d messages par édition, et moins quand d'autres familles de votre zone la lisent aussi."
           }
         }
       }
@@ -36187,6 +37013,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lire avec l'IA (%lld messages)"
+          }
+        }
+      }
+    },
+    "Leggi e cambiamenti che toccano le famiglie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laws and changes that affect families"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leyes y cambios que afectan a las familias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lois et changements qui touchent les familles"
           }
         }
       }
@@ -36917,6 +37765,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Électricité"
+          }
+        }
+      }
+    },
+    "Luce, gas, acqua e spesa più convenienti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cheaper electricity, gas, water and groceries"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Luz, gas, agua y compra más baratos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Électricité, gaz, eau et courses moins chers"
           }
         }
       }
@@ -40847,6 +41717,29 @@
         }
       }
     },
+    "Nessuna connessione. Controlla Wi‑Fi o dati mobili." : {
+      "comment" : "News: offline",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No connection. Check Wi‑Fi or mobile data."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin conexión. Comprueba el wifi o los datos móviles."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas de connexion. Vérifiez le Wi‑Fi ou les données mobiles."
+          }
+        }
+      }
+    },
     "Nessuna cura aggiunta" : {
       "localizations" : {
         "en" : {
@@ -42498,6 +43391,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Non disponible"
+          }
+        }
+      }
+    },
+    "Non trovo questa città. Prova a scriverla con la provincia." : {
+      "comment" : "News: city not found",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't find this city. Try adding the province or county."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No encuentro esta ciudad. Prueba a escribirla con la provincia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ville introuvable. Essayez d'ajouter le département."
           }
         }
       }
@@ -44301,6 +45217,94 @@
         }
       }
     },
+    "Notizie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "News"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noticias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualités"
+          }
+        }
+      }
+    },
+    "Notizie attive" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "News on"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noticias activadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualités activées"
+          }
+        }
+      }
+    },
+    "Notizie per la tua famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "News for your family"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noticias para tu familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des actualités pour votre famille"
+          }
+        }
+      }
+    },
+    "Notizie trovate e riassunte dall'AI dalle fonti indicate. Prima di fare domanda o di cambiare un contratto controlla sempre i dettagli sulla fonte." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "News found and summarised by AI from the sources shown. Before applying for anything or changing a contract, always check the details at the source."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noticias encontradas y resumidas por la IA a partir de las fuentes indicadas. Antes de solicitar algo o cambiar un contrato, comprueba siempre los detalles en la fuente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualités trouvées et résumées par l'IA à partir des sources indiquées. Avant de faire une demande ou de changer de contrat, vérifiez toujours les détails à la source."
+          }
+        }
+      }
+    },
     "Notte" : {
       "localizations" : {
         "en" : {
@@ -45359,6 +46363,73 @@
         }
       }
     },
+    "Offerte cercate %@" : {
+      "comment" : "News: when personal offers were searched",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offers found %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ofertas buscadas %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offres cherchées %@"
+          }
+        }
+      }
+    },
+    "Offerte su misura" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tailored offers"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ofertas a medida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offres sur mesure"
+          }
+        }
+      }
+    },
+    "Offerte su misura da bollette e lista della spesa, quando le chiedi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tailored offers from your bills and shopping list, when you ask."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ofertas a medida a partir de tus facturas y tu lista de la compra, cuando las pides."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des offres sur mesure à partir de vos factures et de votre liste de courses, quand vous les demandez."
+          }
+        }
+      }
+    },
     "Officina" : {
       "localizations" : {
         "en" : {
@@ -45488,6 +46559,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aujourd'hui à %@ %@ a un examen."
+          }
+        }
+      }
+    },
+    "Oggi niente di nuovo per gli argomenti che segui." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing new today for the topics you follow."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy no hay nada nuevo sobre los temas que sigues."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien de nouveau aujourd'hui pour les sujets que vous suivez."
           }
         }
       }
@@ -45760,6 +46853,28 @@
         }
       }
     },
+    "Ogni giorno fino a 10 notizie su bonus, scuola, salute ed economia, dal tuo paese alla tua città." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to 10 stories a day on benefits, school, health and money, from your country to your city."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hasta 10 noticias al día sobre ayudas, escuela, salud y economía, de tu país a tu ciudad."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jusqu'à 10 actualités par jour sur les aides, l'école, la santé et l'économie, de votre pays à votre ville."
+          }
+        }
+      }
+    },
     "Ogni lunedì alle 08:00 ricevi una notifica con un breve recap generato dall'AI: scadenze, cure, eventi chiave e un suggerimento pratico per la settimana." : {
       "localizations" : {
         "en" : {
@@ -45801,6 +46916,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tous les mois"
+          }
+        }
+      }
+    },
+    "Ogni notizia con la sua fonte, e niente riempitivi: se non c'è niente di nuovo, l'edizione è più corta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every story with its source, and no filler: if there's nothing new, the edition is shorter."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada noticia con su fuente y sin relleno: si no hay nada nuevo, la edición es más corta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque actualité avec sa source, et pas de remplissage : s'il n'y a rien de nouveau, l'édition est plus courte."
           }
         }
       }
@@ -46002,6 +47139,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ou montrez le QR code si vous êtes ensemble — plus sûr"
+          }
+        }
+      }
+    },
+    "Oppure scrivi la città" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or type your city"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O escribe tu ciudad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ou saisissez votre ville"
           }
         }
       }
@@ -46644,6 +47803,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pays : %@"
+          }
+        }
+      }
+    },
+    "Pagamento il %@" : {
+      "comment" : "News: payment date badge",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment on %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pago el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paiement le %@"
           }
         }
       }
@@ -47846,6 +49028,28 @@
         }
       }
     },
+    "Per le notizie della tua regione e del tuo comune, e gli eventi entro 60 km." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For news from your region and town, and events within 60 km."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para las noticias de tu región y tu municipio, y los eventos a menos de 60 km."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour les actualités de votre région et de votre commune, et les événements à moins de 60 km."
+          }
+        }
+      }
+    },
     "Per mostrarli qui, consenti l'accesso completo ai calendari nelle Impostazioni." : {
       "localizations" : {
         "en" : {
@@ -47864,6 +49068,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pour les afficher ici, autorisez l'accès complet aux calendriers dans les Réglages."
+          }
+        }
+      }
+    },
+    "Per oggi nessuna offerta più conveniente di quello che avete già." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No better offer today than what you already have."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy no hay ninguna oferta mejor que lo que ya tienes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aujourd'hui, aucune offre plus avantageuse que ce que vous avez déjà."
           }
         }
       }
@@ -49149,6 +50375,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Position partagée"
+          }
+        }
+      }
+    },
+    "Posizione non consentita. Scrivi la tua città qui sotto, oppure abilita la posizione in Impostazioni." : {
+      "comment" : "News: location denied",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location not allowed. Type your city below, or turn on location in Settings."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ubicación no permitida. Escribe tu ciudad abajo o activa la ubicación en Ajustes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Position non autorisée. Saisissez votre ville ci-dessous ou activez la position dans Réglages."
           }
         }
       }
@@ -52037,6 +53286,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quand la mémoire dépasse un message, vous choisissez avant l'envoi."
+          }
+        }
+      }
+    },
+    "Quando non ci sono notizie utili l'edizione è più corta: meglio poche notizie vere che tante di riempimento." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When there's no useful news the edition is shorter: better a few real stories than lots of filler."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando no hay noticias útiles la edición es más corta: mejor pocas noticias reales que muchas de relleno."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand il n'y a pas d'actualité utile, l'édition est plus courte : mieux vaut peu d'actualités vraies que beaucoup de remplissage."
           }
         }
       }
@@ -55716,6 +56987,29 @@
         }
       }
     },
+    "Risposta inattesa dal server. Riprova fra poco." : {
+      "comment" : "News: undecodable response",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unexpected response from the server. Try again shortly."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Respuesta inesperada del servidor. Vuelve a intentarlo en un momento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réponse inattendue du serveur. Réessayez dans un instant."
+          }
+        }
+      }
+    },
     "Risposta non inviata" : {
       "localizations" : {
         "en" : {
@@ -56797,6 +58091,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Expire le"
+          }
+        }
+      }
+    },
+    "Scade il %@" : {
+      "comment" : "News: deadline badge",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Due %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vence el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Échéance le %@"
           }
         }
       }
@@ -57965,6 +59282,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Découvrir les forfaits"
+          }
+        }
+      }
+    },
+    "Scopri Pro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discover Pro"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descubre Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Découvrir Pro"
           }
         }
       }
@@ -59976,6 +61315,50 @@
         }
       }
     },
+    "Si cercano solo gli argomenti accesi. Gli eventi vicini arrivano con Tempo libero." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only the topics that are on are searched. Nearby events come with Leisure."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo se buscan los temas activados. Los eventos cercanos llegan con Ocio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seuls les sujets activés sont recherchés. Les événements à proximité arrivent avec Loisirs."
+          }
+        }
+      }
+    },
+    "Si cercano solo quando tocchi «Cerca offerte», partendo dalle bollette in Casa e dalla lista della spesa. All'AI arrivano fornitore, importi, consumi e prodotti: mai nomi, indirizzi o codici dei contratti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "They're only searched when you tap “Find offers”, starting from the bills under Home and the shopping list. The AI receives supplier, amounts, consumption and products: never names, addresses or contract codes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo se buscan cuando tocas «Buscar ofertas», a partir de las facturas de Casa y de la lista de la compra. A la IA llegan proveedor, importes, consumos y productos: nunca nombres, direcciones ni códigos de contratos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elles ne sont recherchées que lorsque vous touchez « Chercher des offres », à partir des factures de Maison et de la liste de courses. L'IA reçoit fournisseur, montants, consommations et produits : jamais de noms, d'adresses ni de codes de contrat."
+          }
+        }
+      }
+    },
     "Sicurezza password" : {
       "localizations" : {
         "en" : {
@@ -60304,6 +61687,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Je sais déjà"
+          }
+        }
+      }
+    },
+    "Società" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Society"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sociedad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Société"
           }
         }
       }
@@ -61657,6 +63062,72 @@
         }
       }
     },
+    "Sto cercando le notizie della tua zona e gli eventi vicini…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finding news from your area and nearby events…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando las noticias de tu zona y los eventos cercanos…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je cherche les actualités de votre zone et les événements à proximité…"
+          }
+        }
+      }
+    },
+    "Sto cercando le notizie di oggi…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finding today's news…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando las noticias de hoy…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je cherche les actualités du jour…"
+          }
+        }
+      }
+    },
+    "Sto confrontando bollette e offerte…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comparing bills and offers…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comparando facturas y ofertas…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je compare factures et offres…"
+          }
+        }
+      }
+    },
     "Sto finalizzando il percorso di %d giorni" : {
       "localizations" : {
         "en" : {
@@ -61852,6 +63323,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sur iPhone, l'analyse utilise Apple Intelligence sur l'appareil quand disponible. Vous pouvez désactiver l'envoi à tout moment."
+          }
+        }
+      }
+    },
+    "Su misura per voi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tailored for you"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A medida para ti"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sur mesure pour vous"
           }
         }
       }
@@ -63517,6 +65010,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Retirer des favoris"
+          }
+        }
+      }
+    },
+    "Togli la città" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove city"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitar la ciudad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer la ville"
           }
         }
       }
@@ -65513,6 +67028,28 @@
         }
       }
     },
+    "Usa la mia posizione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use my location"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar mi ubicación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser ma position"
+          }
+        }
+      }
+    },
     "Usa la mia posizione attuale" : {
       "localizations" : {
         "en" : {
@@ -65775,6 +67312,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Utilisation de l'espace"
+          }
+        }
+      }
+    },
+    "Vaccinazioni, prevenzione e prodotti richiamati" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaccinations, prevention and product recalls"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vacunación, prevención y productos retirados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaccinations, prévention et rappels de produits"
           }
         }
       }

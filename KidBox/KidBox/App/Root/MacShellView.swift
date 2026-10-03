@@ -49,6 +49,7 @@ enum MacSection: String, CaseIterable, Identifiable {
     case vehicles
     case travel
     case assistant
+    case news
     // Account group
     case family
     case profile
@@ -60,7 +61,7 @@ enum MacSection: String, CaseIterable, Identifiable {
     static let main: [MacSection] = [
         .dashboard, .calendar, .todo, .notes, .shopping, .photos, .health,
         .chat, .documents, .expenses, .wallet, .passwords, .location, .pets,
-        .homeItems, .vehicles, .travel, .assistant
+        .homeItems, .vehicles, .travel, .assistant, .news
     ]
 
     /// Account / family management sections (bottom group in the sidebar).
@@ -86,6 +87,7 @@ enum MacSection: String, CaseIterable, Identifiable {
         case .vehicles:  return "Garage"
         case .travel:    return "Viaggi"
         case .assistant: return "Assistente"
+        case .news:      return "Notizie"
         case .family:    return "Family"
         case .profile:   return "Profilo"
         case .settings:  return "Impostazioni"
@@ -112,6 +114,7 @@ enum MacSection: String, CaseIterable, Identifiable {
         case .vehicles:  return "car.fill"
         case .travel:    return "suitcase.fill"
         case .assistant: return "brain.head.profile"
+        case .news:      return "newspaper.fill"
         case .family:    return "person.2.fill"
         case .profile:   return "person.crop.circle"
         case .settings:  return "gearshape.fill"
@@ -139,6 +142,7 @@ enum MacSection: String, CaseIterable, Identifiable {
         case .vehicles:  return .gray
         case .travel:    return .teal
         case .assistant: return .purple
+        case .news:      return .orange
         case .family:    return .teal
         case .profile:   return .blue
         case .settings:  return .gray
@@ -151,7 +155,7 @@ enum MacSection: String, CaseIterable, Identifiable {
         case .dashboard, .todo, .chat, .documents, .family, .profile, .assistant, .settings:
             return false
         case .calendar, .notes, .shopping, .photos, .health, .expenses, .wallet,
-             .passwords, .location, .pets, .homeItems, .vehicles, .travel:
+             .passwords, .location, .pets, .homeItems, .vehicles, .travel, .news:
             return true
         }
     }
@@ -178,6 +182,7 @@ enum MacSection: String, CaseIterable, Identifiable {
         case .vehicles:  return .vehiclesHome(familyId: familyId)
         case .travel:    return .travelList(familyId: familyId)
         case .assistant: return .askExpert
+        case .news:      return .news(familyId: familyId)
         case .family:    return .familySettings
         case .profile:   return .profile
         case .settings:  return .settings

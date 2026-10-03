@@ -321,6 +321,9 @@ struct PediatricHomeView: View {
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Salute")
         .navigationBarTitleDisplayMode(.large)
+        // Su iPhone e iPad l'assistente si apre dalla barra in basso, già
+        // centrato su questa persona (AgentFocus.forRoute); il pulsante resta sul Mac.
+        #if targetEnvironment(macCatalyst)
         .overlay(alignment: .bottomTrailing) {
             HealthAskAIButton(
                 subjectName: subjectName,
@@ -329,6 +332,7 @@ struct PediatricHomeView: View {
             .padding(.trailing, 20)
             .padding(.bottom, 32)
         }
+        #endif
     }
     
     // MARK: - Header

@@ -112,6 +112,24 @@ struct SettingsView: View {
                     }
                 }
                 .listRowBackground(cardBackground)
+
+                NavigationLink {
+                    NewsSettingsView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "newspaper.fill")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Notizie")
+                                .foregroundStyle(.primary)
+                            Text("Argomenti, città e offerte su misura")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .listRowBackground(cardBackground)
             
                 // La skill esiste solo in italiano: vedi `AlexaAvailability`.
                 if AlexaAvailability.isAvailable {

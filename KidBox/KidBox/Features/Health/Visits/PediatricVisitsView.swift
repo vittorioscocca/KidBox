@@ -203,6 +203,9 @@ struct PediatricVisitsView: View {
         } message: {
             Text("Le visite verranno rimosse da tutti i dispositivi.")
         }
+        // Su iPhone e iPad l'assistente si apre dalla barra in basso, già
+        // centrato sulle visite (AgentFocus.forRoute); il pulsante resta sul Mac.
+        #if targetEnvironment(macCatalyst)
         .overlay(alignment: .bottomTrailing) {
             if let selectedPerson, !filteredVisits.isEmpty, !isSelecting {
                 PediatricVisitsAskAIButton(
@@ -216,6 +219,7 @@ struct PediatricVisitsView: View {
                 .padding(.bottom, 96)
             }
         }
+        #endif
         .environment(\.locale, kbDeviceLocale())
         .environment(\.calendar, kbDeviceCalendar())
     }

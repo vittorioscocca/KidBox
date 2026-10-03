@@ -42,6 +42,12 @@ struct RootGateView: View {
         !families.isEmpty
     }
 
+    /// La famiglia attiva per le Notizie: quella scelta, o la più recente
+    /// (stessa regola di `RootHostView.resolvedActiveFamilyId`).
+    private var newsFamilyId: String {
+        coordinator.activeFamilyId ?? families.first?.id ?? ""
+    }
+
     /// Mostra la Home solo se esiste davvero una famiglia in SwiftData.
     ///
     /// `hasSeenOnboarding` **non** basta più a sbloccare la Home. Prima era la
@@ -98,7 +104,13 @@ struct RootGateView: View {
                     #if targetEnvironment(macCatalyst)
                     MacShellView()
                     #else
-                    HomeView()
+                    // Le due radici della barra in basso (vedi RootHostView).
+                    switch coordinator.rootTab {
+                    case .home:
+                        HomeView()
+                    case .news:
+                        NewsView(familyId: newsFamilyId)
+                    }
                     #endif
                 }
                 .fullScreenCover(isPresented: $showPushPriming) {

@@ -166,6 +166,8 @@ final class LoginViewModel: ObservableObject {
             do {
                 try auth.signOut()
                 KBSubscriptionManager.shared.resetOnSignOut()
+                NewsPrefsStore.shared.resetOnSignOut()
+                NewsService.shared.clearCache()
                 KBLog.auth.kbInfo("LoginViewModel signOut success")
             } catch {
                 KBLog.auth.kbError("LoginViewModel signOut failed: \(error.localizedDescription)")

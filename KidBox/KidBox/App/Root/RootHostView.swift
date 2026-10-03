@@ -88,6 +88,18 @@ struct RootHostView: View {
     @State private var isConsumingInvite = false
     @ObservedObject private var crashReportPrompt = CrashReportPromptCenter.shared
     @ObservedObject private var appUpdateChecker = AppUpdateChecker.shared
+
+    // MARK: Barra in basso (Home · assistente · Notizie)
+
+    /// Con la tastiera aperta la barra sparisce: altrimenti salirebbe con lei
+    /// e coprirebbe il campo in cui si scrive.
+    @State private var keyboardVisible = false
+    /// L'assistente aperto dalla barra su una schermata di Salute, con il focus.
+    @State private var tabBarAgentFocus: TabBarAgentFocus?
+    @State private var tabBarConsentFocus: AgentFocus?
+    @State private var showTabBarConsent = false
+    @State private var showTabBarUpgrade = false
+    @State private var showTabBarOwnerOnly = false
     
     // MARK: - View
 
@@ -109,7 +121,58 @@ struct RootHostView: View {
                     coordinator.makeDestination(for: $0)
                 }
         }
+        // `safeAreaBar` e non overlay: le schermate sotto (liste, pulsanti in
+        // basso) si fermano sopra la barra invece di finirci sotto, e il
+        // contenuto che scorre dietro si sfuma come sotto le barre di sistema
+        // (con `safeAreaInset` il testo restava leggibile attraverso il vetro).
+        .safeAreaBar(edge: .bottom, spacing: 0) {
+            if showsTabBar {
+                KBLiquidTabBar(
+                    selected: coordinator.rootTab,
+                    onSelect: { coordinator.selectRootTab($0) },
+                    onAssistant: openAssistantFromTabBar
+                )
+                .padding(.bottom, 2)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.22), value: showsTabBar)
         #endif
+    }
+
+    /// La barra c'è sulle due radici e su Salute (dove prima c'era il pulsante
+    /// AI), solo con una famiglia e un utente: non su login e onboarding.
+    private var showsTabBar: Bool {
+        guard coordinator.isAuthenticated, !coordinator.isCheckingAuth, !families.isEmpty,
+              !coordinator.isCreatingFamilyInOnboarding, !keyboardVisible else { return false }
+        guard let top = coordinator.path.last else { return true }
+        return top.showsRootTabBar
+    }
+
+    /// Il cerchio al centro della barra: l'assistente, centrato su quello che
+    /// si sta guardando in Salute. Stessi controlli dei pulsanti che sostituisce
+    /// (`HomeAIFloatingButton`, `HealthAskAIButton`, `AskAIButton`,
+    /// `ExamsAskAIButton`): quota del Free, proprietario, consenso.
+    private func openAssistantFromTabBar() {
+        guard KBSubscriptionManager.shared.isAIAccessible else {
+            if KBSubscriptionManager.shared.isFamilyOwner {
+                showTabBarUpgrade = true
+                AppAnalytics.aiPaywallShown(context: "tab_bar")
+            } else {
+                showTabBarOwnerOnly = true
+            }
+            return
+        }
+        guard let focus = AgentFocus.forRoute(coordinator.path.last, context: modelContext) else {
+            coordinator.navigate(to: .askExpert)
+            return
+        }
+        if !AISettings.shared.consentGiven {
+            tabBarConsentFocus = focus
+            showTabBarConsent = true
+            return
+        }
+        tabBarAgentFocus = TabBarAgentFocus(focus: focus)
     }
 
     var body: some View {
@@ -209,6 +272,33 @@ struct RootHostView: View {
                 coordinator: coordinator,
                 firstContent: invite.contentType
             )
+        }
+        // Assistente dalla barra, su una schermata di Salute.
+        .sheet(item: $tabBarAgentFocus) { item in
+            AgentChatSheet(focus: item.focus)
+                .environmentObject(coordinator)
+        }
+        .sheet(isPresented: $showTabBarConsent) {
+            AIConsentSheet {
+                guard let focus = tabBarConsentFocus else { return }
+                // Il foglio del consenso si sta chiudendo: aprirne un altro
+                // nello stesso istante fallirebbe in silenzio.
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(450))
+                    tabBarAgentFocus = TabBarAgentFocus(focus: focus)
+                }
+            }
+        }
+        .sheet(isPresented: $showTabBarUpgrade) {
+            UpgradeSheetView(triggerFeature: "tab_bar_ai")
+                .environmentObject(KBSubscriptionManager.shared)
+        }
+        .ownerOnlyAlert(isPresented: $showTabBarOwnerOnly)
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            keyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            keyboardVisible = false
         }
         // Richiesta di famiglia aperta da una push o da una card in Home.
         .sheet(item: $coordinator.presentedFamilyRequest) { ref in
@@ -693,4 +783,10 @@ struct RootHostView: View {
         KBLog.sync.kbDebug("startAIChatRealtime")
         SyncCenter.shared.startAIChatRealtime(modelContext: modelContext)
     }
+}
+
+/// `.sheet(item:)` vuole un Identifiable: il focus lo è per contenuto.
+private struct TabBarAgentFocus: Identifiable {
+    let focus: AgentFocus
+    var id: AgentFocus { focus }
 }

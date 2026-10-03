@@ -490,11 +490,9 @@ struct HomeView: View {
                         }
                     }
 
-                    #if !targetEnvironment(macCatalyst)
-                    // Spazio in coda: le ultime righe (e i loro badge) restano
-                    // sopra il bottone AI flottante, non nascoste sotto.
-                    Color.clear.frame(height: 96)
-                    #endif
+                    // Su iPhone e iPad niente spazio in coda: l'assistente è
+                    // nella barra in basso, e la barra sposta già il fondo
+                    // della pagina (safe area, vedi RootHostView).
                 }
                 .padding()
             }
@@ -503,26 +501,16 @@ struct HomeView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .overlay(alignment: .bottomTrailing) {
+            // Su iPhone e iPad l'assistente si apre dalla barra in basso
+            // (KBLiquidTabBar, dal 03/10/2026): il pulsante flottante non c'è più.
+            #if targetEnvironment(macCatalyst)
             if hasFamily {
-                #if targetEnvironment(macCatalyst)
                 HomeFAB(familyId: activeFamilyId, isExpanded: $fabExpanded)
                     .padding(.trailing, 20)
                     .padding(.bottom, 32)
                     .zIndex(2)
-                #else
-                HomeAIFloatingButton(
-                    onOpenAI: { navigate(to: .askExpert) },
-                    onLockedTap: {
-                        guard KBSubscriptionManager.shared.isFamilyOwner else { showOwnerOnly = true; return }
-                        showAIUpgrade = true
-                        AppAnalytics.aiPaywallShown(context: "assistant_icon")
-                    }
-                )
-                .padding(.trailing, 20)
-                .padding(.bottom, 32)
-                .zIndex(2)
-                #endif
             }
+            #endif
         }
         .ownerOnlyAlert(isPresented: $showOwnerOnly)
         .sheet(isPresented: $showAIUpgrade) {
@@ -1897,25 +1885,6 @@ private struct HomeCategoryList: View {
             }
         case .expert:
             break // ora è il bottone AI flottante
-        }
-    }
-}
-
-// MARK: - HomeAIFloatingButton
-
-private struct HomeAIFloatingButton: View {
-    let onOpenAI: () -> Void
-    let onLockedTap: () -> Void
-
-    @ObservedObject private var subscription = KBSubscriptionManager.shared
-
-    var body: some View {
-        AskAIControl(style: .circle, accessibilityLabel: "Chiedi all'AI") {
-            if subscription.isAIAccessible {
-                onOpenAI()
-            } else {
-                onLockedTap()
-            }
         }
     }
 }

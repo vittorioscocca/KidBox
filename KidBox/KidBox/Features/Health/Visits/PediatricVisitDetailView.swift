@@ -86,6 +86,9 @@ struct PediatricVisitDetailView: View {
                 AppAnalytics.contentSharedRead(type: "health")
             }
         }
+        // Su iPhone e iPad l'assistente si apre dalla barra in basso, già
+        // centrato su questa visita (AgentFocus.forRoute); il pulsante resta sul Mac.
+        #if targetEnvironment(macCatalyst)
         .overlay(alignment: .bottomTrailing) {
             if let visit, let child = childForAI {
                 AskAIButton(visit: visit, child: child)
@@ -93,6 +96,7 @@ struct PediatricVisitDetailView: View {
                     .padding(.bottom, 96)
             }
         }
+        #endif
         .sheet(isPresented: $showEditSheet) {
             if let visit {
                 PediatricVisitEditView(

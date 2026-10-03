@@ -38,6 +38,21 @@ final class AppCoordinator: ObservableObject {
     /// Ultimo `screen_name` inviato a GA4, per evitare fire duplicati su path invariato.
     private var lastFiredScreenName: String?
 
+    /// La radice sotto la pila, scelta dalla barra in basso: Home o Notizie.
+    /// L'assistente non è una radice: si apre sopra (vedi `RootHostView`).
+    @Published var rootTab: KBRootTab = .home {
+        didSet {
+            guard rootTab != oldValue else { return }
+            trackScreenViewIfNeeded()
+        }
+    }
+
+    /// Tocco su una scheda della barra: dalla pila si torna alla radice scelta.
+    func selectRootTab(_ tab: KBRootTab) {
+        if !path.isEmpty { path.removeAll() }
+        rootTab = tab
+    }
+
     // MARK: - Session state
     
     /// Whether there is a currently authenticated Firebase user.
@@ -596,7 +611,8 @@ final class AppCoordinator: ObservableObject {
 
     private func trackScreenViewIfNeeded() {
         let route = path.last
-        let name = route.flatMap { screenName(for: $0) } ?? (path.isEmpty ? "home" : nil)
+        let rootName = rootTab == .news ? "notizie" : "home"
+        let name = route.flatMap { screenName(for: $0) } ?? (path.isEmpty ? rootName : nil)
         guard let name else { return }
         guard name != lastFiredScreenName else { return }
         lastFiredScreenName = name
@@ -617,6 +633,8 @@ final class AppCoordinator: ObservableObject {
             return "chat_supporto"
         case .askExpert:
             return "assistente_ai"
+        case .news:
+            return "notizie"
         case .expensesHome, .expenseDetail:
             return "spese"
         case .shoppingList:
@@ -794,6 +812,9 @@ final class AppCoordinator: ObservableObject {
             PasswordDetailView(familyId: familyId, entryId: entryId)
         case .askExpert:
             PlanningAIChatView()
+
+        case .news(let familyId):
+            NewsView(familyId: familyId)
 
         case .petsHome(let familyId):
             PetsHomeView(familyId: familyId)
@@ -1572,6 +1593,9 @@ final class AppCoordinator: ObservableObject {
         KBLog.navigation.kbInfo("Reset to root (clearing path)")
         openFamilyPhotosCameraForFamilyId = nil
         path.removeAll()
+        // «Radice» vuol dire Home: dopo join, cambio famiglia o uscita non si
+        // riparte dalle Notizie.
+        rootTab = .home
         // `activeFamilyId` non viene azzerato qui: resta in UserDefaults / App Group
         // così dopo join + resetToRoot() la root vede ancora la famiglia attiva.
         if let id = activeFamilyId {
@@ -1613,6 +1637,8 @@ final class AppCoordinator: ObservableObject {
             try Auth.auth().signOut()
             KBLog.auth.kbInfo("Firebase sign-out OK")
             KBSubscriptionManager.shared.resetOnSignOut()
+            NewsPrefsStore.shared.resetOnSignOut()
+            NewsService.shared.clearCache()
             FamilyKeychainStore.clearKeyCache()
             setActiveFamily(nil)
             resetToRoot()

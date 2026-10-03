@@ -109,6 +109,9 @@ struct PediatricExamDetailView: View {
                 AppAnalytics.contentSharedRead(type: "health")
             }
         }
+        // Su iPhone e iPad l'assistente si apre dalla barra in basso, già
+        // centrato su questo esame (AgentFocus.forRoute); il pulsante resta sul Mac.
+        #if targetEnvironment(macCatalyst)
         .overlay(alignment: .bottomTrailing) {
             if let exam {
                 ExamsAskAIButton(subjectName: childName, scope: .single(exam))
@@ -116,6 +119,7 @@ struct PediatricExamDetailView: View {
                     .padding(.bottom, 96)
             }
         }
+        #endif
         .sheet(isPresented: $showEditSheet) {
             if let exam {
                 PediatricExamEditView(

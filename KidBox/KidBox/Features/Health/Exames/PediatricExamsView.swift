@@ -198,6 +198,9 @@ struct PediatricExamsView: View {
             prompt: "Cerca esame"
         )
         .toolbar { toolbarItems }
+        // Su iPhone e iPad l'assistente si apre dalla barra in basso, già
+        // centrato sugli esami (AgentFocus.forRoute); il pulsante resta sul Mac.
+        #if targetEnvironment(macCatalyst)
         .overlay(alignment: .bottomTrailing) {
             if !isSelecting && !exams.isEmpty {
                 ExamsAskAIButton(subjectName: childName, scope: .all(filtered))
@@ -205,6 +208,7 @@ struct PediatricExamsView: View {
                     .padding(.bottom, 96)
             }
         }
+        #endif
         // Avvia il realtime UNA SOLA VOLTA (non si riavvia al pop dalla Detail)
         .task {
             guard !realtimeStarted else { return }

@@ -139,6 +139,29 @@ enum AppAnalytics {
         Analytics.logEvent("ai_paywall_shown", parameters: ["context": context])
     }
 
+    // MARK: - Notizie
+
+    /// Edizione del giorno caricata: quante notizie, quanti messaggi scalati
+    /// adesso (0 se già pagata) e se una parte era ancora in preparazione.
+    static func newsOpened(items: Int, events: Int, units: Int, preparing: Bool) {
+        Analytics.logEvent("news_opened", parameters: [
+            "items": items, "events": events, "units": units, "preparing": preparing ? 1 : 0,
+        ])
+    }
+
+    /// Tocco su una notizia, un evento o un'offerta (`kind`), con la categoria e il livello.
+    static func newsItemOpened(kind: String, category: String, level: String) {
+        Analytics.logEvent("news_item_opened", parameters: ["kind": kind, "category": category, "level": level])
+    }
+
+    static func newsOffersSearched(offers: Int, units: Int) {
+        Analytics.logEvent("news_offers_searched", parameters: ["offers": offers, "units": units])
+    }
+
+    static func newsActivated() {
+        Analytics.logEvent("news_activated", parameters: nil)
+    }
+
     static func aiMessageSent(agentType: String, plan: String) {
         Analytics.logEvent("ai_message_sent", parameters: [
             "agent_type": agentType,
