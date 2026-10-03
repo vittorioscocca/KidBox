@@ -14,8 +14,11 @@ const PALETTE = [
   ["#e8833a", "#c96a20"],
 ];
 
-/** Creazione e modifica di una tessera fedeltà. */
-export default function WalletCardModal({ card, members, onSave, onUploadPhoto, onClose }) {
+/**
+ * Creazione e modifica di una tessera fedeltà. Le foto non si caricano qui ma
+ * dal dettaglio, sulla tessera già salvata (come su iOS e Android).
+ */
+export default function WalletCardModal({ card, members, onSave, onClose }) {
   const { t } = useTranslation();
   const w = t.wallet;
   const isNew = !card?.id;
@@ -39,20 +42,6 @@ export default function WalletCardModal({ card, members, onSave, onUploadPhoto, 
   const [showVisibility, setShowVisibility] = useState(false);
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
-
-  const pickPhoto = async (side, file) => {
-    if (!file) return;
-    try {
-      const { url, path } = await onUploadPhoto(side, file);
-      set(
-        side === "front"
-          ? { frontPhotoStorageURL: url, frontPhotoStoragePath: path }
-          : { backPhotoStorageURL: url, backPhotoStoragePath: path }
-      );
-    } catch (err) {
-      setError(err.message);
-    }
-  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -119,25 +108,6 @@ export default function WalletCardModal({ card, members, onSave, onUploadPhoto, 
               aria-label={primary}
             />
           ))}
-        </div>
-
-        <div className="wl-two">
-          <label>
-            {w.frontPhoto}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => pickPhoto("front", e.target.files?.[0])}
-            />
-          </label>
-          <label>
-            {w.backPhoto}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => pickPhoto("back", e.target.files?.[0])}
-            />
-          </label>
         </div>
 
         <label>

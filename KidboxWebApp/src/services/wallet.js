@@ -9,8 +9,10 @@
  * Function per i promemoria, che devono leggere `eventDate` senza poter leggere
  * il PNR. I campi cifrati hanno il suffisso `Enc` e viaggiano in base64.
  *
- * Le **tessere fedeltà** non sono cifrate: è la scelta fatta su iOS, e cambiarla
- * qui renderebbe illeggibili le tessere sugli altri client.
+ * Le **tessere fedeltà** hanno numero e nome in chiaro: è la scelta fatta su
+ * iOS, e cambiarla qui renderebbe illeggibili le tessere sugli altri client.
+ * Le loro **foto** invece sono cifrate (possono mostrare l'intestatario):
+ * passano da `walletPhotos.js`, come su iOS e Android.
  *
  * L'eliminazione è `isDeleted: true`, non un campo `deletedAt`: è il contratto
  * che usano gli altri client per questo modulo.
@@ -28,6 +30,7 @@ import { db, storage } from "../firebase";
 import { loadFamilyKey } from "./familyKey";
 import { encryptBytes, decryptBytes } from "./familyCrypto";
 import { contentCreated } from "./analytics";
+import { deleteWalletPhoto, fetchWalletPhoto, uploadWalletPhoto } from "./walletPhotos";
 
 const SCHEMA_VERSION = 1;
 
@@ -372,21 +375,21 @@ export async function saveCard({ familyId, userId, userName, card }) {
   return id;
 }
 
-export async function deleteCard({ familyId, userId, id }) {
+/** Cancella la tessera e, best-effort come su iOS, le sue foto. */
+export async function deleteCard({ familyId, userId, card }) {
+  for (const path of [card.frontPhotoStoragePath, card.backPhotoStoragePath]) {
+    await deleteWalletPhoto(path);
+  }
   await setDoc(
-    doc(cardsCol(familyId), id),
+    doc(cardsCol(familyId), card.id),
     { isDeleted: true, updatedBy: userId, updatedAt: serverTimestamp() },
     { merge: true }
   );
 }
 
-/**
- * Le foto delle tessere NON sono cifrate: su iOS finiscono su Storage in chiaro,
- * e cifrarle solo qui le renderebbe illeggibili sul telefono.
- */
-export async function uploadCardPhoto({ familyId, cardId, side, file }) {
-  const path = `families/${familyId}/loyaltyCards/${cardId}-${side}.jpg`;
-  const storageRef = ref(storage, path);
-  await uploadBytes(storageRef, file, { contentType: file.type || "image/jpeg" });
-  return { url: await getDownloadURL(storageRef), path };
-}
+/** Foto di una tessera già salvata: cifrata, sul path di iOS e Android. */
+export const uploadCardPhoto = ({ familyId, userId, cardId, side, file }) =>
+  uploadWalletPhoto({ familyId, userId, folder: "loyaltyCards", module: "loyaltyCard", cardId, side, file });
+
+export const fetchCardPhoto = fetchWalletPhoto;
+export const deleteCardPhoto = deleteWalletPhoto;

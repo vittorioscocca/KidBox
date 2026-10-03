@@ -6,6 +6,7 @@ import { useFamilyMembers } from "../hooks/useFamilyMembers";
 import { MissingFamilyKeyError } from "../services/familyKey";
 import {
   deleteCard,
+  deleteCardPhoto,
   deleteTicket,
   deleteTicketPdf,
   fetchTicketPdf,
@@ -28,6 +29,7 @@ import WalletCardModal from "../components/WalletCardModal";
 import PaymentCardModal from "../components/PaymentCardModal";
 import PaymentCardTile from "../components/PaymentCardTile";
 import PaymentCardDetail from "../components/PaymentCardDetail";
+import CardPhotoSlots from "../components/CardPhotoSlots";
 import { deletePaymentCard, listenPaymentCards, savePaymentCard } from "../services/paymentCards";
 import "./Wallet.css";
 
@@ -179,11 +181,21 @@ export default function Wallet() {
     setDetail(null);
   };
 
-  const removeCard = async (id) => {
+  const removeCard = async (card) => {
     if (!window.confirm(w.confirmDelete)) return;
-    await deleteCard({ familyId: currentFamilyId, userId: user.uid, id });
+    await deleteCard({ familyId: currentFamilyId, userId: user.uid, card });
     setDetail(null);
   };
+
+  // Le foto stanno sulla tessera già salvata, come su iOS e Android: così
+  // hanno sempre l'id vero nel path, e ogni modifica risalva la tessera.
+  const saveCardPhoto = (card, side, url, path) =>
+    saveCard({
+      familyId: currentFamilyId,
+      userId: user.uid,
+      userName,
+      card: { ...card, [`${side}PhotoStorageURL`]: url, [`${side}PhotoStoragePath`]: path },
+    });
 
   const attachPdf = async (file) => {
     if (!file || !openTicket) return;
@@ -522,17 +534,37 @@ export default function Wallet() {
             />
             <Field label={w.notes} value={openCard.note} />
 
-            <div className="wl-photos">
-              {openCard.frontPhotoStorageURL && (
-                <img src={openCard.frontPhotoStorageURL} alt={w.frontPhoto} />
-              )}
-              {openCard.backPhotoStorageURL && (
-                <img src={openCard.backPhotoStorageURL} alt={w.backPhoto} />
-              )}
-            </div>
+            <CardPhotoSlots
+              familyId={currentFamilyId}
+              userId={user.uid}
+              frontPath={openCard.frontPhotoStoragePath}
+              backPath={openCard.backPhotoStoragePath}
+              labels={{
+                title: w.cardPhotos,
+                front: w.frontPhoto,
+                back: w.backPhoto,
+                add: w.addPhoto,
+                remove: w.removePhoto,
+                hint: w.photosEncryptedHint,
+              }}
+              onUpload={async (side, file) => {
+                const { url, path } = await uploadCardPhoto({
+                  familyId: currentFamilyId,
+                  userId: user.uid,
+                  cardId: openCard.id,
+                  side,
+                  file,
+                });
+                await saveCardPhoto(openCard, side, url, path);
+              }}
+              onRemove={async (side) => {
+                await deleteCardPhoto(openCard[`${side}PhotoStoragePath`]);
+                await saveCardPhoto(openCard, side, null, null);
+              }}
+            />
 
             <div className="pw-form-actions">
-              <button className="pw-danger" onClick={() => removeCard(openCard.id)}>
+              <button className="pw-danger" onClick={() => removeCard(openCard)}>
                 {w.delete}
               </button>
               <button
@@ -595,14 +627,6 @@ export default function Wallet() {
           members={members}
           onSave={(card) =>
             saveCard({ familyId: currentFamilyId, userId: user.uid, userName, card })
-          }
-          onUploadPhoto={(side, file) =>
-            uploadCardPhoto({
-              familyId: currentFamilyId,
-              cardId: editingCard.id || "nuova",
-              side,
-              file,
-            })
           }
           onClose={() => setEditingCard(null)}
         />

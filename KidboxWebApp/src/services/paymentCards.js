@@ -4,19 +4,18 @@
  *
  * Tutto ciò che scrive l'utente è cifrato con la chiave di famiglia (campi
  * `*Enc`, base64 di AES-GCM combined) e si decifra solo in memoria. Le foto
- * salgono cifrate in byte grezzi sullo stesso path degli altri client:
- * `families/{familyId}/wallet/paymentCards/{cardId}/{front|back}.jpg.kbenc`.
+ * passano da `walletPhotos.js`, sullo stesso path degli altri client.
  * Nessuna AI legge queste carte, e il CVV non si salva. Il PIN sì, su richiesta
  * dell'utente: mai sulla carta disegnata, nascosto finché non lo si chiede.
  */
 import { collection, deleteField, doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
-import { deleteObject, getBytes, getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { db, storage } from "../firebase";
+import { db } from "../firebase";
 import { loadFamilyKey } from "./familyKey";
 import { encryptBytes, decryptBytes } from "./familyCrypto";
 import { contentCreated } from "./analytics";
 import { isVisibleTo, normalizedWalletScope, WALLET_MEMBERS } from "./wallet";
 import { PAYMENT_CARD_DEFAULT_HEX } from "./paymentCardFormat";
+import { deleteWalletPhoto, fetchWalletPhoto, uploadWalletPhoto } from "./walletPhotos";
 
 const col = (familyId) => collection(db, "families", familyId, "paymentCards");
 
@@ -143,12 +142,7 @@ export async function savePaymentCard({ familyId, userId, userName, card }) {
 /** Tombstone: svuota anche i campi cifrati e cancella le foto. */
 export async function deletePaymentCard({ familyId, userId, card }) {
   for (const path of [card.frontPhotoStoragePath, card.backPhotoStoragePath]) {
-    if (!path) continue;
-    try {
-      await deleteObject(ref(storage, path));
-    } catch {
-      // Già assente: non è un errore da mostrare.
-    }
+    await deleteWalletPhoto(path);
   }
   const cleared = {};
   for (const f of ENC_FIELDS) cleared[`${f}Enc`] = deleteField();
@@ -160,54 +154,9 @@ export async function deletePaymentCard({ familyId, userId, card }) {
   );
 }
 
-const photoPath = (familyId, cardId, side) =>
-  `families/${familyId}/wallet/paymentCards/${cardId}/${side}.jpg.kbenc`;
-
-/** Ridimensiona a 2000 px di lato lungo e ricomprime in JPEG, come iOS. */
-async function toJpeg(file) {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
-  return new Uint8Array(await blob.arrayBuffer());
-}
-
 /** Cifra e carica la foto di un lato. Restituisce `{ url, path }`. */
-export async function uploadPaymentCardPhoto({ familyId, userId, cardId, side, file }) {
-  const key = await loadFamilyKey({ familyId, userId });
-  const sealed = await encryptBytes(await toJpeg(file), key);
-  const path = photoPath(familyId, cardId, side);
-  const storageRef = ref(storage, path);
-  await uploadBytes(storageRef, sealed, {
-    contentType: "application/octet-stream",
-    customMetadata: {
-      kb_encrypted: "1",
-      kb_alg: "AES-GCM",
-      kb_orig_mime: "image/jpeg",
-      kb_orig_name: `${side}.jpg`,
-      kb_module: "paymentCard",
-    },
-  });
-  return { url: await getDownloadURL(storageRef), path };
-}
+export const uploadPaymentCardPhoto = ({ familyId, userId, cardId, side, file }) =>
+  uploadWalletPhoto({ familyId, userId, folder: "paymentCards", module: "paymentCard", cardId, side, file });
 
-/** Scarica e decifra una foto: un object URL da revocare quando non serve più. */
-export async function fetchPaymentCardPhoto({ familyId, userId, path }) {
-  if (!path) return null;
-  const key = await loadFamilyKey({ familyId, userId });
-  const sealed = new Uint8Array(await getBytes(ref(storage, path), 15 * 1024 * 1024));
-  const plain = await decryptBytes(sealed, key);
-  return URL.createObjectURL(new Blob([plain], { type: "image/jpeg" }));
-}
-
-export async function deletePaymentCardPhoto(path) {
-  if (!path) return;
-  try {
-    await deleteObject(ref(storage, path));
-  } catch {
-    // Già assente.
-  }
-}
+export const fetchPaymentCardPhoto = fetchWalletPhoto;
+export const deletePaymentCardPhoto = deleteWalletPhoto;
