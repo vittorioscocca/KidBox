@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-28",
+  "updatedAt": "2026-10-03",
   "plans": {
     "free": {
       "id": "free",
@@ -248,6 +248,11 @@
             "strong": true
           },
           {
+            "icon": "📰",
+            "text": "Notizie per la famiglia: bonus, scuola, salute ed eventi vicini",
+            "strong": true
+          },
+          {
             "icon": "✈️",
             "text": "Pianificatore Viaggi con AI",
             "strong": true
@@ -292,6 +297,11 @@
           {
             "icon": "🧠",
             "text": "AI Assistant included",
+            "strong": true
+          },
+          {
+            "icon": "📰",
+            "text": "News for your family: benefits, school, health and events nearby",
             "strong": true
           },
           {
@@ -342,6 +352,11 @@
             "strong": true
           },
           {
+            "icon": "📰",
+            "text": "Actualités pour votre famille : aides, école, santé et événements à proximité",
+            "strong": true
+          },
+          {
             "icon": "✈️",
             "text": "Planificateur de voyages IA",
             "strong": true
@@ -386,6 +401,11 @@
           {
             "icon": "🧠",
             "text": "Asistente de IA incluido",
+            "strong": true
+          },
+          {
+            "icon": "📰",
+            "text": "Noticias para tu familia: ayudas, escuela, salud y eventos cercanos",
             "strong": true
           },
           {

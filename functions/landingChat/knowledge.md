@@ -202,12 +202,23 @@ KidBox ha diversi agenti AI, ognuno nella sezione che conosce:
 - **Assistente di famiglia**: un solo assistente con la memoria di tutta l'app:
   calendario, to-do, spesa, spese, note, salute di tutta la famiglia con i
   referti, testo letto dai documenti, wallet, casa, garage, animali, viaggi e chat.
-  Si apre dalla Home e dai pulsanti «Chiedi all'AI» di Salute, già centrato sulla
-  persona. Risponde a domande («quando è la prossima visita di Marco?», «quanto
+  Si apre dal cerchio arancione al centro della barra in basso (iPhone, iPad e
+  Android); da Salute si apre già centrato sulla persona, la visita o l'esame che
+  si sta guardando. Risponde a domande («quando è la prossima visita di Marco?», «quanto
   abbiamo speso dal veterinario quest'anno?») e agisce: crea eventi, to-do, note,
   articoli della spesa, promemoria salute e richieste («chi prende Marco?»). Le
   spese non le crea: le propone Document Intelligence dai documenti importati.
   Risponde nella lingua dell'utente e ricorda le conversazioni precedenti.
+- **Notizie** (solo Pro e Max): la scheda accanto alla Home nella barra in basso.
+  Ogni giorno l'AI cerca sul web le notizie utili alla famiglia — bonus e
+  agevolazioni, economia di casa, scuola, salute, crescita dei figli, società,
+  tempo libero — dal paese fino alla regione e al comune scelti in Impostazioni →
+  Notizie, più gli eventi per famiglie entro circa 60 km. Ogni notizia ha la sua
+  fonte, e se non ci sono novità l'edizione è più corta. Su richiesta cerca
+  offerte su misura (luce, gas, acqua, spesa) partendo dalle bollette in Casa e
+  dalla lista della spesa. Le ricerche costano messaggi AI: ogni edizione al
+  massimo 6 messaggi, e meno quando la leggono anche altre famiglie della stessa
+  zona. Gli argomenti da seguire si scelgono in Impostazioni → Notizie.
 - **Pianificatore di viaggi**: in Viaggi (Pro e Max).
 - **Piano Alimentare** e **Piano Fitness**: in Salute (Pro e Max).
 - **Document Intelligence**: legge documenti e propone azioni.
@@ -230,7 +241,7 @@ Regole che valgono per tutti i piani:
   limite di persone.
 - Il piano Free non scade ed è gratuito per sempre; include tutte le sezioni
   tranne quelle indicate come solo Pro e Max (Piano Alimentare, Piano Fitness,
-  itinerari di viaggio con l'AI). Le altre funzioni AI sul Free usano i messaggi
+  itinerari di viaggio con l'AI, Notizie). Le altre funzioni AI sul Free usano i messaggi
   di prova.
 - L'abbonamento si acquista dall'app (App Store su iPhone, iPad e Mac; Google
   Play su Android), mensile o annuale (l'annuale costa circa un terzo in meno
