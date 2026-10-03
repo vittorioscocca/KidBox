@@ -84,6 +84,20 @@ L'edizione dell'utente (`compose`) filtra le sue categorie e mette prima il
 paese, poi la regione, poi la città: al massimo 10 notizie (metà spazio al locale
 quando c'è), 6 eventi (con «Tempo libero»).
 
+**Eventi nel calendario** (03/10/2026): ogni scheda evento ha un «+» in alto a
+destra che apre «Nuovo evento» del calendario KidBox già compilato — tutto il
+giorno dal primo all'ultimo giorno (le edizioni danno solo le date), Tempo
+libero, luogo, riassunto e link nelle note; visibilità e promemoria restano da
+scegliere. Su iOS è un foglio sopra le Notizie (`CalendarEventPrefill(newsEvent:)`
+in `NewsView.swift`, la scheda è la stessa di «Copia in KidBox»); su Android il
+modulo è legato al calendario, quindi il «+» apre il calendario col modulo già
+aperto (`CalendarPrefillHandoff`, il prefill non sta in una rotta) e, chiuso il
+modulo, torna alle Notizie. Il «+» diventa una spunta quando nel calendario c'è
+un evento con lo stesso titolo (senza maiuscole e accenti) e lo stesso giorno
+d'inizio: la vede anche l'altro genitore. Non c'è un collegamento fra evento
+delle Notizie e evento salvato: cambiato il titolo salvando, la spunta non
+compare.
+
 ## Il costo in messaggi
 
 Richiesta esplicita: le spese in dollari diventano messaggi AI KidBox.
@@ -196,7 +210,8 @@ Server `gate()` in `functions/news/index.js` (`quota.period === "lifetime"` →
 ## Numeri da guardare
 
 `news_opened` (units, preparing), `news_item_opened` (kind, category, level),
-`news_offers_searched`, `news_activated` in GA4; `news_usage/{data}` e i log
+`news_offers_searched`, `news_activated`, `news_event_add` (il «+»; il
+salvataggio vero è `content_created` calendar) in GA4; `news_usage/{data}` e i log
 `news: edizione pronta` (costUsd, searches, dropped) per costo e qualità; la
 media dei lettori per zona (`readers` sulle edizioni) per capire se il prezzo
 per famiglia scende davvero.
