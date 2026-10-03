@@ -11,6 +11,10 @@ Disegno completo in `internal/notizie.md`. Qui le regole e le trappole.
   `search.js` (chiamata con ricerca web), `index.js` (callable, trigger,
   scheduler, addebito). `build(deps)` riceve da `index.js` appartenenza, quota,
   contatore e rimborso: una copia sola.
+- Scelte: della famiglia (accese, luogo, lingua) in
+  `families/{familyId}/news/settings` via `NewsFamilyStore`; di ciascuno
+  (argomenti, offerte in vista) in `users/{uid}.newsPrefs` via `NewsPrefsStore`.
+  Offerte trovate in `news_offers/{familyId}`.
 - iOS: `Features/News/`, barra `UIComponent/KBLiquidTabBar.swift`, focus
   `Features/AIAgent/AgentFocus+Route.swift`, aggancio in `RootHostView`.
 - Android: `ui/screens/news/`, barra e focus `ui/components/KidBoxBottomBar.kt`,
@@ -63,6 +67,13 @@ Disegno completo in `internal/notizie.md`. Qui le regole e le trappole.
     Android `BottomBarScrollState` conta solo lo scorrimento consumato
     (test in `BottomBarScrollStateTest`). Il cerchio Android non deve sporgere
     sopra la barra: copriva il contenuto.
+13. **Le notizie sono della famiglia** (03/10/2026): accensione e città per
+    persona facevano rivedere la presentazione al secondo membro, gli davano
+    un'altra edizione locale pagata di nuovo e gli nascondevano le offerte.
+    Non rimettere `enabled`/`place` in `newsPrefs`: il server preferisce il
+    documento di famiglia a quello che manda il telefono. Le chiamate aspettano
+    `NewsFamilyStore.settled()`, o un «Attiva» appena toccato arriva dopo la
+    richiesta e il server risponde `news-off`.
 
 ## Regole
 

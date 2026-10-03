@@ -112,10 +112,46 @@ Richiesta esplicita: le spese in dollari diventano messaggi AI KidBox.
 - Tutto regolabile senza deploy in `config/news` (cambio, tetti, sforzi, numero
   di ricerche, rinnovo locale, `enabled` per spegnere).
 
+## Della famiglia, non della persona
+
+Richiesta dell'utente del 03/10/2026: le notizie accese da un membro le vedono
+tutti i membri della famiglia. Fino a quel giorno solo le edizioni erano
+comuni (per zona e lingua): accensione e città stavano su
+`users/{uid}.newsPrefs`, quindi un secondo membro vedeva la presentazione con
+«Attiva le notizie», con un'altra città riceveva un'altra edizione locale
+(pagata di nuovo), e le offerte su misura le vedeva solo chi le aveva cercate.
+
+| | Dove | Chi la cambia |
+|---|---|---|
+| Accese o no, luogo, lingua delle edizioni | `families/{familyId}/news/settings` (`enabled`, `place`, `lang`, `updatedAtMs`, `updatedBy`) | qualunque membro, per tutti |
+| Offerte su misura trovate | `news_offers/{familyId}` (solo server) | chi tocca «Cerca offerte», per tutti |
+| Argomenti, offerte in vista | `users/{uid}.newsPrefs` | ciascuno per sé: filtrano le stesse edizioni, non costano |
+
+- Le rules non hanno una regola per `news/settings`: lo apre ai membri il
+  wildcard delle sottocollezioni (6 casi in `firestore-tests`, compreso
+  l'estraneo che non legge né spegne).
+- Il server legge il documento e, quando c'è, **preferisce luogo e lingua della
+  famiglia** a quelli che manda il telefono: due membri con città o lingua
+  diverse sul telefono leggono le stesse edizioni, pagate una volta. Spente
+  dalla famiglia → `failed-precondition` `news-off`, niente edizione né
+  addebito. Senza documento (app vecchie) usa quello che manda il telefono.
+- La lingua la fissa chi le accende per primo: un'edizione in un'altra lingua
+  sarebbe un'altra ricerca, pagata di nuovo. Chi ha l'app in un'altra lingua
+  legge le notizie in quella della famiglia.
+- Client: `NewsFamilyStore` (iOS e Android) ascolta il documento con i cambi
+  di metadati e, finché non sa com'è la famiglia, la scheda aspetta invece di
+  mostrare la presentazione. Le chiamate aspettano l'ultima scrittura
+  (`settled()`): un «Attiva» appena toccato arriva prima della richiesta
+  dell'edizione, altrimenti il server leggerebbe ancora «spente».
+- Le offerte se ne vanno con la famiglia (`deleteFamilyCompletely`, insieme a
+  `families/{id}/news`); quelle vecchie per utente (`news_personal/{uid}`, solo
+  prove del 03/10) le cancella ancora `deleteAccount`.
+
 ## Privacy
 
-- In chiaro sul server: paese, regione, provincia, città, lingua e categorie
-  (`users/{uid}.newsPrefs`, letto e scritto solo dall'utente). Mai coordinate:
+- In chiaro sul server: paese, regione, provincia, città e lingua della
+  famiglia (`families/{familyId}/news/settings`, letto e scritto dai membri),
+  argomenti di ciascuno (`users/{uid}.newsPrefs`). Mai coordinate:
   la posizione si legge una volta, sul telefono, e diventa un nome di città.
 - Le query di ricerca contengono luoghi e argomenti, mai dati personali (regola
   nel prompt).
@@ -124,7 +160,8 @@ Richiesta esplicita: le spese in dollari diventano messaggi AI KidBox.
   prodotti della spesa) **senza** nomi, indirizzi, codici cliente, POD/PDR,
   IBAN, email (righe scartate, cifre lunghe mascherate); parte solo al tocco di
   «Cerca offerte» e **dopo il consenso AI**; il server non lo salva. Si salvano
-  solo le offerte trovate (`news_personal/{uid}`), cancellate con l'account.
+  solo le offerte trovate (`news_offers/{familyId}`), visibili a tutti i membri
+  e cancellate con la famiglia.
 - Informativa: paragrafo «Notizie» nella sezione Assistente AI di
   `privacy*.html`, confermato dall'utente e pubblicato in 4 lingue il 03/10/2026.
 - Pulizia: policy TTL su `expireAt` di `news_charges` (40 giorni), `news_jobs`
@@ -136,14 +173,17 @@ Richiesta esplicita: le spese in dollari diventano messaggi AI KidBox.
 |---|---|---|
 | Scheda | `Features/News/NewsView.swift` (+ `NewsCards.swift`) | `ui/screens/news/NewsScreen.kt` |
 | Logica | `NewsViewModel`, `NewsService` (presidio di piano) | `NewsViewModel`, `NewsRepository` (presidio di piano) |
-| Scelte | `NewsPrefsStore` → `users/{uid}.newsPrefs` | `NewsPrefsStore`, stesso formato |
+| Scelte della famiglia | `NewsFamilyStore` → `families/{familyId}/news/settings` | `NewsFamilyStore`, stesso documento |
+| Scelte di ciascuno | `NewsPrefsStore` → `users/{uid}.newsPrefs` | `NewsPrefsStore`, stesso formato |
 | Riassunto | `NewsBriefBuilder.swift` | `NewsBriefBuilder.kt` |
 | Città | `NewsLocationResolver` (MapKit) | `NewsLocationResolver` (Fused + Geocoder) |
 | Impostazioni | Impostazioni → Notizie, e l'icona in alto | uguale |
 
-Stati della scheda: Free → invito a Pro; mai attivata → presentazione con il
+Stati della scheda: Free → invito a Pro; scelte della famiglia non ancora
+arrivate → attesa; famiglia che non le ha mai accese → presentazione con il
 costo («al massimo 6 messaggi per edizione») e «Attiva le notizie»: prima non
-parte nessuna ricerca né si scala nulla; attiva → edizione del giorno.
+parte nessuna ricerca né si scala nulla; accese da un qualunque membro →
+edizione del giorno.
 
 ## Gating (i tre presidi)
 

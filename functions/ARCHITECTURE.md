@@ -35,7 +35,7 @@ npm run lint      # eslint
 | `suggestTravelDestinations` / `searchTravelDestinations` | Suggerimento/ricerca destinazioni. |
 | `getTravelPlaceDetails` | Dettagli + foto via Google Places API. |
 | `saveCalendarFeed` / `deleteCalendarFeed` | Calendari iscritti da link (feed ICS): scarica subito il link (niente indirizzi interni, 5 MB, 15 s), espande le ripetizioni con `ical.js` e salva le occorrenze dentro `families/{fid}/calendarFeeds/{feedId}`; le rules lasciano la collezione solo in lettura ai membri. Codice in `calendarFeeds.js`. |
-| `getFamilyNews` | Edizione del giorno delle Notizie (Pro e Max): compone nazionale + locale per le categorie dell'utente, mette in coda ciò che manca (`status: "preparing"`), scala dalla quota AI la parte di ogni edizione non ancora pagata. Codice in `news/`, disegno in `../internal/notizie.md`. |
+| `getFamilyNews` | Edizione del giorno delle Notizie (Pro e Max): compone nazionale + locale per le categorie dell'utente, col luogo e la lingua della famiglia (`families/{id}/news/settings`, preferiti a quelli del telefono), mette in coda ciò che manca (`status: "preparing"`), scala dalla quota AI la parte di ogni edizione non ancora pagata. Codice in `news/`, disegno in `../internal/notizie.md`. |
 | `getNewsOffers` | Offerte su misura da bollette e spesa (riassunto mandato dal telefono, non salvato): Sonnet 5.5 + ricerca web, costo convertito in messaggi. |
 | `getStorageUsage` | `{usedBytes, quotaBytes, breakdown}` (auth + membership). |
 | `initStorageUsage` / `initStorageUsageAdmin` | Ricalcola da zero `families/{fid}/stats/storage`. |
