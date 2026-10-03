@@ -53,6 +53,7 @@ enum LocalDataWiper {
         do {
             // Leaf entities
             try delete(KBDocument.self, familyId: fid, context: context)
+            try delete(KBPaymentCard.self, familyId: fid, context: context)
             try delete(KBDocumentCategory.self, familyId: fid, context: context)
             
             try delete(KBRoutineCheck.self, familyId: fid, context: context)
@@ -136,6 +137,7 @@ enum LocalDataWiper {
     static func wipeAll(context: ModelContext) throws {
         do {
             try deleteAll(KBDocument.self, context: context)
+            try deleteAll(KBPaymentCard.self, context: context)
             try deleteAll(KBDocumentCategory.self, context: context)
             
             try deleteAll(KBRoutineCheck.self, context: context)

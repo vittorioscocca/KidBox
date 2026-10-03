@@ -29,6 +29,7 @@ struct WalletHomeView: View {
         case tickets = "Biglietti"
         case documents = "Documenti"
         case loyaltyCards = "Carte"
+        case paymentCards = "Pagamento"
 
         /// `Text(rawValue)` non viene localizzato automaticamente da SwiftUI
         /// (a differenza di un literal passato direttamente a `Text`), quindi
@@ -41,6 +42,8 @@ struct WalletHomeView: View {
                 return NSLocalizedString("Documenti", comment: "Wallet tab: documents")
             case .loyaltyCards:
                 return NSLocalizedString("Carte", comment: "Wallet tab: loyalty cards")
+            case .paymentCards:
+                return NSLocalizedString("Pagamento", comment: "Wallet tab: payment cards")
             }
         }
     }
@@ -99,6 +102,8 @@ struct WalletHomeView: View {
                     WalletDocumentsSectionView(familyId: familyId)
                 case .loyaltyCards:
                     LoyaltyCardsSectionView(familyId: familyId)
+                case .paymentCards:
+                    PaymentCardsSectionView(familyId: familyId)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

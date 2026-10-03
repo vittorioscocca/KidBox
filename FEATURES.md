@@ -81,7 +81,7 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 | Richieste («Chiedi a…») | Dall'editor del to-do si chiede a uno o più membri, o a chi non ha l'app con un link (`kidboxapp.com/r`); il primo «Ci penso io» fa nascere il to-do assegnato. iOS, Android e web app. Disegno in `internal/richieste-disegno.md` | F |
 | Note | Note condivise, cifrate | F |
 | Spese | Voci per categoria, più quelle che nascono da sole dalle altre schede | F |
-| Wallet | Biglietti e documenti d'identità con lettura AI dei campi, carte fedeltà con codice a barre | F (la lettura AI consuma i messaggi del piano: sul Free i 5 una tantum) |
+| Wallet | Biglietti e documenti d'identità con lettura AI dei campi, carte fedeltà con codice a barre, carte di pagamento («Pagamento»: numero, intestatario, scadenza, IBAN, PIN, foto fronte/retro) inserite solo a mano, tutte cifrate e mai lette dall'AI; numero e PIN visibili solo dopo Face ID/impronta (sul web a richiesta, si rinascondono in 30 s); niente CVV | F (la lettura AI consuma i messaggi del piano: sul Free i 5 una tantum) |
 | Documenti | Cartelle e categorie, file cifrati, allegati di tutte le altre schede | F |
 | Password | Credenziali di famiglia o personali, cifrate, con AutoFill e audit di sicurezza | F |
 | Foto e video | Album condivisi, cifrati | F |

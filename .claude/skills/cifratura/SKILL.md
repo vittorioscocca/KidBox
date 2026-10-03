@@ -31,6 +31,13 @@ to-do. Il link pubblico di una richiesta (`/r`) porta il token nel
 **frammento** (`#t=`) e il server ne tiene solo lo SHA-256, come il segreto
 degli inviti (`#k=`), che viaggia nello stesso frammento.
 
+**Carte di pagamento** (`paymentCards`, 03/10/2026): tutti i campi scritti
+dall'utente sono `*Enc` (`labelEnc`, `cardNumberEnc`, `holderNameEnc`,
+`ibanEnc`, `expiryEnc`, `notesEnc`, `pinEnc`) e restano cifrati **anche in
+locale** (SwiftData e Room): si decifrano solo per mostrarli. Il circuito
+(Visa, Mastercard…) non si salva, si ricava dal numero. Il tombstone svuota i
+campi cifrati. Foto in `families/{id}/wallet/paymentCards/{cardId}/…kbenc`.
+
 Su un campo `*Enc` **non** si fanno query, **non** si costruiscono indici, **non**
 si scrivono log, e **nessuna Cloud Function può migrarlo**: un cambio di schema
 su un campo cifrato non è backfillabile dal server, va fatto dai client.

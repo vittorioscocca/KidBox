@@ -641,7 +641,7 @@ final class AppCoordinator: ObservableObject {
             return "lista_spesa"
         case .passwordsHome, .passwordsSecurity, .passwordDetail:
             return "password"
-        case .walletHome, .walletTicketDetail, .walletDocumentDetail, .loyaltyCardDetail:
+        case .walletHome, .walletTicketDetail, .walletDocumentDetail, .loyaltyCardDetail, .paymentCardDetail:
             return "wallet"
         case .notesHome, .noteDetail:
             return "note"
@@ -804,6 +804,8 @@ final class AppCoordinator: ObservableObject {
             WalletDocumentDetailView(familyId: familyId, documentId: documentId)
         case .loyaltyCardDetail(familyId: let familyId, cardId: let cardId):
             LoyaltyCardDetailView(familyId: familyId, cardId: cardId)
+        case .paymentCardDetail(familyId: let familyId, cardId: let cardId):
+            PaymentCardDetailView(familyId: familyId, cardId: cardId)
         case .passwordsHome(familyId: let familyId):
             PasswordsHomeView(familyId: familyId)
         case .passwordsSecurity(familyId: let familyId):

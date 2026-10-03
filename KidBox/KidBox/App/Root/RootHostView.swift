@@ -676,6 +676,7 @@ struct RootHostView: View {
             SyncCenter.shared.stopExpensesRealtime()
             SyncCenter.shared.stopWalletRealtime()
             SyncCenter.shared.stopLoyaltyCardsRealtime()
+            SyncCenter.shared.stopPaymentCardsRealtime()
             SyncCenter.shared.stopPasswordsRealtime()
             SyncCenter.shared.stopPetsRealtime()
             SyncCenter.shared.stopPetEventsRealtime()
@@ -753,6 +754,11 @@ struct RootHostView: View {
 
         KBLog.sync.kbDebug("startLoyaltyCardsRealtime familyId=\(familyId)")
         SyncCenter.shared.startLoyaltyCardsRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+
+        SyncCenter.shared.startPaymentCardsRealtime(
             familyId: familyId,
             modelContext: modelContext
         )
