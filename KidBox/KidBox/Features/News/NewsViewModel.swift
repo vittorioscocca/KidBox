@@ -26,6 +26,9 @@ final class NewsViewModel: ObservableObject {
     @Published private(set) var feed: NewsFeed?
     @Published private(set) var phase: Phase = .idle
     @Published var filter: NewsCategory?
+    /// Capsula «Eventi»: solo gli eventi vicini, niente notizie né offerte.
+    /// Esclude `filter`: toccare un argomento la spegne, e viceversa.
+    @Published var eventsOnly = false
 
     @Published private(set) var offers: NewsOffersPayload?
     @Published private(set) var isSearchingOffers = false
@@ -89,13 +92,14 @@ final class NewsViewModel: ObservableObject {
 
     /// Le notizie con il filtro della riga di categorie.
     var visibleItems: [NewsItem] {
-        guard let items = feed?.items else { return [] }
+        guard let items = feed?.items, !eventsOnly else { return [] }
         guard let filter else { return items }
         return items.filter { $0.category == filter.rawValue }
     }
 
     var visibleEvents: [NewsEvent] {
         guard let events = feed?.events else { return [] }
+        if eventsOnly { return events }
         if let filter, filter != .leisure { return [] }
         return events
     }

@@ -131,10 +131,12 @@ struct NewsView: View {
                     categoryChips
                     if feed.isPreparing { preparingBanner(pending: feed.pending) }
                     if !family.effectivePlace.hasCity { addCityCard }
-                    if prefs.personalOffers, vm.filter == nil || vm.filter == .economy { offersSection }
+                    if prefs.personalOffers, !vm.eventsOnly, vm.filter == nil || vm.filter == .economy { offersSection }
                     newsSections(feed)
                     eventsSection
-                    if vm.visibleItems.isEmpty, vm.visibleEvents.isEmpty, !feed.isPreparing { emptyState }
+                    if vm.visibleItems.isEmpty, vm.visibleEvents.isEmpty, !feed.isPreparing {
+                        if vm.eventsOnly { noEventsState } else { emptyState }
+                    }
                     disclaimer
                 } else {
                     switch vm.phase {
@@ -181,9 +183,17 @@ struct NewsView: View {
     private var categoryChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                chip(title: "Tutte", symbol: "square.grid.2x2", tint: KBTheme.bubbleTint, isOn: vm.filter == nil) { vm.filter = nil }
+                chip(title: "Tutte", symbol: "square.grid.2x2", tint: KBTheme.bubbleTint, isOn: vm.filter == nil && !vm.eventsOnly) {
+                    vm.filter = nil
+                    vm.eventsOnly = false
+                }
+                chip(title: "Eventi", symbol: "calendar", tint: Self.eventsTint, isOn: vm.eventsOnly) {
+                    vm.filter = nil
+                    vm.eventsOnly.toggle()
+                }
                 ForEach(prefs.categories) { cat in
                     chip(title: cat.title, symbol: cat.symbol, tint: cat.tint, isOn: vm.filter == cat) {
+                        vm.eventsOnly = false
                         vm.filter = vm.filter == cat ? nil : cat
                     }
                 }
@@ -191,6 +201,10 @@ struct NewsView: View {
             .padding(.vertical, 2)
         }
     }
+
+    /// Colore della capsula «Eventi»: diverso da «Tempo libero», che gli
+    /// eventi li comprende ma mostra anche le notizie.
+    private static let eventsTint = Color(red: 0.557, green: 0.361, blue: 0.851)
 
     private func chip(title: LocalizedStringKey, symbol: String, tint: Color, isOn: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -279,6 +293,22 @@ struct NewsView: View {
             .background(RoundedRectangle(cornerRadius: 16).fill(KBTheme.bubbleTint.opacity(0.10)))
         }
         .buttonStyle(.plain)
+    }
+
+    private var noEventsState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "calendar")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text("Oggi nessun evento vicino a te.")
+                .font(.subheadline.weight(.semibold))
+            Text("Gli eventi arrivano con l'edizione della tua città: cerco quelli entro una sessantina di chilometri.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
     }
 
     private var emptyState: some View {

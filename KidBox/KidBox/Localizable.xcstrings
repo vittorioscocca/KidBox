@@ -49,816 +49,46 @@
         }
       }
     },
-    "Carta di pagamento" : {
+    "Gli eventi arrivano con l'edizione della tua città: cerco quelli entro una sessantina di chilometri." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Payment card"
+            "value" : "Events come with your city's edition: I look for ones within about 60 kilometres."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tarjeta de pago"
+            "value" : "Los eventos llegan con la edición de tu ciudad: busco los que están a unos sesenta kilómetros."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Carte de paiement"
+            "value" : "Les événements arrivent avec l'édition de votre ville : je cherche ceux qui se trouvent à une soixantaine de kilomètres."
           }
         }
       }
     },
-    "Carta eliminata." : {
+    "Oggi nessun evento vicino a te." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Card deleted."
+            "value" : "No events near you today."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tarjeta eliminada."
+            "value" : "Hoy no hay eventos cerca de ti."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Carte supprimée."
-          }
-        }
-      }
-    },
-    "Carta non leggibile" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unreadable card"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tarjeta ilegible"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Carte illisible"
-          }
-        }
-      }
-    },
-    "Chi può vedere questa carta" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Who can see this card"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quién puede ver esta tarjeta"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qui peut voir cette carte"
-          }
-        }
-      }
-    },
-    "Eliminare questa carta?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete this card?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Eliminar esta tarjeta?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Supprimer cette carte ?"
-          }
-        }
-      }
-    },
-    "Es. Visa di Marco" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "E.g. Marco's Visa"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ej. Visa de Marco"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ex. Visa de Marco"
-          }
-        }
-      }
-    },
-    "Foto della carta" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Card photos"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fotos de la tarjeta"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Photos de la carte"
-          }
-        }
-      }
-    },
-    "IBAN" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "IBAN"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "IBAN"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "IBAN"
-          }
-        }
-      }
-    },
-    "IBAN (opzionale)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "IBAN (optional)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "IBAN (opcional)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "IBAN (facultatif)"
-          }
-        }
-      }
-    },
-    "IBAN copiato." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "IBAN copied."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "IBAN copiado."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "IBAN copié."
-          }
-        }
-      }
-    },
-    "Il mese deve essere fra 01 e 12." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The month must be between 01 and 12."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El mes debe estar entre 01 y 12."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le mois doit être compris entre 01 et 12."
-          }
-        }
-      }
-    },
-    "Il numero non sembra valido: controlla le cifre." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This number doesn't look valid: check the digits."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El número no parece válido: revisa las cifras."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce numéro ne semble pas valide : vérifiez les chiffres."
-          }
-        }
-      }
-    },
-    "Il PIN non compare mai sulla carta: per vederlo o copiarlo serve Face ID o il codice del telefono." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The PIN never appears on the card: to see or copy it you need Face ID or your phone's passcode."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El PIN nunca aparece en la tarjeta: para verlo o copiarlo hace falta Face ID o el código del teléfono."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le code PIN n'apparaît jamais sur la carte : pour le voir ou le copier, il faut Face ID ou le code du téléphone."
-          }
-        }
-      }
-    },
-    "Impossibile cifrare la carta: la chiave della famiglia non è disponibile su questo dispositivo." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't encrypt the card: the family key isn't available on this device."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se ha podido cifrar la tarjeta: la clave de la familia no está disponible en este dispositivo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible de chiffrer la carte : la clé de la famille n'est pas disponible sur cet appareil."
-          }
-        }
-      }
-    },
-    "Intestatario" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cardholder"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Titular"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Titulaire"
-          }
-        }
-      }
-    },
-    "Intestatario copiato." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cardholder copied."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Titular copiado."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Titulaire copié."
-          }
-        }
-      }
-    },
-    "IT00 X000 0000 0000 0000 0000 000" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "IT00 X000 0000 0000 0000 0000 000"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ES00 0000 0000 0000 0000 0000"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FR00 0000 0000 0000 0000 0000 000"
-          }
-        }
-      }
-    },
-    "L'IBAN non sembra valido: controlla i caratteri." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This IBAN doesn't look valid: check the characters."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El IBAN no parece válido: revisa los caracteres."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'IBAN ne semble pas valide : vérifiez les caractères."
-          }
-        }
-      }
-    },
-    "MM/AA" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MM/YY"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MM/AA"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MM/AA"
-          }
-        }
-      }
-    },
-    "Modifica carta" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edit card"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Editar tarjeta"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Modifier la carte"
-          }
-        }
-      }
-    },
-    "Mostra il numero e il PIN della carta." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show the card number and PIN."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar el número y el PIN de la tarjeta."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher le numéro et le code PIN de la carte."
-          }
-        }
-      }
-    },
-    "Nessuna carta di pagamento" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No payment cards"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ninguna tarjeta de pago"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune carte de paiement"
-          }
-        }
-      }
-    },
-    "Nome della carta (opzionale)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Card name (optional)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nombre de la tarjeta (opcional)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nom de la carte (facultatif)"
-          }
-        }
-      }
-    },
-    "Nome e cognome come sulla carta" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Full name as on the card"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nombre y apellidos como en la tarjeta"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nom et prénom comme sur la carte"
-          }
-        }
-      }
-    },
-    "Non hai accesso a questa carta." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You don't have access to this card."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No tienes acceso a esta tarjeta."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vous n'avez pas accès à cette carte."
-          }
-        }
-      }
-    },
-    "Non riesco a decifrare questa carta su questo dispositivo." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This card can't be decrypted on this device."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se puede descifrar esta tarjeta en este dispositivo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible de déchiffrer cette carte sur cet appareil."
-          }
-        }
-      }
-    },
-    "Non salvare il CVV: KidBox non lo chiede. Numero, intestatario, scadenza, IBAN, PIN e foto sono cifrati sul telefono prima di partire e l'AI non li legge." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Don't save the CVV: KidBox doesn't ask for it. Number, cardholder, expiry date, IBAN, PIN and photos are encrypted on your phone before they leave it, and AI never reads them."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No guardes el CVV: KidBox no lo pide. El número, el titular, la caducidad, el IBAN, el PIN y las fotos se cifran en el teléfono antes de salir y la IA no los lee."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "N'enregistrez pas le CVV : KidBox ne le demande pas. Numéro, titulaire, date d'expiration, IBAN, code PIN et photos sont chiffrés sur le téléphone avant de partir, et l'IA ne les lit pas."
-          }
-        }
-      }
-    },
-    "Nota (opzionale)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Note (optional)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nota (opcional)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Note (facultatif)"
-          }
-        }
-      }
-    },
-    "Numero copiato per 60 secondi." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Number copied for 60 seconds."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Número copiado durante 60 segundos."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Numéro copié pour 60 secondes."
-          }
-        }
-      }
-    },
-    "Pagamento" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Payment"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pago"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Paiement"
-          }
-        }
-      }
-    },
-    "PIN" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PIN"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PIN"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Code PIN"
-          }
-        }
-      }
-    },
-    "PIN (opzionale)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PIN (optional)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PIN (opcional)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Code PIN (facultatif)"
-          }
-        }
-      }
-    },
-    "PIN copiato per 60 secondi." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PIN copied for 60 seconds."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PIN copiado durante 60 segundos."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Code PIN copié pour 60 secondes."
-          }
-        }
-      }
-    },
-    "Salva numero, intestatario, scadenza e IBAN delle carte di famiglia, con la foto di fronte e retro. Tutto cifrato end-to-end, mai letto dall'AI. Non serve, e non va salvato, il CVV." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save the number, cardholder, expiry date and IBAN of your family's cards, with a photo of the front and back. Everything is end-to-end encrypted and never read by AI. The CVV isn't needed and shouldn't be saved."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Guarda el número, el titular, la caducidad y el IBAN de las tarjetas de la familia, con una foto del anverso y del reverso. Todo cifrado de extremo a extremo, nunca leído por la IA. El CVV no hace falta y no debe guardarse."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enregistrez le numéro, le titulaire, la date d'expiration et l'IBAN des cartes de la famille, avec une photo du recto et du verso. Tout est chiffré de bout en bout, jamais lu par l'IA. Le CVV n'est pas nécessaire et ne doit pas être enregistré."
-          }
-        }
-      }
-    },
-    "Sblocco annullato." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unlock cancelled."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desbloqueo cancelado."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Déverrouillage annulé."
-          }
-        }
-      }
-    },
-    "Sblocco non disponibile: imposta un codice o Face ID." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unlock unavailable: set up a passcode or Face ID."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desbloqueo no disponible: configura un código o Face ID."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Déverrouillage indisponible : configurez un code ou Face ID."
-          }
-        }
-      }
-    },
-    "Scaduta" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expired"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Caducada"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expirée"
+            "value" : "Aucun événement près de chez vous aujourd'hui."
           }
         }
       }
@@ -12991,7 +12221,7 @@
       }
     },
     "Carta" : {
-      "comment" : "Fallback nav title when no loyalty card brand is set yet",
+      "comment" : "Fallback nav title when no loyalty card brand is set yet\nPayment card network: unknown",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13054,6 +12284,51 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Carte d'identité, permis de conduire, carte Vitale et passeport de toute la famille, toujours avec vous. Chiffrés de bout en bout, avec une alerte avant l'expiration."
+          }
+        }
+      }
+    },
+    "Carta di pagamento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment card"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjeta de pago"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carte de paiement"
+          }
+        }
+      }
+    },
+    "Carta eliminata." : {
+      "comment" : "Banner after deleting a payment card",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card deleted."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjeta eliminada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carte supprimée."
           }
         }
       }
@@ -13146,6 +12421,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Carte absente de la liste ? Ajoutez-la manuellement"
+          }
+        }
+      }
+    },
+    "Carta non leggibile" : {
+      "comment" : "Payment card tile: cannot decrypt",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unreadable card"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjeta ilegible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carte illisible"
           }
         }
       }
@@ -14118,6 +13416,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Qui peut accéder aux données de la famille."
+          }
+        }
+      }
+    },
+    "Chi può vedere questa carta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Who can see this card"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quién puede ver esta tarjeta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui peut voir cette carte"
           }
         }
       }
@@ -24350,6 +23670,28 @@
         }
       }
     },
+    "Eliminare questa carta?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this card?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar esta tarjeta?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer cette carte ?"
+          }
+        }
+      }
+    },
     "Eliminare questa cura?" : {
       "localizations" : {
         "en" : {
@@ -25811,6 +25153,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ex. Vacances été 2025"
+          }
+        }
+      }
+    },
+    "Es. Visa di Marco" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g. Marco's Visa"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ej. Visa de Marco"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ex. Visa de Marco"
           }
         }
       }
@@ -28504,6 +27868,28 @@
         }
       }
     },
+    "Foto della carta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card photos"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotos de la tarjeta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos de la carte"
+          }
+        }
+      }
+    },
     "Foto della tessera" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30014,28 +29400,6 @@
         }
       }
     },
-    "Gli Echo di casa non potranno più aggiungere articoli alla lista né creare promemoria finché non ricolleghi." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your Echos won't be able to add items to the list or create reminders until you link again."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los Echo de casa no podrán añadir artículos a la lista ni crear recordatorios hasta que vuelvas a vincular."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les Echo de la maison ne pourront plus ajouter d'articles à la liste ni créer de rappels tant que vous ne les reconnectez pas."
-          }
-        }
-      }
-    },
     "Gli argomenti sono solo tuoi: scegli cosa leggere senza cambiare le notizie degli altri. Gli eventi vicini arrivano con Tempo libero." : {
       "comment" : "News settings: topics are personal",
       "localizations" : {
@@ -30055,6 +29419,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les sujets ne concernent que vous : choisissez ce que vous lisez sans changer les actualités des autres. Les événements à proximité arrivent avec Loisirs."
+          }
+        }
+      }
+    },
+    "Gli Echo di casa non potranno più aggiungere articoli alla lista né creare promemoria finché non ricolleghi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Echos won't be able to add items to the list or create reminders until you link again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los Echo de casa no podrán añadir artículos a la lista ni crear recordatorios hasta que vuelvas a vincular."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les Echo de la maison ne pourront plus ajouter d'articles à la liste ni créer de rappels tant que vous ne les reconnectez pas."
           }
         }
       }
@@ -31428,6 +30814,73 @@
         }
       }
     },
+    "IBAN" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IBAN"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IBAN"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IBAN"
+          }
+        }
+      }
+    },
+    "IBAN (opzionale)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IBAN (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IBAN (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IBAN (facultatif)"
+          }
+        }
+      }
+    },
+    "IBAN copiato." : {
+      "comment" : "Payment card: IBAN copied",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IBAN copied."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IBAN copiado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IBAN copié."
+          }
+        }
+      }
+    },
     "Ibrida" : {
       "localizations" : {
         "en" : {
@@ -31918,6 +31371,28 @@
         }
       }
     },
+    "Il mese deve essere fra 01 e 12." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The month must be between 01 and 12."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El mes debe estar entre 01 y 12."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le mois doit être compris entre 01 et 12."
+          }
+        }
+      }
+    },
     "Il mese successivo riparte da qui: l'AI tiene conto di cosa hai fatto davvero, dei giorni saltati e del livello raggiunto nell'ultima settimana." : {
       "localizations" : {
         "en" : {
@@ -31936,6 +31411,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le mois suivant repart d'ici : l'IA tient compte de ce que vous avez vraiment fait, des jours sautés et du niveau atteint la dernière semaine."
+          }
+        }
+      }
+    },
+    "Il numero non sembra valido: controlla le cifre." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This number doesn't look valid: check the digits."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El número no parece válido: revisa las cifras."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce numéro ne semble pas valide : vérifiez les chiffres."
           }
         }
       }
@@ -32228,6 +31725,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le plan est supprimé de cet appareil. Le régénérer coûte de nouveau des messages IA."
+          }
+        }
+      }
+    },
+    "Il PIN non compare mai sulla carta: per vederlo o copiarlo serve Face ID o il codice del telefono." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The PIN never appears on the card: to see or copy it you need Face ID or your phone's passcode."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El PIN nunca aparece en la tarjeta: para verlo o copiarlo hace falta Face ID o el código del teléfono."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le code PIN n'apparaît jamais sur la carte : pour le voir ou le copier, il faut Face ID ou le code du téléphone."
           }
         }
       }
@@ -32848,6 +32367,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Montant personnalisé"
+          }
+        }
+      }
+    },
+    "Impossibile cifrare la carta: la chiave della famiglia non è disponibile su questo dispositivo." : {
+      "comment" : "Payment card save error: missing family key",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't encrypt the card: the family key isn't available on this device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido cifrar la tarjeta: la clave de la familia no está disponible en este dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de chiffrer la carte : la clé de la famille n'est pas disponible sur cet appareil."
           }
         }
       }
@@ -34670,6 +34212,51 @@
         }
       }
     },
+    "Intestatario" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cardholder"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titular"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titulaire"
+          }
+        }
+      }
+    },
+    "Intestatario copiato." : {
+      "comment" : "Payment card: holder copied",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cardholder copied."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titular copiado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titulaire copié."
+          }
+        }
+      }
+    },
     "Intestazione" : {
       "localizations" : {
         "en" : {
@@ -35398,6 +34985,28 @@
         }
       }
     },
+    "IT00 X000 0000 0000 0000 0000 000" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IT00 X000 0000 0000 0000 0000 000"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ES00 0000 0000 0000 0000 0000"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FR00 0000 0000 0000 0000 0000 000"
+          }
+        }
+      }
+    },
     "Itinerario, packing list e note collegate verranno rimossi da questo dispositivo." : {
       "localizations" : {
         "en" : {
@@ -36081,6 +35690,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L'assistant répond quand vous lui écrivez. Les briefings, récaps et l'analyse mensuelle ne partent seuls que si vous les activez dans les réglages. Vous pouvez retirer votre consentement à tout moment dans Réglages → Assistant IA."
+          }
+        }
+      }
+    },
+    "L'IBAN non sembra valido: controlla i caratteri." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This IBAN doesn't look valid: check the characters."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El IBAN no parece válido: revisa los caracteres."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'IBAN ne semble pas valide : vérifiez les caractères."
           }
         }
       }
@@ -40302,6 +39933,28 @@
         }
       }
     },
+    "MM/AA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MM/YY"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MM/AA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MM/AA"
+          }
+        }
+      }
+    },
     "mmHg" : {
       "localizations" : {
         "en" : {
@@ -40408,6 +40061,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Modifier l'animal"
+          }
+        }
+      }
+    },
+    "Modifica carta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit card"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar tarjeta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier la carte"
           }
         }
       }
@@ -41070,6 +40745,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher mes calendriers"
+          }
+        }
+      }
+    },
+    "Mostra il numero e il PIN della carta." : {
+      "comment" : "Face ID reason for payment card number and PIN",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show the card number and PIN."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar el número y el PIN de la tarjeta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher le numéro et le code PIN de la carte."
           }
         }
       }
@@ -42578,6 +42276,28 @@
         }
       }
     },
+    "Nessuna carta di pagamento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No payment cards"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguna tarjeta de pago"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune carte de paiement"
+          }
+        }
+      }
+    },
     "Nessuna carta fedeltà" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -43684,6 +43404,28 @@
         }
       }
     },
+    "Nome della carta (opzionale)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card name (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre de la tarjeta (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nom de la carte (facultatif)"
+          }
+        }
+      }
+    },
     "Nome e cognome" : {
       "localizations" : {
         "en" : {
@@ -43702,6 +43444,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nom et prénom"
+          }
+        }
+      }
+    },
+    "Nome e cognome come sulla carta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full name as on the card"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre y apellidos como en la tarjeta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nom et prénom comme sur la carte"
           }
         }
       }
@@ -44415,6 +44179,28 @@
         }
       }
     },
+    "Non hai accesso a questa carta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't have access to this card."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No tienes acceso a esta tarjeta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous n'avez pas accès à cette carte."
+          }
+        }
+      }
+    },
     "Non hai accesso a questa voce." : {
       "localizations" : {
         "en" : {
@@ -44683,6 +44469,28 @@
         }
       }
     },
+    "Non riesco a decifrare questa carta su questo dispositivo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This card can't be decrypted on this device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se puede descifrar esta tarjeta en este dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de déchiffrer cette carte sur cet appareil."
+          }
+        }
+      }
+    },
     "Non riesco a generare il codice. Riprova." : {
       "localizations" : {
         "en" : {
@@ -44811,6 +44619,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vous ne savez pas qui peut s'en charger ? Demandez : le premier qui répond « Je m'en occupe » la prend. Même sans l'app."
+          }
+        }
+      }
+    },
+    "Non salvare il CVV: KidBox non lo chiede. Numero, intestatario, scadenza, IBAN, PIN e foto sono cifrati sul telefono prima di partire e l'AI non li legge." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't save the CVV: KidBox doesn't ask for it. Number, cardholder, expiry date, IBAN, PIN and photos are encrypted on your phone before they leave it, and AI never reads them."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No guardes el CVV: KidBox no lo pide. El número, el titular, la caducidad, el IBAN, el PIN y las fotos se cifran en el teléfono antes de salir y la IA no los lee."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "N'enregistrez pas le CVV : KidBox ne le demande pas. Numéro, titulaire, date d'expiration, IBAN, code PIN et photos sont chiffrés sur le téléphone avant de partir, et l'IA ne les lit pas."
           }
         }
       }
@@ -44967,6 +44797,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Note"
+          }
+        }
+      }
+    },
+    "Nota (opzionale)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nota (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note (facultatif)"
           }
         }
       }
@@ -46274,6 +46126,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Numéro de carte"
+          }
+        }
+      }
+    },
+    "Numero copiato per 60 secondi." : {
+      "comment" : "Payment card: number copied",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Number copied for 60 seconds."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Número copiado durante 60 segundos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Numéro copié pour 60 secondes."
           }
         }
       }
@@ -48692,6 +48567,29 @@
         }
       }
     },
+    "Pagamento" : {
+      "comment" : "Wallet tab: payment cards",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pago"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paiement"
+          }
+        }
+      }
+    },
     "Pagamento il %@" : {
       "comment" : "News: payment date badge",
       "localizations" : {
@@ -51081,6 +50979,73 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Forfait Pro ou Max requis pour la planification IA."
+          }
+        }
+      }
+    },
+    "PIN" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PIN"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PIN"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code PIN"
+          }
+        }
+      }
+    },
+    "PIN (opzionale)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PIN (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PIN (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code PIN (facultatif)"
+          }
+        }
+      }
+    },
+    "PIN copiato per 60 secondi." : {
+      "comment" : "Payment card: PIN copied",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PIN copied for 60 seconds."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PIN copiado durante 60 segundos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code PIN copié pour 60 secondes."
           }
         }
       }
@@ -58627,6 +58592,28 @@
         }
       }
     },
+    "Salva numero, intestatario, scadenza e IBAN delle carte di famiglia, con la foto di fronte e retro. Tutto cifrato end-to-end, mai letto dall'AI. Non serve, e non va salvato, il CVV." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save the number, cardholder, expiry date and IBAN of your family's cards, with a photo of the front and back. Everything is end-to-end encrypted and never read by AI. The CVV isn't needed and shouldn't be saved."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guarda el número, el titular, la caducidad y el IBAN de las tarjetas de la familia, con una foto del anverso y del reverso. Todo cifrado de extremo a extremo, nunca leído por la IA. El CVV no hace falta y no debe guardarse."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrez le numéro, le titulaire, la date d'expiration et l'IBAN des cartes de la famille, avec une photo du recto et du verso. Tout est chiffré de bout en bout, jamais lu par l'IA. Le CVV n'est pas nécessaire et ne doit pas être enregistré."
+          }
+        }
+      }
+    },
     "Salva orari" : {
       "localizations" : {
         "en" : {
@@ -58910,6 +58897,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Déverrouiller le PDF"
+          }
+        }
+      }
+    },
+    "Sblocco annullato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock cancelled."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloqueo cancelado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déverrouillage annulé."
+          }
+        }
+      }
+    },
+    "Sblocco non disponibile: imposta un codice o Face ID." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock unavailable: set up a passcode or Face ID."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloqueo no disponible: configura un código o Face ID."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déverrouillage indisponible : configurez un code ou Face ID."
           }
         }
       }
@@ -59263,6 +59294,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Échéances et paiements"
+          }
+        }
+      }
+    },
+    "Scaduta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expired"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caducada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expirée"
           }
         }
       }
