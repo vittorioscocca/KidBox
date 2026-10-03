@@ -5,8 +5,10 @@ description: Le funzioni AI di KidBox — purpose, modello, unità scalate, quot
 
 Tutto passa dalla callable **`askAI`** (`functions/index.js`), discriminata dal
 `purpose`. Fuori da lì: `generateTravelPlan` (callable sua), Document
-Intelligence (immagini), e la chat della landing (`landingChat`, funzione HTTP
-separata, senza login).
+Intelligence (immagini), la chat della landing (`landingChat`, funzione HTTP
+separata, senza login) e le **Notizie** (`functions/news/`: Sonnet 5.5 con la
+ricerca web, costo in dollari convertito in messaggi sullo stesso contatore →
+`/notizie`).
 
 `purpose` noti: `clinicalRecord`, `mealPlan`, `fitnessPlan`, `fitnessAdjust`,
 `fitnessCopilot`, `familyAgent` (l'assistente unico, dal 02/10/2026: serve

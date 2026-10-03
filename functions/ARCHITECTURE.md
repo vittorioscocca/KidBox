@@ -35,6 +35,8 @@ npm run lint      # eslint
 | `suggestTravelDestinations` / `searchTravelDestinations` | Suggerimento/ricerca destinazioni. |
 | `getTravelPlaceDetails` | Dettagli + foto via Google Places API. |
 | `saveCalendarFeed` / `deleteCalendarFeed` | Calendari iscritti da link (feed ICS): scarica subito il link (niente indirizzi interni, 5 MB, 15 s), espande le ripetizioni con `ical.js` e salva le occorrenze dentro `families/{fid}/calendarFeeds/{feedId}`; le rules lasciano la collezione solo in lettura ai membri. Codice in `calendarFeeds.js`. |
+| `getFamilyNews` | Edizione del giorno delle Notizie (Pro e Max): compone nazionale + locale per le categorie dell'utente, mette in coda ciò che manca (`status: "preparing"`), scala dalla quota AI la parte di ogni edizione non ancora pagata. Codice in `news/`, disegno in `../internal/notizie.md`. |
+| `getNewsOffers` | Offerte su misura da bollette e spesa (riassunto mandato dal telefono, non salvato): Sonnet 5.5 + ricerca web, costo convertito in messaggi. |
 | `getStorageUsage` | `{usedBytes, quotaBytes, breakdown}` (auth + membership). |
 | `initStorageUsage` / `initStorageUsageAdmin` | Ricalcola da zero `families/{fid}/stats/storage`. |
 | `deleteAccount` | Wipe completo account: membership, famiglie senza altri membri, FCM token, `users/{uid}`, blob Storage `users/{uid}/`, contatori AI, `Auth.deleteUser`. |
@@ -58,6 +60,7 @@ npm run lint      # eslint
 
 | Funzione | Cadenza | Scopo |
 |---|---|---|
+| `prepareNewsEditions` | ogni giorno 05:30 | Mette in coda le edizioni Notizie delle zone lette negli ultimi 3 giorni (`news_editions.lastReadAt`); le genera il trigger `buildNewsEdition` su `news_jobs/{id}` (540 s). |
 | `refreshCalendarFeeds` | ogni 6 ore | Rilegge tutti i feed ICS (`collectionGroup("calendarFeeds")`) con ETag/Last-Modified; un errore finisce in `lastError` senza svuotare gli eventi. |
 | `expireTemporaryLocations` | ogni 5 min | `collectionGroup("locations")`, scade `mode == "temporary"` con `expiresAt <= now`. |
 | `resumeStaleLocationSharing` | ogni 30 min | `collectionGroup("live")` con `lastUpdateAt` fra 40 min e 3 giorni fa: se lo stato è ancora `isSharing`, push dati silenziosa `location_resume` ad alta priorità ai soli token con `locationResume == true` (Android dalla build che la gestisce, con permesso posizione «sempre»), per riavviare il servizio morto. Una prova ogni 2 ore per persona (`resumeCheckedAt` su `live/current`). Il servizio Android riscrive la posizione almeno ogni 15 min anche da fermo: è quello che distingue «fermo» da «morto». Indice `live.lastUpdateAt` COLLECTION_GROUP in `firestore.indexes.json`. |
