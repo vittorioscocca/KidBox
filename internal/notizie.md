@@ -101,8 +101,10 @@ Richiesta esplicita: le spese in dollari diventano messaggi AI KidBox.
   IBAN, email (righe scartate, cifre lunghe mascherate); parte solo al tocco di
   «Cerca offerte» e **dopo il consenso AI**; il server non lo salva. Si salvano
   solo le offerte trovate (`news_personal/{uid}`), cancellate con l'account.
-- **Da fare**: un paragrafo «Notizie» nell'informativa (sezione Assistente AI),
-  da confermare dall'utente prima della pubblicazione delle app.
+- Informativa: paragrafo «Notizie» nella sezione Assistente AI di
+  `privacy*.html`, confermato dall'utente e pubblicato in 4 lingue il 03/10/2026.
+- Pulizia: policy TTL su `expireAt` di `news_charges` (40 giorni), `news_jobs`
+  (7) e `news_editions` (120), attivate il 03/10/2026.
 
 ## Client
 
