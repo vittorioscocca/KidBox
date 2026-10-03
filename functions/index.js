@@ -5420,6 +5420,10 @@ const FAMILY_SUBCOLLECTIONS = [
   "vehicleEvents",
   // ── Wallet ─────────────────────────────────────────────────────
   "walletTickets",
+  "loyaltyCards",
+  // Carte di pagamento: campi cifrati, ma restavano orfani come i backup
+  // delle chiavi se non comparivano qui.
+  "paymentCards",
   // ── Notizie (accensione, luogo e lingua della famiglia) ────────
   "news",
   // ── Zone di arrivo ─────────────────────────────────────────────
