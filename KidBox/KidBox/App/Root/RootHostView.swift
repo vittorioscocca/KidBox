@@ -116,37 +116,60 @@ struct RootHostView: View {
         coordinator.makeRootView()
         #else
         NavigationStack(path: $coordinator.path) {
-            coordinator.makeRootView()
-                .navigationDestination(for: Route.self) {
-                    coordinator.makeDestination(for: $0)
+            withTabBar(coordinator.makeRootView(), on: true)
+                .navigationDestination(for: Route.self) { route in
+                    withTabBar(coordinator.makeDestination(for: route), on: route.showsRootTabBar)
                 }
         }
-        // `safeAreaBar` e non overlay: le schermate sotto (liste, pulsanti in
-        // basso) si fermano sopra la barra invece di finirci sotto, e il
-        // contenuto che scorre dietro si sfuma come sotto le barre di sistema
-        // (con `safeAreaInset` il testo restava leggibile attraverso il vetro).
-        .safeAreaBar(edge: .bottom, spacing: 0) {
-            if showsTabBar {
-                KBLiquidTabBar(
-                    selected: coordinator.rootTab,
-                    onSelect: { coordinator.selectRootTab($0) },
-                    onAssistant: openAssistantFromTabBar
-                )
-                .padding(.bottom, 2)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.easeInOut(duration: 0.22), value: showsTabBar)
+        // Si rimpicciolisce scorrendo per leggere oltre, torna grande tornando
+        // indietro o in cima; ogni cambio di schermata riparte grande.
+        .background(KBTabBarScrollObserver(isActive: showsTabBar))
+        .onChange(of: coordinator.path) { _, _ in KBTabBarScrollState.shared.set(false) }
+        .onChange(of: coordinator.rootTab) { _, _ in KBTabBarScrollState.shared.set(false) }
         #endif
     }
 
     /// La barra c'è sulle due radici e su Salute (dove prima c'era il pulsante
     /// AI), solo con una famiglia e un utente: non su login e onboarding.
     private var showsTabBar: Bool {
-        guard coordinator.isAuthenticated, !coordinator.isCheckingAuth, !families.isEmpty,
-              !coordinator.isCreatingFamilyInOnboarding, !keyboardVisible else { return false }
+        guard tabBarAllowed else { return false }
         guard let top = coordinator.path.last else { return true }
         return top.showsRootTabBar
+    }
+
+    private var tabBarAllowed: Bool {
+        coordinator.isAuthenticated && !coordinator.isCheckingAuth && !families.isEmpty
+            && !coordinator.isCreatingFamilyInOnboarding && !keyboardVisible
+    }
+
+    /// La barra sta su ogni pagina che la mostra, dentro la pila, e non sulla
+    /// `NavigationStack`: messa lì non arriva al contenuto, che resta col solo
+    /// margine dell'indicatore home (34 punti) e finisce sotto la barra in
+    /// fondo alla pagina — visto nell'app-banco il 03/10/2026, uguale con
+    /// `safeAreaInset`. `safeAreaBar` e non overlay: liste e pulsanti in basso
+    /// si fermano sopra la barra, e il contenuto che scorre dietro si sfuma come
+    /// sotto le barre di sistema (con `safeAreaInset` il testo restava
+    /// leggibile attraverso il vetro). L'altezza riservata non cambia quando la
+    /// barra si rimpicciolisce: il contenuto non salta.
+    @ViewBuilder
+    private func withTabBar<Content: View>(_ content: Content, on: Bool) -> some View {
+        if on {
+            content
+                .safeAreaBar(edge: .bottom, spacing: 0) {
+                    if tabBarAllowed {
+                        ScrollAwareTabBar(
+                            selected: coordinator.rootTab,
+                            onSelect: { coordinator.selectRootTab($0) },
+                            onAssistant: openAssistantFromTabBar
+                        )
+                        .padding(.bottom, 2)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .animation(.easeInOut(duration: 0.22), value: tabBarAllowed)
+        } else {
+            content
+        }
     }
 
     /// Il cerchio al centro della barra: l'assistente, centrato su quello che

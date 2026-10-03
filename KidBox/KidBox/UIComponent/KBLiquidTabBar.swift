@@ -24,14 +24,23 @@ enum KBRootTab: String, Hashable {
 struct KBLiquidTabBar: View {
 
     let selected: KBRootTab
+    /// Compatta mentre si scorre per leggere oltre (`KBTabBarScrollObserver`).
+    var isMinimized: Bool = false
     let onSelect: (KBRootTab) -> Void
     let onAssistant: () -> Void
 
     @Namespace private var selection
 
     /// Il cerchio dell'assistente sporge sopra e sotto la capsula.
-    private let barHeight: CGFloat = 62
-    private let assistantSize: CGFloat = 70
+    private var barHeight: CGFloat { isMinimized ? 46 : 62 }
+    private var assistantSize: CGFloat { isMinimized ? 52 : 70 }
+    private var raise: CGFloat { isMinimized ? 2 : 6 }
+
+    /// Lo spazio che la barra occupa in basso non cambia mai: è quello della
+    /// barra grande, cerchio rialzato compreso. Così rimpicciolendosi non sposta
+    /// le schermate (niente salti mentre si scorre) e non può finire sopra un
+    /// pulsante o un contenuto: quello che sta sopra questo spazio resta sopra.
+    static let reservedHeight: CGFloat = 78
 
     var body: some View {
         ZStack {
@@ -49,11 +58,14 @@ struct KBLiquidTabBar: View {
                 .glassEffect(.regular.interactive(), in: .capsule)
             }
             assistantButton
-                .offset(y: -6)
+                .offset(y: -raise)
         }
-        .frame(maxWidth: 360)
+        .frame(maxWidth: isMinimized ? 240 : 360)
         .padding(.horizontal, 24)
+        .frame(maxWidth: .infinity)
+        .frame(height: Self.reservedHeight, alignment: .bottom)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: selected)
+        .animation(.spring(response: 0.38, dampingFraction: 0.82), value: isMinimized)
     }
 
     // MARK: - Schede
@@ -65,12 +77,16 @@ struct KBLiquidTabBar: View {
         } label: {
             VStack(spacing: 3) {
                 Image(systemName: isSelected ? selectedSymbol : symbol)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: isMinimized ? 18 : 20, weight: .semibold))
                     .symbolEffect(.bounce, value: isSelected)
-                Text(title)
-                    .font(.system(size: 11, weight: .semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                // Compatta: solo le icone, come le barre di sistema ridotte.
+                if !isMinimized {
+                    Text(title)
+                        .font(.system(size: 11, weight: .semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                }
             }
             .foregroundStyle(isSelected ? KBTheme.bubbleTint : Color.primary.opacity(0.75))
             .frame(maxWidth: .infinity)
@@ -85,6 +101,7 @@ struct KBLiquidTabBar: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text(title))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
@@ -93,7 +110,7 @@ struct KBLiquidTabBar: View {
     private var assistantButton: some View {
         Button(action: onAssistant) {
             Image(systemName: "sparkles")
-                .font(.system(size: 26, weight: .semibold))
+                .font(.system(size: isMinimized ? 21 : 26, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: assistantSize - 16, height: assistantSize - 16)
         }
@@ -115,8 +132,11 @@ struct KBLiquidTabBar: View {
             ZStack(alignment: .bottom) {
                 LinearGradient(colors: [.orange.opacity(0.3), .blue.opacity(0.3)], startPoint: .top, endPoint: .bottom)
                     .ignoresSafeArea()
-                KBLiquidTabBar(selected: tab, onSelect: { tab = $0 }, onAssistant: {})
-                    .padding(.bottom, 8)
+                VStack(spacing: 0) {
+                    KBLiquidTabBar(selected: tab, isMinimized: true, onSelect: { tab = $0 }, onAssistant: {})
+                    KBLiquidTabBar(selected: tab, onSelect: { tab = $0 }, onAssistant: {})
+                }
+                .padding(.bottom, 8)
             }
         }
     }
