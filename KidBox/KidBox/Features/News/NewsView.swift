@@ -26,6 +26,9 @@ struct NewsView: View {
     @State private var showUpgrade = false
     @State private var showOwnerOnly = false
     @State private var openedURL: NewsLink?
+    /// Le offerte su misura mandano ad Anthropic dati della famiglia (bollette,
+    /// spesa): passano dallo stesso consenso dell'assistente.
+    @State private var showOffersConsent = false
 
     let familyId: String
 
@@ -89,6 +92,11 @@ struct NewsView: View {
         .ownerOnlyAlert(isPresented: $showOwnerOnly)
         .sheet(item: $openedURL) { link in
             NewsSafariView(url: link.url).ignoresSafeArea()
+        }
+        .sheet(isPresented: $showOffersConsent) {
+            AIConsentSheet {
+                Task { await vm.searchOffers(familyId: familyId, prefs: prefs, context: modelContext) }
+            }
         }
         .task { await prefsStore.refreshFromRemote() }
         .task(id: loadKey) {
@@ -376,6 +384,10 @@ struct NewsView: View {
 
     private var offersButton: some View {
         Button {
+            guard AISettings.shared.consentGiven else {
+                showOffersConsent = true
+                return
+            }
             Task { await vm.searchOffers(familyId: familyId, prefs: prefs, context: modelContext) }
         } label: {
             HStack(spacing: 10) {
