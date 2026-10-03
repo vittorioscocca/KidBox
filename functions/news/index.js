@@ -30,11 +30,21 @@
 // ciascuno ha un tetto (`maxUnitsPerEdition`, 6): con pochi lettori sarebbe
 // quasi tutto il costo, e il primo giorno si mangerebbe la quota di un Pro.
 //
+// LE NOTIZIE SONO DELLA FAMIGLIA (richiesta dell'utente del 03/10/2026: quelle
+// generate da un membro le vedono tutti). Accensione, luogo e lingua delle
+// edizioni stanno in `families/{familyId}/news/settings`, scritto dai client
+// (le rules lo aprono ai membri col wildcard delle sottocollezioni) e letto qui:
+// quando c'è vince su quello che manda il telefono, così due membri con città o
+// lingua diverse sul telefono leggono comunque le stesse edizioni, pagate una
+// volta. Anche le offerte su misura sono della famiglia (`news_offers`). Gli
+// argomenti restano di ciascuno: filtrano le stesse edizioni e non costano.
+//
 // Collezioni, tutte solo-server (le rules non le aprono):
 //   news_editions/{scopeKey}_{dateKey}  stato e contenuto di un'edizione
 //   news_jobs/{editionId}_{n}           richiesta di generazione (trigger)
 //   news_charges/{familyId}_{editionId} addebito di un'edizione a una famiglia
-//   news_personal/{uid}                 le ultime offerte su misura dell'utente
+//   news_offers/{familyId}              le ultime offerte su misura della famiglia
+//                                       (fino al 03/10/2026 news_personal/{uid})
 //   news_usage/{dateKey}                spesa del giorno, per il tetto globale
 // Disegno e numeri in internal/notizie.md.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -55,7 +65,7 @@ const REGION = "europe-west1";
 const EDITIONS = "news_editions";
 const JOBS = "news_jobs";
 const CHARGES = "news_charges";
-const PERSONAL = "news_personal";
+const OFFERS = "news_offers";
 const USAGE = "news_usage";
 
 const ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
@@ -604,12 +614,12 @@ function build(deps) {
   }
 
   /**
-   * Le offerte salvate dell'utente, nella forma della risposta.
-   * @param {string} uid
+   * Le offerte salvate della famiglia, nella forma della risposta.
+   * @param {string} familyId
    * @return {Promise<?object>}
    */
-  async function savedOffers(uid) {
-    const snap = await db().collection(PERSONAL).doc(uid).get();
+  async function savedOffers(familyId) {
+    const snap = await db().collection(OFFERS).doc(familyId).get();
     if (!snap.exists) return null;
     return {
       offers: snap.get("offers") || [],
@@ -619,6 +629,40 @@ function build(deps) {
     };
   }
 
+  /**
+   * Le scelte della famiglia (`families/{familyId}/news/settings`): accese o
+   * no, luogo, lingua delle edizioni. Null se nessuno le ha ancora scritte: si
+   * usa allora quello che manda il telefono.
+   * @param {string} familyId
+   * @return {Promise<?{enabled: boolean, place: ?object, lang: ?string}>}
+   */
+  async function familySettings(familyId) {
+    const snap = await db().doc(`families/${familyId}/news/settings`).get();
+    if (!snap.exists) return null;
+    const rawLang = snap.get("lang");
+    return {
+      enabled: snap.get("enabled") === true,
+      place: parsePlace(snap.get("place")),
+      lang: typeof rawLang === "string" && rawLang ? parseLang(rawLang) : null,
+    };
+  }
+
+  /**
+   * Luogo e lingua per questa richiesta: quelli della famiglia, se ci sono.
+   * Spente dalla famiglia → niente edizione e niente addebito, anche da un
+   * telefono che non se n'è ancora accorto.
+   * @param {string} familyId
+   * @param {object} d i dati della richiesta
+   * @return {Promise<{place: ?object, lang: string}>}
+   */
+  async function familyScope(familyId, d) {
+    const fam = await familySettings(familyId);
+    if (fam && !fam.enabled) {
+      throw new HttpsError("failed-precondition", "Le notizie sono spente per questa famiglia.", {reason: "news-off"});
+    }
+    return {place: fam?.place || parsePlace(d.place), lang: fam?.lang || parseLang(d.lang)};
+  }
+
   // ── getFamilyNews ──────────────────────────────────────────────────────────
 
   const getFamilyNews = onCall(
@@ -626,9 +670,8 @@ function build(deps) {
       async (request) => {
         const {uid, familyId, quota, cfg} = await gate(request);
         const d = request.data || {};
-        const place = parsePlace(d.place);
+        const {place, lang} = await familyScope(familyId, d);
         if (!place) throw new HttpsError("invalid-argument", "Manca il paese.", {reason: "no-place"});
-        const lang = parseLang(d.lang);
         const timeZone = parseTimeZone(d.timeZone);
         const categories = parseCategories(d.categories);
         const today = P.todayInfo(timeZone);
@@ -643,7 +686,7 @@ function build(deps) {
         const charge = await chargeEditions(uid, familyId, quota, readyEditions, cfg);
 
         const {items, events} = compose(byKind.country?.edition, byKind.local?.edition, categories, today.dateKey);
-        const offers = await savedOffers(uid);
+        const offers = await savedOffers(familyId);
         const pending = scopes.filter((s, i) => resolved[i].status === "preparing").map((s) => s.kind);
 
         logger.info("getFamilyNews", {
@@ -661,6 +704,7 @@ function build(deps) {
           pending,
           dateKey: today.dateKey,
           place: {city: place.city || null, region: place.city ? place.region : null, country: place.country},
+          lang,
           items,
           events,
           offers: offers && offers.lang === lang ? offers : null,
@@ -848,8 +892,8 @@ function build(deps) {
       async (request) => {
         const {uid, familyId, quota, cfg} = await gate(request);
         const d = request.data || {};
-        const lang = parseLang(d.lang);
-        const saved = await savedOffers(uid);
+        const {place, lang} = await familyScope(familyId, d);
+        const saved = await savedOffers(familyId);
         const estimateUnits = unitsFor(cfg.offersEstimateUsd, cfg, cfg.maxUnitsOffers);
         if (d.refresh !== true) {
           return {status: saved ? "saved" : "none", ...(saved || {offers: []}), estimateUnits};
@@ -857,7 +901,6 @@ function build(deps) {
         if (saved?.generatedAt && Date.now() - saved.generatedAt < OFFERS_MIN_INTERVAL_MS && saved.lang === lang) {
           return {status: "recent", ...saved, estimateUnits};
         }
-        const place = parsePlace(d.place);
         if (!place) throw new HttpsError("invalid-argument", "Manca il paese.", {reason: "no-place"});
         const brief = parseBrief(d.brief);
         if (brief.bills.length === 0 && brief.grocery.length === 0) {
@@ -922,12 +965,13 @@ function build(deps) {
           });
         }
         const briefHash = crypto.createHash("sha256").update(JSON.stringify(brief)).digest("hex").slice(0, 16);
-        await db().collection(PERSONAL).doc(uid).set({
+        await db().collection(OFFERS).doc(familyId).set({
           offers,
           lang,
           units,
           costUsd,
           familyId,
+          uid,
           briefHash,
           generatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -976,4 +1020,4 @@ function build(deps) {
   return {getFamilyNews, getNewsOffers, buildNewsEdition, prepareNewsEditions};
 }
 
-module.exports = {build, PERSONAL, _test: {parsePlace, parseBrief, parseCategories, scopesFor, slug, unitsFor, shiftDay}};
+module.exports = {build, OFFERS, _test: {parsePlace, parseBrief, parseCategories, scopesFor, slug, unitsFor, shiftDay}};

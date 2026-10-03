@@ -5420,6 +5420,8 @@ const FAMILY_SUBCOLLECTIONS = [
   "vehicleEvents",
   // ── Wallet ─────────────────────────────────────────────────────
   "walletTickets",
+  // ── Notizie (accensione, luogo e lingua della famiglia) ────────
+  "news",
   // ── Zone di arrivo ─────────────────────────────────────────────
   "geofences",
   "geofenceEvents",
@@ -5573,6 +5575,10 @@ async function deleteFamilyCompletely(familyId) {
   }
   await db.collection("families").doc(familyId).delete().catch(() => {});
   await deleteStoragePrefix(`families/${familyId}/`);
+
+  // Offerte su misura delle Notizie: nate dalle bollette e dalla spesa della
+  // famiglia, non le sopravvivono.
+  await db.collection("news_offers").doc(familyId).delete().catch(() => {});
 
   // Rimuovi contatore AI famiglia
   await deleteCollection(db.collection(`ai_usage/family_${familyId}/daily`)).catch(() => {});
@@ -5827,8 +5833,9 @@ exports.deleteAccount = onCall(
           logger.warn("alexa cleanup failed", {uid, coll, err: String(e)});
         });
       }
-      // Le ultime offerte su misura delle Notizie: nate dalle bollette e dalla
-      // spesa di questo utente, non devono sopravvivergli.
+      // Le offerte su misura delle Notizie nel vecchio formato per utente (fino
+      // al 03/10/2026). Ora sono della famiglia (`news_offers/{familyId}`) e se
+      // ne vanno con lei, in deleteFamilyCompletely.
       await db.collection("news_personal").doc(uid).delete().catch(() => {});
       await db.collection("users").doc(uid).delete().catch(() => {});
       await deleteStoragePrefix(`users/${uid}/`).catch(() => {});
