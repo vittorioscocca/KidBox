@@ -42,8 +42,8 @@ final class NewsViewModel: ObservableObject {
     // MARK: - Edizione
 
     /// `key` cambia quando cambiano famiglia, categorie, luogo o lingua.
-    func load(familyId: String, prefs: NewsPrefs, key: String, force: Bool = false) async {
-        guard !familyId.isEmpty, prefs.enabled else { return }
+    func load(familyId: String, family: NewsFamilySettings, prefs: NewsPrefs, key: String, force: Bool = false) async {
+        guard !familyId.isEmpty, family.enabled else { return }
         if !force, loadedKey == key, feed != nil { return }
         if !force, feed == nil, let cached = NewsService.shared.cachedFeed,
            cached.familyId == familyId, cached.dateKey == NewsDates.key(Date()) {
@@ -53,9 +53,9 @@ final class NewsViewModel: ObservableObject {
         pollTask?.cancel()
         if feed == nil { phase = .loading }
         do {
-            let fresh = try await NewsService.shared.fetchFeed(familyId: familyId, prefs: prefs)
+            let fresh = try await NewsService.shared.fetchFeed(familyId: familyId, family: family, prefs: prefs)
             apply(fresh, key: key)
-            if fresh.isPreparing { startPolling(familyId: familyId, prefs: prefs, key: key) }
+            if fresh.isPreparing { startPolling(familyId: familyId, family: family, prefs: prefs, key: key) }
             AppAnalytics.newsOpened(items: fresh.items.count, events: fresh.events.count, units: fresh.charge.units, preparing: fresh.isPreparing)
         } catch let error as NewsServiceError {
             phase = .failed(error)
@@ -71,13 +71,13 @@ final class NewsViewModel: ObservableObject {
         if let saved = fresh.offers { offers = saved }
     }
 
-    private func startPolling(familyId: String, prefs: NewsPrefs, key: String) {
+    private func startPolling(familyId: String, family: NewsFamilySettings, prefs: NewsPrefs, key: String) {
         pollTask = Task { [weak self] in
             guard let self else { return }
             for _ in 0..<maxPolls {
                 try? await Task.sleep(for: pollInterval)
                 if Task.isCancelled { return }
-                guard let fresh = try? await NewsService.shared.fetchFeed(familyId: familyId, prefs: prefs) else { continue }
+                guard let fresh = try? await NewsService.shared.fetchFeed(familyId: familyId, family: family, prefs: prefs) else { continue }
                 if Task.isCancelled { return }
                 self.apply(fresh, key: key)
                 if !fresh.isPreparing { return }
@@ -102,12 +102,12 @@ final class NewsViewModel: ObservableObject {
 
     // MARK: - Offerte su misura
 
-    func loadSavedOffers(familyId: String, prefs: NewsPrefs) async {
-        guard prefs.enabled, prefs.personalOffers, offers == nil else { return }
-        offers = try? await NewsService.shared.fetchOffers(familyId: familyId, prefs: prefs, brief: nil)
+    func loadSavedOffers(familyId: String, family: NewsFamilySettings, prefs: NewsPrefs) async {
+        guard family.enabled, prefs.personalOffers, offers == nil else { return }
+        offers = try? await NewsService.shared.fetchOffers(familyId: familyId, family: family, brief: nil)
     }
 
-    func searchOffers(familyId: String, prefs: NewsPrefs, context: ModelContext) async {
+    func searchOffers(familyId: String, family: NewsFamilySettings, context: ModelContext) async {
         let brief = NewsBriefBuilder.build(familyId: familyId, uid: Auth.auth().currentUser?.uid, context: context)
         guard !brief.isEmpty else {
             offersError = NewsServiceError.emptyBrief.errorDescription
@@ -117,7 +117,7 @@ final class NewsViewModel: ObservableObject {
         offersError = nil
         defer { isSearchingOffers = false }
         do {
-            offers = try await NewsService.shared.fetchOffers(familyId: familyId, prefs: prefs, brief: brief)
+            offers = try await NewsService.shared.fetchOffers(familyId: familyId, family: family, brief: brief)
             AppAnalytics.newsOffersSearched(offers: offers?.offers.count ?? 0, units: offers?.units ?? 0)
         } catch let error as NewsServiceError {
             offersError = error.errorDescription

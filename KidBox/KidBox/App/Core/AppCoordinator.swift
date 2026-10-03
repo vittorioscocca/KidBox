@@ -1638,6 +1638,7 @@ final class AppCoordinator: ObservableObject {
             KBLog.auth.kbInfo("Firebase sign-out OK")
             KBSubscriptionManager.shared.resetOnSignOut()
             NewsPrefsStore.shared.resetOnSignOut()
+            NewsFamilyStore.shared.resetOnSignOut()
             NewsService.shared.clearCache()
             FamilyKeychainStore.clearKeyCache()
             setActiveFamily(nil)

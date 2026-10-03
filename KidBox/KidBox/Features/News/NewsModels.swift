@@ -119,19 +119,35 @@ struct NewsPlace: Codable, Hashable {
     }
 }
 
-/// Le scelte dell'utente, sincronizzate fra i suoi dispositivi su
-/// `users/{uid}.newsPrefs` (vince la modifica più recente).
-struct NewsPrefs: Equatable {
-    /// L'utente ha letto la presentazione e acceso le Notizie: prima di allora
-    /// non parte nessuna ricerca e non si scala nessun messaggio.
+/// Le scelte della famiglia, uguali per tutti i membri su
+/// `families/{familyId}/news/settings`: le notizie che un membro accende le
+/// vedono tutti, con lo stesso luogo e la stessa lingua, e la famiglia le paga
+/// una volta (richiesta dell'utente del 03/10/2026). Il server le legge e,
+/// quando ci sono, le preferisce a quello che manda il telefono.
+struct NewsFamilySettings: Equatable {
+    /// Qualcuno della famiglia ha letto la presentazione e acceso le Notizie:
+    /// prima di allora non parte nessuna ricerca e non si scala nessun messaggio.
     var enabled: Bool = false
-    var categories: [NewsCategory] = NewsCategory.allCases
     var place: NewsPlace? = nil
-    /// Offerte su misura da bollette e spesa (si cercano solo su richiesta).
-    var personalOffers: Bool = true
+    /// Lingua delle edizioni: quella di chi le ha accese. Un'edizione in
+    /// un'altra lingua sarebbe un'altra ricerca, pagata di nuovo.
+    var lang: String? = nil
     var updatedAt: Date = .distantPast
+    var updatedBy: String? = nil
 
     var effectivePlace: NewsPlace { place ?? .deviceDefault }
+    var effectiveLang: String { lang ?? LanguageManager.shared.currentLanguageCode }
+}
+
+/// Le scelte di ciascuno, sincronizzate fra i suoi dispositivi su
+/// `users/{uid}.newsPrefs` (vince la modifica più recente): cosa leggere delle
+/// stesse edizioni della famiglia. Non cambiano le notizie degli altri e non
+/// costano niente.
+struct NewsPrefs: Equatable {
+    var categories: [NewsCategory] = NewsCategory.allCases
+    /// Mostrare le offerte su misura della famiglia (si cercano solo su richiesta).
+    var personalOffers: Bool = true
+    var updatedAt: Date = .distantPast
 }
 
 // MARK: - Risposte del server

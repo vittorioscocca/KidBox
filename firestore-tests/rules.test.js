@@ -190,6 +190,31 @@ async function check(nome, promessa) {
       assertFails(env.authenticatedContext("fuori").firestore()
           .doc(`families/${FAM}/calendarFeeds/f1`).get()));
 
+  // ── NOTIZIE DELLA FAMIGLIA ─────────────────────────
+  //
+  // `families/{familyId}/news/settings`: accensione, luogo e lingua delle
+  // Notizie, uguali per tutti i membri (richiesta del 03/10/2026: le notizie
+  // accese da uno le vedono tutti). Nessuna regola sua: è il wildcard delle
+  // sottocollezioni. Le offerte su misura (`news_offers/{familyId}`) e le
+  // edizioni restano solo-server: le leggono le callable.
+  console.log("\n── NOTIZIE DELLA FAMIGLIA ─────────────────────────");
+  const newsPath = `families/${FAM}/news/settings`;
+  await check("notizie: chi le accende scrive le scelte della famiglia",
+      assertSucceeds(db.doc(newsPath).set({enabled: true, lang: "it", place: {countryCode: "IT", country: "Italia", city: "Benevento"}})));
+  await check("notizie: un altro membro le legge",
+      assertSucceeds(dbMembro.doc(newsPath).get()));
+  await check("notizie: un altro membro cambia la città per tutti",
+      assertSucceeds(dbMembro.doc(newsPath).set({place: {countryCode: "IT", country: "Italia", city: "Napoli"}}, {merge: true})));
+  await check("notizie: chi è fuori dalla famiglia NON le legge",
+      assertFails(dbEstraneo.doc(newsPath).get()));
+  await check("notizie: chi è fuori dalla famiglia NON le spegne",
+      assertFails(dbEstraneo.doc(newsPath).set({enabled: false}, {merge: true})));
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc(`news_offers/${FAM}`).set({offers: [], lang: "it"});
+  });
+  await check("notizie: le offerte della famiglia NON si leggono dal client",
+      assertFails(dbMembro.doc(`news_offers/${FAM}`).get()));
+
   // ── RICHIESTE («Chi prende Marco giovedì?») ────────
   //
   // `families/{familyId}/requests/{requestId}` la CREA il client di chi chiede,

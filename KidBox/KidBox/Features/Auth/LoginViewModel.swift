@@ -167,6 +167,7 @@ final class LoginViewModel: ObservableObject {
                 try auth.signOut()
                 KBSubscriptionManager.shared.resetOnSignOut()
                 NewsPrefsStore.shared.resetOnSignOut()
+                NewsFamilyStore.shared.resetOnSignOut()
                 NewsService.shared.clearCache()
                 KBLog.auth.kbInfo("LoginViewModel signOut success")
             } catch {

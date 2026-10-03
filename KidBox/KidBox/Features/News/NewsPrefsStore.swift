@@ -2,10 +2,12 @@
 //  NewsPrefsStore.swift
 //  KidBox
 //
-//  Le scelte delle Notizie (categorie, luogo, offerte su misura): sul telefono
-//  per partire subito, su `users/{uid}.newsPrefs` per gli altri dispositivi
-//  dello stesso utente. Vince la modifica più recente (`updatedAtMs`), come
-//  per le altre preferenze sincronizzate. Android legge e scrive lo stesso campo.
+//  Le scelte personali delle Notizie (argomenti, offerte su misura in vista):
+//  sul telefono per partire subito, su `users/{uid}.newsPrefs` per gli altri
+//  dispositivi dello stesso utente. Vince la modifica più recente
+//  (`updatedAtMs`), come per le altre preferenze sincronizzate. Android legge e
+//  scrive lo stesso campo. Accensione, luogo e lingua sono della famiglia:
+//  `NewsFamilyStore`.
 //
 
 import Foundation
@@ -70,24 +72,19 @@ final class NewsPrefsStore: ObservableObject {
     // MARK: - Formato (uguale su Android)
 
     private static func encode(_ p: NewsPrefs) -> [String: Any] {
-        var d: [String: Any] = [
-            "enabled": p.enabled,
+        [
             "categories": p.categories.map(\.rawValue),
             "personalOffers": p.personalOffers,
             "updatedAtMs": Int64(p.updatedAt.timeIntervalSince1970 * 1000),
         ]
-        d["place"] = p.place?.dictionary ?? NSNull()
-        return d
     }
 
     private static func decode(_ d: [String: Any]) -> NewsPrefs? {
         var p = NewsPrefs()
-        p.enabled = d["enabled"] as? Bool ?? false
         if let cats = d["categories"] as? [String] {
             let parsed = cats.compactMap(NewsCategory.init(rawValue:))
             p.categories = parsed.isEmpty ? NewsCategory.allCases : NewsCategory.allCases.filter(parsed.contains)
         }
-        p.place = NewsPlace(dictionary: d["place"] as? [String: Any])
         p.personalOffers = d["personalOffers"] as? Bool ?? true
         if let ms = (d["updatedAtMs"] as? NSNumber)?.doubleValue {
             p.updatedAt = Date(timeIntervalSince1970: ms / 1000)
@@ -101,9 +98,7 @@ final class NewsPrefsStore: ObservableObject {
     }
 
     private static func saveLocal(_ p: NewsPrefs) {
-        var d = encode(p)
-        if d["place"] is NSNull { d.removeValue(forKey: "place") }
-        UserDefaults.standard.set(d, forKey: defaultsKey)
+        UserDefaults.standard.set(encode(p), forKey: defaultsKey)
     }
 
     /// All'uscita dall'account: le scelte sono dell'utente, non del telefono.

@@ -3,9 +3,11 @@
 //  KidBox
 //
 //  La scheda Notizie (seconda radice della barra in basso). Tre stati prima del
-//  contenuto: Free → invito a Pro; Pro mai attivato → presentazione con il
-//  costo in messaggi; attivo → l'edizione del giorno, dal paese alla città,
-//  con gli eventi vicini e, su richiesta, le offerte su misura.
+//  contenuto: Free → invito a Pro; famiglia che non le ha mai accese →
+//  presentazione con il costo in messaggi; accese da un qualunque membro →
+//  l'edizione del giorno, dal paese alla città, con gli eventi vicini e, su
+//  richiesta, le offerte su misura. Accensione, luogo, lingua e offerte sono
+//  della famiglia (`NewsFamilyStore`): quello che trova uno lo leggono tutti.
 //
 
 import SwiftUI
@@ -20,6 +22,7 @@ struct NewsView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @ObservedObject private var prefsStore = NewsPrefsStore.shared
+    @ObservedObject private var familyStore = NewsFamilyStore.shared
     @StateObject private var vm = NewsViewModel()
 
     @State private var showSettings = false
@@ -33,11 +36,16 @@ struct NewsView: View {
     let familyId: String
 
     private var prefs: NewsPrefs { prefsStore.prefs }
+    /// Le scelte della famiglia, solo quando sono di questa famiglia.
+    private var family: NewsFamilySettings {
+        familyStore.familyId == familyId ? familyStore.settings : NewsFamilySettings()
+    }
+    private var familyLoaded: Bool { familyStore.familyId == familyId && familyStore.isLoaded }
 
     /// Cambia quando cambia qualcosa che cambia l'edizione.
     private var loadKey: String {
-        [familyId, prefs.categories.map(\.rawValue).joined(separator: ","), prefs.effectivePlace.label,
-         LanguageManager.shared.currentLanguageCode, String(prefs.enabled)].joined(separator: "|")
+        [familyId, prefs.categories.map(\.rawValue).joined(separator: ","), family.effectivePlace.label,
+         family.effectiveLang, String(family.enabled)].joined(separator: "|")
     }
 
     var body: some View {
@@ -51,11 +59,16 @@ struct NewsView: View {
                         showOwnerOnly = true
                     }
                 }
-            } else if !prefs.enabled {
-                NewsIntroView(place: prefs.effectivePlace, maxUnits: vm.feed?.maxUnitsPerEdition ?? 6) {
+            } else if !familyLoaded {
+                // Le scelte della famiglia stanno arrivando: niente presentazione
+                // a chi le ha già accese da un altro membro.
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if !family.enabled {
+                NewsIntroView(place: family.effectivePlace, maxUnits: vm.feed?.maxUnitsPerEdition ?? 6) {
                     showSettings = true
                 } onActivate: {
-                    prefsStore.update { $0.enabled = true }
+                    familyStore.update { $0.enabled = true }
                     AppAnalytics.newsActivated()
                 }
             } else {
@@ -77,7 +90,7 @@ struct NewsView: View {
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
-                NewsSettingsView()
+                NewsSettingsView(familyId: familyId)
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Fine") { showSettings = false }
@@ -95,14 +108,15 @@ struct NewsView: View {
         }
         .sheet(isPresented: $showOffersConsent) {
             AIConsentSheet {
-                Task { await vm.searchOffers(familyId: familyId, prefs: prefs, context: modelContext) }
+                Task { await vm.searchOffers(familyId: familyId, family: family, context: modelContext) }
             }
         }
         .task { await prefsStore.refreshFromRemote() }
+        .task(id: familyId) { familyStore.bind(familyId: familyId) }
         .task(id: loadKey) {
-            guard subscriptionManager.currentPlan != .free, prefs.enabled else { return }
-            await vm.load(familyId: familyId, prefs: prefs, key: loadKey)
-            await vm.loadSavedOffers(familyId: familyId, prefs: prefs)
+            guard subscriptionManager.currentPlan != .free, familyLoaded, family.enabled else { return }
+            await vm.load(familyId: familyId, family: family, prefs: prefs, key: loadKey)
+            await vm.loadSavedOffers(familyId: familyId, family: family, prefs: prefs)
         }
         .onDisappear { vm.stopPolling() }
     }
@@ -116,7 +130,7 @@ struct NewsView: View {
                 if let feed = vm.feed {
                     categoryChips
                     if feed.isPreparing { preparingBanner(pending: feed.pending) }
-                    if !prefs.effectivePlace.hasCity { addCityCard }
+                    if !family.effectivePlace.hasCity { addCityCard }
                     if prefs.personalOffers, vm.filter == nil || vm.filter == .economy { offersSection }
                     newsSections(feed)
                     eventsSection
@@ -136,7 +150,7 @@ struct NewsView: View {
             .padding(.bottom, 24)
         }
         .refreshable {
-            await vm.load(familyId: familyId, prefs: prefs, key: loadKey, force: true)
+            await vm.load(familyId: familyId, family: family, prefs: prefs, key: loadKey, force: true)
         }
     }
 
@@ -150,7 +164,7 @@ struct NewsView: View {
             Button {
                 showSettings = true
             } label: {
-                Label(prefs.effectivePlace.label, systemImage: "mappin.and.ellipse")
+                Label(family.effectivePlace.label, systemImage: "mappin.and.ellipse")
                     .font(.subheadline)
                     .foregroundStyle(KBTheme.bubbleTint)
             }
@@ -233,7 +247,7 @@ struct NewsView: View {
             }
             .font(.subheadline)
             Button("Riprova") {
-                Task { await vm.load(familyId: familyId, prefs: prefs, key: loadKey, force: true) }
+                Task { await vm.load(familyId: familyId, family: family, prefs: prefs, key: loadKey, force: true) }
             }
             .buttonStyle(.borderedProminent)
             .tint(KBTheme.bubbleTint)
@@ -388,7 +402,7 @@ struct NewsView: View {
                 showOffersConsent = true
                 return
             }
-            Task { await vm.searchOffers(familyId: familyId, prefs: prefs, context: modelContext) }
+            Task { await vm.searchOffers(familyId: familyId, family: family, context: modelContext) }
         } label: {
             HStack(spacing: 10) {
                 if vm.isSearchingOffers {

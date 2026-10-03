@@ -17,6 +17,8 @@ enum NewsServiceError: LocalizedError, Equatable {
     /// La quota AI della famiglia non basta per l'edizione di oggi.
     case quota(units: Int?, remaining: Int?, limit: Int?, reason: String?)
     case disabled
+    /// Un membro le ha spente per tutta la famiglia.
+    case familyOff
     case budget
     case emptyBrief
     case network(String)
@@ -39,6 +41,8 @@ enum NewsServiceError: LocalizedError, Equatable {
             return NSLocalizedString("La famiglia ha finito i messaggi AI di oggi. Riprova domani.", comment: "News: daily AI quota reached")
         case .disabled:
             return NSLocalizedString("Le notizie sono sospese per qualche ora. Riprova più tardi.", comment: "News: feature switched off")
+        case .familyOff:
+            return NSLocalizedString("Le notizie sono state spente per tutta la famiglia. Puoi riaccenderle dalle impostazioni.", comment: "News: switched off by a family member")
         case .budget:
             return NSLocalizedString("Le ricerche di oggi sono finite: riprova domani.", comment: "News: global daily budget reached")
         case .emptyBrief:
@@ -63,15 +67,18 @@ final class NewsService {
 
     // MARK: - Edizione del giorno
 
-    func fetchFeed(familyId: String, prefs: NewsPrefs) async throws -> NewsFeed {
+    /// Luogo e lingua sono quelli della famiglia (`NewsFamilyStore`), gli
+    /// argomenti di chi legge. Prima si aspetta che l'ultima scelta della
+    /// famiglia sia sul server: il server la legge e la preferisce.
+    func fetchFeed(familyId: String, family: NewsFamilySettings, prefs: NewsPrefs) async throws -> NewsFeed {
         try await ensurePaidPlan()
-        let place = prefs.effectivePlace
+        await NewsFamilyStore.shared.settled()
         let payload: [String: Any] = [
             "familyId": familyId,
-            "lang": LanguageManager.shared.currentLanguageCode,
+            "lang": family.effectiveLang,
             "timeZone": TimeZone.current.identifier,
             "categories": prefs.categories.map(\.rawValue),
-            "place": place.dictionary,
+            "place": family.effectivePlace.dictionary,
         ]
         let callable = functions.httpsCallable("getFamilyNews")
         callable.timeoutInterval = 70
@@ -89,13 +96,15 @@ final class NewsService {
 
     /// Senza `brief` legge solo le ultime offerte salvate (gratis); con `brief`
     /// cerca offerte nuove e scala i messaggi.
-    func fetchOffers(familyId: String, prefs: NewsPrefs, brief: NewsBrief?) async throws -> NewsOffersPayload {
+    /// Le offerte sono della famiglia: le vede ogni membro, chiunque le abbia cercate.
+    func fetchOffers(familyId: String, family: NewsFamilySettings, brief: NewsBrief?) async throws -> NewsOffersPayload {
         try await ensurePaidPlan()
+        await NewsFamilyStore.shared.settled()
         var payload: [String: Any] = [
             "familyId": familyId,
-            "lang": LanguageManager.shared.currentLanguageCode,
+            "lang": family.effectiveLang,
             "timeZone": TimeZone.current.identifier,
-            "place": prefs.effectivePlace.dictionary,
+            "place": family.effectivePlace.dictionary,
             "refresh": brief != nil,
         ]
         if let brief { payload["brief"] = brief.dictionary }
@@ -157,6 +166,8 @@ final class NewsService {
             )
         case .failedPrecondition where reason == "news-disabled":
             return NewsServiceError.disabled
+        case .failedPrecondition where reason == "news-off":
+            return NewsServiceError.familyOff
         case .invalidArgument where reason == "empty-brief":
             return NewsServiceError.emptyBrief
         case .deadlineExceeded, .unavailable:

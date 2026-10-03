@@ -4739,6 +4739,29 @@
         }
       }
     },
+    "Accensione e città valgono per tutta la famiglia: le notizie trovate per uno le leggono tutti, e si pagano una volta sola." : {
+      "comment" : "News settings: switch and city are family-wide",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The switch and the city apply to the whole family: news found for one of you is read by everyone, and paid for only once."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El interruptor y la ciudad valen para toda la familia: las noticias encontradas para uno las leen todos, y se pagan una sola vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'activation et la ville valent pour toute la famille : les actualités trouvées pour l'un sont lues par tous, et payées une seule fois."
+          }
+        }
+      }
+    },
     "Accesso ai contatti negato" : {
       "localizations" : {
         "en" : {
@@ -29198,6 +29221,29 @@
         }
       }
     },
+    "Gli argomenti sono solo tuoi: scegli cosa leggere senza cambiare le notizie degli altri. Gli eventi vicini arrivano con Tempo libero." : {
+      "comment" : "News settings: topics are personal",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Topics are just yours: choose what to read without changing anyone else's news. Nearby events come with Leisure."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los temas son solo tuyos: elige qué leer sin cambiar las noticias de los demás. Los eventos cercanos llegan con Ocio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les sujets ne concernent que vous : choisissez ce que vous lisez sans changer les actualités des autres. Les événements à proximité arrivent avec Loisirs."
+          }
+        }
+      }
+    },
     "Gli esami verranno rimossi da tutti i dispositivi." : {
       "localizations" : {
         "en" : {
@@ -36658,6 +36704,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les Actualités sont suspendues pour quelques heures. Réessayez plus tard."
+          }
+        }
+      }
+    },
+    "Le notizie sono state spente per tutta la famiglia. Puoi riaccenderle dalle impostazioni." : {
+      "comment" : "News: switched off by a family member",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "News has been turned off for the whole family. You can turn it back on in settings."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las Noticias se han desactivado para toda la familia. Puedes volver a activarlas en los ajustes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les Actualités ont été désactivées pour toute la famille. Vous pouvez les réactiver dans les réglages."
           }
         }
       }
@@ -61311,28 +61380,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Toutes les dates de la série sont supprimées, passées et à venir."
-          }
-        }
-      }
-    },
-    "Si cercano solo gli argomenti accesi. Gli eventi vicini arrivano con Tempo libero." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Only the topics that are on are searched. Nearby events come with Leisure."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solo se buscan los temas activados. Los eventos cercanos llegan con Ocio."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seuls les sujets activés sont recherchés. Les événements à proximité arrivent avec Loisirs."
           }
         }
       }

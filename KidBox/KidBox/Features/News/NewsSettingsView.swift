@@ -2,16 +2,25 @@
 //  NewsSettingsView.swift
 //  KidBox
 //
-//  Impostazioni → Notizie (e l'icona in alto nella scheda Notizie): gli
-//  argomenti, la città, le offerte su misura, l'interruttore generale.
+//  Impostazioni → Notizie (e l'icona in alto nella scheda Notizie).
+//  L'interruttore generale e la città sono della famiglia (`NewsFamilyStore`):
+//  cambiano le notizie di tutti i membri. Gli argomenti e le offerte in vista
+//  sono di chi legge (`NewsPrefsStore`).
 //
 
 import SwiftUI
+import SwiftData
 
 struct NewsSettingsView: View {
 
     @ObservedObject private var store = NewsPrefsStore.shared
+    @ObservedObject private var familyStore = NewsFamilyStore.shared
+    @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.colorScheme) private var colorScheme
+    @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
+
+    /// Nil da Impostazioni: la famiglia attiva, come per la scheda Notizie.
+    var familyId: String? = nil
 
     @State private var cityQuery = ""
     @State private var isLocating = false
@@ -19,13 +28,17 @@ struct NewsSettingsView: View {
     @State private var resolver = NewsLocationResolver()
 
     private var prefs: NewsPrefs { store.prefs }
+    private var family: NewsFamilySettings { familyStore.settings }
+    private var resolvedFamilyId: String {
+        familyId ?? coordinator.activeFamilyId ?? families.first?.id ?? ""
+    }
 
     var body: some View {
         Form {
             Section {
                 Toggle(isOn: Binding(
-                    get: { prefs.enabled },
-                    set: { on in store.update { $0.enabled = on } }
+                    get: { family.enabled },
+                    set: { on in familyStore.update { $0.enabled = on } }
                 )) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Notizie attive")
@@ -36,7 +49,10 @@ struct NewsSettingsView: View {
                 }
                 .tint(KBTheme.bubbleTint)
             } footer: {
-                Text("Le ricerche si pagano in messaggi AI, dalla quota della famiglia: ogni edizione al massimo 6 messaggi, e meno quando la leggono anche altre famiglie della tua zona. Incluse nei piani Pro e Max.")
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Le ricerche si pagano in messaggi AI, dalla quota della famiglia: ogni edizione al massimo 6 messaggi, e meno quando la leggono anche altre famiglie della tua zona. Incluse nei piani Pro e Max.")
+                    Text("Accensione e città valgono per tutta la famiglia: le notizie trovate per uno le leggono tutti, e si pagano una volta sola.")
+                }
             }
 
             Section {
@@ -61,18 +77,18 @@ struct NewsSettingsView: View {
             } header: {
                 Text("Argomenti")
             } footer: {
-                Text("Si cercano solo gli argomenti accesi. Gli eventi vicini arrivano con Tempo libero.")
+                Text("Gli argomenti sono solo tuoi: scegli cosa leggere senza cambiare le notizie degli altri. Gli eventi vicini arrivano con Tempo libero.")
             }
 
             Section {
                 HStack {
                     Image(systemName: "mappin.and.ellipse")
                         .foregroundStyle(KBTheme.bubbleTint)
-                    Text(verbatim: prefs.effectivePlace.label)
+                    Text(verbatim: family.effectivePlace.label)
                     Spacer()
-                    if prefs.place?.hasCity == true {
+                    if family.place?.hasCity == true {
                         Button(role: .destructive) {
-                            store.update { p in
+                            familyStore.update { p in
                                 if var place = p.place {
                                     place.city = ""
                                     place.province = ""
@@ -140,6 +156,7 @@ struct NewsSettingsView: View {
         .navigationTitle("Notizie")
         .navigationBarTitleDisplayMode(.inline)
         .task { await store.refreshFromRemote() }
+        .task(id: resolvedFamilyId) { familyStore.bind(familyId: resolvedFamilyId) }
     }
 
     private func binding(for cat: NewsCategory) -> Binding<Bool> {
@@ -161,7 +178,7 @@ struct NewsSettingsView: View {
         defer { isLocating = false }
         do {
             let place = try await resolver.resolveCurrentPlace()
-            store.update { $0.place = place }
+            familyStore.update { $0.place = place }
         } catch {
             placeError = error.localizedDescription
         }
@@ -175,7 +192,7 @@ struct NewsSettingsView: View {
         defer { isLocating = false }
         do {
             let place = try await resolver.resolve(cityName: query)
-            store.update { $0.place = place }
+            familyStore.update { $0.place = place }
             cityQuery = ""
         } catch {
             placeError = error.localizedDescription
