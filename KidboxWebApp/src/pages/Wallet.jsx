@@ -25,6 +25,10 @@ import { fetchDocumentBlob } from "../services/documents";
 import Barcode from "../components/Barcode";
 import WalletTicketModal from "../components/WalletTicketModal";
 import WalletCardModal from "../components/WalletCardModal";
+import PaymentCardModal from "../components/PaymentCardModal";
+import PaymentCardTile from "../components/PaymentCardTile";
+import PaymentCardDetail from "../components/PaymentCardDetail";
+import { deletePaymentCard, listenPaymentCards, savePaymentCard } from "../services/paymentCards";
 import "./Wallet.css";
 
 export default function Wallet() {
@@ -39,6 +43,8 @@ export default function Wallet() {
   const [tickets, setTickets] = useState([]);
   const [cards, setCards] = useState([]);
   const [walletDocs, setWalletDocs] = useState([]);
+  const [payCards, setPayCards] = useState([]);
+  const [editingPayCard, setEditingPayCard] = useState(null);
   const [keyMissing, setKeyMissing] = useState(false);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
@@ -75,6 +81,20 @@ export default function Wallet() {
       userId: user.uid,
       onChange: setWalletDocs,
       onError: (err) => setError(err.message),
+    });
+  }, [currentFamilyId, user]);
+
+  // Quarta scheda: carte di pagamento, cifrate come i biglietti.
+  useEffect(() => {
+    if (!currentFamilyId || !user) return undefined;
+    return listenPaymentCards({
+      familyId: currentFamilyId,
+      userId: user.uid,
+      onChange: setPayCards,
+      onError: (err) => {
+        if (err instanceof MissingFamilyKeyError) setKeyMissing(true);
+        else setError(err.message);
+      },
     });
   }, [currentFamilyId, user]);
 
@@ -121,6 +141,20 @@ export default function Wallet() {
   const openDoc = walletDocs.find((x) => detail?.type === "doc" && x.id === detail.id) || null;
   const openTicket = tickets.find((x) => detail?.type === "ticket" && x.id === detail.id) || null;
   const openCard = cards.find((x) => detail?.type === "card" && x.id === detail.id) || null;
+  const openPayCard = payCards.find((x) => detail?.type === "pay" && x.id === detail.id) || null;
+
+  // Il numero intero non entra nella ricerca: basta nome, titolare e ultime cifre.
+  const visiblePayCards = useMemo(
+    () => payCards.filter((c) => matches([c.label, c.holderName, (c.cardNumber || "").slice(-4)])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [payCards, q]
+  );
+
+  const removePayCard = async (card) => {
+    if (!window.confirm(w.pay.confirmDelete)) return;
+    await deletePaymentCard({ familyId: currentFamilyId, userId: user.uid, card });
+    setDetail(null);
+  };
 
   const fmt = (millis) =>
     millis
@@ -217,11 +251,13 @@ export default function Wallet() {
           />
           <button
             className="pw-btn-primary"
-            onClick={() => (tab === "tickets" ? setEditingTicket({}) : setEditingCard({}))}
+            onClick={() =>
+              tab === "tickets" ? setEditingTicket({}) : tab === "payments" ? setEditingPayCard({}) : setEditingCard({})
+            }
             disabled={tab === "documents"}
             title={tab === "documents" ? w.readOnlyDocs : undefined}
           >
-            + {tab === "cards" ? w.addCard : w.addTicket}
+            + {tab === "cards" ? w.addCard : tab === "payments" ? w.pay.add : w.addTicket}
           </button>
         </div>
       </header>
@@ -243,7 +279,13 @@ export default function Wallet() {
           className={"pw-chip" + (tab === "cards" ? " selected" : "")}
           onClick={() => setTab("cards")}
         >
-          💳 {w.tabCards}
+          🏷️ {w.tabCards}
+        </button>
+        <button
+          className={"pw-chip" + (tab === "payments" ? " selected" : "")}
+          onClick={() => setTab("payments")}
+        >
+          💳 {w.pay.tab}
         </button>
       </div>
 
@@ -301,6 +343,23 @@ export default function Wallet() {
               })}
             </div>
           </>
+        )
+      ) : tab === "payments" ? (
+        visiblePayCards.length === 0 ? (
+          <p className="pw-empty">{w.pay.empty}</p>
+        ) : (
+          <div className="wl-paycards">
+            {visiblePayCards.map((c) => (
+              <PaymentCardTile
+                key={c.id}
+                card={c}
+                otherNetwork={w.pay.otherNetwork}
+                expiredLabel={w.pay.expired}
+                unreadableLabel={w.pay.unreadable}
+                onClick={() => setDetail({ type: "pay", id: c.id })}
+              />
+            ))}
+          </div>
         )
       ) : visibleCards.length === 0 ? (
         <p className="pw-empty">{w.noCards}</p>
@@ -490,6 +549,22 @@ export default function Wallet() {
         </div>
       )}
 
+      {/* ── Dettaglio carta di pagamento ── */}
+      {openPayCard && (
+        <PaymentCardDetail
+          card={openPayCard}
+          familyId={currentFamilyId}
+          user={user}
+          onCopy={copy}
+          onEdit={() => {
+            setEditingPayCard(openPayCard);
+            setDetail(null);
+          }}
+          onDelete={() => removePayCard(openPayCard)}
+          onClose={() => setDetail(null)}
+        />
+      )}
+
       <input
         ref={pdfInputRef}
         type="file"
@@ -530,6 +605,17 @@ export default function Wallet() {
             })
           }
           onClose={() => setEditingCard(null)}
+        />
+      )}
+
+      {editingPayCard && (
+        <PaymentCardModal
+          card={editingPayCard}
+          members={members}
+          onSave={(card) =>
+            savePaymentCard({ familyId: currentFamilyId, userId: user.uid, userName, card })
+          }
+          onClose={() => setEditingPayCard(null)}
         />
       )}
 

@@ -275,3 +275,147 @@
 .wl-cats li span {
   color: var(--muted);
 }
+
+/* ── Carte di pagamento ── */
+.wl-paycards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.wl-paycard {
+  aspect-ratio: 1.586;
+  width: 100%;
+  border: none;
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  font-family: inherit;
+  text-align: left;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+  box-sizing: border-box;
+}
+
+button.wl-paycard {
+  cursor: pointer;
+}
+
+.pw-form .wl-paycard,
+.pw-detail .wl-paycard {
+  max-width: 360px;
+  margin: 0 auto 8px;
+}
+
+.wl-paycard-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.wl-paycard-title {
+  flex: 1;
+  font-weight: 700;
+  font-size: 1.05rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wl-paycard-network {
+  font-weight: 800;
+  font-style: italic;
+  opacity: 0.9;
+}
+
+.wl-paycard-chip {
+  margin-top: auto;
+  opacity: 0.45;
+  font-size: 1.3rem;
+}
+
+.wl-paycard-number {
+  margin-top: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.wl-paycard-bottom {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.wl-paycard-holder {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wl-paycard-expiry {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.wl-paycard-expired {
+  background: rgba(255, 59, 48, 0.85);
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-size: 0.65rem;
+  font-family: inherit;
+}
+
+.wl-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.wl-warn {
+  display: block;
+  color: #c96a20;
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+.wl-photos-slots {
+  margin-bottom: 4px;
+}
+
+.wl-photo-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wl-photo-empty {
+  aspect-ratio: 1.586;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.wl-photo-slot img {
+  aspect-ratio: 1.586;
+  object-fit: cover;
+}
+
+.wl-photo-remove {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  align-self: flex-start;
+}
