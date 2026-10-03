@@ -52,6 +52,17 @@ Disegno completo in `internal/notizie.md`. Qui le regole e le trappole.
     in una macchia. `safeAreaBar` e cerchio fuori dal contenitore con
     `.glassProminent`. Provare il vetro nell'app-banco (memoria «Verifica UI iOS»):
     `KBLiquidTabBar.swift` e `NewsCards.swift` compilano senza Firebase.
+11. **iOS: `safeAreaBar` sulla `NavigationStack` non arriva al contenuto** delle
+    pagine (34 punti invece di 114: l'ultimo pulsante finiva sotto la barra).
+    Va su ogni pagina con la barra (`RootHostView.withTabBar`). Per misurarlo:
+    `adjustedContentInset.bottom` della scroll view nell'app-banco.
+12. **La barra compatta**: su iOS l'osservatore sulla finestra
+    (`KBTabBarScrollObserver`) non deve guardare «in cima» mentre il dito
+    trascina, perché col titolo grande che si richiude l'offset resta uguale al
+    margine in alto per ~100 punti e la barra rimbalzava subito grande. Su
+    Android `BottomBarScrollState` conta solo lo scorrimento consumato
+    (test in `BottomBarScrollStateTest`). Il cerchio Android non deve sporgere
+    sopra la barra: copriva il contenuto.
 
 ## Regole
 

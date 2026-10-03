@@ -13,8 +13,9 @@
 | | iOS | Android |
 |---|---|---|
 | Componente | `UIComponent/KBLiquidTabBar.swift` | `ui/components/KidBoxBottomBar.kt` |
-| Aspetto | capsula in vetro liquido (`glassEffect`), cerchio dell'assistente in vetro «prominente» arancione, rialzato | fondo = `kidBoxColors.background`, lo stesso che la radice dipinge sotto la barra di sistema |
-| Dove sta | `safeAreaBar` sulla `NavigationStack` di `RootHostView` | sotto il `NavHost` in `AppNavGraph` |
+| Aspetto | capsula in vetro liquido (`glassEffect`), cerchio dell'assistente in vetro «prominente» arancione, rialzato | fondo = `kidBoxColors.background`, lo stesso che la radice dipinge sotto la barra di sistema; cerchio dentro la barra |
+| Dove sta | `safeAreaBar` su ogni pagina che la mostra, dentro la pila (`RootHostView.withTabBar`) | sotto il `NavHost` in `AppNavGraph` |
+| Compatta scorrendo | `KBTabBarScrollObserver` (pan sulla finestra + KVO della scroll view sotto il dito), `KBTabBarScrollState` | `BottomBarScrollState` (`NestedScrollConnection` sul Box del NavHost) |
 | Quando c'è | radici (pila vuota) e Salute (`Route.showsRootTabBar`) | `BottomBarRoutes.showsBar` |
 | Radici | `AppCoordinator.rootTab` (`.home` / `.news`), cambiate da `selectRootTab` | rotte `home` e `news` (back di sistema da Notizie torna in Home) |
 
@@ -30,6 +31,29 @@ pulsanti di prima e le Notizie sono una voce della barra laterale.
 leggeva attraverso il vetro (visto nell'app-banco). Il cerchio dentro il
 `GlassEffectContainer` si fondeva con la capsula in una macchia sfrangiata:
 sta fuori, con `.buttonStyle(.glassProminent)`.
+
+**Sulla pagina, non sulla `NavigationStack`.** Messa sulla pila (com'era nel
+primo commit, 27d8c734) la barra non arriva al contenuto: la scroll view
+tiene solo i 34 punti dell'indicatore home e in fondo alla pagina l'ultimo
+pulsante finisce sotto la barra. Uguale con `safeAreaInset`. Misurato
+nell'app-banco il 03/10/2026 (`adjustedContentInset.bottom` 34 sulla pila,
+114 sulla pagina). Effetto collaterale accettato: passando da Home a Salute
+la barra scorre via con la pagina e rientra con la nuova, come le barre di
+sistema.
+
+**Compatta scorrendo** (richiesta del 03/10/2026, come le barre di iOS 26):
+scorrendo per leggere oltre la barra si riduce (solo icone, cerchio più
+piccolo), torna grande scorrendo indietro, arrivando in cima o cambiando
+schermata. Soglia di 28 punti nella stessa direzione contro il tremolio; conta
+solo un contenuto che scorre in verticale. Su iOS lo spazio riservato resta
+quello della barra grande (`KBLiquidTabBar.reservedHeight`), così il contenuto
+non salta; su Android la barra è in colonna col NavHost, quindi compatta lascia
+20 dp in più alla schermata e nessun contenuto può finirle sotto. Trappola
+dell'osservatore iOS: mentre il titolo grande si richiude iOS toglie margine
+in alto alla stessa velocità con cui cresce l'offset, e la pagina sembra «in
+cima» per i primi ~100 punti; il ritorno in cima si controlla solo a dito
+sollevato e salendo. Fino al 03/10/2026 su Android il cerchio sporgeva di
+12 dp sopra la barra e copriva l'ultima riga: ora sta dentro.
 
 ## Le edizioni
 
