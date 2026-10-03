@@ -40,7 +40,7 @@ sempre **cross-client**: A crea su iOS, B legge su Android e web (e viceversa). 
 | 8 | Salute | visite/esami/vaccini con referto, cartella clinica, Health (dati simulati dove possibile) |
 | 9 | Casa, veicoli, animali | scadenze, pagamenti, interventi con ricevuta, notifiche scadenza |
 | 10 | Fuori casa | posizione simulata (sim location), geofence, condivisione temporanea, viaggio AI |
-| 11 | AI e gating | assistente (5 msg bonus Free), mealPlan bloccato su Free, Document Intelligence, `isAIAccessible` coerente con `config/plans`; Android: risalire durante una risposta AI non riporta in fondo, inviare sì (chat a lista rovesciata e normale) |
+| 11 | AI e gating | assistente (5 msg bonus Free), mealPlan bloccato su Free, Document Intelligence, `isAIAccessible` coerente con `config/plans`; **assistente unico**: aperto da Home e da Salute (persona, visite, visita, esami) con etichetta, ✕ e domande a tema anche con lo storico, dialogo «accurata / ridotta» con «Chiedi ogni volta» (Annulla rimette la domanda, la scelta invia davvero), ridotto automatico sul Free, conversazione scritta su iPhone letta sul web (e cifrata dopo l'accensione di `text_encryption_enabled`); Android: risalire durante una risposta AI non riporta in fondo, inviare sì (chat a lista rovesciata e normale) |
 | 12 | Abbonamento | gating Free/Pro/Max cambiando piano da console admin; **nessun acquisto reale** |
 | 13 | Backend | `firestore-tests` rules, Functions in emulatore, scheduler (`jobs list`: tutti `ENABLED`), App Check, alert Monitoring silenziosi, DENY delle rules/ora nel riferimento 0-6, audit indice famiglie a zero |
 | 14 | Web app + localizzazione | parità con iOS sui settori 1–7, screenshot EN/FR/ES e stringhe non tradotte |

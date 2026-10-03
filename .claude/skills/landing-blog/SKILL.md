@@ -78,7 +78,10 @@ iOS**.
 L'assistente in chat crea eventi, to-do, note, lista della spesa, promemoria
 salute e richieste («chi prende Marco?»), **non spese**, e le esegue senza
 mostrarle prima (le spese le propone Document Intelligence da un documento
-importato). Corretto sulla landing il 01/10/2026. Quando una frase descrive una funzione, verificala nel codice o in
+importato). Corretto sulla landing il 01/10/2026. Dal 02/10/2026 l'assistente è **uno solo**:
+il «Consulente di Salute» non esiste più come agente (i pulsanti AI di Salute aprono
+l'Assistente di Famiglia centrato sulla persona) e gli agenti sono **sei**, non sette.
+Quando una frase descrive una funzione, verificala nel codice o in
 `FEATURES.md` prima di scriverla in quattro lingue.
 
 ## Le regole italiane invecchiano
