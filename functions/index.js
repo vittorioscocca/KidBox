@@ -5827,6 +5827,9 @@ exports.deleteAccount = onCall(
           logger.warn("alexa cleanup failed", {uid, coll, err: String(e)});
         });
       }
+      // Le ultime offerte su misura delle Notizie: nate dalle bollette e dalla
+      // spesa di questo utente, non devono sopravvivergli.
+      await db.collection("news_personal").doc(uid).delete().catch(() => {});
       await db.collection("users").doc(uid).delete().catch(() => {});
       await deleteStoragePrefix(`users/${uid}/`).catch(() => {});
 
@@ -8361,3 +8364,17 @@ exports.onFamilyRequestCreated = familyRequests.onFamilyRequestCreated;
 exports.onFamilyRequestUpdated = familyRequests.onFamilyRequestUpdated;
 exports.expireFamilyRequests = familyRequests.expireFamilyRequests;
 exports.nudgeFamilyRequests = familyRequests.nudgeFamilyRequests;
+
+// Notizie per la famiglia (Pro e Max): edizioni condivise per paese e città,
+// trovate da Claude con la ricerca web e pagate in messaggi AI. Disegno in
+// internal/notizie.md; quota e piano arrivano da qui, così hanno una copia sola.
+const news = require("./news").build({
+  assertFamilyMember,
+  resolveAIQuota,
+  checkAndIncrementAIUsage,
+  refundAIUsage,
+});
+exports.getFamilyNews = news.getFamilyNews;
+exports.getNewsOffers = news.getNewsOffers;
+exports.buildNewsEdition = news.buildNewsEdition;
+exports.prepareNewsEditions = news.prepareNewsEditions;
