@@ -9,6 +9,7 @@
 //
 
 import SwiftUI
+import CryptoKit
 
 // MARK: - Categorie
 
@@ -166,6 +167,24 @@ struct NewsItem: Identifiable, Hashable, Decodable {
     let url: String
 
     var newsCategory: NewsCategory? { NewsCategory(rawValue: category) }
+}
+
+/// Una notizia salvata col segnalibro: una copia, perché l'edizione da cui
+/// viene se ne va (le edizioni cambiano ogni giorno e hanno un TTL). Di chi la
+/// salva, sincronizzata fra i suoi dispositivi su `users/{uid}/savedNews/{id}`;
+/// Android legge e scrive lo stesso formato (`NewsSavedStore`).
+struct NewsSavedItem: Identifiable, Hashable {
+    let id: String
+    let item: NewsItem
+    /// Il luogo dell'edizione da cui viene: «Italia», «Campania», «Benevento».
+    let placeName: String?
+    let savedAt: Date
+
+    /// Id del documento: SHA-256 dell'URL in esadecimale, uguale su Android,
+    /// così la stessa notizia salvata da due telefoni è un documento solo.
+    static func documentId(url: String) -> String {
+        SHA256.hash(data: Data(url.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
 }
 
 struct NewsEvent: Identifiable, Hashable, Decodable {

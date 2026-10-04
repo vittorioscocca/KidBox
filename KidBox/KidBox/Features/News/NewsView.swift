@@ -23,6 +23,7 @@ struct NewsView: View {
 
     @ObservedObject private var prefsStore = NewsPrefsStore.shared
     @ObservedObject private var familyStore = NewsFamilyStore.shared
+    @ObservedObject private var savedStore = NewsSavedStore.shared
     @StateObject private var vm = NewsViewModel()
 
     @State private var showSettings = false
@@ -81,6 +82,18 @@ struct NewsView: View {
         .navigationTitle("Notizie")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            // Le salvate restano di chi le ha salvate anche tornando al Free:
+            // l'elenco non costa niente.
+            if subscriptionManager.currentPlan != .free || !savedStore.items.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        coordinator.navigate(to: .newsSaved)
+                    } label: {
+                        Image(systemName: "bookmark")
+                    }
+                    .accessibilityLabel(Text("Notizie salvate"))
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showSettings = true
@@ -106,7 +119,7 @@ struct NewsView: View {
         }
         .ownerOnlyAlert(isPresented: $showOwnerOnly)
         .sheet(item: $openedURL) { link in
-            NewsSafariView(url: link.url).ignoresSafeArea()
+            NewsSafariView(link: link).ignoresSafeArea()
         }
         .sheet(item: $calendarPrefill) { prefill in
             CalendarEventFormView(
@@ -123,6 +136,7 @@ struct NewsView: View {
             }
         }
         .task { await prefsStore.refreshFromRemote() }
+        .task { savedStore.bind() }
         .task(id: familyId) { familyStore.bind(familyId: familyId) }
         .task(id: loadKey) {
             guard subscriptionManager.currentPlan != .free, familyLoaded, family.enabled else { return }
@@ -362,10 +376,15 @@ struct NewsView: View {
                     sectionTitle(group.title.isEmpty ? NSLocalizedString("Notizie", comment: "News: section fallback title") : group.title,
                                  symbol: group.symbol)
                     ForEach(levelItems) { item in
-                        NewsItemCard(item: item) {
-                            open(item.url)
-                            AppAnalytics.newsItemOpened(kind: "news", category: item.category, level: item.level)
-                        }
+                        NewsItemCard(
+                            item: item,
+                            isSaved: savedStore.savedIds.contains(NewsSavedItem.documentId(url: item.url)),
+                            onOpen: {
+                                open(item.url, item: item, placeName: group.title)
+                                AppAnalytics.newsItemOpened(kind: "news", category: item.category, level: item.level)
+                            },
+                            onToggleSave: { toggleSave(item, placeName: group.title) }
+                        )
                     }
                 }
             }
@@ -474,9 +493,17 @@ struct NewsView: View {
         .padding(.bottom, 16)
     }
 
-    private func open(_ raw: String) {
+    /// `item` e `placeName` solo per le notizie: il browser offre «Salva
+    /// notizia» nel menu Condividi.
+    private func open(_ raw: String, item: NewsItem? = nil, placeName: String? = nil) {
         guard let url = URL(string: raw), url.scheme?.hasPrefix("http") == true else { return }
-        openedURL = NewsLink(url: url)
+        openedURL = NewsLink(url: url, item: item, placeName: placeName)
+    }
+
+    private func toggleSave(_ item: NewsItem, placeName: String) {
+        if savedStore.toggle(item, placeName: placeName.isEmpty ? nil : placeName) {
+            AppAnalytics.newsItemSaved(category: item.category, level: item.level, from: "card")
+        }
     }
 }
 
@@ -661,15 +688,76 @@ extension CalendarEventPrefill {
 
 struct NewsLink: Identifiable {
     let url: URL
+    /// La notizia aperta: il browser offre «Salva notizia» nel menu Condividi.
+    var item: NewsItem? = nil
+    var placeName: String? = nil
     var id: String { url.absoluteString }
 }
 
+/// Il browser in app. Mentre si legge una notizia, il menu Condividi ha
+/// «Salva notizia» (o «Togli dalle salvate»): un pulsante sopra la pagina no,
+/// perché Safari non va coperto.
 struct NewsSafariView: UIViewControllerRepresentable {
-    let url: URL
+    let link: NewsLink
+
+    func makeCoordinator() -> Coordinator { Coordinator(link: link) }
 
     func makeUIViewController(context: Context) -> SFSafariViewController {
-        SFSafariViewController(url: url)
+        let controller = SFSafariViewController(url: link.url)
+        controller.delegate = context.coordinator
+        return controller
     }
 
     func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
+
+    final class Coordinator: NSObject, SFSafariViewControllerDelegate {
+        let link: NewsLink
+
+        init(link: NewsLink) { self.link = link }
+
+        func safariViewController(_ controller: SFSafariViewController, activityItemsFor URL: URL, title: String?) -> [UIActivity] {
+            guard let item = link.item else { return [] }
+            return [NewsSaveActivity(item: item, placeName: link.placeName, isSaved: NewsSavedStore.shared.isSaved(item))]
+        }
+    }
+}
+
+/// «Salva notizia» / «Togli dalle salvate» nel menu Condividi del browser.
+final class NewsSaveActivity: UIActivity {
+    private let item: NewsItem
+    private let placeName: String?
+    private let isSaved: Bool
+
+    init(item: NewsItem, placeName: String?, isSaved: Bool) {
+        self.item = item
+        self.placeName = placeName
+        self.isSaved = isSaved
+        super.init()
+    }
+
+    override class var activityCategory: UIActivity.Category { .action }
+
+    override var activityType: UIActivity.ActivityType? {
+        UIActivity.ActivityType("it.vittorioscocca.kidbox.news.save")
+    }
+
+    override var activityTitle: String? {
+        isSaved
+            ? NSLocalizedString("Togli dalle salvate", comment: "News: remove a saved article (share menu of the in-app browser)")
+            : NSLocalizedString("Salva notizia", comment: "News: save the article being read (share menu of the in-app browser)")
+    }
+
+    override var activityImage: UIImage? {
+        UIImage(systemName: isSaved ? "bookmark.slash" : "bookmark")
+    }
+
+    override func canPerform(withActivityItems activityItems: [Any]) -> Bool { true }
+
+    override func perform() {
+        let placeName = (self.placeName ?? "").isEmpty ? nil : self.placeName
+        if NewsSavedStore.shared.toggle(item, placeName: placeName) {
+            AppAnalytics.newsItemSaved(category: item.category, level: item.level, from: "browser")
+        }
+        activityDidFinish(true)
+    }
 }

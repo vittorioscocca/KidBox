@@ -20,7 +20,14 @@ struct NewsLevelGroup: Identifiable {
 
 struct NewsItemCard: View {
     let item: NewsItem
+    /// Il luogo dell'edizione accanto alla categoria: nelle salvate, dove non
+    /// ci sono i titoli di paese, regione e città.
+    var placeName: String? = nil
+    /// La notizia è fra le salvate: il segnalibro è pieno.
+    var isSaved: Bool = false
     let onOpen: () -> Void
+    /// Il segnalibro in basso a destra; senza, niente segnalibro.
+    var onToggleSave: (() -> Void)? = nil
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -32,6 +39,12 @@ struct NewsItemCard: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(cat.tint)
                     }
+                    if let placeName, !placeName.isEmpty {
+                        Text(verbatim: "· \(placeName)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                     Spacer()
                     if let badge = keyDateBadge {
                         Text(badge)
@@ -39,7 +52,7 @@ struct NewsItemCard: View {
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
                             .foregroundStyle(.white)
-                            .background(Capsule().fill(item.keyDateKind == "deadline" ? Color.red.opacity(0.85) : KBTheme.bubbleTint))
+                            .background(Capsule().fill(badgeColor))
                     }
                 }
                 Text(item.title)
@@ -70,21 +83,69 @@ struct NewsItemCard: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+                // La riga non deve finire sotto il segnalibro.
+                .padding(.trailing, onToggleSave == nil ? 0 : 30)
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(RoundedRectangle(cornerRadius: 16).fill(KBTheme.cardBackground(colorScheme)))
         }
         .buttonStyle(.plain)
+        // Sopra la scheda e non dentro, come il «+» degli eventi: un pulsante
+        // nell'etichetta di un altro si prenderebbe anche il tocco che apre.
+        .overlay(alignment: .bottomTrailing) {
+            if let onToggleSave { saveButton(onToggleSave) }
+        }
+    }
+
+    private func saveButton(_ onToggle: @escaping () -> Void) -> some View {
+        Button(action: onToggle) {
+            Image(systemName: isSaved ? "bookmark.fill" : "bookmark")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(isSaved ? KBTheme.bubbleTint : Color.secondary)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: isSaved)
+        .accessibilityLabel(isSaved ? Text("Togli dalle salvate") : Text("Salva notizia"))
+    }
+
+    /// Una scadenza passata (succede nelle salvate) non è più rossa.
+    private var isPastDeadline: Bool {
+        guard item.keyDateKind == "deadline", let day = NewsDates.date(item.keyDate) else { return false }
+        return day < Calendar.current.startOfDay(for: Date())
+    }
+
+    private var badgeColor: Color {
+        if isPastDeadline { return Color.gray.opacity(0.7) }
+        return item.keyDateKind == "deadline" ? Color.red.opacity(0.85) : KBTheme.bubbleTint
     }
 
     private var keyDateBadge: String? {
         guard let day = NewsDates.dayMonth(item.keyDate) else { return nil }
+        if isPastDeadline {
+            return String(format: NSLocalizedString("Scaduto il %@", comment: "News: badge of a deadline already passed (saved news)"), day)
+        }
         switch item.keyDateKind {
         case "deadline": return String(format: NSLocalizedString("Scade il %@", comment: "News: deadline badge"), day)
         case "start":    return String(format: NSLocalizedString("Dal %@", comment: "News: start date badge"), day)
         case "payment":  return String(format: NSLocalizedString("Pagamento il %@", comment: "News: payment date badge"), day)
         default:         return nil
+        }
+    }
+}
+
+/// Icona e testo affiancati come nella scheda Notizie. Dentro una List (le
+/// salvate) lo stile automatico delle etichette riserva alle icone la colonna
+/// larga delle righe di sistema e le ingrandisce; `labelReservedIconWidth`
+/// non basta (l'icona esce dal margine). Visto nell'app-banco il 04/10/2026.
+struct NewsCardLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 6) {
+            configuration.icon
+            configuration.title
         }
     }
 }

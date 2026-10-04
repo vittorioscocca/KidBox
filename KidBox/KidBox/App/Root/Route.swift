@@ -85,6 +85,8 @@ enum Route: Hashable {
     /// Le Notizie come schermata: su iPhone e iPad sono una radice della barra
     /// in basso (`AppCoordinator.rootTab`), sul Mac una voce della barra laterale.
     case news(familyId: String)
+    /// Le notizie salvate col segnalibro: di chi le salva, non della famiglia.
+    case newsSaved
 
     // MARK: - Spese
     /// `highlightExpenseId`: spesa arrivata da notifica, che la home apre

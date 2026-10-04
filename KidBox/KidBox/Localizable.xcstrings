@@ -49,6 +49,94 @@
         }
       }
     },
+    "Altre azioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More actions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más acciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autres actions"
+          }
+        }
+      }
+    },
+    "Apri" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir"
+          }
+        }
+      }
+    },
+    "Elimina tutte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete all"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar todas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout supprimer"
+          }
+        }
+      }
+    },
+    "Eliminare tutte le notizie salvate?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete all saved news?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar todas las noticias guardadas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer toutes les actualités enregistrées ?"
+          }
+        }
+      }
+    },
     "Già nel calendario" : {
       "localizations" : {
         "en" : {
@@ -93,6 +181,50 @@
         }
       }
     },
+    "Nessuna notizia salvata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No saved news"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay noticias guardadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune actualité enregistrée"
+          }
+        }
+      }
+    },
+    "Notizie salvate" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved news"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noticias guardadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualités enregistrées"
+          }
+        }
+      }
+    },
     "Oggi nessun evento vicino a te." : {
       "localizations" : {
         "en" : {
@@ -111,6 +243,119 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun événement près de chez vous aujourd'hui."
+          }
+        }
+      }
+    },
+    "Salva notizia" : {
+      "comment" : "News: save the article being read (share menu of the in-app browser)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save article"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar noticia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer l'article"
+          }
+        }
+      }
+    },
+    "Scaduto il %@" : {
+      "comment" : "News: badge of a deadline already passed (saved news)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expired %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venció el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expiré le %@"
+          }
+        }
+      }
+    },
+    "Spariscono da tutti i tuoi dispositivi. Gli articoli restano sui siti delle fonti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "They'll disappear from all your devices. The articles stay on the sources' websites."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desaparecen de todos tus dispositivos. Los artículos siguen en las webs de las fuentes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elles disparaissent de tous vos appareils. Les articles restent sur les sites des sources."
+          }
+        }
+      }
+    },
+    "Tocca il segnalibro su una notizia per ritrovarla qui, anche quando non è più nell'edizione del giorno." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the bookmark on a news item to find it here, even when it's no longer in the day's edition."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca el marcador de una noticia para encontrarla aquí, aunque ya no esté en la edición del día."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez le signet d'une actualité pour la retrouver ici, même quand elle n'est plus dans l'édition du jour."
+          }
+        }
+      }
+    },
+    "Togli dalle salvate" : {
+      "comment" : "News: remove a saved article (share menu of the in-app browser)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from saved"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitar de las guardadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer des actualités enregistrées"
           }
         }
       }

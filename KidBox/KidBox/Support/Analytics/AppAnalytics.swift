@@ -160,6 +160,12 @@ enum AppAnalytics {
         Analytics.logEvent("news_event_add", parameters: nil)
     }
 
+    /// Segnalibro su una notizia: `from` = "card" (la scheda) o "browser"
+    /// (menu Condividi mentre la si legge). Togliere non si conta.
+    static func newsItemSaved(category: String, level: String, from: String) {
+        Analytics.logEvent("news_item_saved", parameters: ["category": category, "level": level, "from": from])
+    }
+
     static func newsOffersSearched(offers: Int, units: Int) {
         Analytics.logEvent("news_offers_searched", parameters: ["offers": offers, "units": units])
     }

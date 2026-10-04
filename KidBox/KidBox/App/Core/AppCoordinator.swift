@@ -635,6 +635,8 @@ final class AppCoordinator: ObservableObject {
             return "assistente_ai"
         case .news:
             return "notizie"
+        case .newsSaved:
+            return "notizie_salvate"
         case .expensesHome, .expenseDetail:
             return "spese"
         case .shoppingList:
@@ -817,6 +819,8 @@ final class AppCoordinator: ObservableObject {
 
         case .news(let familyId):
             NewsView(familyId: familyId)
+        case .newsSaved:
+            NewsSavedView()
 
         case .petsHome(let familyId):
             PetsHomeView(familyId: familyId)
@@ -1641,6 +1645,7 @@ final class AppCoordinator: ObservableObject {
             KBSubscriptionManager.shared.resetOnSignOut()
             NewsPrefsStore.shared.resetOnSignOut()
             NewsFamilyStore.shared.resetOnSignOut()
+            NewsSavedStore.shared.resetOnSignOut()
             NewsService.shared.clearCache()
             FamilyKeychainStore.clearKeyCache()
             setActiveFamily(nil)
