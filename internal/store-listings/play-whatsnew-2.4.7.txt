@@ -1,0 +1,24 @@
+<it-IT>
+• Nuova barra in basso: Home, Notizie e, al centro, l'assistente AI.
+• Notizie per la famiglia (Pro e Max): bonus, scuola, salute ed economia dal paese alla città, eventi vicini da mettere in calendario e offerte su misura. Salvale col segnalibro in «Notizie salvate».
+• Un solo assistente con la memoria di tutta l'app: da Salute parte già sulla persona.
+• Nel Wallet arrivano le carte di pagamento, cifrate.
+</it-IT>
+<en-US>
+• New bottom bar: Home, News and, in the middle, the AI assistant.
+• News for your family (Pro and Max): benefits, school, health and money from your country to your town, nearby events to add to the calendar and tailored offers. Bookmark them in "Saved news".
+• One assistant with the memory of the whole app: from Health it starts focused on the person.
+• Payment cards arrive in the Wallet, encrypted.
+</en-US>
+<fr-FR>
+• Nouvelle barre en bas : Accueil, Actualités et, au centre, l'assistant IA.
+• Des actualités pour la famille (Pro et Max) : aides, école, santé et économie du pays à la ville, événements proches à ajouter au calendrier et offres sur mesure. Enregistrez-les avec le signet dans « Actualités enregistrées ».
+• Un seul assistant avec la mémoire de toute l'app : depuis Santé, il démarre centré sur la personne.
+• Les cartes de paiement arrivent dans le Wallet, chiffrées.
+</fr-FR>
+<es-ES>
+• Nueva barra inferior: Inicio, Noticias y, en el centro, el asistente de IA.
+• Noticias para la familia (Pro y Max): ayudas, escuela, salud y economía del país a la ciudad, eventos cercanos para el calendario y ofertas a medida. Guárdalas con el marcador en «Noticias guardadas».
+• Un solo asistente con la memoria de toda la app: desde Salud empieza centrado en la persona.
+• Llegan las tarjetas de pago al Wallet, cifradas.
+</es-ES>

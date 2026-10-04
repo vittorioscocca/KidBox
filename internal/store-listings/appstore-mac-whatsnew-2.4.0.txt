@@ -1,0 +1,31 @@
+# Novità macOS 2.4.0 — testi «Novità» per App Store Connect (Mac)
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 04/10/2026 sulle modifiche dopo la 2.3.9 (in vendita): sul Mac niente barra in basso: Notizie nella barra laterale; scheda Notizie (Pro e Max) dal paese alla città con fonti, eventi entro 60 km col «+» per il calendario, offerte su misura da bollette e spesa, accese da un membro per tutta la famiglia; notizie salvate col segnalibro in «Notizie salvate»; un solo assistente con la memoria di tutta l'app, aperto da Salute già sulla persona; carte di pagamento nel Wallet. Non citate: chat, memoria e testo dei documenti cifrati (interruttore remoto ancora spento) e il contesto ridotto automatico. Etichette tra virgolette = quelle del catalogo stringhe.
+
+## it
+
+• Nuova sezione Notizie nella barra laterale (Pro e Max): ogni giorno bonus, scuola, salute ed economia, dal tuo paese fino alla tua città, ognuna con la sua fonte. Gli eventi entro 60 km si aggiungono al calendario con un clic e, quando vuoi, arrivano offerte su misura a partire da bollette e lista della spesa. Le attiva un familiare e le vedono tutti.
+• Salva col segnalibro le notizie che ti interessano e ritrovale in «Notizie salvate».
+• Un solo assistente con la memoria di tutta l'app: da Salute si apre già sulla persona, la visita o l'esame che stai guardando.
+• Nel Wallet arrivano le carte di pagamento: numero, scadenza, IBAN e PIN cifrati, che si mostrano solo dopo Touch ID o password.
+
+## en-GB
+
+• New News section in the sidebar (Pro and Max): every day, benefits, school, health and money, from your country down to your town, each with its source. Events within 60 km go into the calendar with one click and, whenever you like, you get tailored offers based on your bills and shopping list. One family member turns it on and everyone sees it.
+• Bookmark the news you care about and find it again in "Saved news".
+• One assistant with the memory of the whole app: from Health it opens already focused on the person, visit or exam you're looking at.
+• Payment cards arrive in the Wallet: number, expiry date, IBAN and PIN are encrypted and shown only after Touch ID or password.
+
+## es-ES
+
+• Nueva sección Noticias en la barra lateral (Pro y Max): cada día, ayudas, escuela, salud y economía, desde tu país hasta tu ciudad, cada una con su fuente. Los eventos a menos de 60 km se añaden al calendario con un clic y, cuando quieras, llegan ofertas a medida a partir de tus facturas y tu lista de la compra. Las activa un familiar y las ven todos.
+• Guarda con el marcador las noticias que te interesan y encuéntralas en «Noticias guardadas».
+• Un solo asistente con la memoria de toda la app: desde Salud se abre ya centrado en la persona, la visita o el examen que estás viendo.
+• Llegan las tarjetas de pago al Wallet: número, caducidad, IBAN y PIN cifrados, que solo se muestran tras Touch ID o contraseña.
+
+## fr-FR
+
+• Nouvelle section Actualités dans la barre latérale (Pro et Max) : chaque jour, aides, école, santé et économie, de votre pays jusqu'à votre ville, chacune avec sa source. Les événements à moins de 60 km s'ajoutent au calendrier d'un clic et, quand vous le souhaitez, des offres sur mesure arrivent à partir de vos factures et de votre liste de courses. Un membre de la famille les active et tout le monde les voit.
+• Enregistrez avec le signet les actualités qui vous intéressent et retrouvez-les dans « Actualités enregistrées ».
+• Un seul assistant avec la mémoire de toute l'app : depuis Santé, il s'ouvre déjà centré sur la personne, la visite ou l'examen que vous regardez.
+• Les cartes de paiement arrivent dans le Wallet : numéro, date d'expiration, IBAN et code PIN chiffrés, affichés seulement après Touch ID ou mot de passe.
