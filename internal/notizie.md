@@ -213,6 +213,8 @@ comuni (per zona e lingua): accensione e città stavano su
 - Informativa: paragrafo «Notizie» nella sezione Assistente AI di
   `privacy*.html`, confermato dall'utente e pubblicato in 4 lingue il 03/10/2026;
   lo stesso giorno, sempre su suo ok, attivazione, città e offerte della famiglia.
+  Il 04/10/2026, su suo ok, la frase sulle notizie salvate: solo nell'account,
+  gli altri membri non le vedono, si cancellano con l'account.
 - Pulizia: policy TTL su `expireAt` di `news_charges` (40 giorni), `news_jobs`
   (7) e `news_editions` (120), attivate il 03/10/2026.
 
