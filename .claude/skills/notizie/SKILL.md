@@ -14,7 +14,9 @@ Disegno completo in `internal/notizie.md`. Qui le regole e le trappole.
 - Scelte: della famiglia (accese, luogo, lingua) in
   `families/{familyId}/news/settings` via `NewsFamilyStore`; di ciascuno
   (argomenti, offerte in vista) in `users/{uid}.newsPrefs` via `NewsPrefsStore`.
-  Offerte trovate in `news_offers/{familyId}`.
+  Offerte trovate in `news_offers/{familyId}`. Notizie salvate col
+  segnalibro: dell'account, in `users/{uid}/savedNews/{sha256(url)}` via
+  `NewsSavedStore` (mai della famiglia: richiesta esplicita del 04/10/2026).
 - iOS: `Features/News/`, barra `UIComponent/KBLiquidTabBar.swift`, focus
   `Features/AIAgent/AgentFocus+Route.swift`, aggancio in `RootHostView`.
 - Android: `ui/screens/news/`, barra e focus `ui/components/KidBoxBottomBar.kt`,

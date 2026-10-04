@@ -98,6 +98,40 @@ d'inizio: la vede anche l'altro genitore. Non c'è un collegamento fra evento
 delle Notizie e evento salvato: cambiato il titolo salvando, la spunta non
 compare.
 
+## Notizie salvate
+
+Richiesta dell'utente del 04/10/2026: salvare una notizia mentre la si legge e
+ritrovarla in una vista dove gestirle, eliminandole. **Di chi le salva, non
+della famiglia** (detto esplicitamente: se A salva tre notizie, B non se le
+ritrova), al contrario di accensione, città e offerte.
+
+- Dove: `users/{uid}/savedNews/{id}`, id = SHA-256 dell'URL in esadecimale
+  (uguale su iOS e Android: la stessa notizia è un documento solo). Una
+  **copia** della notizia (titolo, riassunto, azione, data chiave, fonte, URL,
+  categoria, livello, `placeName` del gruppo, `savedAtMs`): le edizioni
+  cambiano ogni giorno e hanno un TTL, un riferimento si perderebbe.
+- Rules: `match /savedNews/{newsId}` sotto `users/{uid}`, solo il proprietario,
+  in `firestore.rules` e `.next` (5 casi nella suite). `deleteAccount` le
+  cancella. Il wildcard di `users/{uid}` non esiste: ogni sottocollezione nuova
+  vuole la sua `match`.
+- Salvare: segnalibro in basso a destra della scheda (iOS e Android); su iOS
+  anche «Salva notizia» nel menu Condividi del browser in app
+  (`NewsSaveActivity`: un pulsante sopra `SFSafariViewController` non si mette,
+  Safari non va coperto). Su Android la notizia si legge nel browser esterno,
+  quindi resta il segnalibro.
+- Vista: icona del segnalibro in alto nella scheda Notizie, visibile anche a
+  chi è tornato Free se ha salvate (l'elenco non costa niente). iOS
+  `NewsSavedView` (scorri per eliminare, menu della notizia, «Seleziona»,
+  «Elimina tutte» con conferma); Android `NewsSavedScreen` (scorri a sinistra
+  con «Annulla», pressione lunga o «Seleziona» per i gruppi, «Elimina tutte»).
+  Una scadenza passata diventa «Scaduto il …» in grigio.
+- Store: `NewsSavedStore` su entrambe, un ascolto per sessione (iOS lo apre
+  la scheda e lo chiude `resetOnSignOut`; Android segue l'`AuthStateListener`).
+- Su iOS, dentro una `List` le etichette delle schede prendono la colonna
+  larga delle icone di sistema: le righe delle salvate usano
+  `NewsCardLabelStyle` (`labelReservedIconWidth(0)` faceva uscire l'icona dal
+  margine). Visto nell'app-banco il 04/10/2026.
+
 ## Il costo in messaggi
 
 Richiesta esplicita: le spese in dollari diventano messaggi AI KidBox.
@@ -209,7 +243,8 @@ Server `gate()` in `functions/news/index.js` (`quota.period === "lifetime"` →
 
 ## Numeri da guardare
 
-`news_opened` (units, preparing), `news_item_opened` (kind, category, level),
+`news_opened` (units, preparing), `news_item_opened` (kind, category, level; kind `saved` dalle salvate),
+`news_item_saved` (category, level, from `card`/`browser`),
 `news_offers_searched`, `news_activated`, `news_event_add` (il «+»; il
 salvataggio vero è `content_created` calendar) in GA4; `news_usage/{data}` e i log
 `news: edizione pronta` (costUsd, searches, dropped) per costo e qualità; la
