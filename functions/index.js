@@ -5829,6 +5829,8 @@ exports.deleteAccount = onCall(
       // sottocollezioni insieme al documento padre, quindi senza questa riga
       // restavano in archivio anche dopo la sparizione di `users/{uid}`.
       await deleteCollection(db.collection(`users/${uid}/aiConversations`)).catch(() => {});
+      // Notizie salvate col segnalibro (dal 04/10/2026): stessa ragione.
+      await deleteCollection(db.collection(`users/${uid}/savedNews`)).catch(() => {});
       // Collegamenti Alexa creati da questo account, in qualunque famiglia:
       // la skill ormai li scarta (vedi `resolveLink` in alexa.js), ma
       // resterebbero in archivio per sempre insieme allo userId Amazon.

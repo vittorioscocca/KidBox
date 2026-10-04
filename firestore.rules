@@ -206,6 +206,14 @@ service cloud.firestore {
       match /fitnessPlans/{childId} {
         allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
       }
+
+      // ── NOTIZIE SALVATE (private per-utente, sync cross-device) ──
+      // Il segnalibro delle Notizie: copie delle notizie che l'utente salva,
+      // una per documento (id = SHA-256 dell'URL, uguale su iOS e Android).
+      // Di chi le salva, non della famiglia. Le cancella deleteAccount.
+      match /savedNews/{newsId} {
+        allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
+      }
     }
 
     // Contatore famiglie possedute: l'utente può leggere il proprio (per mostrare

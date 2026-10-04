@@ -763,6 +763,28 @@ async function check(nome, promessa) {
       assertSucceeds(dbNuovo.doc(`families/${FAM}/members/${NUOVO}`)
           .update({displayName: "Nuovo"})));
 
+  // ── NOTIZIE SALVATE (users/{uid}/savedNews) ────────
+  //
+  // Il segnalibro delle Notizie (04/10/2026): di chi le salva, sincronizzate
+  // fra i suoi dispositivi. Id = SHA-256 dell'URL, uguale su iOS e Android.
+  console.log("\n── NOTIZIE SALVATE (users/{uid}/savedNews) ────────");
+  const salvata = {
+    url: "https://www.inps.it/bonus-nido", title: "Bonus nido 2026", summary: "Fino a 3.600 euro.",
+    category: "bonus", level: "country", placeName: "Italia", source: "INPS",
+    keyDate: "2026-12-31", keyDateKind: "deadline", savedAtMs: 1791100000000,
+  };
+  const salvataPath = `users/${UID}/savedNews/a1b2c3`;
+  await check("notizie salvate: il proprietario salva una notizia",
+      assertSucceeds(db.doc(salvataPath).set(salvata)));
+  await check("notizie salvate: il proprietario legge l'elenco in ordine di salvataggio",
+      assertSucceeds(db.collection(`users/${UID}/savedNews`).orderBy("savedAtMs", "desc").get()));
+  await check("notizie salvate: un altro utente NON legge l'elenco",
+      assertFails(env.authenticatedContext("estraneo").firestore().collection(`users/${UID}/savedNews`).get()));
+  await check("notizie salvate: un altro utente NON ne aggiunge",
+      assertFails(env.authenticatedContext("estraneo").firestore().doc(`users/${UID}/savedNews/x`).set(salvata)));
+  await check("notizie salvate: il proprietario la elimina",
+      assertSucceeds(db.doc(salvataPath).delete()));
+
   // ── CHAT AI (users/{uid}/aiConversations) ──────────
   //
   // Oggi si scrivono come vogliono i client (le build installate mandano il
