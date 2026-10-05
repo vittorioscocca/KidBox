@@ -36,6 +36,9 @@ final class PlanningAIChatViewModel: ObservableObject {
     @Published private(set) var autoExecutedMessageIds: Set<String> = []
     /// Da dove si è aperto l'assistente (Salute); `nil` = dalla Home.
     @Published var focus: AgentFocus?
+    /// Messaggi usati e tetto, per il contatore sopra il campo di testo
+    /// (nil finché il server non risponde).
+    @Published private(set) var quota: AssistantQuota?
 
     // Scelta «accurata / ridotta» quando il quaderno non sta in un messaggio.
     @Published var showContextModeChoice = false
@@ -119,6 +122,13 @@ final class PlanningAIChatViewModel: ObservableObject {
                 self?.usageTodaySnapshot = usage.usageToday
                 self?.dailyLimitSnapshot = usage.dailyLimit
                 self?.quotaPeriodSnapshot = usage.period
+                self?.quota = AssistantQuota(
+                    used: usage.usageToday,
+                    limit: usage.dailyLimit,
+                    period: usage.period,
+                    monthlyUsed: usage.monthlyUsage,
+                    monthlyLimit: usage.monthlyLimit
+                )
             }
 
             contextPrepared = true
@@ -293,9 +303,23 @@ final class PlanningAIChatViewModel: ObservableObject {
                 autoExecutedMessageIds.insert(assistantMessage.id)
             }
 
+            // Il mese avanza di quanto è avanzato il periodo (giorno o prova):
+            // la risposta porta solo quello, `getAIUsage` lo rilegge alla
+            // prossima apertura. Un giorno nuovo riparte da zero.
+            let previous = quota
+            let advanced = response.usageToday >= usageTodaySnapshot
+                ? response.usageToday - usageTodaySnapshot
+                : response.usageToday
             usageTodaySnapshot = response.usageToday
             dailyLimitSnapshot = response.dailyLimit
             quotaPeriodSnapshot = response.period
+            quota = AssistantQuota(
+                used: response.usageToday,
+                limit: response.dailyLimit,
+                period: response.period,
+                monthlyUsed: min(previous?.monthlyLimit ?? 0, (previous?.monthlyUsed ?? 0) + advanced),
+                monthlyLimit: previous?.monthlyLimit ?? 0
+            )
 
             try await compactIfNeeded(conversation: conversation)
             try? modelContext.save()
@@ -599,4 +623,19 @@ final class PlanningAIChatViewModel: ObservableObject {
     }
 
     private static let compactionSystemPrompt = "Riassumi in modo conciso ma completo la conversazione seguente, mantenendo i punti chiave, le decisioni prese e il contesto importante. Il riassunto sarà usato come contesto per continuare la conversazione."
+}
+
+/// Messaggi AI usati e rimasti, per il contatore dell'assistente: il periodo
+/// della quota (oggi, prova o bonus Free) e, sui piani a pagamento e nella
+/// prova, il tetto del mese.
+struct AssistantQuota: Equatable {
+    let used: Int
+    let limit: Int
+    let period: AIQuotaPeriod
+    let monthlyUsed: Int
+    let monthlyLimit: Int
+
+    var isNearLimit: Bool { limit > 0 && used >= Int(Double(limit) * 0.8) }
+    /// Il mese compare solo quando si avvicina: prima sarebbe rumore.
+    var showsMonth: Bool { monthlyLimit > 0 && monthlyUsed >= Int(Double(monthlyLimit) * 0.8) }
 }

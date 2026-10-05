@@ -932,6 +932,12 @@ private struct PlanningAIChatInnerView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
             }
+
+            if let quota = vm.quota, quota.limit > 0 {
+                quotaCounter(quota)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 4)
+            }
             
             HStack(alignment: .bottom, spacing: 10) {
                 // Input field — parte da una riga (42pt) e cresce con il testo
@@ -975,6 +981,28 @@ private struct PlanningAIChatInnerView: View {
         }
     }
     
+    /// Messaggi usati sul periodo della quota, come nella vecchia chat Salute;
+    /// il mese si aggiunge quando si avvicina il tetto.
+    private func quotaCounter(_ quota: AssistantQuota) -> some View {
+        HStack(spacing: 4) {
+            Spacer()
+            Group {
+                switch quota.period {
+                case .daily: Text("\(quota.used)/\(quota.limit) oggi")
+                case .trial: Text("\(quota.used)/\(quota.limit) della prova")
+                case .lifetime: Text("\(quota.used)/\(quota.limit) gratuiti")
+                }
+            }
+            .foregroundStyle(quota.isNearLimit ? Color.orange : Color.secondary)
+            if quota.showsMonth {
+                Text(verbatim: "·").foregroundStyle(.secondary)
+                Text("\(quota.monthlyUsed)/\(quota.monthlyLimit) nel mese")
+                    .foregroundStyle(Color.orange)
+            }
+        }
+        .font(.caption2)
+    }
+
     private var quickInputChips: some View {
         // `String` (non `LocalizedStringKey`): il testo del chip diventa anche il
         // messaggio inviato all'AI (`vm.inputText = chip`), quindi passa da NSLocalizedString.

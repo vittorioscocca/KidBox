@@ -49,477 +49,90 @@
         }
       }
     },
-    "%lld di %lld messaggi usati questo mese" : {
+    "%lld/%lld della prova" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld of %lld messages used this month"
+            "value" : "%lld/%lld of the trial"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld de %lld mensajes usados este mes"
+            "value" : "%lld/%lld de la prueba"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld sur %lld messages utilisés ce mois-ci"
+            "value" : "%lld/%lld de l’essai"
           }
         }
       }
     },
-    "Altre azioni" : {
+    "%lld/%lld gratuiti" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "More actions"
+            "value" : "%lld/%lld free"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Más acciones"
+            "value" : "%lld/%lld gratuitos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Autres actions"
+            "value" : "%lld/%lld gratuits"
           }
         }
       }
     },
-    "Apri" : {
+    "%lld/%lld nel mese" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open"
+            "value" : "%lld/%lld this month"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir"
+            "value" : "%lld/%lld este mes"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrir"
+            "value" : "%lld/%lld ce mois-ci"
           }
         }
       }
     },
-    "Elimina tutte" : {
+    "%lld/%lld oggi" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete all"
+            "value" : "%lld/%lld today"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar todas"
+            "value" : "%lld/%lld hoy"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tout supprimer"
-          }
-        }
-      }
-    },
-    "Eliminare tutte le notizie salvate?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete all saved news?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Eliminar todas las noticias guardadas?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Supprimer toutes les actualités enregistrées ?"
-          }
-        }
-      }
-    },
-    "Già nel calendario" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Already in the calendar"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ya está en el calendario"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Déjà dans le calendrier"
-          }
-        }
-      }
-    },
-    "Gli eventi arrivano con l'edizione della tua città: cerco quelli entro una sessantina di chilometri." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Events come with your city's edition: I look for ones within about 60 kilometres."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los eventos llegan con la edición de tu ciudad: busco los que están a unos sesenta kilómetros."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les événements arrivent avec l'édition de votre ville : je cherche ceux qui se trouvent à une soixantaine de kilomètres."
-          }
-        }
-      }
-    },
-    "La famiglia ha finito i messaggi AI di questo mese. Si rinnovano il primo del mese." : {
-      "comment" : "News: monthly AI quota reached",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your family has run out of AI messages for this month. They renew on the 1st of the month."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La familia ha agotado los mensajes de IA de este mes. Se renuevan el día 1 del mes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La famille a épuisé ses messages IA de ce mois-ci. Ils se renouvellent le 1er du mois."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La famiglia ha finito i messaggi AI di questo mese. Si rinnovano il primo del mese."
-          }
-        }
-      }
-    },
-    "La famiglia ha usato tutti i %d messaggi AI di questo mese. Si rinnovano il primo del mese." : {
-      "comment" : "AI monthly quota reached",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your family has used all %d AI messages for this month. They renew on the 1st of the month."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La familia ha usado los %d mensajes de IA de este mes. Se renuevan el día 1 del mes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La famille a utilisé les %d messages IA de ce mois-ci. Ils se renouvellent le 1er du mois."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La famiglia ha usato tutti i %d messaggi AI di questo mese. Si rinnovano il primo del mese."
-          }
-        }
-      }
-    },
-    "Le notizie di oggi costano %1$d messaggi AI e questo mese alla famiglia ne restano %2$d. Si rinnovano il primo del mese." : {
-      "comment" : "News: monthly AI quota not enough",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Today’s news costs %1$d AI messages and your family has %2$d left this month. They renew on the 1st of the month."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las noticias de hoy cuestan %1$d mensajes de IA y a la familia le quedan %2$d este mes. Se renuevan el día 1 del mes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les actualités du jour coûtent %1$d messages IA et il en reste %2$d à la famille ce mois-ci. Ils se renouvellent le 1er du mois."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le notizie di oggi costano %1$d messaggi AI e questo mese alla famiglia ne restano %2$d. Si rinnovano il primo del mese."
-          }
-        }
-      }
-    },
-    "Nessuna notizia salvata" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No saved news"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No hay noticias guardadas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune actualité enregistrée"
-          }
-        }
-      }
-    },
-    "Notizie salvate" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Saved news"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Noticias guardadas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actualités enregistrées"
-          }
-        }
-      }
-    },
-    "Oggi nessun evento vicino a te." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No events near you today."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hoy no hay eventos cerca de ti."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun événement près de chez vous aujourd'hui."
-          }
-        }
-      }
-    },
-    "Passa a Pro per %lld messaggi AI al giorno per famiglia (fino a %lld al mese), o a Max per %lld (fino a %lld al mese)." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upgrade to Pro for %lld AI messages a day per family (up to %lld a month), or to Max for %lld (up to %lld a month)."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cambia a Pro para %lld mensajes de IA al día por familia (hasta %lld al mes), o a Max para %lld (hasta %lld al mes)."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Passez à Pro pour %lld messages IA par jour et par famille (jusqu’à %lld par mois), ou à Max pour %lld (jusqu’à %lld par mois)."
-          }
-        }
-      }
-    },
-    "Questo messaggio costa %1$d messaggi AI perché il contesto è ampio, e questo mese alla famiglia ne restano %2$d su %3$d. Si rinnovano il primo del mese." : {
-      "comment" : "AI monthly quota: message costs more units than remaining",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This message costs %1$d AI messages because the context is large, and your family has %2$d of %3$d left this month. They renew on the 1st of the month."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este mensaje cuesta %1$d mensajes de IA porque el contexto es amplio, y a la familia le quedan %2$d de %3$d este mes. Se renuevan el día 1 del mes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce message coûte %1$d messages IA car le contexte est large, et il reste à la famille %2$d messages sur %3$d ce mois-ci. Ils se renouvellent le 1er du mois."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Questo messaggio costa %1$d messaggi AI perché il contesto è ampio, e questo mese alla famiglia ne restano %2$d su %3$d. Si rinnovano il primo del mese."
-          }
-        }
-      }
-    },
-    "Salva notizia" : {
-      "comment" : "News: save the article being read (share menu of the in-app browser)",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save article"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Guardar noticia"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enregistrer l'article"
-          }
-        }
-      }
-    },
-    "Scaduto il %@" : {
-      "comment" : "News: badge of a deadline already passed (saved news)",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expired %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Venció el %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expiré le %@"
-          }
-        }
-      }
-    },
-    "Spariscono da tutti i tuoi dispositivi. Gli articoli restano sui siti delle fonti." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "They'll disappear from all your devices. The articles stay on the sources' websites."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desaparecen de todos tus dispositivos. Los artículos siguen en las webs de las fuentes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elles disparaissent de tous vos appareils. Les articles restent sur les sites des sources."
-          }
-        }
-      }
-    },
-    "Tocca il segnalibro su una notizia per ritrovarla qui, anche quando non è più nell'edizione del giorno." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap the bookmark on a news item to find it here, even when it's no longer in the day's edition."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toca el marcador de una noticia para encontrarla aquí, aunque ya no esté en la edición del día."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Touchez le signet d'une actualité pour la retrouver ici, même quand elle n'est plus dans l'édition du jour."
-          }
-        }
-      }
-    },
-    "Togli dalle salvate" : {
-      "comment" : "News: remove a saved article (share menu of the in-app browser)",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove from saved"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quitar de las guardadas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retirer des actualités enregistrées"
+            "value" : "%lld/%lld aujourd’hui"
           }
         }
       }
@@ -2286,6 +1899,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld sur %lld messages utilisés aujourd'hui"
+          }
+        }
+      }
+    },
+    "%lld di %lld messaggi usati questo mese" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld messages used this month"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld de %lld mensajes usados este mes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sur %lld messages utilisés ce mois-ci"
           }
         }
       }
@@ -8301,6 +7936,28 @@
         }
       }
     },
+    "Altre azioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More actions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más acciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autres actions"
+          }
+        }
+      }
+    },
     "Altri %lld allenamenti — vedi cronologia" : {
       "localizations" : {
         "en" : {
@@ -9357,6 +9014,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvre l'écran pour générer un code d'invitation"
+          }
+        }
+      }
+    },
+    "Apri" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir"
           }
         }
       }
@@ -23702,6 +23381,28 @@
         }
       }
     },
+    "Elimina tutte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete all"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar todas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout supprimer"
+          }
+        }
+      }
+    },
     "Elimina tutte le ripetizioni" : {
       "localizations" : {
         "en" : {
@@ -24361,6 +24062,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Supprimer ce voyage ?"
+          }
+        }
+      }
+    },
+    "Eliminare tutte le notizie salvate?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete all saved news?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar todas las noticias guardadas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer toutes les actualités enregistrées ?"
           }
         }
       }
@@ -29452,6 +29175,28 @@
         }
       }
     },
+    "Già nel calendario" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already in the calendar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya está en el calendario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déjà dans le calendrier"
+          }
+        }
+      }
+    },
     "Giornaliera" : {
       "comment" : "Event recurrence: daily",
       "extractionState" : "stale",
@@ -29894,6 +29639,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les examens seront supprimés de tous les appareils."
+          }
+        }
+      }
+    },
+    "Gli eventi arrivano con l'edizione della tua città: cerco quelli entro una sessantina di chilometri." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Events come with your city's edition: I look for ones within about 60 kilometres."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los eventos llegan con la edición de tu ciudad: busco los que están a unos sesenta kilómetros."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les événements arrivent avec l'édition de votre ville : je cherche ceux qui se trouvent à une soixantaine de kilomètres."
           }
         }
       }
@@ -36417,6 +36184,36 @@
         }
       }
     },
+    "La famiglia ha finito i messaggi AI di questo mese. Si rinnovano il primo del mese." : {
+      "comment" : "News: monthly AI quota reached",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your family has run out of AI messages for this month. They renew on the 1st of the month."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La familia ha agotado los mensajes de IA de este mes. Se renuevan el día 1 del mes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La famille a épuisé ses messages IA de ce mois-ci. Ils se renouvellent le 1er du mois."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La famiglia ha finito i messaggi AI di questo mese. Si rinnovano il primo del mese."
+          }
+        }
+      }
+    },
     "La famiglia ha già 10 calendari iscritti." : {
       "localizations" : {
         "en" : {
@@ -36488,6 +36285,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La famille a utilisé %@ sur %@. Passez à Pro pour %@."
+          }
+        }
+      }
+    },
+    "La famiglia ha usato tutti i %d messaggi AI di questo mese. Si rinnovano il primo del mese." : {
+      "comment" : "AI monthly quota reached",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your family has used all %d AI messages for this month. They renew on the 1st of the month."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La familia ha usado los %d mensajes de IA de este mes. Se renuevan el día 1 del mes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La famille a utilisé les %d messages IA de ce mois-ci. Ils se renouvellent le 1er du mois."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La famiglia ha usato tutti i %d messaggi AI di questo mese. Si rinnovano il primo del mese."
           }
         }
       }
@@ -37535,6 +37362,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les actualités du jour coûtent %1$d messages IA et il en reste %2$d à la famille. Réessayez demain."
+          }
+        }
+      }
+    },
+    "Le notizie di oggi costano %1$d messaggi AI e questo mese alla famiglia ne restano %2$d. Si rinnovano il primo del mese." : {
+      "comment" : "News: monthly AI quota not enough",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today’s news costs %1$d AI messages and your family has %2$d left this month. They renew on the 1st of the month."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las noticias de hoy cuestan %1$d mensajes de IA y a la familia le quedan %2$d este mes. Se renuevan el día 1 del mes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les actualités du jour coûtent %1$d messages IA et il en reste %2$d à la famille ce mois-ci. Ils se renouvellent le 1er du mois."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le notizie di oggi costano %1$d messaggi AI e questo mese alla famiglia ne restano %2$d. Si rinnovano il primo del mese."
           }
         }
       }
@@ -43083,6 +42940,28 @@
         }
       }
     },
+    "Nessuna notizia salvata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No saved news"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay noticias guardadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune actualité enregistrée"
+          }
+        }
+      }
+    },
     "Nessuna nuova attività da abbinare alle sedute in programma." : {
       "comment" : "Fitness sync no match",
       "localizations" : {
@@ -46451,6 +46330,28 @@
         }
       }
     },
+    "Notizie salvate" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved news"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noticias guardadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualités enregistrées"
+          }
+        }
+      }
+    },
     "Notizie trovate e riassunte dall'AI dalle fonti indicate. Prima di fare domanda o di cambiare un contratto controlla sempre i dettagli sulla fonte." : {
       "localizations" : {
         "en" : {
@@ -47750,6 +47651,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aujourd'hui à %@ %@ a un examen."
+          }
+        }
+      }
+    },
+    "Oggi nessun evento vicino a te." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No events near you today."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy no hay eventos cerca de ti."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun événement près de chez vous aujourd'hui."
           }
         }
       }
@@ -49288,7 +49211,30 @@
         }
       }
     },
+    "Passa a Pro per %lld messaggi AI al giorno per famiglia (fino a %lld al mese), o a Max per %lld (fino a %lld al mese)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upgrade to Pro for %lld AI messages a day per family (up to %lld a month), or to Max for %lld (up to %lld a month)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambia a Pro para %lld mensajes de IA al día por familia (hasta %lld al mes), o a Max para %lld (hasta %lld al mes)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passez à Pro pour %lld messages IA par jour et par famille (jusqu’à %lld par mois), ou à Max pour %lld (jusqu’à %lld par mois)."
+          }
+        }
+      }
+    },
     "Passa a Pro per %lld messaggi AI al giorno per famiglia, o a Max per %lld." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -55486,6 +55432,36 @@
         }
       }
     },
+    "Questo messaggio costa %1$d messaggi AI perché il contesto è ampio, e questo mese alla famiglia ne restano %2$d su %3$d. Si rinnovano il primo del mese." : {
+      "comment" : "AI monthly quota: message costs more units than remaining",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This message costs %1$d AI messages because the context is large, and your family has %2$d of %3$d left this month. They renew on the 1st of the month."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este mensaje cuesta %1$d mensajes de IA porque el contexto es amplio, y a la familia le quedan %2$d de %3$d este mes. Se renuevan el día 1 del mes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce message coûte %1$d messages IA car le contexte est large, et il reste à la famille %2$d messages sur %3$d ce mois-ci. Ils se renouvellent le 1er du mois."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo messaggio costa %1$d messaggi AI perché il contesto è ampio, e questo mese alla famiglia ne restano %2$d su %3$d. Si rinnovano il primo del mese."
+          }
+        }
+      }
+    },
     "Questo messaggio costa circa %1$d messaggi AI, oggi ne restano %2$d." : {
       "comment" : "Fitness copilot cost estimate exceeding remaining quota",
       "extractionState" : "manual",
@@ -59023,6 +58999,29 @@
         }
       }
     },
+    "Salva notizia" : {
+      "comment" : "News: save the article being read (share menu of the in-app browser)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save article"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar noticia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer l'article"
+          }
+        }
+      }
+    },
     "Salva numero, intestatario, scadenza e IBAN delle carte di famiglia, con la foto di fronte e retro. Tutto cifrato end-to-end, mai letto dall'AI. Non serve, e non va salvato, il CVV." : {
       "localizations" : {
         "en" : {
@@ -59813,6 +59812,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "EXPIRÉ"
+          }
+        }
+      }
+    },
+    "Scaduto il %@" : {
+      "comment" : "News: badge of a deadline already passed (saved news)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expired %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venció el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expiré le %@"
           }
         }
       }
@@ -63437,6 +63459,28 @@
         }
       }
     },
+    "Spariscono da tutti i tuoi dispositivi. Gli articoli restano sui siti delle fonti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "They'll disappear from all your devices. The articles stay on the sources' websites."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desaparecen de todos tus dispositivos. Los artículos siguen en las webs de las fuentes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elles disparaissent de tous vos appareils. Les articles restent sur les sites des sources."
+          }
+        }
+      }
+    },
     "Spazio esaurito" : {
       "localizations" : {
         "en" : {
@@ -66119,6 +66163,28 @@
         }
       }
     },
+    "Tocca il segnalibro su una notizia per ritrovarla qui, anche quando non è più nell'edizione del giorno." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the bookmark on a news item to find it here, even when it's no longer in the day's edition."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca el marcador de una noticia para encontrarla aquí, aunque ya no esté en la edición del día."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez le signet d'une actualité pour la retrouver ici, même quand elle n'est plus dans l'édition du jour."
+          }
+        }
+      }
+    },
     "Tocca per aprire" : {
       "localizations" : {
         "en" : {
@@ -66357,6 +66423,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Retirer des favoris"
+          }
+        }
+      }
+    },
+    "Togli dalle salvate" : {
+      "comment" : "News: remove a saved article (share menu of the in-app browser)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from saved"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitar de las guardadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer des actualités enregistrées"
           }
         }
       }
