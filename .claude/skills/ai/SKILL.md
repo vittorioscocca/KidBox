@@ -191,6 +191,17 @@ codice in `AgentMemoryBook.swift` / `AgentMemoryBook.kt` / `memoryBook.js` e nei
   servono allo scheletro e li riempie di testi; se sfora (righe degli allegati
   indentate una per una) toglie lo sforamento dal budget e riprova, al massimo
   3 giri; un ridotto che costa quanto il completo non si propone.
+  **Cache (dal 05/10/2026).** Il prompt parte in tre pezzi: `systemPromptStable`
+  (regole, indice senza i conteggi delle schede che cambiano, schede stabili),
+  `systemPrompt` (focus, oggi/calendario/to-do/spesa/chat, azioni, focus) e
+  `systemPromptTail` (`domanda.md`, senza cache). Nel ridotto i testi hanno
+  nelle schede una **base** che dipende solo dai dati (dal più recente, metà
+  dello spazio dopo una riserva di 20.000) e i testi scelti per la domanda
+  vanno nell'appendice in coda. Con un blocco solo ogni dato nuovo azzerava la
+  cache e il write a 1,25× costava più di non averla; col budget diviso per
+  domanda il ridotto non la usava mai. Misurato su Haiku: seguiti 83% (completo)
+  e 69-83% (ridotto). **Non** rimettere nella parte stabile niente che cambi con
+  la domanda, il focus o un dato frequente: la cache si spegne senza errori.
   **Ridotto automatico:** sul Free (quota `lifetime`) sempre, e altrove quando il
   completo supera i messaggi rimasti (il server lo rifiuterebbe per intero):
   niente dialogo, qualunque sia la preferenza. La quota la leggono i client con

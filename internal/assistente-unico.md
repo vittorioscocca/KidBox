@@ -90,6 +90,18 @@ stimato di 150 caratteri a documento non basta) toglie lo sforamento dal budget
 e ridistribuisce, al massimo 3 giri. Se la ridotta costerebbe quanto la
 completa, il dialogo non compare e parte la completa.
 
+**Cache di Anthropic (dal 05/10/2026).** Il prompt va al server in tre pezzi:
+`systemPromptStable` (regole, indice senza i conteggi delle schede che cambiano,
+schede stabili) e `systemPrompt` (focus, oggi, calendario, to-do, spesa, chat,
+azioni, focus), ognuno con la sua cache, più `systemPromptTail` senza cache. Nella
+ridotta i testi letti hanno nelle schede una base uguale per ogni domanda (dal
+più recente, metà dello spazio che resta dopo le schede stabili e una riserva di
+20.000 caratteri) e i testi scelti per la domanda vanno in coda, in
+`domanda.md`. Se lo storico è troppo lungo per la base, la ridotta si costruisce
+come prima. Misura su Haiku (quaderno finto da 72.700 caratteri): seguito con un
+dato cambiato 83% dalla cache invece di 0%; ridotta 69-83% dalla seconda
+domanda invece di 0%, 0,6-1,1 centesimi invece di 2,65.
+
 **Ridotto automatico (dal 02/10/2026).** Qualunque sia la preferenza, parte la
 ridotta senza dialogo sul **Free** (quota `lifetime`: 5 messaggi in tutto, una
 domanda con la completa poteva costarli tutti) e sugli altri piani quando la
