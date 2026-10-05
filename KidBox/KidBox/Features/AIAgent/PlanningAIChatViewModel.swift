@@ -241,7 +241,7 @@ final class PlanningAIChatViewModel: ObservableObject {
         showContextModeChoice = false
     }
 
-    private func performSend(text: String, systemPrompt: String, mode: String) async {
+    private func performSend(text: String, systemPrompt: AgentSystemPrompt, mode: String) async {
         guard let conversation else {
             errorMessage = NSLocalizedString("Conversazione non inizializzata.", comment: "Assistant error")
             return
@@ -261,7 +261,8 @@ final class PlanningAIChatViewModel: ObservableObject {
 
             let response = try await AIService.shared.sendMessage(
                 messages: payloadMessages,
-                systemPrompt: systemPrompt,
+                systemPrompt: systemPrompt.volatile,
+                systemPromptStable: systemPrompt.stable,
                 purpose: "familyAgent"
             )
             // Con il focus di Salute vale come la vecchia chat Salute: la serie
@@ -319,10 +320,10 @@ final class PlanningAIChatViewModel: ObservableObject {
     // MARK: - Context
 
     private struct ContextPlan {
-        let fullPrompt: String
+        let fullPrompt: AgentSystemPrompt
         let fullUnits: Int
         /// `nil` se la versione completa sta già in un messaggio.
-        let reducedPrompt: String?
+        let reducedPrompt: AgentSystemPrompt?
         let reducedUnits: Int
     }
 
@@ -335,7 +336,7 @@ final class PlanningAIChatViewModel: ObservableObject {
         let history = conversation.map { buildPayloadMessages(conversation: $0) } ?? []
 
         let fullPrompt = AgentPrompt.systemPrompt(familyName: familyName, book: builder.build(docAllowance: nil), focus: focus)
-        let fullChars = AIAskAIPayload.totalChars(systemPrompt: fullPrompt, messages: history, pendingUserText: question)
+        let fullChars = AIAskAIPayload.totalChars(systemPromptChars: fullPrompt.count, messages: history, pendingUserText: question)
         let fullUnits = AIAskAIPayload.messageUnits(totalChars: fullChars)
         guard fullUnits > 1 else {
             KBLog.ai.kbInfo("PlanningAIChatVM context full chars=\(fullChars) units=1")
@@ -347,7 +348,7 @@ final class PlanningAIChatViewModel: ObservableObject {
         let textDocs = builder.textDocuments()
         let zero = Dictionary(textDocs.map { ($0.doc.id, 0) }, uniquingKeysWith: { a, _ in a })
         let skeleton = AgentPrompt.systemPrompt(familyName: familyName, book: builder.build(docAllowance: zero), focus: focus)
-        let skeletonChars = AIAskAIPayload.totalChars(systemPrompt: skeleton, messages: history, pendingUserText: question)
+        let skeletonChars = AIAskAIPayload.totalChars(systemPromptChars: skeleton.count, messages: history, pendingUserText: question)
         // Di solito lo scheletro sta in un messaggio e il ridotto costa 1. Se già
         // lo scheletro non ci sta (02/10/2026: una famiglia con 30 esami e 88
         // documenti, 50.449 caratteri senza un rigo di testo letto), il ridotto
@@ -374,7 +375,7 @@ final class PlanningAIChatViewModel: ObservableObject {
                 availableChars: available
             )
             reducedPrompt = AgentPrompt.systemPrompt(familyName: familyName, book: builder.build(docAllowance: allowance), focus: focus)
-            reducedChars = AIAskAIPayload.totalChars(systemPrompt: reducedPrompt, messages: history, pendingUserText: question)
+            reducedChars = AIAskAIPayload.totalChars(systemPromptChars: reducedPrompt.count, messages: history, pendingUserText: question)
             if reducedChars <= target || available == 0 { break }
             available = max(0, available - (reducedChars - target))
         }

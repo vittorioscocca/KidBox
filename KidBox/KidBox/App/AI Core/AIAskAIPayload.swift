@@ -33,9 +33,14 @@ enum AIAskAIPayload {
     static let fitnessUnitsMultiplier = 3
 
     static func totalChars(systemPrompt: String, messages: [KBAIMessage], pendingUserText: String = "") -> Int {
+        totalChars(systemPromptChars: systemPrompt.count, messages: messages, pendingUserText: pendingUserText)
+    }
+
+    /// Per un prompt mandato in più parti (`systemPromptStable` + `systemPrompt`).
+    static func totalChars(systemPromptChars: Int, messages: [KBAIMessage], pendingUserText: String = "") -> Int {
         let history = messages.reduce(0) { $0 + $1.content.count }
         let pending = pendingUserText.trimmingCharacters(in: .whitespacesAndNewlines).count
-        return systemPrompt.count + history + pending
+        return systemPromptChars + history + pending
     }
 
     static func messageUnits(totalChars: Int) -> Int {

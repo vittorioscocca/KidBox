@@ -275,9 +275,11 @@ final class AIService {
     
     /// Sends the conversation to the AI and returns the assistant reply.
     /// - Parameter purpose: `"clinicalRecord"` usa Sonnet lato server; `"mealPlan"` usa Haiku con max_tokens esteso; `"fitnessPlan"` usa Sonnet con max_tokens esteso; `"fitnessAdjust"` e `"fitnessCopilot"` sono chat su Sonnet riservate ai piani a pagamento (tutto il fitness scala 3× le unità); `nil` = Haiku (chat Salute, visite, esami, ecc.).
+    /// - Parameter systemPromptStable: parte del prompt che cambia di rado (assistente unico): il server la mette in cache da sola, davanti a `systemPrompt`.
     func sendMessage(
         messages: [KBAIMessage],
         systemPrompt: String,
+        systemPromptStable: String? = nil,
         purpose: String? = nil
     ) async throws -> AIResponse {
         let payloadMessages = messages.map {
@@ -286,6 +288,7 @@ final class AIService {
         return try await sendMessages(
             messages: payloadMessages,
             systemPrompt: systemPrompt,
+            systemPromptStable: systemPromptStable,
             purpose: purpose,
         )
     }
@@ -294,6 +297,7 @@ final class AIService {
     func sendMessages(
         messages: [AIMessagePayload],
         systemPrompt: String,
+        systemPromptStable: String? = nil,
         purpose: String? = nil
     ) async throws -> AIResponse {
 
@@ -334,6 +338,9 @@ final class AIService {
         ]
         if let purpose, !purpose.isEmpty {
             payload["purpose"] = purpose
+        }
+        if let systemPromptStable, !systemPromptStable.isEmpty {
+            payload["systemPromptStable"] = systemPromptStable
         }
 
         var timeout: TimeInterval?

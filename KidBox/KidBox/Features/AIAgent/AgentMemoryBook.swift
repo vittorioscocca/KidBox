@@ -294,17 +294,33 @@ struct AgentTextDocument {
 struct AgentMemoryBook {
     let files: [AgentMemoryFile]
 
-    var rendered: String {
-        var out = ["<indice>"]
-        out += files.map { "- \($0.name) — \($0.title): \($0.summary)" }
-        out.append("</indice>")
-        for f in files {
-            out.append("")
-            out.append("<scheda file=\"\(f.name)\" titolo=\"\(f.title)\">")
-            out.append(f.body)
-            out.append("</scheda>")
+    /// Schede che cambiano fra una domanda e l'altra (un to-do spuntato, un
+    /// articolo aggiunto, un messaggio in chat, il tempo che passa). Stanno in
+    /// fondo, nel secondo blocco del prompt, così il resto del quaderno resta
+    /// nella cache di Anthropic. Stesso elenco su Android e web.
+    static let volatileFiles: Set<String> = ["oggi.md", "calendario.md", "todo.md", "spesa.md", "chat.md"]
+
+    private func card(_ f: AgentMemoryFile) -> String {
+        "<scheda file=\"\(f.name)\" titolo=\"\(f.title)\">\n\(f.body)\n</scheda>"
+    }
+
+    /// Indice e schede stabili. L'indice non porta i conteggi delle schede che
+    /// cambiano: un numero diverso farebbe uscire tutto dalla cache.
+    var stableRendered: String {
+        var index = ["<indice>"]
+        index += files.map { f in
+            Self.volatileFiles.contains(f.name)
+                ? "- \(f.name) — \(f.title): in fondo, aggiornata a ogni domanda"
+                : "- \(f.name) — \(f.title): \(f.summary)"
         }
-        return out.joined(separator: "\n")
+        index.append("</indice>")
+        let cards = files.filter { !Self.volatileFiles.contains($0.name) }.map(card)
+        return ([index.joined(separator: "\n")] + cards).joined(separator: "\n\n")
+    }
+
+    /// Le schede che cambiano, nell'ordine del quaderno.
+    var volatileRendered: String {
+        files.filter { Self.volatileFiles.contains($0.name) }.map(card).joined(separator: "\n\n")
     }
 }
 
@@ -1235,20 +1251,36 @@ enum AgentPrompt {
         return f.string(from: date)
     }
 
-    /// Il focus va due volte, prima e dopo il quaderno: provato il 02/10/2026 su
-    /// Haiku, solo in fondo «cosa devo fare adesso?» aperto da una visita tornava
-    /// una volta su due con le cose della famiglia; in cima e in fondo, 4 su 4.
-    static func systemPrompt(familyName: String, book: AgentMemoryBook, focus: AgentFocus?) -> String {
-        [
-            rules(familyName: familyName),
-            focus?.promptLine,
-            book.rendered,
-            PlanningAIActionBlock.promptSection,
-            focus?.promptLine,
-        ]
-        .compactMap { $0 }
-        .joined(separator: "\n\n")
+    /// Il prompt in due blocchi, ognuno con la sua cache sul server
+    /// (`systemPromptStable` + `systemPrompt`): regole e schede stabili, poi
+    /// focus, schede che cambiano e azioni. Il focus va due volte, prima e dopo
+    /// le schede che cambiano: il 02/10/2026 su Haiku, solo in fondo «cosa devo
+    /// fare adesso?» aperto da una visita tornava una volta su due con le cose
+    /// della famiglia; il 05/10/2026 in questa posizione 4 su 4, come in cima al
+    /// quaderno. Prima stava in cima a tutto, e ogni cambio di focus azzerava la cache.
+    static func systemPrompt(familyName: String, book: AgentMemoryBook, focus: AgentFocus?) -> AgentSystemPrompt {
+        AgentSystemPrompt(
+            stable: [rules(familyName: familyName), book.stableRendered].joined(separator: "\n\n"),
+            volatile: [
+                focus?.promptLine,
+                book.volatileRendered,
+                PlanningAIActionBlock.promptSection,
+                focus?.promptLine,
+            ]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n\n")
+        )
     }
+}
+
+/// Il prompt dell'assistente nelle due parti che il server mette in cache a sé.
+struct AgentSystemPrompt {
+    let stable: String
+    let volatile: String
+
+    /// Caratteri come li conta il server: le due parti insieme.
+    var count: Int { stable.count + volatile.count }
 }
 
 // MARK: - Fitting
