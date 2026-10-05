@@ -139,7 +139,8 @@ function plansText(plans) {
           (p.priceYearly ? ` oppure ${p.priceYearly.toFixed(2).replace(".", ",")} € all'anno` : "");
         const ai = p.aiPeriod === "lifetime" ?
           `${p.aiLimit} messaggi AI di prova, una tantum (non si rinnovano)` :
-          `${p.aiLimit} messaggi AI al giorno`;
+          `${p.aiLimit} messaggi AI al giorno` +
+            (p.aiMonthlyLimit > 0 ? `, fino a ${p.aiMonthlyLimit} al mese per famiglia` : "");
         const features = (p.features?.it || [])
             .filter((f) => f.included !== false)
             .map((f) => String(f.text)
@@ -165,7 +166,7 @@ function priceAnswer(plans, lang) {
       locale: "it-IT", free: "gratis, per sempre", month: "al mese", or: "oppure", year: "all'anno",
       storage: "di spazio per la famiglia",
       aiOnce: (n) => `${n} messaggi AI di prova, una tantum`,
-      aiDaily: (n) => `${n} messaggi AI al giorno`,
+      aiDaily: (n, m) => `${n} messaggi AI al giorno` + (m > 0 ? `, fino a ${m} al mese per famiglia` : ""),
       intro: "KidBox ha tre piani, sempre **per famiglia**: un solo abbonamento copre tutti i membri, senza limite di persone.",
       outro: "L'abbonamento si acquista dall'app (App Store o Google Play), si rinnova ogni mese e si annulla quando vuoi. Il piano Free non scade mai.",
     },
@@ -173,7 +174,7 @@ function priceAnswer(plans, lang) {
       locale: "en-GB", free: "free, forever", month: "per month", or: "or", year: "per year",
       storage: "of family storage",
       aiOnce: (n) => `${n} one-off trial AI messages`,
-      aiDaily: (n) => `${n} AI messages per day`,
+      aiDaily: (n, m) => `${n} AI messages per day` + (m > 0 ? `, up to ${m} per month per family` : ""),
       intro: "KidBox has three plans, always **per family**: one subscription covers every member, with no limit on people.",
       outro: "You subscribe from the app (App Store or Google Play); it renews monthly and you can cancel whenever you like. The Free plan never expires.",
     },
@@ -181,7 +182,7 @@ function priceAnswer(plans, lang) {
       locale: "es-ES", free: "gratis, para siempre", month: "al mes", or: "o", year: "al año",
       storage: "de espacio para la familia",
       aiOnce: (n) => `${n} mensajes de IA de prueba, por una sola vez`,
-      aiDaily: (n) => `${n} mensajes de IA al día`,
+      aiDaily: (n, m) => `${n} mensajes de IA al día` + (m > 0 ? `, hasta ${m} al mes por familia` : ""),
       intro: "KidBox tiene tres planes, siempre **por familia**: una sola suscripción cubre a todos los miembros, sin límite de personas.",
       outro: "La suscripción se compra desde la app (App Store o Google Play), se renueva cada mes y se cancela cuando quieras. El plan Free no caduca nunca.",
     },
@@ -189,7 +190,7 @@ function priceAnswer(plans, lang) {
       locale: "fr-FR", free: "gratuit, pour toujours", month: "par mois", or: "ou", year: "par an", colon: "\u00a0:",
       storage: "d'espace pour la famille",
       aiOnce: (n) => `${n} messages IA d'essai, une seule fois`,
-      aiDaily: (n) => `${n} messages IA par jour`,
+      aiDaily: (n, m) => `${n} messages IA par jour` + (m > 0 ? `, jusqu'à ${m} par mois et par famille` : ""),
       intro: "KidBox propose trois offres, toujours **par famille** : un seul abonnement couvre tous les membres, sans limite de personnes.",
       outro: "L'abonnement s'achète depuis l'app (App Store ou Google Play), se renouvelle chaque mois et s'annule quand vous voulez. L'offre Free n'expire jamais.",
     },
@@ -207,7 +208,7 @@ function priceAnswer(plans, lang) {
         const price = p.priceMonthly === 0 ? L.free :
           `${fmt.format(p.priceMonthly)} ${L.month}` +
           (p.priceYearly ? ` ${L.or} ${fmt.format(p.priceYearly)} ${L.year}` : "");
-        const ai = p.aiPeriod === "lifetime" ? L.aiOnce(p.aiLimit) : L.aiDaily(p.aiLimit);
+        const ai = p.aiPeriod === "lifetime" ? L.aiOnce(p.aiLimit) : L.aiDaily(p.aiLimit, p.aiMonthlyLimit || 0);
         // Le voci della scheda senza segnaposto: spazio e messaggi sono già detti.
         const extras = (p.features?.[lang] || p.features?.it || [])
             .filter((f) => f.included !== false && !/\{(storage|aiLimit)\}/.test(String(f.text)))

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-03",
+  "updatedAt": "2026-10-05",
   "plans": {
     "free": {
       "id": "free",
@@ -9,6 +9,7 @@
       "storageBytes": 209715200,
       "aiLimit": 5,
       "aiPeriod": "lifetime",
+      "aiMonthlyLimit": 0,
       "productId": null,
       "priceMonthly": 0,
       "priceYearly": 0,
@@ -211,6 +212,7 @@
       "storageBytes": 5368709120,
       "aiLimit": 30,
       "aiPeriod": "daily",
+      "aiMonthlyLimit": 100,
       "productId": "it.vittorioscocca.kidbox.pro.monthly",
       "priceMonthly": 4.99,
       "priceYearly": 39.99,
@@ -269,7 +271,7 @@
           },
           {
             "icon": "💬",
-            "text": "{aiLimit} messaggi AI al giorno",
+            "text": "{aiLimit} messaggi AI al giorno, fino a 100 al mese",
             "strong": true
           },
           {
@@ -321,7 +323,7 @@
           },
           {
             "icon": "💬",
-            "text": "{aiLimit} AI messages per day",
+            "text": "{aiLimit} AI messages per day, up to 100 per month",
             "strong": true
           },
           {
@@ -373,7 +375,7 @@
           },
           {
             "icon": "💬",
-            "text": "{aiLimit} messages IA par jour",
+            "text": "{aiLimit} messages IA par jour, jusqu'à 100 par mois",
             "strong": true
           },
           {
@@ -425,7 +427,7 @@
           },
           {
             "icon": "💬",
-            "text": "{aiLimit} mensajes de IA al día",
+            "text": "{aiLimit} mensajes de IA al día, hasta 100 al mes",
             "strong": true
           },
           {
@@ -453,6 +455,7 @@
       "storageBytes": 21474836480,
       "aiLimit": 100,
       "aiPeriod": "daily",
+      "aiMonthlyLimit": 200,
       "productId": "it.vittorioscocca.kidbox.max.monthly",
       "priceMonthly": 9.99,
       "priceYearly": 79.99,
@@ -486,7 +489,7 @@
           },
           {
             "icon": "💬",
-            "text": "{aiLimit} messaggi AI al giorno",
+            "text": "{aiLimit} messaggi AI al giorno, fino a 200 al mese",
             "strong": true
           },
           {
@@ -513,7 +516,7 @@
           },
           {
             "icon": "💬",
-            "text": "{aiLimit} AI messages per day",
+            "text": "{aiLimit} AI messages per day, up to 200 per month",
             "strong": true
           },
           {
@@ -540,7 +543,7 @@
           },
           {
             "icon": "💬",
-            "text": "{aiLimit} messages IA par jour",
+            "text": "{aiLimit} messages IA par jour, jusqu'à 200 par mois",
             "strong": true
           },
           {
@@ -567,7 +570,7 @@
           },
           {
             "icon": "💬",
-            "text": "{aiLimit} mensajes de IA al día",
+            "text": "{aiLimit} mensajes de IA al día, hasta 200 al mes",
             "strong": true
           },
           {

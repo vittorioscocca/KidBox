@@ -2560,7 +2560,10 @@ async function resolveAIQuota(uid, familyId = null) {
     // prova. Il periodo "trial" non è "lifetime", quindi i pianificatori
     // riservati a Pro/Max (gate `quota.period === "lifetime"`) restano aperti.
     if (source === "trial" && plan !== "free") {
-      return await proTrial.trialAIQuota();
+      // Il totale della prova, più il tetto mensile del piano provato: la prova
+      // non deve poter spendere più di quanto un abbonato spende in un mese.
+      const [trial, paid] = await Promise.all([proTrial.trialAIQuota(), plansConfig.aiQuotaForPlan(plan)]);
+      return {...trial, monthlyLimit: paid.monthlyLimit || 0};
     }
     return await plansConfig.aiQuotaForPlan(plan);
   } catch (e) {
@@ -2786,14 +2789,16 @@ function anthropicReplyText(json) {
  * Non solleva: un rimborso fallito non deve coprire l'errore originale.
  * @param {string} familyId
  * @param {string} uid
- * @param {{period: "daily"|"lifetime", limit: number}} quota
+ * @param {{period: "daily"|"lifetime", limit: number, monthlyLimit: (number|undefined)}} quota
  * @param {number} units unità da restituire
  * @return {Promise<void>}
  */
 async function refundAIUsage(familyId, uid, quota, units) {
   const delta = Math.max(1, Math.floor(Number(units) || 1));
   const db = admin.firestore();
-  const {familyRef, userRef} = proTrial.aiUsageRefs(db, familyId, uid, quota?.period, aiTodayKey());
+  const {familyRef, userRef, monthRef} = proTrial.aiUsageRefs(db, familyId, uid, quota?.period, aiTodayKey());
+  const monthlyRef = (quota?.period === "daily" || quota?.period === "trial") &&
+    Number(quota?.monthlyLimit) > 0 ? monthRef : null;
 
   try {
     await db.runTransaction(async (tx) => {
@@ -2802,6 +2807,7 @@ async function refundAIUsage(familyId, uid, quota, units) {
       // e regalerebbe quota. Si legge e si scrive il valore con il pavimento a 0.
       const familySnap = await tx.get(familyRef);
       const userSnap = userRef ? await tx.get(userRef) : null;
+      const monthSnap = monthlyRef ? await tx.get(monthlyRef) : null;
       const familyCount = familySnap.exists ? (familySnap.data().count || 0) : 0;
       tx.set(familyRef, {
         count: Math.max(0, familyCount - delta),
@@ -2811,6 +2817,13 @@ async function refundAIUsage(familyId, uid, quota, units) {
         const userCount = userSnap && userSnap.exists ? (userSnap.data().count || 0) : 0;
         tx.set(userRef, {
           count: Math.max(0, userCount - delta),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, {merge: true});
+      }
+      if (monthlyRef) {
+        const monthCount = monthSnap && monthSnap.exists ? (monthSnap.data().count || 0) : 0;
+        tx.set(monthlyRef, {
+          count: Math.max(0, monthCount - delta),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         }, {merge: true});
       }
@@ -2833,13 +2846,16 @@ async function refundAIUsage(familyId, uid, quota, units) {
  * "lifetime/free" — non è mai keyed su una data, quindi non si resetta mai).
  * @param {string} familyId
  * @param {string} uid
- * @param {{period: "daily"|"lifetime", limit: number}} quota
+ * @param {{period: "daily"|"lifetime", limit: number, monthlyLimit: (number|undefined)}} quota
  * @param {number} incrementBy messaggi da scalare (default 1; itinerario viaggio = 2 ogni 3 giorni)
  * @return {Promise<number>} nuovo totale del periodo dopo l'incremento
  */
 async function checkAndIncrementAIUsage(familyId, uid, quota, incrementBy = 1) {
   const delta = Math.max(1, Math.floor(Number(incrementBy) || 1));
   const {period, limit} = quota;
+  const monthlyLimit = period === "daily" || period === "trial" ?
+    Math.max(0, Number(quota.monthlyLimit) || 0) :
+    0;
 
   if (limit <= 0) {
     throw new HttpsError(
@@ -2855,12 +2871,32 @@ async function checkAndIncrementAIUsage(familyId, uid, quota, incrementBy = 1) {
   // illimitate (firestore.rules), quindi il solo contatore per famiglia si
   // aggirerebbe creandone una nuova ogni 5 messaggi. Con il contatore per uid
   // il bonus resta 5 per persona a prescindere da quante famiglie apre.
-  const {familyRef: ref, userRef} = proTrial.aiUsageRefs(db, familyId, uid, period, aiTodayKey());
+  const {familyRef: ref, userRef, monthRef} = proTrial.aiUsageRefs(db, familyId, uid, period, aiTodayKey());
+  // Tetto mensile dei piani a pagamento e della prova: il giornaliero da solo lasciava
+  // 900 messaggi al mese al Pro e 3.000 al Max, più di quanto il piano incassa.
+  const monthlyRef = monthlyLimit > 0 ? monthRef : null;
 
   return await db.runTransaction(async (tx) => {
     // Firestore impone tutte le letture prima di qualsiasi scrittura.
     const snap = await tx.get(ref);
     const userSnap = userRef ? await tx.get(userRef) : null;
+    const monthSnap = monthlyRef ? await tx.get(monthlyRef) : null;
+
+    // Prima il mese: se è finito, «riprova domani» sarebbe falso.
+    const monthCount = monthSnap && monthSnap.exists ? (monthSnap.data().count || 0) : 0;
+    if (monthlyRef && monthCount + delta > monthlyLimit) {
+      const remaining = Math.max(0, monthlyLimit - monthCount);
+      const message = delta > 1 && remaining > 0 ?
+        `Questo messaggio costa ${delta} messaggi AI perché il contesto è ampio, ` +
+          `e questo mese alla famiglia ne restano ${remaining} su ${monthlyLimit}. Si rinnovano il primo del mese.` :
+        `La famiglia ha usato tutti i ${monthlyLimit} messaggi AI di questo mese. Si rinnovano il primo del mese.`;
+      throw new HttpsError("resource-exhausted", message, {
+        reason: "monthly-limit",
+        units: delta,
+        remaining,
+        limit: monthlyLimit,
+      });
+    }
 
     const familyCount = snap.exists ? (snap.data().count || 0) : 0;
     const userCount = userSnap && userSnap.exists ? (userSnap.data().count || 0) : 0;
@@ -2906,6 +2942,15 @@ async function checkAndIncrementAIUsage(familyId, uid, quota, incrementBy = 1) {
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         uid,
         lastFamilyId: familyId,
+      }, {merge: true});
+    }
+
+    if (monthlyRef) {
+      tx.set(monthlyRef, {
+        count: admin.firestore.FieldValue.increment(delta),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        familyId,
+        lastUid: uid,
       }, {merge: true});
     }
 
@@ -4832,7 +4877,7 @@ exports.getAIUsage = onCall(
 
       const quota = await resolveAIQuota(uid, familyId);
       const db = admin.firestore();
-      const {familyRef: ref, userRef} = proTrial.aiUsageRefs(db, familyId, uid, quota.period, aiTodayKey());
+      const {familyRef: ref, userRef, monthRef} = proTrial.aiUsageRefs(db, familyId, uid, quota.period, aiTodayKey());
 
       const snap = await ref.get();
       const familyCount = snap.exists ? (snap.data().count || 0) : 0;
@@ -4846,7 +4891,18 @@ exports.getAIUsage = onCall(
         count = Math.max(familyCount, userCount);
       }
 
-      return {usageToday: count, dailyLimit: quota.limit, period: quota.period};
+      // Tetto mensile (Pro, Max e prova Pro): 0 = nessun tetto. Le build che non lo
+      // leggono vedono solo il giornaliero, e il server le ferma comunque.
+      const monthlyLimit = quota.period === "daily" || quota.period === "trial" ?
+        Number(quota.monthlyLimit) || 0 :
+        0;
+      let monthlyUsage = 0;
+      if (monthlyLimit > 0 && monthRef) {
+        const monthSnap = await monthRef.get();
+        monthlyUsage = monthSnap.exists ? (monthSnap.data().count || 0) : 0;
+      }
+
+      return {usageToday: count, dailyLimit: quota.limit, period: quota.period, monthlyUsage, monthlyLimit};
     },
 );
 

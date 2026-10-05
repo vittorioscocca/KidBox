@@ -34,6 +34,12 @@ const LIMITS = {
   aiLimitMax: 500,
   /** Sul piano Free il bonus è una tantum: un errore qui è spesa API regalata. */
   aiLimitFreeMax: 20,
+  /**
+   * Tetto mensile per famiglia sui piani a pagamento (0 = nessun tetto). Il
+   * giornaliero da solo lasciava 900 messaggi al mese al Pro e 3.000 al Max:
+   * a 2-2,5 centesimi l'uno nel caso peggiore, più di quanto incassa il piano.
+   */
+  aiMonthlyLimitMax: 5000,
   storageBytesMax: 100 * GIB,
   storageBytesFreeMax: 2 * GIB,
   priceMonthlyMax: 99.99,
@@ -124,6 +130,11 @@ function validatePlans(plans) {
     const priceYearly = p.priceYearly === undefined || p.priceYearly === null ?
       Number(base.priceYearly ?? 0) :
       Number(p.priceYearly);
+    // Facoltativo come priceYearly: un listino salvato prima del 05/10/2026 non
+    // ce l'ha, e allora vale il tetto del bundle, non «nessun tetto».
+    const aiMonthlyLimit = p.aiMonthlyLimit === undefined || p.aiMonthlyLimit === null ?
+      Number(base.aiMonthlyLimit ?? 0) :
+      Number(p.aiMonthlyLimit);
     const tettoStorage = id === "free" ? LIMITS.storageBytesFreeMax : LIMITS.storageBytesMax;
     const tettoAI = id === "free" ? LIMITS.aiLimitFreeMax : LIMITS.aiLimitMax;
 
@@ -132,6 +143,16 @@ function validatePlans(plans) {
     }
     if (!Number.isInteger(aiLimit) || aiLimit < 0 || aiLimit > tettoAI) {
       errors.push(`${id}: aiLimit deve essere un intero tra 0 e ${tettoAI}`);
+    }
+    if (!Number.isInteger(aiMonthlyLimit) || aiMonthlyLimit < 0 || aiMonthlyLimit > LIMITS.aiMonthlyLimitMax) {
+      errors.push(`${id}: aiMonthlyLimit deve essere un intero tra 0 e ${LIMITS.aiMonthlyLimitMax}`);
+    }
+    // Il Free ha già il suo bonus a vita: un tetto mensile lì non ha senso.
+    if (id === "free" && aiMonthlyLimit !== 0) {
+      errors.push("free: aiMonthlyLimit deve restare 0");
+    }
+    if (id !== "free" && aiMonthlyLimit > 0 && aiMonthlyLimit < aiLimit) {
+      errors.push(`${id}: aiMonthlyLimit non può essere più basso del limite giornaliero (${aiLimit})`);
     }
     if (aiPeriod !== "daily" && aiPeriod !== "lifetime") {
       errors.push(`${id}: aiPeriod deve essere "daily" o "lifetime"`);
@@ -155,6 +176,7 @@ function validatePlans(plans) {
       storageBytes,
       aiLimit,
       aiPeriod,
+      aiMonthlyLimit,
       priceMonthly,
       priceYearly,
       highlighted: p.highlighted === true,
@@ -233,14 +255,16 @@ async function storageQuotaBytesForPlan(plan) {
 
 /**
  * Quota messaggi AI per famiglia: su `free` è un bonus UNA TANTUM che non si
- * resetta mai (`lifetime`), su Pro/Max è la quota giornaliera (`daily`).
+ * resetta mai (`lifetime`), su Pro/Max è la quota giornaliera (`daily`) con
+ * in più un tetto per mese di calendario (`monthlyLimit`, 0 = nessuno).
  * @param {string|null|undefined} plan
- * @return {Promise<{period: string, limit: number}>}
+ * @return {Promise<{period: string, limit: number, monthlyLimit: number}>}
  */
 async function aiQuotaForPlan(plan) {
   const {plans} = await loadPlans();
   const spec = planSpec(plans, plan);
-  return {period: spec.aiPeriod, limit: spec.aiLimit};
+  const monthlyLimit = spec.aiPeriod === "daily" ? Number(spec.aiMonthlyLimit) || 0 : 0;
+  return {period: spec.aiPeriod, limit: spec.aiLimit, monthlyLimit};
 }
 
 /**

@@ -522,7 +522,7 @@ function renderPlansEditor() {
     ? 'in uso: config/plans (modificato da console)'
     : 'in uso: plans.json dell\'ultimo deploy — config/plans assente o non valido';
   document.getElementById('plans-source').textContent =
-    origine + ' · tetti: AI ≤ ' + limits.aiLimitMax + ' (Free ≤ ' + limits.aiLimitFreeMax + '), storage ≤ ' + Math.round(limits.storageBytesMax/1073741824) + ' GB';
+    origine + ' · tetti: AI ≤ ' + limits.aiLimitMax + ' (Free ≤ ' + limits.aiLimitFreeMax + '), AI al mese ≤ ' + limits.aiMonthlyLimitMax + ', storage ≤ ' + Math.round(limits.storageBytesMax/1073741824) + ' GB';
 
   const ordine = ['free','pro','max'];
   document.getElementById('plans-editor').innerHTML = ordine.map(id => {
@@ -550,6 +550,10 @@ function renderPlansEditor() {
         <div class="field" style="margin:0;width:110px">
           <label>Periodo</label>
           <input value="${plansEsc(p.aiPeriod)}" disabled style="width:100%;opacity:.6" title="Free è una tantum, i piani a pagamento sono giornalieri: non si cambia da qui" />
+        </div>
+        <div class="field" style="margin:0;width:120px">
+          <label>Tetto AI / mese</label>
+          <input type="number" min="0" step="1" id="plan-${id}-ai-month" value="${p.aiMonthlyLimit ?? 0}" ${p.aiPeriod === 'lifetime' ? 'disabled' : ''} style="width:100%${p.aiPeriod === 'lifetime' ? ';opacity:.6' : ''}" title="Messaggi AI per famiglia nel mese di calendario, oltre al limite giornaliero. 0 = nessun tetto. Se lo cambi, cambia anche il numero scritto nella frase dei messaggi AI (le app installate non conoscono un segnaposto per il mese)." />
         </div>
         <div class="field" style="margin:0;width:120px">
           <label>Prezzo / mese</label>
@@ -593,6 +597,7 @@ function plansFromForm() {
       storageBytes: Math.round(Number(document.getElementById(`plan-${id}-storage`).value) * unita),
       aiLimit: parseInt(document.getElementById(`plan-${id}-ai`).value, 10),
       aiPeriod: base.aiPeriod,
+      aiMonthlyLimit: parseInt(document.getElementById(`plan-${id}-ai-month`).value, 10) || 0,
       priceMonthly: Number(document.getElementById(`plan-${id}-price`).value),
       priceYearly: Number(document.getElementById(`plan-${id}-price-year`).value),
       highlighted: document.getElementById(`plan-${id}-hot`).checked,
@@ -616,6 +621,7 @@ function plansDiffQuote(nuovi) {
     const a = plansState.plans[id], b = nuovi[id];
     if (a.storageBytes !== b.storageBytes) righe.push(`${id}: storage ${fmtBytes(a.storageBytes)} → ${fmtBytes(b.storageBytes)}`);
     if (a.aiLimit !== b.aiLimit) righe.push(`${id}: messaggi AI ${a.aiLimit} → ${b.aiLimit}`);
+    if ((a.aiMonthlyLimit ?? 0) !== (b.aiMonthlyLimit ?? 0)) righe.push(`${id}: tetto AI mensile ${a.aiMonthlyLimit ?? 0} → ${b.aiMonthlyLimit ?? 0}`);
     if (Number(a.priceMonthly) !== Number(b.priceMonthly)) righe.push(`${id}: prezzo ${a.priceMonthly} → ${b.priceMonthly} (solo etichetta, non tocca lo store)`);
   }
   return righe;

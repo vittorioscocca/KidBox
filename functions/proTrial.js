@@ -239,17 +239,24 @@ async function grantTrial(familyId, uid, opts = {}) {
  * Riferimenti ai contatori AI per un periodo di quota.
  * `lifetime` (Free) scala anche per utente; `trial` solo per famiglia, perché
  * la prova è già una per persona alla concessione; `daily` per famiglia e giorno.
+ * `monthRef` (prova e piani a pagamento) è il contatore per famiglia e mese del
+ * tetto mensile.
  * @param {FirebaseFirestore.Firestore} db
  * @param {string} familyId
  * @param {string} uid
  * @param {string} period
  * @param {string} todayKey chiave del giorno per il periodo `daily`
- * @return {{familyRef: FirebaseFirestore.DocumentReference, userRef: ?FirebaseFirestore.DocumentReference}}
+ * @return {{familyRef: FirebaseFirestore.DocumentReference, userRef: ?FirebaseFirestore.DocumentReference,
+ *   monthRef: (FirebaseFirestore.DocumentReference|undefined)}}
  */
 function aiUsageRefs(db, familyId, uid, period, todayKey) {
   const familyDoc = db.collection("ai_usage").doc(`family_${familyId}`);
+  // Il mese di calendario a Roma, dalla stessa chiave del giorno (YYYY-MM-DD):
+  // la prova lo condivide coi piani a pagamento, così il tetto mensile vale
+  // anche lì e chi si abbona a metà mese parte da quanto ha già usato.
+  const monthRef = familyDoc.collection("monthly").doc(String(todayKey).slice(0, 7));
   if (period === "trial") {
-    return {familyRef: familyDoc.collection("lifetime").doc("trial"), userRef: null};
+    return {familyRef: familyDoc.collection("lifetime").doc("trial"), userRef: null, monthRef};
   }
   if (period === "lifetime") {
     return {
@@ -257,7 +264,7 @@ function aiUsageRefs(db, familyId, uid, period, todayKey) {
       userRef: uid ? db.collection("ai_usage").doc(`user_${uid}`).collection("lifetime").doc("free") : null,
     };
   }
-  return {familyRef: familyDoc.collection("daily").doc(todayKey), userRef: null};
+  return {familyRef: familyDoc.collection("daily").doc(todayKey), userRef: null, monthRef};
 }
 
 module.exports = {
