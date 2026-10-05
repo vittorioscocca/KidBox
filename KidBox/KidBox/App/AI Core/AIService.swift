@@ -276,10 +276,12 @@ final class AIService {
     /// Sends the conversation to the AI and returns the assistant reply.
     /// - Parameter purpose: `"clinicalRecord"` usa Sonnet lato server; `"mealPlan"` usa Haiku con max_tokens esteso; `"fitnessPlan"` usa Sonnet con max_tokens esteso; `"fitnessAdjust"` e `"fitnessCopilot"` sono chat su Sonnet riservate ai piani a pagamento (tutto il fitness scala 3× le unità); `nil` = Haiku (chat Salute, visite, esami, ecc.).
     /// - Parameter systemPromptStable: parte del prompt che cambia di rado (assistente unico): il server la mette in cache da sola, davanti a `systemPrompt`.
+    /// - Parameter systemPromptTail: coda che cambia a ogni domanda, dopo `systemPrompt` e senza cache.
     func sendMessage(
         messages: [KBAIMessage],
         systemPrompt: String,
         systemPromptStable: String? = nil,
+        systemPromptTail: String? = nil,
         purpose: String? = nil
     ) async throws -> AIResponse {
         let payloadMessages = messages.map {
@@ -289,6 +291,7 @@ final class AIService {
             messages: payloadMessages,
             systemPrompt: systemPrompt,
             systemPromptStable: systemPromptStable,
+            systemPromptTail: systemPromptTail,
             purpose: purpose,
         )
     }
@@ -298,6 +301,7 @@ final class AIService {
         messages: [AIMessagePayload],
         systemPrompt: String,
         systemPromptStable: String? = nil,
+        systemPromptTail: String? = nil,
         purpose: String? = nil
     ) async throws -> AIResponse {
 
@@ -341,6 +345,10 @@ final class AIService {
         }
         if let systemPromptStable, !systemPromptStable.isEmpty {
             payload["systemPromptStable"] = systemPromptStable
+        }
+        // Coda che cambia a ogni domanda (testi scelti nel contesto ridotto): senza cache.
+        if let systemPromptTail, !systemPromptTail.isEmpty {
+            payload["systemPromptTail"] = systemPromptTail
         }
 
         var timeout: TimeInterval?

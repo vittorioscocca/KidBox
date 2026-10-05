@@ -300,6 +300,11 @@ struct AgentMemoryBook {
     /// nella cache di Anthropic. Stesso elenco su Android e web.
     static let volatileFiles: Set<String> = ["oggi.md", "calendario.md", "todo.md", "spesa.md", "chat.md"]
 
+    /// Cambia a ogni domanda: va in coda, dopo le azioni, e non entra nell'indice.
+    static let tailFile = "domanda.md"
+
+    private var bookFiles: [AgentMemoryFile] { files.filter { $0.name != Self.tailFile } }
+
     private func card(_ f: AgentMemoryFile) -> String {
         "<scheda file=\"\(f.name)\" titolo=\"\(f.title)\">\n\(f.body)\n</scheda>"
     }
@@ -308,19 +313,24 @@ struct AgentMemoryBook {
     /// cambiano: un numero diverso farebbe uscire tutto dalla cache.
     var stableRendered: String {
         var index = ["<indice>"]
-        index += files.map { f in
+        index += bookFiles.map { f in
             Self.volatileFiles.contains(f.name)
                 ? "- \(f.name) — \(f.title): in fondo, aggiornata a ogni domanda"
                 : "- \(f.name) — \(f.title): \(f.summary)"
         }
         index.append("</indice>")
-        let cards = files.filter { !Self.volatileFiles.contains($0.name) }.map(card)
+        let cards = bookFiles.filter { !Self.volatileFiles.contains($0.name) }.map(card)
         return ([index.joined(separator: "\n")] + cards).joined(separator: "\n\n")
     }
 
     /// Le schede che cambiano, nell'ordine del quaderno.
     var volatileRendered: String {
-        files.filter { Self.volatileFiles.contains($0.name) }.map(card).joined(separator: "\n\n")
+        bookFiles.filter { Self.volatileFiles.contains($0.name) }.map(card).joined(separator: "\n\n")
+    }
+
+    /// I testi scelti per la domanda (contesto ridotto), o vuoto.
+    var tailRendered: String {
+        files.filter { $0.name == Self.tailFile }.map(card).joined(separator: "\n\n")
     }
 }
 
@@ -371,7 +381,9 @@ struct AgentMemoryBookBuilder {
 
     // MARK: Build
 
-    func build(docAllowance: [String: Int]?) -> AgentMemoryBook {
+    /// `appendix`: caratteri dei testi scelti per la domanda, in `domanda.md`
+    /// (contesto ridotto in base + appendice).
+    func build(docAllowance: [String: Int]?, appendix: [String: Int]? = nil) -> AgentMemoryBook {
         var files: [AgentMemoryFile] = []
         files.append(familyFile())
         if let f = memoryFile() { files.append(f) }
@@ -389,7 +401,34 @@ struct AgentMemoryBookBuilder {
         if let f = petsFile(docAllowance: docAllowance) { files.append(f) }
         if let f = tripsFile() { files.append(f) }
         if let f = chatFile() { files.append(f) }
+        if let appendix, let f = appendixFile(appendix) { files.append(f) }
         return AgentMemoryBook(files: files)
+    }
+
+    // MARK: domanda.md
+
+    /// I testi scelti per la domanda di adesso, più lunghi della base che sta
+    /// nelle schede. Va in coda al prompt, fuori dalla cache: è la sola parte
+    /// che cambia da una domanda all'altra. Stesso ordine su Android e web.
+    private func appendixFile(_ appendix: [String: Int]) -> AgentMemoryFile? {
+        let picked = textDocuments()
+            .filter { (appendix[$0.doc.id] ?? 0) > 0 }
+            .sorted {
+                let a = appendix[$0.doc.id] ?? 0, b = appendix[$1.doc.id] ?? 0
+                if a != b { return a > b }
+                if $0.doc.updatedAt != $1.doc.updatedAt { return $0.doc.updatedAt > $1.doc.updatedAt }
+                return $0.doc.id < $1.doc.id
+            }
+        guard !picked.isEmpty else { return nil }
+        var lines = [
+            "# Testi per questa domanda",
+            "Testi letti scelti per la domanda di adesso: qui sono più lunghi che nelle schede sopra, dove sono accorciati. Per questi documenti vale il testo qui sotto.",
+        ]
+        for item in picked {
+            lines.append("\n## \(item.doc.title) (\(item.place), \(fmtDate(item.doc.createdAt)))")
+            lines.append(documentText(item.doc, allowance: appendix).body)
+        }
+        return AgentMemoryFile(name: AgentMemoryBook.tailFile, title: "Testi per questa domanda", summary: "\(picked.count) testi", body: lines.joined(separator: "\n"))
     }
 
     // MARK: famiglia.md
@@ -1269,18 +1308,21 @@ enum AgentPrompt {
             ]
             .compactMap { $0 }
             .filter { !$0.isEmpty }
-            .joined(separator: "\n\n")
+            .joined(separator: "\n\n"),
+            tail: book.tailRendered
         )
     }
 }
 
-/// Il prompt dell'assistente nelle due parti che il server mette in cache a sé.
+/// Il prompt dell'assistente: le due parti che il server mette in cache a sé,
+/// più la coda senza cache coi testi scelti per la domanda (contesto ridotto).
 struct AgentSystemPrompt {
     let stable: String
     let volatile: String
+    var tail: String = ""
 
-    /// Caratteri come li conta il server: le due parti insieme.
-    var count: Int { stable.count + volatile.count }
+    /// Caratteri come li conta il server: le parti insieme.
+    var count: Int { stable.count + volatile.count + tail.count }
 }
 
 // MARK: - Fitting
@@ -1297,7 +1339,40 @@ enum AgentContextFitter {
     /// Righe di contorno che un testo incluso aggiunge (titolo, nota di taglio).
     private static let perDocOverhead = 150
     private static let minUsefulChars = 300
+    /// Contesto ridotto in base + appendice: la riserva fuori dalla base (schede
+    /// che cambiano, storico, domanda, appendice), la quota del resto che va
+    /// alla base, e il contorno di `domanda.md`. Stessi valori su Android e web.
+    private static let baseReserve = 20_000
+    private static let baseShare = 0.5
+    static let appendixOverhead = 400
 
+    /// Base dei testi nel contesto ridotto: dal più recente, senza guardare
+    /// domanda né focus, con metà dello spazio che resta in un messaggio dopo le
+    /// schede stabili e la riserva. Dipende solo dai dati: due domande di fila
+    /// hanno la stessa base, e il blocco stabile del prompt resta nella cache.
+    /// `nil` se non c'è spazio.
+    @MainActor
+    static func baseAllowances(
+        textDocuments: [AgentTextDocument],
+        stableChars: Int,
+        unitSafetyMargin: Int
+    ) -> [String: Int]? {
+        let units = AIAskAIPayload.messageUnits(totalChars: stableChars + baseReserve + unitSafetyMargin)
+        let room = units * AIAskAIPayload.standardChars - unitSafetyMargin - baseReserve - stableChars
+        let budget = Int((Double(room) * baseShare).rounded(.down))
+        guard budget >= minUsefulChars else { return nil }
+        return allowances(
+            textDocuments: textDocuments,
+            question: "",
+            focus: nil,
+            focusItemTags: [],
+            personNames: [:],
+            availableChars: budget
+        )
+    }
+
+    /// `targetedOnly`: solo focus e pertinenti, e solo se avrebbero più testo di
+    /// quanto ne hanno già in `floor` (l'appendice della domanda sopra la base).
     @MainActor
     static func allowances(
         textDocuments: [AgentTextDocument],
@@ -1305,7 +1380,9 @@ enum AgentContextFitter {
         focus: AgentFocus?,
         focusItemTags: Set<String>,
         personNames: [String: String],
-        availableChars: Int
+        availableChars: Int,
+        targetedOnly: Bool = false,
+        floor: [String: Int]? = nil
     ) -> [String: Int] {
         let terms = AgentRelevance.terms(from: question)
         let foldedQuestion = AgentRelevance.fold(question)
@@ -1334,7 +1411,10 @@ enum AgentContextFitter {
                 ? Candidate(item: item, tier: 1, score: score, cap: relevantMaxChars)
                 : Candidate(item: item, tier: 2, score: 0, cap: otherMaxChars)
         }
-        let ordered = candidates.sorted {
+        let pool = targetedOnly
+            ? candidates.filter { $0.tier < 2 && min($0.item.fullLength, $0.cap) > (floor?[$0.item.doc.id] ?? 0) }
+            : candidates
+        let ordered = pool.sorted {
             if $0.tier != $1.tier { return $0.tier < $1.tier }
             if $0.score != $1.score { return $0.score > $1.score }
             return $0.item.doc.updatedAt > $1.item.doc.updatedAt

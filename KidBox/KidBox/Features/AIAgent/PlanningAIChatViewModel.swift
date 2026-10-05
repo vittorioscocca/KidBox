@@ -263,6 +263,7 @@ final class PlanningAIChatViewModel: ObservableObject {
                 messages: payloadMessages,
                 systemPrompt: systemPrompt.volatile,
                 systemPromptStable: systemPrompt.stable,
+                systemPromptTail: systemPrompt.tail,
                 purpose: "familyAgent"
             )
             // Con il focus di Salute vale come la vecchia chat Salute: la serie
@@ -359,25 +360,73 @@ final class PlanningAIChatViewModel: ObservableObject {
             (snap.children.map { ($0.id, $0.name) } + snap.members.compactMap { m in m.displayName.map { (m.userId, $0) } }),
             uniquingKeysWith: { a, _ in a }
         )
-        var available = max(0, target - skeletonChars)
-        var reducedPrompt = skeleton
-        var reducedChars = skeletonChars
-        // Il contorno stimato per documento non basta quando un allegato ha molte
-        // righe (ognuna indentata): se sfora, lo sforamento esce dal budget e si
-        // ridistribuisce. Stesso giro su Android e web.
-        for _ in 0..<3 {
-            let allowance = AgentContextFitter.allowances(
-                textDocuments: textDocs,
-                question: question,
-                focus: focus,
-                focusItemTags: focusItemTags,
-                personNames: personNames,
-                availableChars: available
-            )
-            reducedPrompt = AgentPrompt.systemPrompt(familyName: familyName, book: builder.build(docAllowance: allowance), focus: focus)
-            reducedChars = AIAskAIPayload.totalChars(systemPromptChars: reducedPrompt.count, messages: history, pendingUserText: question)
-            if reducedChars <= target || available == 0 { break }
-            available = max(0, available - (reducedChars - target))
+        var reducedPrompt: AgentSystemPrompt?
+        var reducedChars = 0
+
+        // Base + appendice: nelle schede ogni testo ha una base che dipende solo
+        // dai dati, uguale per ogni domanda, così resta nella cache; i testi
+        // scelti per la domanda vanno in coda, in domanda.md. Misurato il
+        // 05/10/2026: col budget diviso per domanda le due domande condividevano
+        // 2.165 caratteri e la cache non serviva mai. Stesso giro su Android e web.
+        if let base = AgentContextFitter.baseAllowances(
+            textDocuments: textDocs,
+            stableChars: skeleton.stable.count,
+            unitSafetyMargin: Self.unitSafetyMargin
+        ) {
+            let withBase = AgentPrompt.systemPrompt(familyName: familyName, book: builder.build(docAllowance: base), focus: focus)
+            var budget = target
+                - AIAskAIPayload.totalChars(systemPromptChars: withBase.count, messages: history, pendingUserText: question)
+                - AgentContextFitter.appendixOverhead
+            var attempt = 0
+            while budget >= 0 && attempt < 3 {
+                attempt += 1
+                let appendix = AgentContextFitter.allowances(
+                    textDocuments: textDocs,
+                    question: question,
+                    focus: focus,
+                    focusItemTags: focusItemTags,
+                    personNames: personNames,
+                    availableChars: budget,
+                    targetedOnly: true,
+                    floor: base
+                )
+                let prompt = AgentPrompt.systemPrompt(
+                    familyName: familyName,
+                    book: builder.build(docAllowance: base, appendix: appendix),
+                    focus: focus
+                )
+                reducedPrompt = prompt
+                reducedChars = AIAskAIPayload.totalChars(systemPromptChars: prompt.count, messages: history, pendingUserText: question)
+                if reducedChars <= target || budget == 0 { break }
+                budget = max(0, budget - (reducedChars - target))
+            }
+            if reducedChars > target { reducedPrompt = nil }
+        }
+
+        // Senza spazio per la base (storico lungo, scheletro enorme): il budget
+        // si divide per domanda come prima, e la parte dei testi esce dalla cache.
+        if reducedPrompt == nil {
+            var available = max(0, target - skeletonChars)
+            reducedPrompt = skeleton
+            reducedChars = skeletonChars
+            // Il contorno stimato per documento non basta quando un allegato ha molte
+            // righe (ognuna indentata): se sfora, lo sforamento esce dal budget e si
+            // ridistribuisce. Stesso giro su Android e web.
+            for _ in 0..<3 {
+                let allowance = AgentContextFitter.allowances(
+                    textDocuments: textDocs,
+                    question: question,
+                    focus: focus,
+                    focusItemTags: focusItemTags,
+                    personNames: personNames,
+                    availableChars: available
+                )
+                let prompt = AgentPrompt.systemPrompt(familyName: familyName, book: builder.build(docAllowance: allowance), focus: focus)
+                reducedPrompt = prompt
+                reducedChars = AIAskAIPayload.totalChars(systemPromptChars: prompt.count, messages: history, pendingUserText: question)
+                if reducedChars <= target || available == 0 { break }
+                available = max(0, available - (reducedChars - target))
+            }
         }
         let reducedUnits = AIAskAIPayload.messageUnits(totalChars: reducedChars)
         KBLog.ai.kbInfo("PlanningAIChatVM context full chars=\(fullChars) units=\(fullUnits) reduced chars=\(reducedChars) units=\(reducedUnits) docs=\(textDocs.count)")
