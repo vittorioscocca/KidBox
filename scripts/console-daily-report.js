@@ -462,6 +462,21 @@ async function main() {
   // 4. Costi AI del mese e ticket aperti.
   out.ai = (await getDoc(tok, `ai_costs/${month}`, ["calls", "inputTokens", "outputTokens", "costUsd"])) || { calls: 0, costUsd: 0 };
   out.ai.month = month;
+  // Famiglie fermate dal tetto mensile (ai_caps/{mese}, dal 05/10/2026): dice
+  // se i pacchetti di messaggi venderebbero e se il tetto è troppo stretto.
+  // Le famiglie con un account di test si contano a parte.
+  const caps = (await getDoc(tok, `ai_caps/${month}`, ["families"]))?.families || {};
+  out.aiCaps = Object.entries(caps)
+    .map(([fid, c]) => ({
+      fid,
+      plan: c.plan || "?",
+      limit: c.monthlyLimit || 0,
+      first: c.firstAt ? romeDate(new Date(c.firstAt)) : "?",
+      last: c.lastAt ? romeDate(new Date(c.lastAt)) : "?",
+      hits: c.hits || 0,
+      internal: Boolean(perFamily[fid]?.internal),
+    }))
+    .sort((x, y) => x.first.localeCompare(y.first));
   // «new» è lo stato (backlog da triagare), «ieri» è l'arrivo: senza il
   // secondo, cinque ticket fermi da luglio leggono come cinque crash di ieri.
   const since = romeMidnight(yesterday);
@@ -604,6 +619,18 @@ function print(o) {
 
   L.push(`## AI — mese ${o.ai.month}`);
   L.push(`Chiamate ${o.ai.calls || 0} · token in/out ${o.ai.inputTokens || 0}/${o.ai.outputTokens || 0} · costo ${(o.ai.costUsd || 0).toFixed(2)} USD`);
+  {
+    const real = o.aiCaps.filter((c) => !c.internal);
+    const test = o.aiCaps.length - real.length;
+    const byPlan = {};
+    for (const c of real) byPlan[c.plan] = (byPlan[c.plan] || 0) + 1;
+    const split = Object.entries(byPlan).map(([p, n]) => `${n} ${p}`).join(", ");
+    L.push(`Famiglie arrivate al tetto mensile: ${real.length}${split ? ` (${split})` : ""}` +
+      (test ? ` · più ${test} di prova dello sviluppatore, escluse` : ""));
+    for (const c of real) {
+      L.push(`- ${c.fid.slice(0, 8)}… ${c.plan} (tetto ${c.limit}): fermata la prima volta il ${c.first}, ${c.hits} ${c.hits === 1 ? "volta" : "volte"}, l'ultima il ${c.last}`);
+    }
+  }
   L.push("");
   const t = o.tickets, ar = t.arrivedSinceYesterday;
   L.push("## Ticket");

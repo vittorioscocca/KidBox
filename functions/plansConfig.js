@@ -258,13 +258,13 @@ async function storageQuotaBytesForPlan(plan) {
  * resetta mai (`lifetime`), su Pro/Max è la quota giornaliera (`daily`) con
  * in più un tetto per mese di calendario (`monthlyLimit`, 0 = nessuno).
  * @param {string|null|undefined} plan
- * @return {Promise<{period: string, limit: number, monthlyLimit: number}>}
+ * @return {Promise<{period: string, limit: number, monthlyLimit: number, plan: string}>}
  */
 async function aiQuotaForPlan(plan) {
   const {plans} = await loadPlans();
   const spec = planSpec(plans, plan);
   const monthlyLimit = spec.aiPeriod === "daily" ? Number(spec.aiMonthlyLimit) || 0 : 0;
-  return {period: spec.aiPeriod, limit: spec.aiLimit, monthlyLimit};
+  return {period: spec.aiPeriod, limit: spec.aiLimit, monthlyLimit, plan: spec.id};
 }
 
 /**

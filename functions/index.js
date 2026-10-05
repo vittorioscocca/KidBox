@@ -2563,7 +2563,7 @@ async function resolveAIQuota(uid, familyId = null) {
       // Il totale della prova, più il tetto mensile del piano provato: la prova
       // non deve poter spendere più di quanto un abbonato spende in un mese.
       const [trial, paid] = await Promise.all([proTrial.trialAIQuota(), plansConfig.aiQuotaForPlan(plan)]);
-      return {...trial, monthlyLimit: paid.monthlyLimit || 0};
+      return {...trial, monthlyLimit: paid.monthlyLimit || 0, plan: paid.plan};
     }
     return await plansConfig.aiQuotaForPlan(plan);
   } catch (e) {
@@ -2864,8 +2864,6 @@ async function checkAndIncrementAIUsage(familyId, uid, quota, incrementBy = 1) {
     );
   }
 
-  const isLifetime = period === "lifetime";
-  const isTrial = period === "trial";
   const db = admin.firestore();
   // Il bonus Free è tracciato anche per utente: chiunque può creare famiglie
   // illimitate (firestore.rules), quindi il solo contatore per famiglia si
@@ -2876,6 +2874,60 @@ async function checkAndIncrementAIUsage(familyId, uid, quota, incrementBy = 1) {
   // 900 messaggi al mese al Pro e 3.000 al Max, più di quanto il piano incassa.
   const monthlyRef = monthlyLimit > 0 ? monthRef : null;
 
+  try {
+    return await incrementAIUsageTx(db, {ref, userRef, monthlyRef, familyId, uid, period, limit, monthlyLimit, delta});
+  } catch (e) {
+    if (e instanceof HttpsError && e.details?.reason === "monthly-limit") {
+      await recordMonthlyCap(db, familyId, quota).catch((err) =>
+        logger.warn("ai_caps: registrazione fallita", {familyId, error: err.message}));
+    }
+    throw e;
+  }
+}
+
+/**
+ * Famiglie arrivate al tetto mensile, in `ai_caps/{YYYY-MM}`: una voce per
+ * famiglia con piano, primo e ultimo blocco e quante volte è stata fermata.
+ * Dice se i pacchetti di messaggi venderebbero e se il tetto è troppo stretto
+ * (report giornaliero). Lo scrive solo il server; lo leggono solo gli admin.
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {string} familyId
+ * @param {{period: string, limit: number, monthlyLimit: number, plan: (string|undefined)}} quota
+ * @return {Promise<void>}
+ */
+async function recordMonthlyCap(db, familyId, quota) {
+  const ref = db.collection("ai_caps").doc(aiTodayKey().slice(0, 7));
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const known = snap.exists ? snap.data().families?.[familyId] : null;
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    // Oggetti annidati con merge, non chiavi col punto: set({"a.b": v}) crea
+    // un campo che si chiama «a.b» (vedi il contatore storage cieco per mesi).
+    tx.set(ref, {
+      families: {
+        [familyId]: {
+          plan: quota.period === "trial" ? "trial" : (quota.plan || null),
+          monthlyLimit: quota.monthlyLimit || 0,
+          firstAt: known?.firstAt || now,
+          lastAt: now,
+          hits: admin.firestore.FieldValue.increment(1),
+        },
+      },
+      updatedAt: now,
+    }, {merge: true});
+  });
+}
+
+/**
+ * La transazione di `checkAndIncrementAIUsage`: legge i contatori, controlla
+ * mese e periodo, scala.
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {object} p
+ * @return {Promise<number>} nuovo totale del periodo
+ */
+async function incrementAIUsageTx(db, {ref, userRef, monthlyRef, familyId, uid, period, limit, monthlyLimit, delta}) {
+  const isLifetime = period === "lifetime";
+  const isTrial = period === "trial";
   return await db.runTransaction(async (tx) => {
     // Firestore impone tutte le letture prima di qualsiasi scrittura.
     const snap = await tx.get(ref);
