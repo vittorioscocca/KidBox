@@ -48,8 +48,8 @@ Create multiple family groups and switch between them at any time—your extende
 — — —
 PLANS
 - Free: every feature, 200 MB, 5 trial AI messages
-- Pro (€4.99/month): 5 GB, 30 AI messages per day, meal and fitness plans, AI travel
-- Max (€9.99/month): 20 GB, 100 AI messages per day
+- Pro (€4.99/month): 5 GB, 30 AI messages per day (100/month), meal and fitness plans, AI travel
+- Max (€9.99/month): 20 GB, 100 AI messages per day (200/month)
 One subscription for the whole family, with no member limit. It renews automatically; manage or cancel it in your Apple ID settings.
 
 Privacy: https://kidboxapp.com/privacy.html

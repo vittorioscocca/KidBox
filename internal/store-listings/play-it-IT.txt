@@ -54,6 +54,6 @@ Crea più nuclei familiari e passa da uno all'altro in qualsiasi momento — la 
 — — —
 PIANI
 - Free: tutte le funzioni, 200 MB, 5 messaggi AI di prova
-- Pro (€4,99/mese): 5 GB, 30 messaggi AI al giorno, piani pasti e fitness, viaggi con AI
-- Max (€9,99/mese): 20 GB, 100 messaggi AI al giorno
+- Pro (€4,99/mese): 5 GB, 30 messaggi AI al giorno (100/mese), piani pasti e fitness, viaggi con AI
+- Max (€9,99/mese): 20 GB, 100 messaggi AI al giorno (200/mese)
 Un solo abbonamento per tutta la famiglia, senza limite di membri. Si rinnova automaticamente; si gestisce e annulla da Google Play.

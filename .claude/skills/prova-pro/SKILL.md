@@ -23,6 +23,7 @@ description: La prova Pro gratuita di 14 giorni di KidBox — come viene concess
 ## Interruttore e parametri
 
 Documento `config/trial`: `enabled` (bool), `autoGrant` (bool, assente = acceso), `days` (1-30), `aiLimit` (0-200), `reminderDaysBefore` (0-7). Cache di 60 secondi. Assente o illeggibile = prova spenta.
+**Tetto mensile anche qui (dal 05/10/2026):** oltre al totale `aiLimit`, i messaggi della prova contano sul contatore del mese della famiglia col tetto del piano provato (Pro: 100). Un `aiLimit` sopra 100 non serve: il mese ferma prima. E chi si abbona a metà mese parte da quanto ha usato nella prova.
 - **Spegnerla:** `enabled: false`. Le prove già concesse finiscono comunque alla loro scadenza.
 - **Accenderla solo quando i client che la spiegano sono in vendita su ENTRAMBI gli store** (iOS ≥ 2.3.6, Android ≥ 2.4.2). Le app vecchie vedono il Pro sbloccato senza banner, e a fine prova perdono funzioni senza capire perché. Il 29/09 l'utente ha deciso di accenderla prima: è una sua scelta da rispettare, ma va detto il rischio.
 

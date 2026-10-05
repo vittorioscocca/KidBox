@@ -55,6 +55,16 @@ payload, **non** sulle unità moltiplicate.
 `resolveAIQuota`: **Free → `lifetime`**, pro/max → `daily` (30 / 100). È questa
 la differenza che discrimina il piano, non `isAIAccessible`.
 
+**Tetto mensile (dal 05/10/2026): Pro 100, Max 200 per famiglia** nel mese di
+calendario (Europe/Rome), oltre al giornaliero: `aiMonthlyLimit` nel listino,
+`ai_usage/family_{id}/monthly/{YYYY-MM}`, controllato **prima** del giornaliero
+(se il mese è finito «riprova domani» sarebbe falso), errore con
+`reason: "monthly-limit"`, rimborsato da `refundAIUsage` come il giorno. **Vale
+anche per la prova Pro** (tetto del piano provato, stesso contatore del mese:
+chi si abbona a metà mese parte da quanto ha usato nella prova); il Free no. Il conto: col solo giornaliero un Pro poteva
+consumare 900 messaggi al mese, a 2-2,5 ¢ l'uno nel caso peggiore contro un
+netto di 2,86 € (Apple 30% e IVA); a 100 resta un margine anche lì.
+
 I **5 messaggi bonus del Free sono una tantum e non si ricaricano mai**: esauriti,
 l'app torna esattamente com'era prima del bonus. Il contatore è doppio —
 `ai_usage/family_{familyId}/lifetime/free` e `ai_usage/user_{uid}/lifetime/free`

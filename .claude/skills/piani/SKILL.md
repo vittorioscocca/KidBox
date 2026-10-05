@@ -43,6 +43,9 @@ SDK, che le rules non le attraversa:
 
 - `aiLimit` ≤ 500, e ≤ **20 sul Free** — lì il bonus è una tantum, un errore è
   spesa API regalata a chiunque si registri;
+- `aiMonthlyLimit` (dal 05/10/2026: Pro 100, Max 200) ≤ 5000, **0 sul Free**, e
+  mai sotto `aiLimit`; se manca nel documento vale quello del bundle, non
+  «nessun tetto»;
 - `storageBytes` ≤ 100 GB, ≤ 2 GB sul Free;
 - `aiPeriod`: `lifetime` **solo** sul Free, `daily` **solo** sui piani a
   pagamento (un abbonamento con quota a vita smetterebbe di funzionare);
@@ -70,6 +73,12 @@ cambia `plansConfig.LIMITS` con un deploy, dicendolo.
 Nei testi feature si usano i segnaposto `{storage}` e `{aiLimit}`, risolti da chi
 mostra la card dagli stessi `storageBytes`/`aiLimit` del piano: **il numero nella
 frase non può divergere dalla quota applicata**. Unità binarie (5 GB = 5 × 1024³).
+
+**Eccezione: il tetto mensile è scritto in chiaro** («{aiLimit} messaggi AI al
+giorno, fino a 100 al mese»), perché le app già installate non conoscono un
+segnaposto per il mese e lo mostrerebbero tale e quale. Chi cambia
+`aiMonthlyLimit` cambia anche il numero nelle quattro frasi, e nelle schede
+degli store (`internal/store-listings/`) e nei termini della landing.
 
 Se cambia **cosa** è incluso in un piano (non solo quanto), il listino da solo non
 basta: servono i tre presidi server/service/view → `/gating-pro`.

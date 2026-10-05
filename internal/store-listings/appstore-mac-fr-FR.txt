@@ -47,9 +47,9 @@ Laissez l'IA suggérer la destination idéale ou planifiez vous-même avec l'ass
 — — —
 FORFAITS
 - Free : toutes les fonctionnalités, 200 Mo, 5 messages IA d'essai
-- Pro (4,99 €/mois) : 5 Go, 30 messages IA par jour, plans repas et fitness, voyages avec l'IA
-- Max (9,99 €/mois) : 20 Go, 100 messages IA par jour
+- Pro (4,99 €/mois) : 5 Go, 30 messages IA par jour (100/mois), plans repas et fitness, voyages avec l'IA
+- Max (9,99 €/mois) : 20 Go, 100 messages IA par jour (200/mois)
 Un seul abonnement pour toute la famille, sans limite de membres. Renouvellement automatique ; gestion et résiliation depuis votre identifiant Apple.
 
-Conditions d'utilisation (EULA) : https://kidboxapp.com/terms.html
-Politique de confidentialité : https://kidboxapp.com/privacy.html
+Conditions (EULA) : https://kidboxapp.com/terms.html
+Confidentialité : https://kidboxapp.com/privacy.html

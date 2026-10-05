@@ -48,6 +48,6 @@ Crea varios grupos familiares y cambia entre ellos en cualquier momento: tu fami
 — — —
 PLANES
 - Free: todas las funciones, 200 MB, 5 mensajes de IA de prueba
-- Pro (4,99 €/mes): 5 GB, 30 mensajes de IA al día, planes de comidas y fitness, viajes con IA
-- Max (9,99 €/mes): 20 GB, 100 mensajes de IA al día
+- Pro (4,99 €/mes): 5 GB, 30 mensajes de IA al día (100/mes), planes de comidas y fitness, viajes con IA
+- Max (9,99 €/mes): 20 GB, 100 mensajes de IA al día (200/mes)
 Una sola suscripción para toda la familia, sin límite de miembros. Se renueva automáticamente; se gestiona y cancela desde Google Play.
