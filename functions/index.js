@@ -7,7 +7,10 @@ const {onSchedule} = require("firebase-functions/v2/scheduler");
 // Analytics utenti attivi — internal/analytics-active-users.md. I trigger di
 // scrittura stanno in analytics.js; qui serve solo per `askAI`, che è l'unica
 // azione di valore senza una scrittura Firestore dietro.
-const {logEvent: logAnalyticsEvent} = require("./analytics");
+const {
+  logEvent: logAnalyticsEvent,
+  LAST_OPEN_DOC,
+} = require("./analytics");
 // Catalogo piani: quote/prezzi/feature vivono SOLO in functions/plans.json.
 // Vedi functions/plansConfig.js e internal/plans-source-of-truth.md.
 const plansConfig = require("./plansConfig");
@@ -8147,6 +8150,42 @@ exports.unregisterAdminNotifications = onCall(
 );
 
 /**
+ * Mappa uid → Timestamp dell'ultima apertura. Al primo uso il documento non
+ * esiste (o l'ha creato solo il trigger): lo si ricostruisce dai
+ * `session_start` ancora in `analyticsEvents` e lo si scrive, così dalla volta
+ * dopo costa una lettura sola.
+ * @return {Promise<Object<string, admin.firestore.Timestamp>>}
+ */
+async function loadLastOpenByUid() {
+  const db = admin.firestore();
+  const ref = db.collection(LAST_OPEN_DOC.coll).doc(LAST_OPEN_DOC.id);
+  const snap = await ref.get();
+  if (snap.exists && snap.data().rebuiltAt) return snap.data().byUid || {};
+
+  const events = await db.collection("analyticsEvents")
+      .where("name", "==", "session_start").get();
+  const byUid = {};
+  const keepNewer = (uid, ts) => {
+    if (typeof uid !== "string" || !uid) return;
+    if (!ts || typeof ts.toMillis !== "function") return;
+    if (!byUid[uid] || byUid[uid].toMillis() < ts.toMillis()) byUid[uid] = ts;
+  };
+  for (const doc of events.docs) keepNewer(doc.data().uid, doc.data().ts);
+  // Il trigger può aver già scritto aperture più nuove: si tengono quelle.
+  const current = (snap.exists && snap.data().byUid) || {};
+  for (const [uid, ts] of Object.entries(current)) keepNewer(uid, ts);
+
+  await ref.set({
+    byUid,
+    rebuiltAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, {merge: true});
+  logger.info("lastOpen ricostruito", {
+    events: events.size, users: Object.keys(byUid).length,
+  });
+  return byUid;
+}
+
+/**
  * Callable (admin only): restituisce uid + createdAt (ms) per tutti gli utenti Auth.
  * Usato dalla console per mostrare la data di prima registrazione.
  *
@@ -8156,6 +8195,11 @@ exports.unregisterAdminNotifications = onCall(
  * d'uso). Conta anche il lavoro in background — la posizione condivisa rinnova
  * il token senza che l'app venga aperta — quindi è «l'app è viva», non «l'ha
  * aperta». Resta comunque molto più vicino al vero di `users/{uid}.updatedAt`.
+ *
+ * `lastOpenAt` è invece l'ultima apertura vera dell'app iOS o Android
+ * (`session_start`), tenuta dal trigger `analyticsLastOpen` in un solo
+ * documento. Se il documento manca lo ricostruisce una volta dagli eventi
+ * grezzi (90 giorni di TTL).
  */
 exports.getAuthUsersData = onCall(
     {region: "europe-west1", maxInstances: 20},
@@ -8183,6 +8227,17 @@ exports.getAuthUsersData = onCall(
         pageToken = listResult.pageToken;
       } while (pageToken);
 
+      let lastOpenByUid = {};
+      try {
+        lastOpenByUid = await loadLastOpenByUid();
+      } catch (e) {
+        // La colonna resta vuota, il resto della tabella no.
+        logger.warn("getAuthUsersData: lastOpen non disponibile", {error: e.message});
+      }
+      for (const row of result) {
+        const t = lastOpenByUid[row.uid];
+        row.lastOpenAt = t && typeof t.toMillis === "function" ? t.toMillis() : 0;
+      }
       return {users: result};
     },
 );

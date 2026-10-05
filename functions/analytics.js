@@ -280,6 +280,45 @@ const familyMemberJoined = onDocumentCreated(
     },
 );
 
+// ── Ultima apertura dell'app, per utente ─────────────────────────────────────
+//
+// La console mostrava come «ultimo accesso» il rinnovo del token di Auth, che
+// scatta anche in background (la posizione condivisa lo rinnova ogni ora a
+// telefono in tasca). Il segnale vero di apertura è `session_start`, scritto
+// dai client iOS e Android al passaggio in foreground (finestra di 30 minuti).
+//
+// Eccezione voluta (05/10/2026, decisione dell'utente) al «niente profilo per
+// utente»: si tiene UNA data per uid, l'ultima apertura, non cosa ha aperto né
+// quando nel dettaglio. Un solo documento, leggibile solo dall'admin (regola
+// catch-all), così la console paga una lettura e non una per utente.
+// Il web non scrive `session_start`: le sue aperture qui non compaiono.
+const LAST_OPEN_DOC = {coll: "adminStats", id: "lastOpen"};
+
+const lastOpen = onDocumentCreated(
+    {
+      document: `${EVENTS_COLLECTION}/{eventId}`,
+      region: REGION,
+      maxInstances: MAX_INSTANCES,
+    },
+    async (event) => {
+      const data = event.data ? event.data.data() : null;
+      if (!data || data.name !== "session_start") return;
+      if (typeof data.uid !== "string" || !data.uid) return;
+      const ts = data.ts instanceof admin.firestore.Timestamp ?
+        data.ts : admin.firestore.Timestamp.now();
+      try {
+        // set con merge su un oggetto annidato: unisce la mappa invece di
+        // sostituirla. Non usare la chiave "byUid.<uid>" con set(): creerebbe
+        // un campo col punto nel nome.
+        await admin.firestore()
+            .collection(LAST_OPEN_DOC.coll).doc(LAST_OPEN_DOC.id)
+            .set({byUid: {[data.uid]: ts}}, {merge: true});
+      } catch (e) {
+        logger.warn("lastOpen: scrittura fallita", {error: e.message});
+      }
+    },
+);
+
 // Export: `analyticsDocuments`, `analyticsTodos`, …
 const triggers = {};
 for (const spec of TRACKED) {
@@ -287,10 +326,12 @@ for (const spec of TRACKED) {
   triggers[`analytics${suffix}`] = makeTrigger(spec);
 }
 triggers.analyticsFamilyMemberJoined = familyMemberJoined;
+triggers.analyticsLastOpen = lastOpen;
 
 module.exports = {
   triggers,
   logEvent,
+  LAST_OPEN_DOC,
   // esportati per i test
   classify,
   resolveUid,

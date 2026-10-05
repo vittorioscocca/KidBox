@@ -935,7 +935,7 @@ window.userGoPage = function(p) {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-let _userSort = { col: 'createdAt', dir: 'desc' };
+let _userSort = { col: 'lastOpenAt', dir: 'desc' };
 
 window.sortUsers = function(col) {
   if (_userSort.col === col) {
@@ -1086,7 +1086,7 @@ function renderUsersTable(rows) {
   setVal('stat-platform-android', fmtNum(android));
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty">Nessun utente nel periodo selezionato</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Nessun utente nel periodo selezionato</td></tr>';
     renderPagination('user', 0, 1, 'userGoPage');
     return;
   }
@@ -1094,6 +1094,7 @@ function renderUsersTable(rows) {
     let va, vb;
     if (_userSort.col === 'createdAt') { va = a.createdAt?.getTime()||0; vb = b.createdAt?.getTime()||0; }
     else if (_userSort.col === 'lastActiveAt') { va = a.lastActiveAt?.getTime()||0; vb = b.lastActiveAt?.getTime()||0; }
+    else if (_userSort.col === 'lastOpenAt') { va = a.lastOpenAt?.getTime()||0; vb = b.lastOpenAt?.getTime()||0; }
     else if (_userSort.col === 'email') { return _userSort.dir === 'asc' ? a.email.localeCompare(b.email) : b.email.localeCompare(a.email); }
     else { va = 0; vb = 0; }
     return _userSort.dir === 'desc' ? vb - va : va - vb;
@@ -1111,6 +1112,8 @@ function renderUsersTable(rows) {
     const createdStr = u.createdAt ? u.createdAt.toLocaleDateString('it-IT') : '—';
     const lastActiveStr = fmtLastActive(u.lastActiveAt);
     const lastActiveTitle = u.lastActiveAt ? u.lastActiveAt.toLocaleString('it-IT') : '';
+    const lastOpenStr = fmtLastActive(u.lastOpenAt);
+    const lastOpenTitle = u.lastOpenAt ? u.lastOpenAt.toLocaleString('it-IT') : 'Nessuna apertura registrata negli ultimi 90 giorni (o solo dal web)';
     return `
     <tr>
       <td data-label="Email" class="dim" style="font-size:12px" title="${u.email}">${emailShort}</td>
@@ -1119,7 +1122,8 @@ function renderUsersTable(rows) {
       <td data-label="Piano">${plan ? `<span class="badge badge-${plan}">${plan}</span>` : '<span class="dim">—</span>'}</td>
       <td data-label="Dispositivo" style="font-size:13px;white-space:nowrap">${platformBadge}</td>
       <td data-label="Registrato" class="dim mono" style="font-size:11px">${createdStr}</td>
-      <td data-label="Ultimo accesso" class="dim mono" style="font-size:11px;white-space:nowrap" title="${lastActiveTitle}">${lastActiveStr}</td>
+      <td data-label="Ultima apertura" class="mono" style="font-size:11px;white-space:nowrap" title="${lastOpenTitle}">${lastOpenStr}</td>
+      <td data-label="App viva" class="dim mono" style="font-size:11px;white-space:nowrap" title="${lastActiveTitle}">${lastActiveStr}</td>
     </tr>`;
   }).join('');
 }
@@ -1180,6 +1184,7 @@ async function loadUsers() {
         updatedAt: u.updatedAt?.toDate(),
         createdAt: auth.createdAt ? new Date(auth.createdAt) : null,
         lastActiveAt: auth.lastActiveAt ? new Date(auth.lastActiveAt) : null,
+        lastOpenAt: auth.lastOpenAt ? new Date(auth.lastOpenAt) : null,
       };
     });
 
@@ -2970,11 +2975,12 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
               <th>Famiglia</th>
               <th>Piano</th>
               <th>Dispositivo</th>
-              <th data-usort="createdAt" onclick="sortUsers('createdAt')" style="cursor:pointer">Registrato<span class="sort-arrow"> ↓</span></th>
-              <th data-usort="lastActiveAt" onclick="sortUsers('lastActiveAt')" style="cursor:pointer" title="Ultimo login o rinnovo del token, su qualsiasi client. Include l'attività in background (es. posizione).">Ultimo accesso<span class="sort-arrow"> ↕</span></th>
+              <th data-usort="createdAt" onclick="sortUsers('createdAt')" style="cursor:pointer">Registrato<span class="sort-arrow"> ↕</span></th>
+              <th data-usort="lastOpenAt" onclick="sortUsers('lastOpenAt')" style="cursor:pointer" title="Ultima volta che l'utente ha aperto l'app iOS o Android (portata in primo piano; rientri entro 30 minuti contano come la stessa apertura). Il web non è contato. Storico: 90 giorni.">Ultima apertura<span class="sort-arrow"> ↓</span></th>
+              <th data-usort="lastActiveAt" onclick="sortUsers('lastActiveAt')" style="cursor:pointer" title="Ultimo login o rinnovo del token, su qualsiasi client. Include l'attività in background (es. posizione condivisa): dice che l'app è installata e accesa, non che è stata aperta.">App viva<span class="sort-arrow"> ↕</span></th>
             </tr>
           </thead>
-          <tbody id="user-tbody"><tr><td colspan="7" class="empty">Caricamento…</td></tr></tbody>
+          <tbody id="user-tbody"><tr><td colspan="8" class="empty">Caricamento…</td></tr></tbody>
         </table></div>
         <div class="pagination" id="user-pagination" style="display:none">
           <span class="pag-info" id="user-pag-info"></span>
