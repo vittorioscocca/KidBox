@@ -49,6 +49,12 @@ const FOCUS_ITEM_MAX_CHARS = 12_000;
 const OTHER_MAX_CHARS = 1500;
 const PER_DOC_OVERHEAD = 150;
 const MIN_USEFUL_CHARS = 300;
+// Contesto ridotto in base + appendice: la riserva fuori dalla base (schede che
+// cambiano, storico, domanda, appendice), la quota del resto che va alla base,
+// e il contorno di domanda.md (intestazione e righe dei titoli).
+const BASE_RESERVE = 20_000;
+const BASE_SHARE = 0.5;
+const APPENDIX_OVERHEAD = 400;
 const WALLET_PREFIX = "kb_wallet_doc:";
 
 export const messageUnits = (chars) => Math.max(1, Math.ceil(Math.max(0, chars) / STANDARD_CHARS));
@@ -293,7 +299,7 @@ export const healthFileName = (name) => `salute-${slug(name)}.md`;
  * Costruisce le schede da uno snapshot. `allowance` null = testi interi;
  * altrimenti caratteri concessi a ogni documento (0 = solo il titolo).
  */
-export function buildMemoryBook(s, { allowance = null, locale = "it", now = Date.now() } = {}) {
+export function buildMemoryBook(s, { allowance = null, appendix = null, locale = "it", now = Date.now() } = {}) {
   const loc = { it: "it-IT", en: "en-US", fr: "fr-FR", es: "es-ES" }[locale] || "it-IT";
   const fmtDate = (ms) => new Date(ms).toLocaleDateString(loc, { day: "numeric", month: "long", year: "numeric" });
   const fmtDateTime = (ms) =>
@@ -884,6 +890,28 @@ export function buildMemoryBook(s, { allowance = null, locale = "it", now = Date
     ]);
   }
 
+  // domanda.md: i testi scelti per la domanda di adesso (contesto ridotto), più
+  // lunghi della base che sta nelle schede. Va in coda al prompt, fuori dalla
+  // cache: è la sola parte che cambia da una domanda all'altra.
+  if (appendix) {
+    const picked = s.documents
+      .filter((d) => (appendix[d.id] || 0) > 0 && hasText(d))
+      .sort((a, b) => appendix[b.id] - appendix[a.id] || b.updatedMs - a.updatedMs || (a.id < b.id ? -1 : 1));
+    if (picked.length) {
+      const lines = [
+        "# Testi per questa domanda",
+        "Testi letti scelti per la domanda di adesso: qui sono più lunghi che nelle schede sopra, dove sono accorciati. Per questi documenti vale il testo qui sotto.",
+      ];
+      picked.forEach((d) => {
+        const clean = sanitize(d.extractedText);
+        const max = appendix[d.id];
+        const body = clean.length <= max ? clean : `${clean.slice(0, max)}\n[… testo accorciato: ${max} caratteri su ${clean.length}]`;
+        lines.push(`\n## ${d.title || d.fileName || "documento"} (${placeLabel(d, homeOf(d))}, ${fmtDate(d.createdMs || d.updatedMs)})`, body);
+      });
+      add("domanda.md", "Testi per questa domanda", `${picked.length} testi`, lines);
+    }
+  }
+
   return files;
 }
 
@@ -894,6 +922,9 @@ export function buildMemoryBook(s, { allowance = null, locale = "it", now = Date
  * di Anthropic. Stesso elenco su iOS e Android.
  */
 export const VOLATILE_FILES = new Set(["oggi.md", "calendario.md", "todo.md", "spesa.md", "chat.md"]);
+
+/** Cambia a ogni domanda: va in coda, dopo le azioni, e non entra nell'indice. */
+const TAIL_FILE = "domanda.md";
 
 /**
  * Il quaderno nel formato del prompt, in due parti: indice e schede stabili,
@@ -906,10 +937,12 @@ export function renderBook(files) {
     VOLATILE_FILES.has(f.name)
       ? `- ${f.name} — ${f.title}: in fondo, aggiornata a ogni domanda`
       : `- ${f.name} — ${f.title}: ${f.summary}`;
-  const index = ["<indice>", ...files.map(indexLine), "</indice>"].join("\n");
+  const book = files.filter((f) => f.name !== TAIL_FILE);
+  const index = ["<indice>", ...book.map(indexLine), "</indice>"].join("\n");
   return {
-    stable: [index, ...files.filter((f) => !VOLATILE_FILES.has(f.name)).map(card)].join("\n\n"),
-    volatile: files.filter((f) => VOLATILE_FILES.has(f.name)).map(card).join("\n\n"),
+    stable: [index, ...book.filter((f) => !VOLATILE_FILES.has(f.name)).map(card)].join("\n\n"),
+    volatile: book.filter((f) => VOLATILE_FILES.has(f.name)).map(card).join("\n\n"),
+    tail: files.filter((f) => f.name === TAIL_FILE).map(card).join("\n\n"),
   };
 }
 
@@ -948,11 +981,12 @@ export function agentSystemPrompt({ familyName, files, focus, locale }) {
   return {
     stable: [agentRules(familyName, locale), book.stable].join("\n\n"),
     volatile: [focusLine, book.volatile, actionsPrompt(), focusLine].filter(Boolean).join("\n\n"),
+    tail: book.tail,
   };
 }
 
-/** Caratteri del prompt come li conta il server: le due parti insieme. */
-export const promptChars = (prompt) => prompt.stable.length + prompt.volatile.length;
+/** Caratteri del prompt come li conta il server: le parti insieme. */
+export const promptChars = (prompt) => prompt.stable.length + prompt.volatile.length + prompt.tail.length;
 
 /* ── Budget ──────────────────────────────────────────────────────────────── */
 
@@ -998,8 +1032,10 @@ function textDocuments(s) {
  * messaggio. Ordine: allegati della visita o dell'esame del focus, poi i
  * documenti pertinenti alla domanda o alla persona del focus, poi gli altri
  * dal più recente. Stesso algoritmo di iOS e Android.
+ * `targetedOnly`: solo focus e pertinenti, e solo se avrebbero più testo di
+ * quanto ne hanno già in `floor` (l'appendice della domanda sopra la base).
  */
-function allowances(s, { question, focus, availableChars }) {
+function allowances(s, { question, focus, availableChars, targetedOnly = false, floor = null }) {
   const qTerms = terms(question);
   const foldedQ = fold(question);
   const names = [
@@ -1024,11 +1060,14 @@ function allowances(s, { question, focus, availableChars }) {
       ? { item, tier: 1, score, cap: STANDARD_REFERTO_MAX_CHARS }
       : { item, tier: 2, score: 0, cap: OTHER_MAX_CHARS };
   });
-  candidates.sort((a, b) => a.tier - b.tier || b.score - a.score || b.item.doc.updatedMs - a.item.doc.updatedMs);
+  const pool = targetedOnly
+    ? candidates.filter((c) => c.tier < 2 && Math.min(c.item.fullLength, c.cap) > (floor?.[c.item.doc.id] ?? 0))
+    : candidates;
+  pool.sort((a, b) => a.tier - b.tier || b.score - a.score || b.item.doc.updatedMs - a.item.doc.updatedMs);
 
   let remaining = availableChars;
   const out = {};
-  candidates.forEach((c) => {
+  pool.forEach((c) => {
     const room = remaining - PER_DOC_OVERHEAD;
     if (room < MIN_USEFUL_CHARS) {
       out[c.item.doc.id] = 0;
@@ -1040,7 +1079,7 @@ function allowances(s, { question, focus, availableChars }) {
   });
   // Secondo giro: lo spazio che avanza va ai testi ancora accorciati, nello
   // stesso ordine, fino al testo intero. Il messaggio costa uguale.
-  candidates.forEach((c) => {
+  pool.forEach((c) => {
     const id = c.item.doc.id;
     const given = out[id];
     if (given >= c.item.fullLength || remaining <= 0) return;
@@ -1062,6 +1101,20 @@ const payloadChars = (prompt, history, question) =>
   promptChars(prompt) + history.reduce((acc, m) => acc + (m.content || "").length, 0) + question.length;
 
 /**
+ * Base dei testi nel contesto ridotto: dal più recente, senza guardare domanda
+ * né focus, con metà dello spazio che resta in un messaggio dopo le schede
+ * stabili e una riserva per schede che cambiano, storico, domanda e
+ * appendice. Dipende solo dai dati: due domande di fila hanno la stessa base,
+ * e il blocco stabile del prompt resta nella cache. `null` se non c'è spazio.
+ */
+function baseAllowances(s, stableChars) {
+  const units = messageUnits(stableChars + BASE_RESERVE + UNIT_SAFETY_MARGIN);
+  const budget = Math.floor((units * STANDARD_CHARS - UNIT_SAFETY_MARGIN - BASE_RESERVE - stableChars) * BASE_SHARE);
+  if (budget < MIN_USEFUL_CHARS) return null;
+  return allowances(s, { question: "", focus: null, availableChars: budget });
+}
+
+/**
  * Quaderno completo e, se non sta in un messaggio, quello ridotto per questa
  * domanda. `history` è lo storico che partirà col messaggio (senza la domanda).
  */
@@ -1081,18 +1134,42 @@ export function planContext(snapshot, { question, focus, history, locale }) {
   // che servono allo scheletro e li riempie di testi, invece di buttarli tutti.
   const skeletonChars = payloadChars(skeleton, history, question);
   const target = messageUnits(skeletonChars + UNIT_SAFETY_MARGIN) * STANDARD_CHARS - UNIT_SAFETY_MARGIN;
-  let available = Math.max(0, target - skeletonChars);
   let reducedPrompt = null;
   let reducedChars = 0;
-  // Il contorno stimato per documento non basta quando un allegato ha molte
-  // righe (ognuna indentata): se sfora, lo sforamento esce dal budget e si
-  // ridistribuisce.
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const allowance = allowances(snapshot, { question, focus, availableChars: available });
-    reducedPrompt = agentSystemPrompt({ familyName, files: buildMemoryBook(snapshot, { allowance, locale }), focus, locale });
-    reducedChars = payloadChars(reducedPrompt, history, question);
-    if (reducedChars <= target || available === 0) break;
-    available = Math.max(0, available - (reducedChars - target));
+
+  // Base + appendice: nelle schede ogni testo ha una base che dipende solo dai
+  // dati, uguale per ogni domanda, così resta nella cache; i testi scelti per
+  // la domanda vanno in coda, in domanda.md. Misurato il 05/10/2026: col
+  // budget diviso per domanda le due domande condividevano 2.165 caratteri e
+  // la cache non serviva mai.
+  const base = baseAllowances(snapshot, skeleton.stable.length);
+  if (base) {
+    const withBase = agentSystemPrompt({ familyName, files: buildMemoryBook(snapshot, { allowance: base, locale }), focus, locale });
+    let budget = target - payloadChars(withBase, history, question) - APPENDIX_OVERHEAD;
+    for (let attempt = 0; budget >= 0 && attempt < 3; attempt += 1) {
+      const appendix = allowances(snapshot, { question, focus, availableChars: budget, targetedOnly: true, floor: base });
+      reducedPrompt = agentSystemPrompt({ familyName, files: buildMemoryBook(snapshot, { allowance: base, appendix, locale }), focus, locale });
+      reducedChars = payloadChars(reducedPrompt, history, question);
+      if (reducedChars <= target || budget === 0) break;
+      budget = Math.max(0, budget - (reducedChars - target));
+    }
+    if (reducedChars > target) reducedPrompt = null;
+  }
+
+  // Senza spazio per la base (storico lungo, scheletro enorme): il budget si
+  // divide per domanda come prima, e la parte dei testi esce dalla cache.
+  if (!reducedPrompt) {
+    let available = Math.max(0, target - skeletonChars);
+    // Il contorno stimato per documento non basta quando un allegato ha molte
+    // righe (ognuna indentata): se sfora, lo sforamento esce dal budget e si
+    // ridistribuisce.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const allowance = allowances(snapshot, { question, focus, availableChars: available });
+      reducedPrompt = agentSystemPrompt({ familyName, files: buildMemoryBook(snapshot, { allowance, locale }), focus, locale });
+      reducedChars = payloadChars(reducedPrompt, history, question);
+      if (reducedChars <= target || available === 0) break;
+      available = Math.max(0, available - (reducedChars - target));
+    }
   }
   const reducedUnits = messageUnits(reducedChars);
   // Un ridotto che costa quanto il completo non è una scelta: si manda il completo.

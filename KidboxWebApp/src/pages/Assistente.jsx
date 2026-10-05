@@ -220,7 +220,7 @@ export default function Assistente({ variant = "page", onClose, focus = null, on
     setPendingChoice(null);
   };
 
-  /** `prompt` = `{ stable, volatile }` da `planContext`: due blocchi di cache sul server. */
+  /** `prompt` = `{ stable, volatile, tail }` da `planContext`: due blocchi di cache e una coda sul server. */
   const deliver = async (text, prompt) => {
     const outgoing = {
       id: newId(),
@@ -246,6 +246,7 @@ export default function Assistente({ variant = "page", onClose, focus = null, on
         messages: recentPayload(history),
         systemPromptStable: prompt.stable,
         systemPrompt: prompt.volatile,
+        systemPromptTail: prompt.tail,
         familyId: currentFamilyId,
         purpose: "familyAgent",
       });

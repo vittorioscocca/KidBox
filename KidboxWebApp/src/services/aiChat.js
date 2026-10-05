@@ -296,13 +296,15 @@ export async function deleteConversation({ uid, docId }) {
  * La quota è applicata dal server: qui non si finge alcun controllo di piano,
  * si mostra soltanto il contatore che il server restituisce.
  */
-export async function askAssistant({ messages, systemPrompt, systemPromptStable, familyId, purpose }) {
+export async function askAssistant({ messages, systemPrompt, systemPromptStable, systemPromptTail, familyId, purpose }) {
   const callable = httpsCallable(functions, "askAI", { timeout: 120_000 });
   const { data } = await callable({
     messages: messages.map((m) => ({ role: m.role, content: m.content })),
     systemPrompt,
     // Parte del prompt che cambia di rado: il server la mette in cache da sola.
     ...(systemPromptStable ? { systemPromptStable } : {}),
+    // Coda che cambia a ogni domanda (testi scelti nel contesto ridotto): senza cache.
+    ...(systemPromptTail ? { systemPromptTail } : {}),
     familyId,
     // `familyAgent` riconosce l'assistente in log e analytics del server.
     ...(purpose ? { purpose } : {}),
