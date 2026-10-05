@@ -1,0 +1,20 @@
+<it-IT>
+• Messaggi AI: oltre al limite giornaliero c'è ora un tetto mensile per famiglia, 100 con Pro e 200 con Max. In «Assistente AI» vedi quanti ne avete usati nel mese.
+• Quando i messaggi del mese finiscono, assistente e Notizie te lo dicono e ti ricordano che ripartono il primo del mese.
+• Assistente più efficiente quando fai più domande di seguito.
+</it-IT>
+<en-US>
+• AI messages: on top of the daily limit there is now a monthly cap per family, 100 with Pro and 200 with Max. In "AI Assistant" you can see how many you've used this month.
+• When this month's messages run out, the assistant and News tell you and remind you they renew on the 1st of the month.
+• A more efficient assistant when you ask several questions in a row.
+</en-US>
+<fr-FR>
+• Messages IA : en plus de la limite quotidienne, un plafond mensuel par famille, 100 avec Pro et 200 avec Max. Dans « Assistant IA », voyez combien vous en avez utilisé ce mois-ci.
+• Quand les messages du mois sont épuisés, l'assistant et les Actualités vous le disent et rappellent qu'ils se renouvellent le 1er du mois.
+• Un assistant plus efficace quand vous posez plusieurs questions à la suite.
+</fr-FR>
+<es-ES>
+• Mensajes de IA: además del límite diario, ahora hay un tope mensual por familia, 100 con Pro y 200 con Max. En «Asistente de IA» ves cuántos habéis usado este mes.
+• Cuando se acaban los mensajes del mes, el asistente y las Noticias te lo dicen y te recuerdan que se renuevan el día 1 del mes.
+• Un asistente más eficiente cuando haces varias preguntas seguidas.
+</es-ES>

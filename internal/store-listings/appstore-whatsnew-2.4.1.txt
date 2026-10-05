@@ -1,0 +1,27 @@
+# Novità iOS 2.4.1 — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 05/10/2026 sulle modifiche dopo la 2.4.0 (in vendita): tetto mensile dei messaggi AI per famiglia (Pro 100, Max 200, anche nella prova) con l'utilizzo del mese in «Assistente AI» e il messaggio quando il mese è finito (assistente e Notizie); prompt dell'assistente in due blocchi di cache e contesto ridotto in base più appendice (detto come «più efficiente», nessuna promessa di velocità: non misurata). Etichette tra virgolette = quelle del catalogo stringhe.
+
+## it
+
+• Messaggi AI: oltre al limite giornaliero ora c'è un tetto mensile per famiglia, 100 messaggi con Pro e 200 con Max. In «Assistente AI» nelle impostazioni vedi quanti ne avete usati questo mese.
+• Quando i messaggi del mese finiscono, l'assistente e le Notizie te lo dicono chiaramente e ti ricordano che ripartono il primo del mese.
+• Assistente più efficiente quando fai più domande di seguito, anche nelle famiglie con tanti documenti e referti.
+
+## en-GB
+
+• AI messages: on top of the daily limit there is now a monthly cap per family, 100 messages with Pro and 200 with Max. In "AI Assistant" in Settings you can see how many you've used this month.
+• When this month's messages run out, the assistant and News tell you clearly and remind you that they renew on the 1st of the month.
+• A more efficient assistant when you ask several questions in a row, even in families with lots of documents and medical reports.
+
+## es-ES
+
+• Mensajes de IA: además del límite diario, ahora hay un tope mensual por familia, 100 mensajes con Pro y 200 con Max. En «Asistente IA», dentro de los ajustes, ves cuántos habéis usado este mes.
+• Cuando se acaban los mensajes del mes, el asistente y las Noticias te lo dicen con claridad y te recuerdan que se renuevan el día 1 del mes.
+• Un asistente más eficiente cuando haces varias preguntas seguidas, también en familias con muchos documentos e informes médicos.
+
+## fr-FR
+
+• Messages IA : en plus de la limite quotidienne, il y a désormais un plafond mensuel par famille, 100 messages avec Pro et 200 avec Max. Dans « Assistant IA » des réglages, vous voyez combien vous en avez utilisé ce mois-ci.
+• Quand les messages du mois sont épuisés, l'assistant et les Actualités vous le disent clairement et vous rappellent qu'ils se renouvellent le 1er du mois.
+• Un assistant plus efficace quand vous posez plusieurs questions à la suite, même dans les familles avec beaucoup de documents et de comptes rendus.
