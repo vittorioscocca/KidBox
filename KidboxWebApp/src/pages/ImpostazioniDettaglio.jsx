@@ -199,6 +199,18 @@ function AssistentePage() {
             }
           />
         )}
+        {aiUsage?.period === "daily" && aiUsage.monthlyLimit > 0 && (
+          <Row
+            icon="🗓️"
+            tint="blue"
+            title={s.aiUsageMonth}
+            right={
+              <Value>
+                {aiUsage.monthlyUsage} {s.aiUsageOf} {aiUsage.monthlyLimit} {s.aiMessages}
+              </Value>
+            }
+          />
+        )}
       </Group>
       {prefs?.aiEnabled && (
         <Group label={s.healthContext}>

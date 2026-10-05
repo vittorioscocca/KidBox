@@ -381,5 +381,8 @@ export async function fetchUsage(familyId) {
     usageToday: data?.usageToday ?? 0,
     dailyLimit: data?.dailyLimit ?? 0,
     period: data?.period || "daily",
+    // Tetto mensile della famiglia (Pro e Max, 0 = nessuno).
+    monthlyUsage: data?.monthlyUsage ?? 0,
+    monthlyLimit: data?.monthlyLimit ?? 0,
   };
 }
