@@ -161,6 +161,15 @@ struct AISettingsView: View {
                             )
                             .tint(usage.isNearLimit ? .orange : .blue)
 
+                            // Tetto mensile della famiglia (Pro e Max), oltre al giornaliero.
+                            if !isInTrial && usage.monthlyLimit > 0 {
+                                Text("\(usage.monthlyUsage) di \(usage.monthlyLimit) messaggi usati questo mese")
+                                    .font(.subheadline)
+                                    .padding(.top, 4)
+                                ProgressView(value: Double(min(usage.monthlyUsage, usage.monthlyLimit)), total: Double(usage.monthlyLimit))
+                                    .tint(usage.isNearMonthlyLimit ? .orange : .blue)
+                            }
+
                             if usage.isNearLimit && plan != .max {
                                 Button {
                                     guard subscriptionManager.isFamilyOwner else { showOwnerOnly = true; return }
@@ -528,7 +537,7 @@ struct AISettingsView: View {
                  : "L'assistente AI è disponibile con Pro o Max")
                 .font(.subheadline.bold())
                 .multilineTextAlignment(.center)
-            Text("Passa a Pro per \(KBPlan.pro.aiMessageLimit) messaggi AI al giorno per famiglia, o a Max per \(KBPlan.max.aiMessageLimit).")
+            Text("Passa a Pro per \(KBPlan.pro.aiMessageLimit) messaggi AI al giorno per famiglia (fino a \(KBPlan.pro.aiMonthlyLimit) al mese), o a Max per \(KBPlan.max.aiMessageLimit) (fino a \(KBPlan.max.aiMonthlyLimit) al mese).")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

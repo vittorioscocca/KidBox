@@ -32,6 +32,15 @@ enum NewsServiceError: LocalizedError, Equatable {
             if reason == "trial-limit" {
                 return NSLocalizedString("Hai usato tutti i messaggi AI della prova Pro: le notizie tornano con un abbonamento.", comment: "News: trial AI quota exhausted")
             }
+            if reason == "monthly-limit" {
+                if let units, let remaining, remaining > 0 {
+                    return String(
+                        format: NSLocalizedString("Le notizie di oggi costano %1$d messaggi AI e questo mese alla famiglia ne restano %2$d. Si rinnovano il primo del mese.", comment: "News: monthly AI quota not enough"),
+                        units, remaining
+                    )
+                }
+                return NSLocalizedString("La famiglia ha finito i messaggi AI di questo mese. Si rinnovano il primo del mese.", comment: "News: monthly AI quota reached")
+            }
             if let units, let remaining {
                 return String(
                     format: NSLocalizedString("Le notizie di oggi costano %1$d messaggi AI e alla famiglia ne restano %2$d. Riprova domani.", comment: "News: daily AI quota not enough"),

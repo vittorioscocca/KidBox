@@ -68,6 +68,17 @@ enum KBPlan: String, CaseIterable {
     /// Sul piano Free è un bonus una tantum, su Pro/Max è la quota giornaliera.
     var aiMessageLimit: Int { spec.aiLimit }
 
+    /// Tetto mensile per famiglia (0 = nessuno), oltre al giornaliero. Se il
+    /// listino remoto non lo porta ancora, gli stessi valori del server.
+    var aiMonthlyLimit: Int {
+        if let remote = spec.aiMonthlyLimit { return remote }
+        switch self {
+        case .free: return 0
+        case .pro: return 100
+        case .max: return 200
+        }
+    }
+
     /// Periodo su cui si resetta la quota AI: a vita (una tantum) su Free, giornaliero su Pro/Max.
     var aiQuotaPeriod: AIQuotaPeriod {
         AIQuotaPeriod(rawValue: spec.aiPeriod) ?? (self == .free ? .lifetime : .daily)

@@ -52,6 +52,10 @@ struct KBPlanSpec: Codable {
     var storageBytes: Int64
     var aiLimit: Int
     var aiPeriod: String            // "daily" | "lifetime"
+    /// Tetto per famiglia nel mese di calendario, oltre al giornaliero (Pro e
+    /// Max). Assente nei listini salvati prima del 05/10/2026: allora vale
+    /// quello di `KBPlan.aiMonthlyLimit`.
+    var aiMonthlyLimit: Int?
     var productId: String?
     var priceLabel: [String: String] = [:]
     var tagline: [String: String]    = [:]
@@ -199,25 +203,25 @@ final class KBPlanCatalog: @unchecked Sendable {
         ),
         "pro": KBPlanSpec(
             id: "pro", order: 1, displayName: "Pro",
-            storageBytes: 5 * 1024 * 1024 * 1024, aiLimit: 30, aiPeriod: "daily",
+            storageBytes: 5 * 1024 * 1024 * 1024, aiLimit: 30, aiPeriod: "daily", aiMonthlyLimit: 100,
             productId: "it.vittorioscocca.kidbox.pro.monthly",
             priceLabel: ["it": "€4,99/mese", "en": "€4.99/month"],
             badge: ["it": "Più popolare", "en": "Most popular"],
             features: ["it": [KBPlanFeature(icon: "☁️", text: "{storage} di storage famiglia", strong: true),
-                              KBPlanFeature(icon: "💬", text: "{aiLimit} messaggi AI al giorno", strong: true)],
+                              KBPlanFeature(icon: "💬", text: "{aiLimit} messaggi AI al giorno, fino a 100 al mese", strong: true)],
                        "en": [KBPlanFeature(icon: "☁️", text: "{storage} family storage", strong: true),
-                              KBPlanFeature(icon: "💬", text: "{aiLimit} AI messages per day", strong: true)]]
+                              KBPlanFeature(icon: "💬", text: "{aiLimit} AI messages per day, up to 100 per month", strong: true)]]
         ),
         "max": KBPlanSpec(
             id: "max", order: 2, displayName: "Max",
-            storageBytes: 20 * 1024 * 1024 * 1024, aiLimit: 100, aiPeriod: "daily",
+            storageBytes: 20 * 1024 * 1024 * 1024, aiLimit: 100, aiPeriod: "daily", aiMonthlyLimit: 200,
             productId: "it.vittorioscocca.kidbox.max.monthly",
             priceLabel: ["it": "€9,99/mese", "en": "€9.99/month"],
             badge: ["it": "Migliore", "en": "Best value"],
             features: ["it": [KBPlanFeature(icon: "☁️", text: "{storage} di storage famiglia", strong: true),
-                              KBPlanFeature(icon: "💬", text: "{aiLimit} messaggi AI al giorno", strong: true)],
+                              KBPlanFeature(icon: "💬", text: "{aiLimit} messaggi AI al giorno, fino a 200 al mese", strong: true)],
                        "en": [KBPlanFeature(icon: "☁️", text: "{storage} family storage", strong: true),
-                              KBPlanFeature(icon: "💬", text: "{aiLimit} AI messages per day", strong: true)]]
+                              KBPlanFeature(icon: "💬", text: "{aiLimit} AI messages per day, up to 200 per month", strong: true)]]
         ),
     ]
 }

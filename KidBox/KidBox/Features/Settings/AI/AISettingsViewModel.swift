@@ -64,7 +64,18 @@ final class AISettingsViewModel: ObservableObject {
                   let usageToday = note.userInfo?["usageToday"] as? Int,
                   let dailyLimit = note.userInfo?["dailyLimit"] as? Int else { return }
             Task { @MainActor in
-                self.usage = AIResponse(reply: "", usageToday: usageToday, dailyLimit: dailyLimit)
+                // Dopo una chiamata arriva solo il giornaliero: il mese avanza
+                // della stessa differenza, finché `getAIUsage` non lo rilegge.
+                let previous = self.usage
+                var updated = AIResponse(reply: "", usageToday: usageToday, dailyLimit: dailyLimit)
+                if let previous, previous.monthlyLimit > 0 {
+                    updated.monthlyLimit = previous.monthlyLimit
+                    updated.monthlyUsage = min(
+                        previous.monthlyLimit,
+                        previous.monthlyUsage + max(0, usageToday - previous.usageToday)
+                    )
+                }
+                self.usage = updated
             }
         }
     }

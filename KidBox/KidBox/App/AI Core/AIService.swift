@@ -61,6 +61,11 @@ struct AIResponse {
     /// Caratteri payload inviati (se restituiti dalla Cloud Function).
     let totalPayloadChars: Int?
 
+    /// Tetto mensile della famiglia (Pro e Max, 0 = nessuno) e quanto ne è
+    /// stato usato: li manda `getAIUsage`.
+    var monthlyUsage: Int = 0
+    var monthlyLimit: Int = 0
+
     init(
         reply: String,
         usageToday: Int,
@@ -95,7 +100,8 @@ struct AIResponse {
             return "\(usageToday)/\(dailyLimit) messaggi oggi"
         }
     }
-    var isNearLimit: Bool { usageToday >= Int(Double(dailyLimit) * 0.8) }
+    var isNearLimit: Bool { usageToday >= Int(Double(dailyLimit) * 0.8) || isNearMonthlyLimit }
+    var isNearMonthlyLimit: Bool { monthlyLimit > 0 && monthlyUsage >= Int(Double(monthlyLimit) * 0.8) }
 }
 
 // MARK: - Travel plan
@@ -180,6 +186,7 @@ final class AIService {
     /// Il testo del server è solo in italiano, i numeri invece viaggiano nei
     /// details e qui diventano una frase nella lingua dell'app.
     private func quotaExceededMessage(_ error: NSError) -> String? {
+        if let monthly = monthlyQuotaExceededMessage(error) { return monthly }
         guard let details = error.userInfo[FunctionsErrorDetailsKey] as? [String: Any],
               details["reason"] as? String == "daily-limit",
               let units = details["units"] as? Int,
@@ -199,6 +206,32 @@ final class AIService {
             format: NSLocalizedString(
                 "La famiglia ha raggiunto il limite di %d messaggi AI per oggi. Riprova domani.",
                 comment: "AI daily quota reached"
+            ),
+            limit
+        )
+    }
+
+    /// Tetto mensile della famiglia (Pro e Max): «riprova domani» sarebbe falso.
+    private func monthlyQuotaExceededMessage(_ error: NSError) -> String? {
+        guard let details = error.userInfo[FunctionsErrorDetailsKey] as? [String: Any],
+              details["reason"] as? String == "monthly-limit",
+              let units = details["units"] as? Int,
+              let remaining = details["remaining"] as? Int,
+              let limit = details["limit"] as? Int
+        else { return nil }
+        if units > 1, remaining > 0 {
+            return String(
+                format: NSLocalizedString(
+                    "Questo messaggio costa %1$d messaggi AI perché il contesto è ampio, e questo mese alla famiglia ne restano %2$d su %3$d. Si rinnovano il primo del mese.",
+                    comment: "AI monthly quota: message costs more units than remaining"
+                ),
+                units, remaining, limit
+            )
+        }
+        return String(
+            format: NSLocalizedString(
+                "La famiglia ha usato tutti i %d messaggi AI di questo mese. Si rinnovano il primo del mese.",
+                comment: "AI monthly quota reached"
             ),
             limit
         )
@@ -448,12 +481,15 @@ final class AIService {
             KBLog.ai.kbInfo("fetchUsage succeeded usageToday=\(usageToday) dailyLimit=\(dailyLimit) familyId=\(familyId)")
             await AIUsageStore.shared.apply(usageToday: usageToday, dailyLimit: dailyLimit)
 
-            return AIResponse(
+            var response = AIResponse(
                 reply: "",
                 usageToday: usageToday,
                 dailyLimit: dailyLimit,
                 period: period
             )
+            response.monthlyUsage = data["monthlyUsage"] as? Int ?? 0
+            response.monthlyLimit = data["monthlyLimit"] as? Int ?? 0
+            return response
             
         } catch {
             if let accessError = familyAccessError(error) {
