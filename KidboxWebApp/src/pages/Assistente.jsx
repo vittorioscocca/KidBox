@@ -220,7 +220,8 @@ export default function Assistente({ variant = "page", onClose, focus = null, on
     setPendingChoice(null);
   };
 
-  const deliver = async (text, systemPrompt) => {
+  /** `prompt` = `{ stable, volatile }` da `planContext`: due blocchi di cache sul server. */
+  const deliver = async (text, prompt) => {
     const outgoing = {
       id: newId(),
       role: "user",
@@ -243,7 +244,8 @@ export default function Assistente({ variant = "page", onClose, focus = null, on
 
       const result = await askAssistant({
         messages: recentPayload(history),
-        systemPrompt,
+        systemPromptStable: prompt.stable,
+        systemPrompt: prompt.volatile,
         familyId: currentFamilyId,
         purpose: "familyAgent",
       });

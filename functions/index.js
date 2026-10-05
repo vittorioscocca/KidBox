@@ -2649,14 +2649,15 @@ function validateAskAIMessageContent(content) {
 /**
  * @param {Array<{role: string, content: string|Array<object>}>} messages
  * @param {string} systemPrompt
+ * @param {?string} systemPromptStable parte stabile del prompt, se mandata a parte
  * @return {number}
  */
-function totalAskAIPayloadChars(messages, systemPrompt) {
+function totalAskAIPayloadChars(messages, systemPrompt, systemPromptStable = null) {
   const msgChars = messages.reduce(
       (acc, m) => acc + askAIContentCharCount(m.content),
       0,
   );
-  return msgChars + (systemPrompt?.length || 0);
+  return msgChars + (systemPrompt?.length || 0) + (systemPromptStable?.length || 0);
 }
 
 /**
@@ -2678,14 +2679,16 @@ function askAIMessageUnitsForPayload(totalChars) {
  * Sotto il prefisso minimo cacheable (~4096 token su Haiku) non casha
  * silenziosamente: nessun costo extra, quindi è safe applicarlo sempre.
  * @param {string} systemPrompt
+ * @param {?string} stablePrefix blocco che lo precede con un breakpoint suo
  * @return {Array<object>}
  */
-function cacheableSystem(systemPrompt) {
-  return [{
-    type: "text",
-    text: systemPrompt,
-    cache_control: {type: "ephemeral"},
-  }];
+function cacheableSystem(systemPrompt, stablePrefix = null) {
+  const block = (text) => ({type: "text", text, cache_control: {type: "ephemeral"}});
+  // L'assistente unico manda a parte le schede che cambiano di rado: un articolo
+  // della spesa o un messaggio in chat toccano solo il secondo blocco, e il
+  // primo resta in cache. Con un blocco solo, misurato il 05/10/2026, ogni
+  // cambiamento azzerava la cache e il write a 1,25× costava più di non averla.
+  return stablePrefix ? [block(stablePrefix), block(systemPrompt)] : [block(systemPrompt)];
 }
 
 /**
@@ -2922,6 +2925,13 @@ exports.askAI = onCall(
       if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
 
       const {messages, systemPrompt, familyId, purpose} = request.data || {};
+      // Facoltativo: la parte del prompt che cambia di rado, in cache da sola
+      // (assistente unico). Le build che non lo mandano restano a un blocco.
+      const rawStable = request.data?.systemPromptStable;
+      if (rawStable != null && typeof rawStable !== "string") {
+        throw new HttpsError("invalid-argument", "systemPromptStable deve essere una stringa.");
+      }
+      const systemPromptStable = rawStable?.trim() ? rawStable : null;
 
       if (!Array.isArray(messages) || messages.length === 0) {
         throw new HttpsError("invalid-argument", "messages è richiesto.");
@@ -2945,7 +2955,7 @@ exports.askAI = onCall(
         throw new HttpsError("invalid-argument", "familyId è richiesto.");
       }
 
-      const totalChars = totalAskAIPayloadChars(messages, systemPrompt);
+      const totalChars = totalAskAIPayloadChars(messages, systemPrompt, systemPromptStable);
       if (totalChars > AI_ABSOLUTE_MAX_PAYLOAD_CHARS) {
         throw new HttpsError(
             "invalid-argument",
@@ -3031,7 +3041,7 @@ exports.askAI = onCall(
       logger.info("askAI request", {
         uid, familyId, usageCount, quota, msgCount: messages.length,
         totalChars, messageUnits, isLargeContext, clinicalRecord, mealPlan, fitnessPlan,
-        anthropicModel, purpose: purpose ?? null,
+        anthropicModel, purpose: purpose ?? null, stableChars: systemPromptStable?.length ?? 0,
       });
 
       // Uno storico che finisce con l'assistente è un prefill per l'API, non
@@ -3072,8 +3082,8 @@ exports.askAI = onCall(
             // ~0.1× su cache hit. La cartella clinica è one-shot su Sonnet: il
             // write premium (1.25×) senza re-read sarebbe uno spreco → niente cache.
             system: oneShotGeneration ?
-              effectiveSystemPrompt :
-              cacheableSystem(effectiveSystemPrompt),
+              [systemPromptStable, effectiveSystemPrompt].filter(Boolean).join("\n\n") :
+              cacheableSystem(effectiveSystemPrompt, systemPromptStable),
             messages: oneShotGeneration ?
               requestMessages.map((m) => ({role: m.role, content: m.content})) :
               messagesWithCacheBreakpoint(requestMessages),

@@ -887,11 +887,30 @@ export function buildMemoryBook(s, { allowance = null, locale = "it", now = Date
   return files;
 }
 
-/** Il quaderno nel formato del prompt: indice, poi una `<scheda>` per file. */
+/**
+ * Schede che cambiano fra una domanda e l'altra (un to-do spuntato, un
+ * articolo aggiunto, un messaggio in chat, il tempo che passa). Stanno in fondo,
+ * nel secondo blocco del prompt, così il resto del quaderno resta nella cache
+ * di Anthropic. Stesso elenco su iOS e Android.
+ */
+export const VOLATILE_FILES = new Set(["oggi.md", "calendario.md", "todo.md", "spesa.md", "chat.md"]);
+
+/**
+ * Il quaderno nel formato del prompt, in due parti: indice e schede stabili,
+ * poi le schede che cambiano. L'indice non porta i conteggi di queste ultime:
+ * sta nella parte stabile, e un numero che cambia lo farebbe uscire dalla cache.
+ */
 export function renderBook(files) {
-  const out = ["<indice>", ...files.map((f) => `- ${f.name} — ${f.title}: ${f.summary}`), "</indice>"];
-  files.forEach((f) => out.push("", `<scheda file="${f.name}" titolo="${f.title}">`, f.body, "</scheda>"));
-  return out.join("\n");
+  const card = (f) => [`<scheda file="${f.name}" titolo="${f.title}">`, f.body, "</scheda>"].join("\n");
+  const indexLine = (f) =>
+    VOLATILE_FILES.has(f.name)
+      ? `- ${f.name} — ${f.title}: in fondo, aggiornata a ogni domanda`
+      : `- ${f.name} — ${f.title}: ${f.summary}`;
+  const index = ["<indice>", ...files.map(indexLine), "</indice>"].join("\n");
+  return {
+    stable: [index, ...files.filter((f) => !VOLATILE_FILES.has(f.name)).map(card)].join("\n\n"),
+    volatile: files.filter((f) => VOLATILE_FILES.has(f.name)).map(card).join("\n\n"),
+  };
 }
 
 /** Ruolo e regole dell'assistente unico. Stesso testo su iOS e Android. */
@@ -915,16 +934,25 @@ export function agentRules(familyName, locale, now = new Date()) {
 }
 
 /**
- * Il focus va due volte, prima e dopo il quaderno: provato il 02/10/2026 su
- * Haiku, solo in fondo «cosa devo fare adesso?» aperto da una visita tornava
- * una volta su due con le cose della famiglia; in cima e in fondo, 4 su 4.
+ * Il prompt in due blocchi, ognuno con la sua cache sul server
+ * (`systemPromptStable` + `systemPrompt`): regole e schede stabili, poi focus,
+ * schede che cambiano e azioni. Il focus va due volte, prima e dopo le schede
+ * che cambiano: il 02/10/2026 su Haiku, solo in fondo «cosa devo fare adesso?»
+ * aperto da una visita tornava una volta su due con le cose della famiglia; il
+ * 05/10/2026 in questa posizione 4 su 4, come in cima al quaderno. Prima
+ * stava in cima a tutto, e ogni cambio di focus azzerava la cache.
  */
 export function agentSystemPrompt({ familyName, files, focus, locale }) {
   const focusLine = focusPromptLine(focus);
-  return [agentRules(familyName, locale), focusLine, renderBook(files), actionsPrompt(), focusLine]
-    .filter(Boolean)
-    .join("\n\n");
+  const book = renderBook(files);
+  return {
+    stable: [agentRules(familyName, locale), book.stable].join("\n\n"),
+    volatile: [focusLine, book.volatile, actionsPrompt(), focusLine].filter(Boolean).join("\n\n"),
+  };
 }
+
+/** Caratteri del prompt come li conta il server: le due parti insieme. */
+export const promptChars = (prompt) => prompt.stable.length + prompt.volatile.length;
 
 /* ── Budget ──────────────────────────────────────────────────────────────── */
 
@@ -1030,8 +1058,8 @@ function allowances(s, { question, focus, availableChars }) {
   return out;
 }
 
-const payloadChars = (systemPrompt, history, question) =>
-  systemPrompt.length + history.reduce((acc, m) => acc + (m.content || "").length, 0) + question.length;
+const payloadChars = (prompt, history, question) =>
+  promptChars(prompt) + history.reduce((acc, m) => acc + (m.content || "").length, 0) + question.length;
 
 /**
  * Quaderno completo e, se non sta in un messaggio, quello ridotto per questa
