@@ -287,10 +287,19 @@ export default function Assistente({ variant = "page", onClose, focus = null, on
         ],
         createdAt,
       });
-      setUsage({
-        usageToday: result.usageToday,
-        dailyLimit: result.dailyLimit,
-        period: result.period,
+      // Il mese avanza di quanto è avanzato il periodo (giorno o prova): la
+      // risposta porta solo quello, `getAIUsage` lo rilegge alla prossima apertura.
+      setUsage((prev) => {
+        const before = prev?.usageToday ?? 0;
+        const advanced = result.usageToday >= before ? result.usageToday - before : result.usageToday;
+        const monthlyLimit = prev?.monthlyLimit ?? 0;
+        return {
+          usageToday: result.usageToday,
+          dailyLimit: result.dailyLimit,
+          period: result.period,
+          monthlyLimit,
+          monthlyUsage: monthlyLimit ? Math.min(monthlyLimit, (prev?.monthlyUsage ?? 0) + advanced) : 0,
+        };
       });
 
       await compactIfNeeded({
@@ -415,7 +424,10 @@ export default function Assistente({ variant = "page", onClose, focus = null, on
 
   const quotaLabel = useMemo(() => {
     if (!usage || !usage.dailyLimit) return null;
-    return a.quota(usage.usageToday, usage.dailyLimit);
+    const base = a.quota(usage.usageToday, usage.dailyLimit);
+    // Il mese compare solo quando si avvicina il tetto: prima sarebbe rumore.
+    const nearMonth = usage.monthlyLimit > 0 && usage.monthlyUsage >= Math.floor(usage.monthlyLimit * 0.8);
+    return nearMonth ? `${base} · ${a.quotaMonth(usage.monthlyUsage, usage.monthlyLimit)}` : base;
   }, [usage, a]);
 
   return (
