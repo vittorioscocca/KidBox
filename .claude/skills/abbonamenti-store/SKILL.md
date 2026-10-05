@@ -5,6 +5,13 @@ description: Abbonamenti Pro e Max su App Store Connect e Google Play — produc
 
 ## Cosa esiste (al 29/09/2026)
 
+**Testi (05/10/2026):** descrizioni e vantaggi con il tetto mensile. Play:
+aggiornati e salvati su tutti e quattro, in 5 lingue (la descrizione del Pro
+annuale era il segnaposto tecnico «Versione annuale di
+it.vittorioscocca.kidbox.pro.monthly…» in tutte le lingue, ora vera; mancavano
+le descrizioni italiane dei mensili). Apple: solo i mensili citano i numeri, in
+bozza da inviare; gli annuali non hanno numeri e restano come sono.
+
 | Product id | Durata | Italia (IVA inclusa) | Livello Apple |
 |---|---|---|---|
 | `it.vittorioscocca.kidbox.max.monthly` | 1 mese | 9,99 € | 1 |
@@ -28,6 +35,7 @@ description: Abbonamenti Pro e Max su App Store Connect e Google Play — produc
 6. **Un invio senza build porta come etichetta la versione in vendita** (es. «iOS 2.3.5» per i testi dei mensili mentre si rilascia la 2.3.6). È normale.
 7. **Screenshot di revisione, circolo vizioso:** senza screenshot l'abbonamento resta in «Metadati mancanti» e non si carica nemmeno in sandbox, quindi l'annuale non compare e non si può fotografare. Si sblocca caricando un segnaposto (lo screenshot di un altro abbonamento), poi si sostituisce con quello vero, preso dalla build da TestFlight o da Xcode sul telefono, PRIMA di inviare.
 8. **Localizzazioni Apple approvate non si modificano.** Ogni testo ha una versione APPROVED e una bozza PREPARE_FOR_SUBMISSION: si patcha la bozza, che va in vendita solo con la revisione successiva. Il campo `state` delle localizzazioni resta PREPARE_FOR_SUBMISSION anche dopo l'invio: non è la prova che non sono state inviate.
+   **Se la bozza non c'è** (solo APPROVED in elenco), il `PATCH` sull'approvata risponde **409 «Cannot edit SubscriptionLocalization when it is in ACTIVE state»**. Si crea con un `POST /v1/subscriptionLocalizations` per **una** lingua, con lo stesso `name` dell'approvata: Apple risponde 201 e **clona in bozza tutte le altre lingue** col testo vecchio (un secondo `POST` per un'altra lingua dà 409 «locale already exists»). Poi si patchano quelle bozze. Fatto così il 05/10/2026 per i due mensili (tetto mensile nella descrizione); vanno in vendita con «Aggiungi alla verifica» sulle pagine dei due abbonamenti e «Invia per la revisione».
 9. **Salvare la scheda Play via API la manda in revisione insieme alla release in corso** (la «Panoramica della pubblicazione» mostra release e scheda nello stesso gruppo). Avvisare l'utente PRIMA di salvare se c'è una release in revisione.
 10. **Account di revisione Apple:** deve essere FREE (famiglia senza `plan`, senza `planOverride`, senza `users/{uid}.plan`) e proprietario della famiglia, altrimenti il revisore non vede «Upgrade» e respinge l'abbonamento. Verificarlo con REST prima dell'invio. La nota ai revisori (in inglese) deve dire dove si trova il paywall: Profilo → Abbonamento → Upgrade, oppure Impostazioni → Utilizzo spazio.
 11. **Da NON attivare:** «In famiglia» (Family Sharing, irreversibile: il piano copre già la famiglia dentro l'app), «Fatturazione mensile con impegno di 12 mesi», e offerte di prova gratuita dello store (c'è già la prova Pro nostra, vedi `/prova-pro`).

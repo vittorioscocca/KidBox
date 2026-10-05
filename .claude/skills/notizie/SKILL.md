@@ -53,6 +53,11 @@ Disegno completo in `internal/notizie.md`. Qui le regole e le trappole.
 9. **Senza tetto, il primo lettore di una zona paga tutto**: nazionale + locale
    = 30 messaggi, la quota intera di un Pro. Il tetto per edizione
    (`maxUnitsPerEdition`) è una scelta di prodotto: cambiarlo da `config/news`.
+   **Dal 05/10/2026 le Notizie scalano anche dal tetto mensile** (Pro 100, Max
+   200, prova compresa): `checkAndIncrementAIUsage` ferma con
+   `reason: "monthly-limit"`, che news passa ai client così com'è; iOS
+   (`NewsService`) e Android (`NewsRepository`) hanno la frase del mese, le
+   build vecchie mostrano quella del giorno («riprova domani»).
 10. **iOS: la barra con `safeAreaInset` lasciava leggere il testo attraverso il
     vetro**, e il cerchio dentro `GlassEffectContainer` si fondeva con la capsula
     in una macchia. `safeAreaBar` e cerchio fuori dal contenitore con

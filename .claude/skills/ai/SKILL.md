@@ -64,6 +64,14 @@ anche per la prova Pro** (tetto del piano provato, stesso contatore del mese:
 chi si abbona a metà mese parte da quanto ha usato nella prova); il Free no. Il conto: col solo giornaliero un Pro poteva
 consumare 900 messaggi al mese, a 2-2,5 ¢ l'uno nel caso peggiore contro un
 netto di 2,86 € (Apple 30% e IVA); a 100 resta un margine anche lì.
+Ogni blocco per tetto mensile finisce in **`ai_caps/{YYYY-MM}`** (piano, tetto,
+primo e ultimo blocco, volte): è la riga «Famiglie arrivate al tetto mensile»
+del report console, il segnale per i pacchetti di messaggi a consumo (rimandati
+finché resta 0). **Il contatore nella chat dell'assistente** («3/30 oggi», «3/50
+della prova», «3/5 gratuiti», più «85/100 nel mese» oltre l'80%) era sparito con
+l'assistente unico il 02/10 su iOS e Android; rimesso il 05/10 (iOS 2.4.1,
+Android 2.4.8). Il mese si aggiorna dopo una risposta con la differenza del
+giorno, e `getAIUsage` lo rilegge all'apertura: l'`askAI` non lo restituisce.
 
 I **5 messaggi bonus del Free sono una tantum e non si ricaricano mai**: esauriti,
 l'app torna esattamente com'era prima del bonus. Il contatore è doppio —

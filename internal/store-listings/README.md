@@ -58,3 +58,10 @@ Applicate il 04/10/2026 su iOS 2.4.0 e Mac 2.4.0 (barra in basso, Notizie,
 notizie salvate, assistente unico, carte di pagamento; sul Mac le Notizie
 nella barra laterale e Touch ID al posto di Face ID). Play 2.4.7 in
 `play-whatsnew-2.4.7.txt`, da incollare nella console.
+Applicate il 05/10/2026 su iOS 2.4.1 e Mac 2.4.1 (tetto mensile dei messaggi
+AI, contatore nella chat dell'assistente, avviso a mese finito, assistente più
+efficiente). Play 2.4.8 in `play-whatsnew-2.4.8.txt` (versione più corta: il
+francese lungo superava i 500 caratteri), da incollare nella console. Lo stesso
+giorno le descrizioni dell'app (iOS, Mac, Play) hanno il tetto mensile tra
+parentesi, «(100/mese)»: la frase lunga portava quattro schede oltre i 4.000
+caratteri; nel Mac francese le etichette dei link sono accorciate.

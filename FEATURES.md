@@ -69,8 +69,8 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 | Account | Accesso Apple, Google, Facebook o email+password; email non verificata rifiutata ovunque; «Password dimenticata» e, dal profilo, «Cambia password» solo per gli account email (iOS e Android) | F |
 | Inviti | Link di invito + QR affiancato; la chiave di famiglia viaggia avvolta nell'invito | F |
 | Onboarding | Wizard di creazione famiglia; checklist «Per iniziare» in Home | F |
-| Abbonamento | Free / Pro / Max, per famiglia, mensile o annuale (`….yearly`, stesso gruppo su App Store); acquisto da App Store o Play, ricevute validate lato server | — |
-| Prova Pro | Ogni famiglia nuova parte in Pro per 14 giorni senza carta, una volta per persona (`trials/{uid}`, solo server); AI con tetto suo (50 in tutto, `period: "trial"`); job orario di scadenza con push; interruttore `config/trial.enabled` | `functions/proTrial.js` |
+| Abbonamento | Free / Pro / Max, per famiglia, mensile o annuale (`….yearly`, stesso gruppo su App Store); acquisto da App Store o Play, ricevute validate lato server. Messaggi AI: Free 5 una tantum; Pro 30 al giorno e **100 al mese**, Max 100 al giorno e **200 al mese** per famiglia (tetto mensile dal 05/10/2026, `aiMonthlyLimit` nel listino); utilizzo del mese in «Assistente AI» e contatore nella chat dell'assistente; le famiglie fermate dal tetto finiscono in `ai_caps/{mese}` | — |
+| Prova Pro | Ogni famiglia nuova parte in Pro per 14 giorni senza carta, una volta per persona (`trials/{uid}`, solo server); AI con tetto suo (50 in tutto, `period: "trial"`) e in più il tetto mensile del Pro sullo stesso contatore del mese; job orario di scadenza con push; interruttore `config/trial.enabled` | `functions/proTrial.js` |
 
 ### Organizzazione
 | Funzione | Cosa fa | Piano |
