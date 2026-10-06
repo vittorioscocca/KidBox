@@ -713,6 +713,23 @@ async function checkAdminNotifStatus() {
 // ── families table sort ───────────────────
 let _familyRows = [];
 let _famSort = { col: 'storage', dir: 'desc' };
+let _famQuery = '';
+
+// Ricerca per nome famiglia (anche email del proprietario e Family ID),
+// senza distinguere maiuscole e accenti. Filtra solo la tabella: le stat card
+// restano sul periodo selezionato.
+const normSearch = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+function applyFamilySearch(rows) {
+  const q = normSearch(_famQuery);
+  if (!q) return rows;
+  return rows.filter(r => [r.fname, r.ownerEmail, r.fid].some(v => normSearch(v).includes(q)));
+}
+
+window.searchFamilies = function(value) {
+  _famQuery = value;
+  _famPage = 1;
+  renderFamiliesTable(_familyRows);
+};
 
 function sortRows(rows, col, dir) {
   return [...rows].sort((a, b) => {
@@ -768,12 +785,16 @@ function renderFamiliesTable(rows) {
     { val: pMax,  color: 'var(--color-purple)' },
   ]);
 
-  if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty">Nessuna famiglia nel periodo selezionato</td></tr>';
+  const matched = applyFamilySearch(filtered);
+  if (matched.length === 0) {
+    const msg = _famQuery.trim()
+      ? 'Nessuna famiglia corrisponde alla ricerca'
+      : 'Nessuna famiglia nel periodo selezionato';
+    tbody.innerHTML = `<tr><td colspan="8" class="empty">${msg}</td></tr>`;
     renderPagination('fam', 0, 1, 'famGoPage');
     return;
   }
-  const sorted = sortRows(filtered, _famSort.col, _famSort.dir);
+  const sorted = sortRows(matched, _famSort.col, _famSort.dir);
   const page   = sorted.slice((_famPage-1)*PAGE_SIZE, _famPage*PAGE_SIZE);
   renderPagination('fam', sorted.length, _famPage, 'famGoPage');
   tbody.innerHTML = page.map(r => {
@@ -921,7 +942,7 @@ window.bnGo = function(el, sectionId) {
 };
 
 window.famGoPage = function(p) {
-  const filtered = applyTimeFilter(_familyRows, 'updatedAt');
+  const filtered = applyFamilySearch(applyTimeFilter(_familyRows, 'updatedAt'));
   const total = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   _famPage = Math.max(1, Math.min(p, total));
   renderFamiliesTable(_familyRows);
@@ -2097,6 +2118,7 @@ nav.sidebar-nav {
 .tcard{background:var(--color-card);border:1px solid var(--color-brd);border-radius:var(--radius);overflow:clip;box-shadow:var(--shadow)}
 .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .tcard-hdr{padding:14px 18px;border-bottom:1px solid var(--color-brd);font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:space-between}
+.fam-search{background:var(--color-muted);border:1px solid var(--color-brd);border-radius:6px;color:var(--color-text);font-size:12px;font-weight:400;padding:6px 10px;width:220px;max-width:55%}
 .tcard-hdr .sub{font-weight:400;color:var(--color-dim);font-size:11px}
 table{width:100%;border-collapse:collapse}
 th{text-align:left;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--color-dim);padding:9px 18px;border-bottom:1px solid var(--color-brd)}
@@ -2926,7 +2948,9 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       <div class="sec-title" style="margin-top:32px">📋 Tutte le famiglie</div>
       <div class="tcard">
         <div class="tcard-hdr">
-          Famiglie <span class="sub">(max 60)</span>
+          <span>Famiglie</span>
+          <input id="fam-search" type="search" placeholder="Cerca per nome…" autocomplete="off"
+            oninput="searchFamilies(this.value)" class="fam-search" />
         </div>
         <div class="tbl-scroll"><table>
           <thead>
