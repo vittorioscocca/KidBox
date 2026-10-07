@@ -97,7 +97,10 @@
   .theme-btn:hover { border-color:var(--accent); color:var(--accent); }
   .nav-cta { font-size:0.84rem; font-weight:700; color:#fff; background:var(--accent); text-decoration:none; padding:8px 16px; border-radius:50px; transition:transform .15s; }
   .nav-cta:hover { transform:translateY(-1px); }
-  @media (max-width:720px){ .nav-hide { display:none; } nav{ padding:12px 18px; } }
+  .nav-lnk { white-space:nowrap; }
+  @media (max-width:1240px){ .nav-r { gap:11px; } .nav-lnk { font-size:0.8rem; } }
+  @media (max-width:1040px){ .nav-hide { display:none; } }
+  @media (max-width:720px){ nav{ padding:12px 18px; } }
 
   /* HERO */
   .hero { text-align:center; padding:80px 24px 40px; position:relative; overflow:hidden; }
@@ -314,9 +317,11 @@
 <nav>
   <a class="logo" href="#top"><img src="icon.png" alt="KidBox"><span>Kid<span class="ac">Box</span></span></a>
   <div class="nav-r">
+    <a class="nav-lnk nav-hide" href="#come-funziona">Cómo funciona</a>
     <a class="nav-lnk nav-hide" href="#prodotti">Productos</a>
     <a class="nav-lnk nav-hide" href="#ai">Inteligencia IA</a>
     <a class="nav-lnk nav-hide" href="#prezzi">Precios</a>
+    <a class="nav-lnk nav-hide" href="#faq">Preguntas</a>
     <a class="nav-lnk nav-hide" href="guide-es.html">Guía</a>
     <a class="nav-lnk nav-hide" href="es/tools/">Herramientas</a>
     <a class="nav-lnk nav-hide" href="es/blog/">Blog</a>
