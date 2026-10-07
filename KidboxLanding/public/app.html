@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prova KidBox, gratis</title>
+  <meta name="description" content="KidBox, l'app per organizzare la famiglia: calendario, cose da fare, spese e documenti condivisi. Su iPhone, Android e web.">
+  <meta name="robots" content="noindex">
+  <meta name="apple-itunes-app" content="app-id=6761055375">
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <!-- Google Analytics e Meta Pixel: partono solo dopo il consenso, vedi assets/consent.js -->
+  <script src="/assets/consent.js" defer></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --bg:#fdf7f0; --text:#1c1008; --muted:rgba(28,16,8,0.6);
+      --accent:#e8833a; --border:rgba(180,120,60,0.18);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{ --bg:#140e08; --text:#f6efe6; --muted:rgba(246,239,230,0.65); --border:rgba(255,180,100,0.16); }
+    }
+    body{
+      font-family:'DM Sans',system-ui,-apple-system,sans-serif;
+      background:var(--bg); color:var(--text);
+      min-height:100vh; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; text-align:center;
+      padding:24px; gap:18px;
+    }
+    img.logo{ width:80px; height:80px; border-radius:20px; box-shadow:0 10px 30px rgba(232,131,58,.3); }
+    h1{ font-size:1.5rem; font-weight:700; letter-spacing:-0.02em; }
+    p{ color:var(--muted); font-size:0.98rem; max-width:340px; line-height:1.5; }
+    .buttons{ display:flex; flex-direction:column; gap:12px; margin-top:6px; width:100%; max-width:300px; }
+    .store{
+      display:flex; align-items:center; justify-content:center; padding:14px 22px;
+      background:var(--text); color:var(--bg); border-radius:14px; text-decoration:none;
+      font-weight:700; font-size:1rem;
+    }
+    .store.web{ background:transparent; color:var(--text); border:2px solid var(--text); }
+    .more{ font-size:0.85rem; color:var(--muted); }
+    .more a{ color:var(--accent); text-decoration:none; font-weight:600; }
+    [hidden]{ display:none !important; }
+  </style>
+</head>
+<body>
+  <img class="logo" src="icon.png" alt="KidBox">
+  <h1>KidBox</h1>
+  <p id="lead">Calendario, cose da fare, spese e documenti della famiglia, tutti in un posto solo e condivisi. L'uso base è gratuito.</p>
+
+  <div class="buttons" id="buttons">
+    <a class="store" id="ios" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=Email-Outreach&mt=8" target="_blank" rel="noopener" data-store="ios">Scarica su App Store</a>
+    <a class="store" id="android" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox&referrer=utm_source%3Demail%26utm_medium%3Doutreach%26utm_campaign%3Doutreach_associazioni" target="_blank" rel="noopener" data-store="android">Disponibile su Google Play</a>
+    <a class="store web" id="web" href="https://app.kidboxapp.com" target="_blank" rel="noopener" data-store="web">Apri sul web</a>
+  </div>
+  <p class="more" id="more" hidden></p>
+
+  <script>
+    (function(){
+      var ua = navigator.userAgent || "";
+      var isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+      var isAndroid = /android/i.test(ua);
+      var ios = document.getElementById('ios');
+      var android = document.getElementById('android');
+      var web = document.getElementById('web');
+      var more = document.getElementById('more');
+
+      // Su telefono: solo il pulsante dello store giusto, il web come alternativa.
+      // Su computer: tutti e tre, con il web in evidenza (gli store non servono).
+      if (isIOS) {
+        android.hidden = true;
+        web.hidden = true;
+        more.hidden = false;
+        more.innerHTML = 'Preferisci il browser? <a href="https://app.kidboxapp.com" target="_blank" rel="noopener" data-store="web">Apri sul web</a>';
+      } else if (isAndroid) {
+        ios.hidden = true;
+        web.hidden = true;
+        more.hidden = false;
+        more.innerHTML = 'Preferisci il browser? <a href="https://app.kidboxapp.com" target="_blank" rel="noopener" data-store="web">Apri sul web</a>';
+      } else {
+        // Computer: il web per primo.
+        var box = document.getElementById('buttons');
+        web.classList.remove('web');
+        box.insertBefore(web, ios);
+        ios.classList.add('web');
+        android.classList.add('web');
+        document.getElementById('lead').textContent = 'Calendario, cose da fare, spese e documenti della famiglia, tutti in un posto solo e condivisi. Si usa dal browser, oppure da telefono scaricando l\'app. L\'uso base è gratuito.';
+      }
+
+      // Conteggio nostro (assets/consent.js): un tocco sul pulsante vale come tap sullo store.
+      document.addEventListener('click', function(e){
+        var a = e.target.closest && e.target.closest('a[data-store]');
+        if (!a) return;
+        try { if (window.kbLandingStorePing) window.kbLandingStorePing(a.getAttribute('data-store')); } catch (err) {}
+      });
+    })();
+  </script>
+</body>
+</html>
