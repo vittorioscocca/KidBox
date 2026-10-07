@@ -68,14 +68,15 @@
   }
 
   /**
-   * Prova Pro al contrario (functions/proTrial.js, interruttore config/trial):
-   * le famiglie nuove partono in Pro. Se la prova si spegne, va tolta anche qui.
+   * Prova Pro di 14 giorni (functions/proTrial.js, interruttore config/trial).
+   * Dal 07/10/2026 `autoGrant` è spento: la prova si attiva dal pulsante
+   * nell'app, non parte più da sola. Se la prova si spegne, va tolta anche qui.
    */
   var TRIAL_LINE = {
-    it: "Prova Pro gratis per 14 giorni: parte da sola quando crei la tua famiglia, senza carta",
-    en: "Try Pro free for 14 days: it starts on its own when you create your family, no card needed",
-    fr: "Essai Pro gratuit de 14\u00a0jours\u00a0: il démarre tout seul quand vous créez votre famille, sans carte",
-    es: "Prueba Pro gratis 14 días: empieza sola cuando creas tu familia, sin tarjeta",
+    it: "Prova Pro gratis per 14 giorni: la attivi dall'app con un tocco, senza carta",
+    en: "Try Pro free for 14 days: start it in the app with one tap, no card needed",
+    fr: "Essai Pro gratuit de 14\u00a0jours\u00a0: activez-le dans l'app en un geste, sans carte",
+    es: "Prueba Pro gratis 14 días: la activas en la app con un toque, sin tarjeta",
   };
 
   function featureHtml(feature, plan) {

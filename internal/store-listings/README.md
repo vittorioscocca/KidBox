@@ -65,3 +65,10 @@ francese lungo superava i 500 caratteri), da incollare nella console. Lo stesso
 giorno le descrizioni dell'app (iOS, Mac, Play) hanno il tetto mensile tra
 parentesi, «(100/mese)»: la frase lunga portava quattro schede oltre i 4.000
 caratteri; nel Mac francese le etichette dei link sono accorciate.
+
+**Testo promozionale App Store** (170 caratteri, 4 lingue) in
+`appstore-promo.txt`. Si cambia senza revisione, ma **una versione nuova nasce
+col testo vuoto**: va scritto sulla versione in vendita e anche su quella in
+preparazione o in revisione. Il 07/10/2026 era vuoto ovunque (quello del 29/09
+si era perso coi cambi di versione); riscritto su iOS 2.4.1, Mac 2.4.0 e Mac
+2.4.1 (in revisione), con la prova che si attiva dall'app.

@@ -33,11 +33,13 @@ const ACTIVE_DAYS = 7;
 const DAY = 86400000;
 const APPLY = process.argv.includes("--yes");
 
+// Dal 07/10/2026 le Notizie al posto dei pianificatori: sono la funzione Pro
+// nuova e quotidiana, mentre i pianificatori li usano in pochi.
 const TESTI = {
-  it: ["Prova Pro gratis per 14 giorni", "Spazio in più, pianificatori e assistente AI, senza carta. Aggiorna KidBox e attivala dall'app con un tocco."],
-  en: ["Try Pro free for 14 days", "Extra storage, planners and the AI assistant, no card needed. Update KidBox and start it in the app with one tap."],
-  fr: ["Essayez Pro gratuitement pendant 14 jours", "Espace supplémentaire, planificateurs et assistant IA, sans carte. Mettez KidBox à jour et activez-le dans l'app en un geste."],
-  es: ["Prueba Pro gratis durante 14 días", "Espacio extra, planificadores y asistente de IA, sin tarjeta. Actualiza KidBox y actívala en la app con un toque."],
+  it: ["Prova Pro gratis per 14 giorni", "Spazio in più, Notizie per la famiglia e assistente AI, senza carta. Aggiorna KidBox e attivala dall'app con un tocco."],
+  en: ["Try Pro free for 14 days", "Extra storage, News for your family and the AI assistant, no card needed. Update KidBox and start it in the app with one tap."],
+  fr: ["Essayez Pro gratuitement pendant 14 jours", "Plus d'espace, les Actualités pour votre famille et l'assistant IA, sans carte. Mettez KidBox à jour et activez-le dans l'app en un geste."],
+  es: ["Prueba Pro gratis durante 14 días", "Más espacio, Noticias para tu familia y el asistente de IA, sin tarjeta. Actualiza KidBox y actívala en la app con un toque."],
 };
 
 const tok = execFileSync("gcloud", ["auth", "print-access-token"], { encoding: "utf8" }).trim();

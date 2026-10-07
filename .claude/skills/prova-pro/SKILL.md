@@ -8,11 +8,11 @@ description: La prova Pro gratuita di 14 giorni di KidBox — come viene concess
 - **Si attiva dal pulsante** «Prova Pro per 14 giorni», nella schermata Spazio e nel paywall (iOS `ProTrialOfferCard` in `ProTrialBanner.swift`, Android `ProTrialOfferCard` in `ProTrialBanner.kt`; scritti il 30/09, da pubblicare). Il client chiede `getProTrialStatus` (solo letture: prova accesa, chi chiama è il proprietario, non l'ha mai avuta, famiglia senza piano) e mostra la card solo se `eligible`; il tocco chiama `startProTrial`, che fa le stesse scritture del trigger con `source: "button"` e rifiuta chi non è proprietario (`ownerUid` o membro `role: "owner"`). Evento GA4 `pro_trial_started` con `trigger_feature`.
 - **Il titolo della card cambia con l'origine** (`triggerFeature`): messaggi AI finiti (`ai_lock`, `ai_chat_lock`, `ai_upgrade_*`, e `wallet` su Android) → «Hai usato i messaggi AI gratuiti» + «altri N messaggi» (N = `aiLimit`, il contatore della prova è separato dai 5 del Free, quindi riparte da zero); `meal_plan_lock`, `fitness_plan_lock`, `travel_lock` → «… è incluso nella prova Pro»; il resto → testo generico. Nel paywall la card sta in cima e nasconde il messaggio contestuale.
 - **Membri non proprietari:** `getProTrialStatus` restituisce anche `ownerCanStart` e `askedOwner`; la card diventa «Chiedi di attivarla» e chiama `askOwnerForProTrial`, che manda al proprietario la push `trial.requestTitle/Body` (type `pro_trial`, stage `request`: apre Abbonamento/Piani). Al massimo una al giorno per membro, registro solo server `trialRequests/{familyId}_{uid}`, scritto solo se la push è partita. Evento GA4 `pro_trial_owner_asked`.
-- **Concessione automatica alla creazione della famiglia:** il trigger `grantProTrialOnFamilyCreated` scrive sulla famiglia `plan: "pro"`, `planSource: "trial"` e `planExpiresAt` fra 14 giorni, e registra `trials/{uid}` del proprietario. Resta attivo finché `config/trial.autoGrant` non è `false`: serve alle app pubblicate prima del pulsante (iOS 2.3.6, Android 2.4.2). **Spegnerlo quando le app col pulsante sono in vendita su entrambi gli store**, e insieme cambiare i testi che dicono «parte da sola» (tabella sotto).
+- **Concessione automatica alla creazione della famiglia:** il trigger `grantProTrialOnFamilyCreated` scrive sulla famiglia `plan: "pro"`, `planSource: "trial"` e `planExpiresAt` fra 14 giorni, e registra `trials/{uid}` del proprietario. **Spento dal 07/10/2026** (`config/trial.autoGrant: false`), con le app col pulsante in vendita su entrambi gli store. I testi che dicevano «parte da sola» sono stati cambiati lo stesso giorno, tutti (tabella sotto). Da allora la prova parte solo dal pulsante (`source: "button"`). Le 23 prove concesse in automatico prima restano valide fino alla loro scadenza. Riaccenderlo ha senso solo se il pulsante non viene trovato da nessuno: prima si guarda quante ne partono a settimana.
 - **Una per PERSONA, non per famiglia.** `trials/{uid}` è solo server (nessuna rule lo apre): aprire un'altra famiglia non dà una seconda prova.
 - **Non la ricevono:**
   - chi entra con un invito in una famiglia esistente, perché la prova appartiene al proprietario;
-  - le famiglie nate prima del 29/09, salvo il regalo (sotto);
+  - nessuno per data di nascita della famiglia: col pulsante può attivarla qualunque proprietario che non l'abbia mai avuta, anche con una famiglia nata prima del 29/09;
   - chi ha già un piano, abbonato o assegnato dalla console: la prova non sovrascrive mai un piano che vale di più;
   - il Max: la prova dà sempre e solo il Pro.
 - **AI:** tetto proprio, 50 messaggi in tutto per la prova (`period: "trial"`, contatore `ai_usage/family_{id}/lifetime/trial`). Il periodo non è `lifetime`, quindi i pianificatori Pro-only restano aperti. Costo massimo circa 0,75 $ a famiglia.
@@ -34,6 +34,12 @@ Dal 30/09/2026 la prova è una scelta dell'utente (pulsante), quindi non si conc
 - **La versione dell'app non è registrata da nessuna parte** (né su `fcmTokens` né su `users`): non si può mandare solo a chi ha già il pulsante. Per questo si lancia **una settimana dopo** che iOS 2.3.7 e Android 2.4.3 sono in vendita, e il testo dice «Aggiorna KidBox e attivala dall'app con un tocco».
 - Il tocco (type `pro_trial`, stage `offer`) apre i Piani su Android, dove la card è in cima, e la sezione Abbonamento del Profilo su iOS, da cui «Gestisci spazio e piani» porta alla card.
 - Sempre prima la prova a vuoto mostrata all'utente; `--yes` solo con il suo ok.
+- **Inviato il 07/10/2026**, col testo sulle Notizie (in italiano «Spazio in più, Notizie per la famiglia e assistente AI…»):
+  - 43 proprietari registrati in `trialOfferNotices`;
+  - 35 raggiunti su almeno un dispositivo, 8 senza nessun dispositivo raggiungibile;
+  - 41 in italiano, 1 in inglese, 1 in spagnolo.
+
+  Rilanciarlo avvisa solo i nuovi idonei, perché chi è già registrato viene saltato. Il risultato si legge nelle prove con `source: "button"` dei giorni successivi.
 
 ## Dove vive il testo che la annuncia (da aggiornare tutto insieme)
 
@@ -42,7 +48,7 @@ Dal 30/09/2026 la prova è una scelta dell'utente (pulsante), quindi non si conc
 | Etichetta sulla card Pro della landing (4 lingue) | `KidboxLanding/public/assets/plans.js` → `TRIAL_LINE` |
 | Frase in testa alla nota sotto le card | `index.html`, `index-en.html`; ES/FR in `tools/i18n/index.json`, poi `scripts/translate_html.py build` |
 | Chat della landing | `functions/landingChat/knowledge.md` (deploy di `functions:landingChat`) |
-| Testo promozionale App Store (iPhone e Mac, 4 lingue) | via API sulla versione in vendita e su quella in preparazione |
+| Testo promozionale App Store (iPhone e Mac, 4 lingue) | `internal/store-listings/appstore-promo.txt`, applicato via API sulla versione in vendita **e su quella in preparazione o in revisione**: una versione nuova nasce col testo vuoto (il 07/10/2026 era vuoto ovunque, quello del 29/09 si era perso) |
 | Push di promemoria e fine | `functions/notificationsI18n.js`, chiavi `trial.*` |
 | App | card col pulsante `ProTrialOfferCard` (Spazio e paywall), banner `ProTrialBanner` in Home, riquadro nel paywall, «In prova» su card e profilo |
 
@@ -56,5 +62,5 @@ Dal 30/09/2026 la prova è una scelta dell'utente (pulsante), quindi non si conc
 - **Riga «Prova Pro» della console:** in corso, concesse (ieri), finite, convertite (di cui durante la prova).
 - **Le famiglie in prova hanno `plan: "pro"` ma NON sono paganti:** il report e la console le tolgono già dai paganti.
 - **La conversione si legge solo sulle prove FINITE,** e sotto le 20 finite come conteggio, non come percentuale.
-- **Con `enabled` acceso e famiglie nuove create ma zero concesse:** è un'anomalia, guardare i log di `grantProTrialOnFamilyCreated`.
+- **Con `autoGrant` spento (dal 07/10/2026) zero prove concesse NON è un'anomalia**, anche con famiglie nuove: la prova parte solo se qualcuno tocca il pulsante. Leggi le prove `source: "button"` per settimana: sono il segnale che il pulsante si trova. Con `autoGrant` acceso, famiglie nuove e zero concesse era un'anomalia (log di `grantProTrialOnFamilyCreated`).
 - **Con `enabled` spento e concesse > 0** (fuori dagli invii dello script regalo, `source: "gift"`): è un'anomalia.

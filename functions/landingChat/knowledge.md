@@ -249,16 +249,17 @@ Regole che valgono per tutti i piani:
   qualunque momento dalle impostazioni dell'account Apple o di Google Play.
 - Se si annulla, l'abbonamento resta attivo fino alla fine del periodo già
   pagato (mese o anno).
-- **Prova Pro gratis per 14 giorni**: non si attiva con un pulsante né con la
-  carta. Parte da sola quando si scarica KidBox e si crea la propria famiglia
-  (alla fine della prima configurazione): da quel momento la famiglia ha il Pro
-  per 14 giorni, e in Home un banner mostra i giorni rimasti. Non la riceve chi
-  entra con un invito in una famiglia già esistente, né chi aveva già una
-  famiglia prima del 29 settembre 2026. Durante la prova l'AI ha un tetto suo
-  (50 messaggi in tutto per la prova). Alla fine la famiglia torna da sola al
-  piano Free e non perde nulla di ciò che ha salvato; per continuare con il Pro
-  ci si abbona dall'app. La prova si ha una sola volta per persona: non si
-  rinnova creando un'altra famiglia.
+- **Prova Pro gratis per 14 giorni**: si attiva dall'app con un tocco, senza
+  carta. Il proprietario della famiglia (chi l'ha creata) trova il pulsante
+  «Prova Pro per 14 giorni» in Impostazioni → Utilizzo spazio e nella schermata
+  dei piani; serve l'app aggiornata all'ultima versione. Gli altri membri
+  vedono invece «Chiedi di attivarla», che manda una notifica al proprietario.
+  Da quel momento la famiglia ha il Pro per 14 giorni, e in Home un banner
+  mostra i giorni rimasti. Durante la prova l'AI ha un tetto suo (50 messaggi in
+  tutto per la prova). Alla fine la famiglia torna da sola al piano Free e non
+  perde nulla di ciò che ha salvato; per continuare con il Pro ci si abbona
+  dall'app. La prova si ha una sola volta per persona (non si rinnova creando
+  un'altra famiglia) e non c'è se la famiglia ha già un abbonamento.
 
 ## Supporto
 
