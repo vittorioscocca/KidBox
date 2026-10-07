@@ -237,6 +237,22 @@
   .plan-note { margin-top:36px; text-align:center; font-size:0.85rem; color:var(--muted); max-width:60ch; margin-inline:auto; }
   .plan-note b { color:var(--text); }
 
+    /* HOW + FAQ */
+  .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:34px; margin-top:48px; }
+  .step .n { width:40px; height:40px; border-radius:12px; display:grid; place-items:center; font-weight:800; color:#fff; background:linear-gradient(160deg,var(--accent),var(--accent2)); box-shadow:0 6px 18px rgba(232,131,58,.28); }
+  .step h3 { font-size:1.08rem; font-weight:800; letter-spacing:-0.01em; margin:22px 0 8px; }
+  .step p { font-size:0.93rem; color:var(--muted); line-height:1.6; }
+  .faq { max-width:760px; margin:44px auto 0; }
+  .faq details { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); margin-bottom:12px; overflow:hidden; transition:border-color .2s; }
+  .faq details[open] { border-color:rgba(232,131,58,.4); }
+  .faq summary { cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 22px; font-weight:700; font-size:0.97rem; }
+  .faq summary::-webkit-details-marker { display:none; }
+  .faq summary::after { content:"+"; color:var(--accent); font-size:1.4rem; font-weight:700; line-height:1; transition:transform .2s; }
+  .faq details[open] summary::after { transform:rotate(45deg); }
+  .faq details p { padding:0 22px 20px; color:var(--muted); line-height:1.65; font-size:0.93rem; }
+  .faq details p a { color:var(--accent2); font-weight:600; }
+  @media (max-width:760px){ .steps { grid-template-columns:1fr; gap:28px; } }
+
   /* GUIDE CARD */
   .guide-card { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:26px 32px; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r-lg); text-decoration:none; box-shadow:var(--shadow); transition:border-color .2s,box-shadow .2s; }
   .guide-card:hover { border-color:rgba(232,131,58,.4); box-shadow:var(--shadow-lg); }
@@ -335,6 +351,20 @@
     </div></div>
   </div>
 </div>
+
+<!-- HOW -->
+<section id="come-funziona" class="wrap" style="padding-top:40px;">
+  <div class="sec-head rv">
+    <div class="kicker">How it works</div>
+    <h2>From first open to an organized family, in three steps</h2>
+    <p>No long setup: you start, and the family joins you.</p>
+  </div>
+  <div class="steps rv">
+    <div class="step"><div class="n">1</div><h3>Download and create your family</h3><p>On iPhone, Android or in the browser. Two screens and your family is ready: free, no card, no expiry.</p></div>
+    <div class="step"><div class="n">2</div><h3>Invite the others with a link</h3><p>Partner, grandparents, nanny: send an invite link (valid for 7 days) and whoever opens it joins the family. No limit on members.</p></div>
+    <div class="step"><div class="n">3</div><h3>Add what matters</h3><p>Visits, documents, to-dos, calendar: everyone sees them. The AI assistant reads your documents and suggests what to do. You can try Pro free for 14 days.</p></div>
+  </div>
+</section>
 
 <!-- PRODUCTS -->
 <section id="prodotti" class="wrap">
@@ -629,6 +659,26 @@
   </div>
 <!-- PLANS:END -->
   <p class="plan-note"><b>Try Pro free for 14 days</b>: start it in the app with one tap, no card and no commitment. At the end you go back to Free and lose nothing you saved. Pro and Max can be paid monthly or yearly, and yearly costs a third less. Subscriptions are managed by <b>App Store</b> or <b>Google Play</b> and renew automatically. You can cancel anytime. AI messages are a family-wide counter: on Pro and Max it resets every day, while Free's 5 trial messages are one-off and never renew.</p>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="wrap" style="padding-top:20px;">
+  <div class="sec-head rv">
+    <div class="kicker">Questions</div>
+    <h2>What people usually ask</h2>
+  </div>
+  <div class="faq rv">
+    <details><summary>Does it cost anything?</summary><p>You can start free and stay on the Free plan forever. Pro and Max are paid, monthly or yearly, and a single subscription covers the whole family: prices are right above.</p></details>
+    <details><summary>How many family members can I invite?</summary><p>As many as you need: members have no limit and you don't pay per person.</p></details>
+    <details><summary>Can I try Pro before paying?</summary><p>Yes, free for 14 days: you turn it on from the app with one tap, no card. At the end you go back to Free and lose nothing you saved.</p></details>
+    <details><summary>Is our data safe?</summary><p>Documents, messages, notes, passwords and wallet are encrypted with a family key. You share your location only if you want to, and you can turn it off any time. Details are in the <a href="privacy-en.html">privacy policy</a>.</p></details>
+    <details><summary>Do I need to download an app?</summary><p>There is an app for iPhone and Android; on a computer, or in any browser, there is the web app at app.kidboxapp.com, with the same account.</p></details>
+    <details><summary>How does the AI work, and how many messages do I get?</summary><p>The assistant uses your plan's messages: Free includes 5 trial messages, one time only; Pro and Max have a daily and monthly family cap. Meal Plan, Fitness Plan and travel itineraries require Pro or Max.</p></details>
+    <details><summary>How do I cancel the subscription?</summary><p>From the store: subscriptions are managed by the App Store or Google Play, renew automatically and can be cancelled any time.</p></details>
+    <details><summary>Can I delete my data?</summary><p>Yes. How to do it is explained on the <a href="data-deletion-en.html">Data deletion</a> page.</p></details>
+    <details><summary>Which languages does KidBox come in?</summary><p>Italian, English, Spanish and French, in the app and on the website. The Alexa skill is Italian only.</p></details>
+  </div>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Does it cost anything?", "acceptedAnswer": {"@type": "Answer", "text": "You can start free and stay on the Free plan forever. Pro and Max are paid, monthly or yearly, and a single subscription covers the whole family: prices are right above."}}, {"@type": "Question", "name": "How many family members can I invite?", "acceptedAnswer": {"@type": "Answer", "text": "As many as you need: members have no limit and you don't pay per person."}}, {"@type": "Question", "name": "Can I try Pro before paying?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, free for 14 days: you turn it on from the app with one tap, no card. At the end you go back to Free and lose nothing you saved."}}, {"@type": "Question", "name": "Is our data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Documents, messages, notes, passwords and wallet are encrypted with a family key. You share your location only if you want to, and you can turn it off any time. Details are in the privacy policy."}}, {"@type": "Question", "name": "Do I need to download an app?", "acceptedAnswer": {"@type": "Answer", "text": "There is an app for iPhone and Android; on a computer, or in any browser, there is the web app at app.kidboxapp.com, with the same account."}}, {"@type": "Question", "name": "How does the AI work, and how many messages do I get?", "acceptedAnswer": {"@type": "Answer", "text": "The assistant uses your plan's messages: Free includes 5 trial messages, one time only; Pro and Max have a daily and monthly family cap. Meal Plan, Fitness Plan and travel itineraries require Pro or Max."}}, {"@type": "Question", "name": "How do I cancel the subscription?", "acceptedAnswer": {"@type": "Answer", "text": "From the store: subscriptions are managed by the App Store or Google Play, renew automatically and can be cancelled any time."}}, {"@type": "Question", "name": "Can I delete my data?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. How to do it is explained on the Data deletion page."}}, {"@type": "Question", "name": "Which languages does KidBox come in?", "acceptedAnswer": {"@type": "Answer", "text": "Italian, English, Spanish and French, in the app and on the website. The Alexa skill is Italian only."}}]}</script>
 </section>
 
 <!-- FINAL -->
