@@ -66,6 +66,10 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
 - **Data**: 28 giorni dopo l'uscita sugli store. **Da fissare qui il giorno in cui escono** (nessuna data inventata prima).
 - **Se smentita** (meno di 5 richieste con link): le famiglie continuano a chiedere direttamente su WhatsApp e il problema non era il motivo dell'invito; prima di altro lavoro sulle richieste, chiedere a 2-3 famiglie vere come si sono organizzate l'ultima volta che serviva qualcuno.
 
+---
+
+## Chiuse
+
 ### 9. Il costo per famiglia vera è sceso davvero (decisione sulla pubblicità)
 - **Cambio**: nessuna modifica nuova. Si verifica se il calo della settimana del 21/09 è reale. I numeri:
   - fino al 14/09: 538 € di Meta per 10 famiglie vere, cioè 54 € l'una;
@@ -85,10 +89,10 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
   - (a) confermata e (b) smentita → la spesa resta intorno ai 5 € al giorno e il lavoro va sul valore del Pro per le famiglie con 2+ membri, non sull'acquisizione.
   - (a) smentita → niente aumenti di spesa; prima si rivedono messaggio, pubblico e posizionamenti degli annunci.
 - **Se smentita**: (a) il 21/09 era fortuna, e le modifiche all'invito non hanno cambiato quanto costa una famiglia vera; (b) le famiglie che contano non pagano per quello che il Pro offre oggi, come diceva la diagnosi del 28/09 sull'AI che usano in pochi.
+- **VERDETTO (09/10/2026): non misurabile.** Le tre campagne Meta sono in pausa dal 03/10, per scelta dell'utente: la spesa delle settimane del 05/10, 12/10 e 19/10 è quasi zero, sotto i 60 € richiesti. A spesa quasi zero le famiglie nuove sono 1-4 a settimana, quindi non si calcola nessun costo. Non è una smentita né una conferma: il costo del 21/09 (6,38 €) resta un dato di una settimana, fortuna compresa.
+- **Cosa resta valido:** il comando di misura (`--cohorts-from`) e la decisione per esito. Se le campagne ripartono, si riapre come riga nuova con una data nuova.
+- **Chiusa prima della data (02/11) su richiesta dell'utente.** L'utente passa a studiare cosa fanno gli utenti già attivi con le analytics.
 
----
-
-## Chiuse
 
 ### 6. Attestazione App Check su Android
 - **Cambio**: nessuno ancora. Il codice App Check è nei quattro client dal 14/08/2026, ma Android non supera l'attestazione (`403 App attestation failed` sul device dal 30/08, mai risolto). Prossimo passo: provare una build **release firmata installata da Play**, seguendo l'ordine di `internal/app-check.md`.
