@@ -101,3 +101,17 @@ Disegno completo in `internal/notizie.md`. Qui le regole e le trappole.
   come in `/ai` regola 9. Costano 0,1-0,4 $ l'una: pesano nel report dei costi.
 - Testi in quattro lingue sulle due app (`/localizzazione`): su iOS le
   `NSLocalizedString` non escono nei `.stringsdata`, vanno aggiunte a mano.
+
+## Misurare l'uso (aggiunto il 09/10/2026)
+
+**GA4, sei eventi** (iOS e Android, stessi nomi): `news_opened` (con `items`, `events`, `units`, `preparing`), `news_item_opened` (`kind`, `category`, `level`), `news_item_saved` (`category`, `level`, `from`), `news_event_add`, `news_offers_searched` (`offers`, `units`), `news_activated`. I parametri sono dimensioni custom **non registrate in GA4**: si leggono gli eventi, non le spaccature. Per usarle vanno registrate (gli eventi passati restano «(not set)»).
+
+**Server, più affidabile di GA4:** ogni edizione in `news_editions` ha `readers` e `expectedReaders` (quanti la leggeranno), `lastReadAt`, `items`, `events`, `droppedCount`, `costUsd`, `searches`. Il consumo giornaliero è in `news_usage/{data}`; le notizie salvate in `users/{uid}/savedNews`.
+
+**Stato al 09/10/2026, sei giorni dopo il lancio:**
+- zero eventi `news_*` in GA4 dal 03/10; 3 persone hanno visto la schermata «notizie» (Android 2.4.8/2.4.9), nessuna ha aperto un'edizione;
+- 10 edizioni generate, **tutte con un solo lettore atteso**; le ultime 4 mai lette; zero notizie salvate;
+- le notizie per edizione calano da 5 a 1 (nazionale), il costo no (circa 0,30 $ a edizione, quasi 3 $ in totale);
+- ipotesi da verificare: la schermata che GA4 registra è quella bloccata per i piani Free.
+
+**Prima di dire «le Notizie funzionano»**, serve almeno una famiglia diversa dallo sviluppatore con `readers` > 0 e una lettura entro 3 giorni. Idea già proposta e non fatta: generare l'edizione solo se l'ultima è stata letta negli ultimi 3 giorni, così a zero lettori il costo va a zero.
