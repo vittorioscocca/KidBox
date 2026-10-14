@@ -20,6 +20,7 @@ struct FitnessSessionsSettingsView: View {
     @State private var shoes: [FitnessShoe] = []
     @State private var editing: FitnessShoe?
     @State private var isNew = false
+    @State private var shoeToDelete: FitnessShoe?
 
     private let tint = FitnessPlanTheme.tint
 
@@ -38,13 +39,17 @@ struct FitnessSessionsSettingsView: View {
                     emptyState
                 } else {
                     ForEach(shoes) { shoe in
-                        Button {
-                            isNew = false
-                            editing = shoe
-                        } label: {
-                            shoeCard(shoe)
+                        ZStack(alignment: .topTrailing) {
+                            Button {
+                                isNew = false
+                                editing = shoe
+                            } label: {
+                                shoeCard(shoe)
+                            }
+                            .buttonStyle(.plain)
+
+                            quickMenu(shoe)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
 
@@ -70,11 +75,56 @@ struct FitnessSessionsSettingsView: View {
             shoes = FitnessShoeStore.load(childId: childId)
             shoes = await FitnessShoeStore.pull(childId: childId)
         }
+        .alert("Eliminare le scarpe?", isPresented: Binding(
+            get: { shoeToDelete != nil },
+            set: { if !$0 { shoeToDelete = nil } }
+        )) {
+            Button("Elimina", role: .destructive) {
+                if let shoe = shoeToDelete {
+                    FitnessShoeStore.delete(shoe)
+                    shoes = FitnessShoeStore.load(childId: childId)
+                }
+                shoeToDelete = nil
+            }
+            Button("Annulla", role: .cancel) { shoeToDelete = nil }
+        } message: {
+            Text("I km registrati su queste scarpe andranno persi.")
+        }
         .sheet(item: $editing) { shoe in
             FitnessShoeEditView(shoe: shoe, isNew: isNew) {
                 shoes = FitnessShoeStore.load(childId: childId)
             }
         }
+    }
+
+    /// Azioni rapide sulla scheda, senza aprirla: ritirare o eliminare.
+    private func quickMenu(_ shoe: FitnessShoe) -> some View {
+        Menu {
+            Button {
+                var updated = shoe
+                updated.retiredAt = shoe.isRetired ? nil : Date()
+                FitnessShoeStore.upsert(updated)
+                shoes = FitnessShoeStore.load(childId: childId)
+            } label: {
+                if shoe.isRetired {
+                    Label("Riattiva scarpa", systemImage: "arrow.uturn.backward")
+                } else {
+                    Label("Ritira scarpa", systemImage: "archivebox")
+                }
+            }
+            Button(role: .destructive) {
+                shoeToDelete = shoe
+            } label: {
+                Label("Elimina", systemImage: "trash")
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .font(.title3)
+                .foregroundStyle(KBTheme.secondaryText(colorScheme))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("Altre azioni")
     }
 
     private var emptyState: some View {
