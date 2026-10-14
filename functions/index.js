@@ -5962,6 +5962,8 @@ exports.deleteAccount = onCall(
       await deleteCollection(db.collection(`users/${uid}/aiConversations`)).catch(() => {});
       // Notizie salvate col segnalibro (dal 04/10/2026): stessa ragione.
       await deleteCollection(db.collection(`users/${uid}/savedNews`)).catch(() => {});
+      // Scarpe da corsa del Piano Fitness (dal 14/10/2026): stessa ragione.
+      await deleteCollection(db.collection(`users/${uid}/fitnessShoes`)).catch(() => {});
       // Collegamenti Alexa creati da questo account, in qualunque famiglia:
       // la skill ormai li scarta (vedi `resolveLink` in alexa.js), ma
       // resterebbero in archivio per sempre insieme allo userId Amazon.

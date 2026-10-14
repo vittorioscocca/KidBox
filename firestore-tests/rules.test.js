@@ -785,6 +785,27 @@ async function check(nome, promessa) {
   await check("notizie salvate: il proprietario la elimina",
       assertSucceeds(db.doc(salvataPath).delete()));
 
+  // ── SCARPE DA CORSA (users/{uid}/fitnessShoes) ─────
+  //
+  // Registro delle scarpe del Piano Fitness (14/10/2026): privato per-utente,
+  // con foto in base64 e la mappa dei km per corsa.
+  console.log("\n── SCARPE DA CORSA (users/{uid}/fitnessShoes) ─────");
+  const scarpa = {
+    childId: "c1", brand: "Asics", model: "Novablast", maxKm: 700, isDeleted: false,
+    runs: {"run-1": 5230.5}, photoBase64: "", retiredAt: null,
+  };
+  const scarpaPath = `users/${UID}/fitnessShoes/s1`;
+  await check("scarpe: il proprietario salva una scarpa",
+      assertSucceeds(db.doc(scarpaPath).set(scarpa)));
+  await check("scarpe: il proprietario legge per profilo",
+      assertSucceeds(db.collection(`users/${UID}/fitnessShoes`).where("childId", "==", "c1").get()));
+  await check("scarpe: un altro utente NON legge",
+      assertFails(env.authenticatedContext("estraneo").firestore().collection(`users/${UID}/fitnessShoes`).get()));
+  await check("scarpe: un altro utente NON ne aggiunge",
+      assertFails(env.authenticatedContext("estraneo").firestore().doc(`users/${UID}/fitnessShoes/x`).set(scarpa)));
+  await check("scarpe: il proprietario la elimina",
+      assertSucceeds(db.doc(scarpaPath).delete()));
+
   // ── CHAT AI (users/{uid}/aiConversations) ──────────
   //
   // Oggi si scrivono come vogliono i client (le build installate mandano il

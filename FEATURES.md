@@ -94,7 +94,7 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 | Cartella clinica | Documento riepilogativo da mostrare al medico | F |
 | Apple Health / Health Connect | Passi, battito, pressione, SpO₂, calorie attive, allenamenti, distanza | F |
 | Piano Alimentare | Menù settimanale AI da età, peso, obiettivi, referti, allergie | € |
-| Piano Fitness | Allenamenti AI, calendario, promemoria, sedute chiuse da Health, storico e report settimanale; a fine mese consuntivo e «mese successivo» generato sui risultati (storico in `previousCycles`; il web lo conserva ma non genera ancora la continuazione) | € |
+| Piano Fitness | Allenamenti AI, calendario, promemoria, sedute chiuse da Health, storico e report settimanale; a fine mese consuntivo e «mese successivo» generato sui risultati (storico in `previousCycles`; il web lo conserva ma non genera ancora la continuazione); impostazioni delle sessioni (ingranaggio in «Sessioni») con le scarpe da corsa: marca, acquisto, km massimi, foto, km rimasti dal registro delle corse (`users/{uid}/fitnessShoes`; iOS e Android, non sul web) | € |
 | Analisi mensile | Pattern sulla storia sanitaria dei figli, ad app chiusa | € |
 | Chiedi all'AI | Su iPhone, iPad e Android il cerchio al centro della **barra in basso**, aperto da una schermata di Salute (persona, visite, singola visita, esami, singolo esame), apre l'**assistente di famiglia** già centrato lì, con etichetta che si può togliere e domande a tema (dal 03/10/2026 al posto dei pulsanti AI; sul Mac e sul web restano i pulsanti); le vecchie chat Salute separate non si aprono più (dal 02/10/2026) | € (5 messaggi una tantum sul Free) |
 

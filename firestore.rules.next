@@ -256,6 +256,14 @@ service cloud.firestore {
         allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
       }
 
+      // ── SCARPE DA CORSA (private per-utente, sync cross-device) ──
+      // Registro delle scarpe del Piano Fitness: marca, acquisto, km massimi,
+      // foto e km per corsa. Sta sotto `users` per lo stesso motivo del piano.
+      // Le cancella deleteAccount.
+      match /fitnessShoes/{shoeId} {
+        allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
+      }
+
       // ── NOTIZIE SALVATE (private per-utente, sync cross-device) ──
       // Il segnalibro delle Notizie: copie delle notizie che l'utente salva,
       // una per documento (id = SHA-256 dell'URL, uguale su iOS e Android).
