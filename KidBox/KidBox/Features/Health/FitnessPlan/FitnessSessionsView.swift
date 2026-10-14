@@ -16,6 +16,7 @@ import SwiftUI
 struct FitnessSessionsView: View {
 
     let plan: FitnessPlanDocument
+    let childId: String
 
     @Environment(\.colorScheme) private var colorScheme
 
@@ -59,6 +60,16 @@ struct FitnessSessionsView: View {
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Sessioni")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    FitnessSessionsSettingsView(childId: childId)
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .accessibilityLabel("Impostazioni")
+            }
+        }
     }
 
     // MARK: - Mese

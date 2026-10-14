@@ -722,7 +722,7 @@ struct FitnessPlanView: View {
         let done = plan.allSessions.filter { $0.status == .done }.count
 
         return NavigationLink {
-            FitnessSessionsView(plan: plan)
+            FitnessSessionsView(plan: plan, childId: childId)
         } label: {
             HStack(spacing: 12) {
                 ZStack {

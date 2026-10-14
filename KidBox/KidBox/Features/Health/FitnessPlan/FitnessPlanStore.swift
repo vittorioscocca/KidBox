@@ -30,6 +30,9 @@ enum FitnessPlanStore {
         KBLog.persistence.kbInfo(
             "FitnessPlan saved childId=\(childId) sessions=\(document.allSessions.count)"
         )
+        // Le corse del piano finiscono nel registro delle scarpe adesso: alla
+        // rigenerazione del piano sarebbe tardi.
+        FitnessShoeStore.reconcile(plan: document, childId: childId)
     }
 
     static func clear(childId: String) {
