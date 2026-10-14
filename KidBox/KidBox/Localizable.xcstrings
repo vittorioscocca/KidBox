@@ -49,662 +49,46 @@
         }
       }
     },
-    "%@ percorsi" : {
+    "Km percorsi" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ run"
+            "value" : "Km covered"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ recorridos"
+            "value" : "Km recorridos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ parcourus"
+            "value" : "Km parcourus"
           }
         }
       }
     },
-    "%@ rimasti" : {
+    "Puoi correggere i km a mano, ad esempio se le scarpe sono già state usate: le corse nuove si sommano a questo valore." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ left"
+            "value" : "You can adjust the km by hand, for example if the shoes were already used: new runs are added on top of this value."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ restantes"
+            "value" : "Puedes corregir los km a mano, por ejemplo si las zapatillas ya se han usado: las carreras nuevas se suman a este valor."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ restants"
-          }
-        }
-      }
-    },
-    "%lld/%lld della prova" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld/%lld of the trial"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld/%lld de la prueba"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld/%lld de l’essai"
-          }
-        }
-      }
-    },
-    "%lld/%lld gratuiti" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld/%lld free"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld/%lld gratuitos"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld/%lld gratuits"
-          }
-        }
-      }
-    },
-    "%lld/%lld nel mese" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld/%lld this month"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld/%lld este mes"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld/%lld ce mois-ci"
-          }
-        }
-      }
-    },
-    "%lld/%lld oggi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld/%lld today"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld/%lld hoy"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld/%lld aujourd’hui"
-          }
-        }
-      }
-    },
-    "Acquistata il %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bought on %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comprada el %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Achetée le %@"
-          }
-        }
-      }
-    },
-    "Aggiungi foto" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add photo"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir foto"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter une photo"
-          }
-        }
-      }
-    },
-    "Aggiungi scarpe" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add shoes"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir zapatillas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter des chaussures"
-          }
-        }
-      }
-    },
-    "Aggiungi un paio per sapere quanti km gli restano." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add a pair to see how many km they have left."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añade un par para saber cuántos km le quedan."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajoutez une paire pour savoir combien de km il lui reste."
-          }
-        }
-      }
-    },
-    "Cambia foto" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change photo"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cambiar foto"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Changer la photo"
-          }
-        }
-      }
-    },
-    "Da sostituire" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Time to replace"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hay que cambiarlas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "À remplacer"
-          }
-        }
-      }
-    },
-    "Data di acquisto" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Purchase date"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fecha de compra"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Date d'achat"
-          }
-        }
-      }
-    },
-    "Elimina scarpa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete shoe"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eliminar zapatilla"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Supprimer la chaussure"
-          }
-        }
-      }
-    },
-    "Eliminare le scarpe?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete these shoes?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Eliminar las zapatillas?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Supprimer ces chaussures ?"
-          }
-        }
-      }
-    },
-    "es. 700" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "e.g. 700"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "p. ej. 700"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ex. 700"
-          }
-        }
-      }
-    },
-    "I km delle corse registrate dopo la data d'acquisto si scalano dai km massimi della scarpa più recente in uso." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The km of runs logged after the purchase date are deducted from the maximum km of the most recent shoe in use."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los km de las carreras registradas después de la fecha de compra se descuentan de los km máximos de las zapatillas más recientes en uso."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les km des courses enregistrées après la date d'achat sont déduits des km maximum de la paire en cours la plus récente."
-          }
-        }
-      }
-    },
-    "I km registrati su queste scarpe andranno persi." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The km logged on these shoes will be lost."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los km registrados en estas zapatillas se perderán."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les km enregistrés sur ces chaussures seront perdus."
-          }
-        }
-      }
-    },
-    "Km massimi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Maximum km"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Km máximos"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Km maximum"
-          }
-        }
-      }
-    },
-    "Le scarpe da corsa durano di solito tra 500 e 800 km." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Running shoes usually last between 500 and 800 km."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las zapatillas de correr suelen durar entre 500 y 800 km."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les chaussures de running durent généralement entre 500 et 800 km."
-          }
-        }
-      }
-    },
-    "Modello (facoltativo)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Model (optional)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Modelo (opcional)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Modèle (facultatif)"
-          }
-        }
-      }
-    },
-    "Nessuna scarpa registrata" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No shoes yet"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ninguna zapatilla registrada"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune chaussure enregistrée"
-          }
-        }
-      }
-    },
-    "Nuove scarpe" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New shoes"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zapatillas nuevas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nouvelles chaussures"
-          }
-        }
-      }
-    },
-    "Riattiva scarpa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reactivate shoe"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reactivar zapatilla"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Réactiver la chaussure"
-          }
-        }
-      }
-    },
-    "Ritira scarpa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retire shoe"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retirar zapatilla"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retirer la chaussure"
-          }
-        }
-      }
-    },
-    "Ritirata" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retired"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retirada"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retirée"
-          }
-        }
-      }
-    },
-    "Scarpe" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shoes"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zapatillas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chaussures"
-          }
-        }
-      }
-    },
-    "Scarpe da corsa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Running shoes"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zapatillas de correr"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chaussures de running"
-          }
-        }
-      }
-    },
-    "Scegli dalla libreria" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose from library"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elegir de la galería"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choisir dans la photothèque"
-          }
-        }
-      }
-    },
-    "Una scarpa ritirata non riceve più corse: quelle nuove vanno alla scarpa più recente in uso." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A retired shoe no longer receives runs: new ones go to the most recent shoe in use."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unas zapatillas retiradas ya no reciben carreras: las nuevas van a las más recientes en uso."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une paire retirée ne reçoit plus de courses : les nouvelles vont à la paire en cours la plus récente."
+            "value" : "Vous pouvez corriger les km à la main, par exemple si les chaussures ont déjà servi : les nouvelles courses s'ajoutent à cette valeur."
           }
         }
       }
@@ -1629,6 +1013,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ ne pourra plus accéder aux données de la famille."
+          }
+        }
+      }
+    },
+    "%@ percorsi" : {
+      "comment" : "Shoe km used",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ run"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ recorridos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ parcourus"
+          }
+        }
+      }
+    },
+    "%@ rimasti" : {
+      "comment" : "Shoe km remaining",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ left"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ restantes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ restants"
           }
         }
       }
@@ -3258,6 +2688,28 @@
         }
       }
     },
+    "%lld/%lld della prova" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld of the trial"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld de la prueba"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld de l’essai"
+          }
+        }
+      }
+    },
     "%lld/%lld Dosi totali" : {
       "localizations" : {
         "en" : {
@@ -3276,6 +2728,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld/%lld doses au total"
+          }
+        }
+      }
+    },
+    "%lld/%lld gratuiti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld free"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld gratuitos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld gratuits"
+          }
+        }
+      }
+    },
+    "%lld/%lld nel mese" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld this month"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld este mes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld ce mois-ci"
+          }
+        }
+      }
+    },
+    "%lld/%lld oggi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld today"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld hoy"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld aujourd’hui"
           }
         }
       }
@@ -5620,6 +5138,29 @@
         }
       }
     },
+    "Acquistata il %@" : {
+      "comment" : "Shoe purchase date",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bought on %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprada el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Achetée le %@"
+          }
+        }
+      }
+    },
     "Acquistati (%lld)" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6637,6 +6178,28 @@
         }
       }
     },
+    "Aggiungi foto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add photo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir foto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter une photo"
+          }
+        }
+      }
+    },
     "Aggiungi foto e video" : {
       "localizations" : {
         "en" : {
@@ -7169,6 +6732,28 @@
         }
       }
     },
+    "Aggiungi scarpe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add shoes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir zapatillas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter des chaussures"
+          }
+        }
+      }
+    },
     "Aggiungi testo" : {
       "localizations" : {
         "en" : {
@@ -7276,6 +6861,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajoutez un événement au calendrier"
+          }
+        }
+      }
+    },
+    "Aggiungi un paio per sapere quanti km gli restano." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a pair to see how many km they have left."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade un par para saber cuántos km le quedan."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez une paire pour savoir combien de km il lui reste."
           }
         }
       }
@@ -12363,6 +11970,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Changer de famille"
+          }
+        }
+      }
+    },
+    "Cambia foto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change photo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambiar foto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changer la photo"
           }
         }
       }
@@ -20501,6 +20130,28 @@
         }
       }
     },
+    "Da sostituire" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time to replace"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hay que cambiarlas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À remplacer"
+          }
+        }
+      }
+    },
     "Dai un nome alla famiglia e aggiungi il primo figlio. Potrai modificare tutto in seguito." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -20764,6 +20415,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Date de la course"
+          }
+        }
+      }
+    },
+    "Data di acquisto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purchase date"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fecha de compra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date d'achat"
           }
         }
       }
@@ -23909,6 +23582,28 @@
         }
       }
     },
+    "Elimina scarpa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete shoe"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar zapatilla"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la chaussure"
+          }
+        }
+      }
+    },
     "Elimina seduta" : {
       "localizations" : {
         "en" : {
@@ -24347,6 +24042,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Supprimer la famille ?"
+          }
+        }
+      }
+    },
+    "Eliminare le scarpe?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete these shoes?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar las zapatillas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer ces chaussures ?"
           }
         }
       }
@@ -25415,6 +25132,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ex. Hôpital municipal, 1 rue de Rome"
+          }
+        }
+      }
+    },
+    "es. 700" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. 700"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "p. ej. 700"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ex. 700"
           }
         }
       }
@@ -31452,6 +31191,50 @@
         }
       }
     },
+    "I km delle corse registrate dopo la data d'acquisto si scalano dai km massimi della scarpa più recente in uso." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The km of runs logged after the purchase date are deducted from the maximum km of the most recent shoe in use."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los km de las carreras registradas después de la fecha de compra se descuentan de los km máximos de las zapatillas más recientes en uso."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les km des courses enregistrées après la date d'achat sont déduits des km maximum de la paire en cours la plus récente."
+          }
+        }
+      }
+    },
+    "I km registrati su queste scarpe andranno persi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The km logged on these shoes will be lost."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los km registrados en estas zapatillas se perderán."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les km enregistrés sur ces chaussures seront perdus."
+          }
+        }
+      }
+    },
     "I messaggi sono scalati dal limite giornaliero della famiglia. Il piano resta salvato: rigeneralo solo quando cambiano peso, allenamenti o obiettivo." : {
       "localizations" : {
         "en" : {
@@ -35954,6 +35737,28 @@
         }
       }
     },
+    "Km massimi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maximum km"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Km máximos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Km maximum"
+          }
+        }
+      }
+    },
     "L'abbonamento si rinnova automaticamente ogni anno. Puoi annullare in qualsiasi momento dalle impostazioni del tuo account Apple." : {
       "localizations" : {
         "en" : {
@@ -38212,6 +38017,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les réponses sont générées par Claude d'Anthropic (États-Unis), en passant par les serveurs KidBox. Anthropic n'utilise pas ces données pour entraîner ses modèles et les traite selon sa politique de confidentialité."
+          }
+        }
+      }
+    },
+    "Le scarpe da corsa durano di solito tra 500 e 800 km." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Running shoes usually last between 500 and 800 km."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las zapatillas de correr suelen durar entre 500 y 800 km."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les chaussures de running durent généralement entre 500 et 800 km."
           }
         }
       }
@@ -40855,6 +40682,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Modèle"
+          }
+        }
+      }
+    },
+    "Modello (facoltativo)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modelo (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modèle (facultatif)"
           }
         }
       }
@@ -43685,6 +43534,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucune échéance"
+          }
+        }
+      }
+    },
+    "Nessuna scarpa registrata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No shoes yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguna zapatilla registrada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune chaussure enregistrée"
           }
         }
       }
@@ -47494,6 +47365,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nouvelle zone"
+          }
+        }
+      }
+    },
+    "Nuove scarpe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New shoes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapatillas nuevas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelles chaussures"
           }
         }
       }
@@ -57113,6 +57006,28 @@
         }
       }
     },
+    "Riattiva scarpa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reactivate shoe"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reactivar zapatilla"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réactiver la chaussure"
+          }
+        }
+      }
+    },
     "Riavvia per applicare" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -59017,6 +58932,28 @@
         }
       }
     },
+    "Ritira scarpa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retire shoe"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirar zapatilla"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer la chaussure"
+          }
+        }
+      }
+    },
     "Ritirare la richiesta?" : {
       "localizations" : {
         "en" : {
@@ -59035,6 +58972,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Retirer la demande ?"
+          }
+        }
+      }
+    },
+    "Ritirata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retired"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirée"
           }
         }
       }
@@ -60653,6 +60612,50 @@
         }
       }
     },
+    "Scarpe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shoes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapatillas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaussures"
+          }
+        }
+      }
+    },
+    "Scarpe da corsa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Running shoes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapatillas de correr"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaussures de running"
+          }
+        }
+      }
+    },
     "Scatta una foto" : {
       "localizations" : {
         "en" : {
@@ -60825,6 +60828,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choisir depuis KidBox"
+          }
+        }
+      }
+    },
+    "Scegli dalla libreria" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose from library"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elegir de la galería"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir dans la photothèque"
           }
         }
       }
@@ -68788,6 +68813,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "il y a une heure"
+          }
+        }
+      }
+    },
+    "Una scarpa ritirata non riceve più corse: quelle nuove vanno alla scarpa più recente in uso." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A retired shoe no longer receives runs: new ones go to the most recent shoe in use."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unas zapatillas retiradas ya no reciben carreras: las nuevas van a las más recientes en uso."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une paire retirée ne reçoit plus de courses : les nouvelles vont à la paire en cours la plus récente."
           }
         }
       }

@@ -39,6 +39,11 @@ struct FitnessShoe: Codable, Equatable, Identifiable {
     var updatedAt: Date
     /// id della corsa → metri.
     var runs: [String: Double]
+    /// Correzione a mano, in km, che si somma alle corse (può essere negativa):
+    /// per le scarpe già usate prima di averle inserite o per un conteggio
+    /// sbagliato. Opzionale: le scarpe salvate prima di questo campo restano
+    /// leggibili.
+    var manualKm: Double?
 
     init(
         id: String = UUID().uuidString,
@@ -51,7 +56,8 @@ struct FitnessShoe: Codable, Equatable, Identifiable {
         retiredAt: Date? = nil,
         isDeleted: Bool = false,
         updatedAt: Date = Date(),
-        runs: [String: Double] = [:]
+        runs: [String: Double] = [:],
+        manualKm: Double? = nil
     ) {
         self.id = id
         self.childId = childId
@@ -64,6 +70,7 @@ struct FitnessShoe: Codable, Equatable, Identifiable {
         self.isDeleted = isDeleted
         self.updatedAt = updatedAt
         self.runs = runs
+        self.manualKm = manualKm
     }
 
     var displayName: String {
@@ -73,7 +80,9 @@ struct FitnessShoe: Codable, Equatable, Identifiable {
         return name.isEmpty ? brand : name
     }
 
-    var usedKm: Double { runs.values.reduce(0, +) / 1000 }
+    /// Km delle sole corse registrate.
+    var runsKm: Double { runs.values.reduce(0, +) / 1000 }
+    var usedKm: Double { max(0, runsKm + (manualKm ?? 0)) }
     var remainingKm: Double { max(0, maxKm - usedKm) }
     var progress: Double { maxKm > 0 ? min(1, usedKm / maxKm) : 0 }
     var isWornOut: Bool { maxKm > 0 && usedKm >= maxKm }
@@ -305,6 +314,7 @@ enum FitnessShoeRemoteStore {
             "isDeleted": shoe.isDeleted,
             "updatedAt": Timestamp(date: shoe.updatedAt),
             "runs": shoe.runs,
+            "manualKm": shoe.manualKm ?? 0,
             "photoBase64": shoe.photo?.base64EncodedString() ?? "",
         ]
         data["retiredAt"] = shoe.retiredAt.map { Timestamp(date: $0) } ?? NSNull()
@@ -341,7 +351,8 @@ enum FitnessShoeRemoteStore {
                     retiredAt: (data["retiredAt"] as? Timestamp)?.dateValue(),
                     isDeleted: data["isDeleted"] as? Bool ?? false,
                     updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue() ?? .distantPast,
-                    runs: runs
+                    runs: runs,
+                    manualKm: (data["manualKm"] as? NSNumber)?.doubleValue
                 )
             }
         } catch {

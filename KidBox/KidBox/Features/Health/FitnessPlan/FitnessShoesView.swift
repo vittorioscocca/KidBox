@@ -271,6 +271,9 @@ struct FitnessShoeEditView: View {
     @State private var model = ""
     @State private var purchaseDate = Date()
     @State private var maxKmText = ""
+    /// Km percorsi in totale, modificabili a mano. Vuoto = nessuna correzione.
+    @State private var usedKmText = ""
+    @State private var initialUsedKmText = ""
     @State private var photo: Data?
     @State private var retired = false
     @State private var pickerItem: PhotosPickerItem?
@@ -285,8 +288,17 @@ struct FitnessShoeEditView: View {
         return value
     }
 
+    /// `nil` se il testo non è un numero; il campo vuoto vale zero.
+    private var usedKm: Double? {
+        let normalized = usedKmText.replacingOccurrences(of: ",", with: ".")
+            .trimmingCharacters(in: .whitespaces)
+        if normalized.isEmpty { return 0 }
+        guard let value = Double(normalized), value >= 0 else { return nil }
+        return value
+    }
+
     private var canSave: Bool {
-        !brand.trimmingCharacters(in: .whitespaces).isEmpty && maxKm != nil
+        !brand.trimmingCharacters(in: .whitespaces).isEmpty && maxKm != nil && usedKm != nil
     }
 
     var body: some View {
@@ -351,6 +363,20 @@ struct FitnessShoeEditView: View {
                     Text("Le scarpe da corsa durano di solito tra 500 e 800 km.")
                 }
 
+                Section {
+                    HStack {
+                        Text("Km percorsi")
+                        Spacer()
+                        TextField("0", text: $usedKmText)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(maxWidth: 110)
+                        Text(verbatim: "km").foregroundStyle(.secondary)
+                    }
+                } footer: {
+                    Text("Puoi correggere i km a mano, ad esempio se le scarpe sono già state usate: le corse nuove si sommano a questo valore.")
+                }
+
                 if !isNew {
                     Section {
                         Toggle("Ritirata", isOn: $retired)
@@ -407,6 +433,10 @@ struct FitnessShoeEditView: View {
             purchaseDate = shoe.purchaseDate
             photo = shoe.photo
             retired = shoe.isRetired
+            if !isNew {
+                usedKmText = String(format: "%.1f", shoe.usedKm)
+            }
+            initialUsedKmText = usedKmText
             if shoe.maxKm > 0 {
                 maxKmText = shoe.maxKm.truncatingRemainder(dividingBy: 1) == 0
                     ? String(Int(shoe.maxKm))
@@ -423,6 +453,11 @@ struct FitnessShoeEditView: View {
         updated.purchaseDate = Calendar.current.startOfDay(for: purchaseDate)
         updated.maxKm = maxKm
         updated.photo = photo
+        // Solo se il campo è stato toccato: riscrivere il valore arrotondato
+        // a un decimale sposterebbe i km a ogni salvataggio.
+        if usedKmText != initialUsedKmText, let usedKm {
+            updated.manualKm = usedKm - shoe.runsKm
+        }
         if retired != shoe.isRetired { updated.retiredAt = retired ? Date() : nil }
         FitnessShoeStore.upsert(updated)
         onSaved()
