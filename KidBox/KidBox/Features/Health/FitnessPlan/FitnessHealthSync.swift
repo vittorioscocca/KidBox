@@ -295,6 +295,10 @@ enum FitnessPlanForegroundSync {
         // con le sole calorie da questo innesco, e con i chilometri dall'altro.
         await KBHealthKitService.shared.requestAuthorizationForNewTypesIfLinked()
 
+        // Le scarpe leggono Salute per conto proprio: contano anche le corse
+        // che non chiudono nessuna seduta (e quindi non finiscono nel piano).
+        await FitnessShoeStore.syncFromHealth(childId: childId)
+
         let result = await FitnessHealthSync.reconcile(plan: plan)
         FitnessPlanStore.setLastHealthSync(Date(), childId: childId)
         guard result.didChange else { return }

@@ -74,6 +74,8 @@ struct FitnessSessionsSettingsView: View {
         .task {
             shoes = FitnessShoeStore.load(childId: childId)
             shoes = await FitnessShoeStore.pull(childId: childId)
+            await FitnessShoeStore.syncFromHealth(childId: childId)
+            shoes = FitnessShoeStore.load(childId: childId)
         }
         .alert("Eliminare le scarpe?", isPresented: Binding(
             get: { shoeToDelete != nil },
@@ -94,6 +96,17 @@ struct FitnessSessionsSettingsView: View {
             FitnessShoeEditView(shoe: shoe, isNew: isNew) {
                 shoes = FitnessShoeStore.load(childId: childId)
             }
+        }
+    }
+
+    private func stat(value: String, label: LocalizedStringKey) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(verbatim: value)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(KBTheme.primaryText(colorScheme))
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(KBTheme.secondaryText(colorScheme))
         }
     }
 
@@ -147,7 +160,8 @@ struct FitnessSessionsSettingsView: View {
     private func shoeCard(_ shoe: FitnessShoe) -> some View {
         let barColor: Color = shoe.isWornOut ? .red : (shoe.progress >= 0.85 ? .orange : tint)
 
-        return HStack(alignment: .top, spacing: 12) {
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
             FitnessShoeThumbnail(data: shoe.photo, size: 64)
 
             VStack(alignment: .leading, spacing: 6) {
@@ -201,6 +215,16 @@ struct FitnessSessionsSettingsView: View {
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(KBTheme.secondaryText(colorScheme))
             }
+            }
+
+            Divider()
+            HStack(alignment: .top) {
+                stat(value: "\(shoe.runCount)", label: "Corse")
+                Spacer(minLength: 8)
+                stat(value: FitnessShoeFormat.pace(shoe.averagePaceSecondsPerKm), label: "Andat. media")
+                Spacer(minLength: 8)
+                stat(value: FitnessShoeFormat.duration(shoe.totalMinutes), label: "Tempo")
+            }
         }
         .padding(14)
         .background(
@@ -215,6 +239,26 @@ struct FitnessSessionsSettingsView: View {
 // MARK: - Formato
 
 enum FitnessShoeFormat {
+    /// Andatura come «6'55"/km»; «—» quando nessuna corsa ha durata e distanza.
+    static func pace(_ secondsPerKm: Double?) -> String {
+        guard let secondsPerKm, secondsPerKm.isFinite else { return "—" }
+        let total = Int(secondsPerKm.rounded())
+        return String(format: "%d'%02d\"/km", total / 60, total % 60)
+    }
+
+    /// «45 min» sotto l'ora, «6h 57min» sopra; «—» per zero.
+    static func duration(_ minutes: Int) -> String {
+        guard minutes > 0 else { return "—" }
+        if minutes < 60 {
+            return String(format: NSLocalizedString("%d min", comment: "Session duration in minutes"), minutes)
+        }
+        return String(
+            format: NSLocalizedString("%1$dh %2$02dmin", comment: "Hours and minutes, sessions list"),
+            minutes / 60,
+            minutes % 60
+        )
+    }
+
     /// «312,4 km», anche sotto i 10 m (a differenza di `FitnessDistanceFormatter`,
     /// qui lo zero è un dato vero).
     static func km(_ value: Double) -> String {
@@ -462,6 +506,14 @@ struct FitnessShoeEditView: View {
         FitnessShoeStore.upsert(updated)
         onSaved()
         dismiss()
+        // Una scarpa nuova o con la data cambiata va riempita subito con le
+        // corse di Salute, senza aspettare la prossima apertura.
+        let childId = updated.childId
+        let refresh = onSaved
+        Task {
+            await FitnessShoeStore.syncFromHealth(childId: childId)
+            refresh()
+        }
     }
 }
 

@@ -44,6 +44,9 @@ struct FitnessShoe: Codable, Equatable, Identifiable {
     /// sbagliato. Opzionale: le scarpe salvate prima di questo campo restano
     /// leggibili.
     var manualKm: Double?
+    /// id della corsa → minuti, per le corse che li hanno (tempo e andatura).
+    /// Opzionale: le scarpe salvate prima di questo campo restano leggibili.
+    var runMinutes: [String: Int]?
 
     init(
         id: String = UUID().uuidString,
@@ -57,7 +60,8 @@ struct FitnessShoe: Codable, Equatable, Identifiable {
         isDeleted: Bool = false,
         updatedAt: Date = Date(),
         runs: [String: Double] = [:],
-        manualKm: Double? = nil
+        manualKm: Double? = nil,
+        runMinutes: [String: Int]? = nil
     ) {
         self.id = id
         self.childId = childId
@@ -71,6 +75,7 @@ struct FitnessShoe: Codable, Equatable, Identifiable {
         self.updatedAt = updatedAt
         self.runs = runs
         self.manualKm = manualKm
+        self.runMinutes = runMinutes
     }
 
     var displayName: String {
@@ -83,6 +88,25 @@ struct FitnessShoe: Codable, Equatable, Identifiable {
     /// Km delle sole corse registrate.
     var runsKm: Double { runs.values.reduce(0, +) / 1000 }
     var usedKm: Double { max(0, runsKm + (manualKm ?? 0)) }
+
+    /// Corse registrate (la correzione a mano non è una corsa).
+    var runCount: Int { runs.count }
+
+    /// Minuti e km delle sole corse che hanno la durata: l'andatura media si
+    /// calcola su quelle, così una corsa senza tempo non la falsa.
+    private var timedRuns: [(meters: Double, minutes: Int)] {
+        (runMinutes ?? [:]).compactMap { id, minutes in
+            runs[id].map { (meters: $0, minutes: minutes) }
+        }
+    }
+    var totalMinutes: Int { timedRuns.reduce(0) { $0 + $1.minutes } }
+
+    /// Secondi per km, `nil` se nessuna corsa ha durata e distanza.
+    var averagePaceSecondsPerKm: Double? {
+        let km = timedRuns.reduce(0) { $0 + $1.meters } / 1000
+        guard km >= 0.1, totalMinutes > 0 else { return nil }
+        return Double(totalMinutes * 60) / km
+    }
     var remainingKm: Double { max(0, maxKm - usedKm) }
     var progress: Double { maxKm > 0 ? min(1, usedKm / maxKm) : 0 }
     var isWornOut: Bool { maxKm > 0 && usedKm >= maxKm }
@@ -98,6 +122,7 @@ enum FitnessShoeLedger {
         let id: String
         let date: Date
         let meters: Double
+        let minutes: Int?
     }
 
     /// Le corse con distanza del piano: sedute fatte e allenamenti Salute non
@@ -119,16 +144,33 @@ enum FitnessShoeLedger {
             result.append(Run(
                 id: session.matchedWorkoutId ?? session.id,
                 date: session.completedAt ?? session.date,
-                meters: meters
+                meters: meters,
+                minutes: session.actualMinutes
             ))
         }
         for workout in plan.logged {
             guard let meters = workout.distanceMeters, meters >= 10,
                   FitnessActivityIcon.symbol(workoutTitle: workout.title) == "figure.run"
             else { continue }
-            result.append(Run(id: workout.id, date: workout.date, meters: meters))
+            result.append(Run(
+                id: workout.id, date: workout.date, meters: meters, minutes: workout.durationMinutes
+            ))
         }
         return result
+    }
+
+    /// Le corse lette direttamente da Apple Salute: tutte le corse registrate,
+    /// anche quelle che non c'entrano con nessuna seduta del piano (uscite fatte
+    /// con l'orologio o con altre app). L'id è quello dell'allenamento, lo
+    /// stesso che `matchedWorkoutId` ricorda sulla seduta chiusa: se la corsa è
+    /// anche nel piano, conta una volta sola.
+    static func runs(from workouts: [KBHealthWorkoutEntry]) -> [Run] {
+        workouts.compactMap { workout in
+            guard let meters = workout.distanceMeters, meters >= 10,
+                  FitnessActivityIcon.symbol(workoutTitle: workout.title) == "figure.run"
+            else { return nil }
+            return Run(id: workout.id, date: workout.startedAt, meters: meters, minutes: workout.durationMinutes)
+        }
     }
 
     /// La scarpa che riceve una corsa: la più recente fra quelle già comprate
@@ -149,12 +191,21 @@ enum FitnessShoeLedger {
     /// viste. Non toglie mai niente: una corsa sparita dal piano resta alla
     /// scarpa che l'ha consumata. Restituisce le scarpe cambiate.
     static func reconcile(shoes: [FitnessShoe], plan: FitnessPlanDocument, now: Date = Date()) -> [FitnessShoe] {
+        reconcile(shoes: shoes, runs: runs(in: plan), now: now)
+    }
+
+    static func reconcile(shoes: [FitnessShoe], runs: [Run], now: Date = Date()) -> [FitnessShoe] {
         var updated = shoes
         var changed = Set<String>()
-        for run in runs(in: plan) {
+        for run in runs {
             if let index = updated.firstIndex(where: { $0.runs[run.id] != nil }) {
                 if updated[index].runs[run.id] != run.meters {
                     updated[index].runs[run.id] = run.meters
+                    changed.insert(updated[index].id)
+                }
+                // Le corse registrate prima che si tenesse il tempo lo ricevono qui.
+                if let minutes = run.minutes, updated[index].runMinutes?[run.id] != minutes {
+                    updated[index].runMinutes = (updated[index].runMinutes ?? [:]).merging([run.id: minutes]) { $1 }
                     changed.insert(updated[index].id)
                 }
                 continue
@@ -163,6 +214,9 @@ enum FitnessShoeLedger {
                   let index = updated.firstIndex(where: { $0.id == target.id })
             else { continue }
             updated[index].runs[run.id] = run.meters
+            if let minutes = run.minutes {
+                updated[index].runMinutes = (updated[index].runMinutes ?? [:]).merging([run.id: minutes]) { $1 }
+            }
             changed.insert(updated[index].id)
         }
         return updated.filter { changed.contains($0.id) }.map { shoe in
@@ -179,6 +233,9 @@ enum FitnessShoeLedger {
         let loser = local.updatedAt >= remote.updatedAt ? remote : local
         for (id, meters) in loser.runs where winner.runs[id] == nil {
             winner.runs[id] = meters
+        }
+        for (id, minutes) in loser.runMinutes ?? [:] where winner.runMinutes?[id] == nil {
+            winner.runMinutes = (winner.runMinutes ?? [:]).merging([id: minutes]) { $1 }
         }
         return winner
     }
@@ -267,6 +324,33 @@ enum FitnessShoeStore {
         KBLog.persistence.kbInfo("FitnessShoes reconciled childId=\(childId) shoes=\(changed.count)")
     }
 
+    /// Porta in registro le corse di Apple Salute dalla data d'acquisto della
+    /// scarpa più vecchia in poi. È l'innesco principale: il piano vede solo le
+    /// uscite che chiudono una seduta, Salute le vede tutte.
+    @MainActor
+    static func syncFromHealth(childId: String) async {
+        let active = loadAll(childId: childId).filter { !$0.isDeleted }
+        guard let oldest = active.map(\.purchaseDate).min() else { return }
+        // Solo se Salute è già collegata: qui non si apre nessuna richiesta nuova.
+        await KBHealthKitService.shared.requestAuthorizationForNewTypesIfLinked()
+        let workouts = await KBHealthKitService.shared.workouts(
+            since: Calendar.current.startOfDay(for: oldest),
+            limit: 5000
+        )
+        let runs = FitnessShoeLedger.runs(from: workouts)
+        guard !runs.isEmpty else { return }
+        // Si rilegge dopo l'attesa: nel frattempo l'utente può aver modificato.
+        var all = loadAll(childId: childId)
+        let changed = FitnessShoeLedger.reconcile(shoes: all, runs: runs)
+        guard !changed.isEmpty else { return }
+        for shoe in changed {
+            if let index = all.firstIndex(where: { $0.id == shoe.id }) { all[index] = shoe }
+        }
+        saveAll(all, childId: childId)
+        for shoe in changed { await FitnessShoeRemoteStore.upsert(shoe) }
+        KBLog.persistence.kbInfo("FitnessShoes health sync childId=\(childId) shoes=\(changed.count) runs=\(runs.count)")
+    }
+
     /// Allinea con Firestore all'apertura delle impostazioni: unisce le due
     /// copie e rimanda su ciò che il server non ha o ha più vecchio.
     static func pull(childId: String) async -> [FitnessShoe] {
@@ -315,6 +399,7 @@ enum FitnessShoeRemoteStore {
             "updatedAt": Timestamp(date: shoe.updatedAt),
             "runs": shoe.runs,
             "manualKm": shoe.manualKm ?? 0,
+            "runMinutes": shoe.runMinutes ?? [:],
             "photoBase64": shoe.photo?.base64EncodedString() ?? "",
         ]
         data["retiredAt"] = shoe.retiredAt.map { Timestamp(date: $0) } ?? NSNull()
@@ -352,7 +437,8 @@ enum FitnessShoeRemoteStore {
                     isDeleted: data["isDeleted"] as? Bool ?? false,
                     updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue() ?? .distantPast,
                     runs: runs,
-                    manualKm: (data["manualKm"] as? NSNumber)?.doubleValue
+                    manualKm: (data["manualKm"] as? NSNumber)?.doubleValue,
+                    runMinutes: (data["runMinutes"] as? [String: Any])?.compactMapValues { ($0 as? NSNumber)?.intValue }
                 )
             }
         } catch {
