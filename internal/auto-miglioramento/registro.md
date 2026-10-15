@@ -66,6 +66,23 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
 - **Data**: 28 giorni dopo l'uscita sugli store. **Da fissare qui il giorno in cui escono** (nessuna data inventata prima).
 - **Se smentita** (meno di 5 richieste con link): le famiglie continuano a chiedere direttamente su WhatsApp e il problema non era il motivo dell'invito; prima di altro lavoro sulle richieste, chiedere a 2-3 famiglie vere come si sono organizzate l'ultima volta che serviva qualcuno.
 
+### 10. Campagna Google per app, solo Android, ottimizzata su «famiglia creata»
+- **Cambio**: prima campagna Google Ads dell'account 868-406-1522, dopo le tre campagne Meta (ferme dal 03/10, 601,82 € spesi in tutto). GA4 collegato a Google Ads il 15/10/2026; conversione importata `family_created` Android, categoria «Registrazione». Una sola campagna: tipo app, Android, Italia, 10 € al giorno per 15 giorni (150 €), messaggio unico «chi prende Marco giovedì?». Niente Meta in parallelo.
+- **Previsione** (scritta il 15/10/2026, prima di spendere; le soglie sono stime mie dai dati di Meta, non concordate):
+  - **(a)** costo per `family_created` **sotto 5 €**;
+  - **(b)** almeno **1 famiglia su 12** tra quelle create dalla campagna arriva a 2+ membri entro 14 giorni dalla creazione.
+- **Misura**:
+  - (a) spesa e conversioni dell'account Google Ads; controllo incrociato con `family_created` Android di GA4 nelle stesse date;
+  - (b) `node scripts/console-daily-report.js --cohorts-from <lunedì della settimana d'avvio>` sulle coorti dell'avvio. Il conteggio delle famiglie 2+ è su tutta la settimana: non si attribuisce alla sola campagna, e va detto.
+- **Data**: 14 giorni dopo l'ultimo giorno di spesa (campagna di 15 giorni). **Da fissare qui il giorno d'avvio.**
+- **Non misurabile se**: meno di 100 € spesi, o meno di 30 `family_created` dalla campagna.
+- **Decisione, scritta ora**:
+  - (a) e (b) confermate → seconda tornata di 15 giorni, sempre su Android; poi valutare Apple Search Ads per l'iPhone;
+  - (a) confermata e (b) smentita → la pubblicità porta famiglie che non invitano: si lavora sull'invito e si pausa;
+  - (a) smentita → niente aumento di spesa; si rivedono messaggio e parole, e Google non si riprova prima di aver cambiato l'invito.
+- **Se smentita**: (a) la nostra offerta non converte nemmeno su un canale basato sull'intento di chi cerca; (b) il problema non è il canale ma il passaggio da 1 a 2 membri.
+- **Limite noto**: 150 € sono pochi per l'ottimizzazione automatica di Google, che di solito vuole decine di conversioni a settimana: i primi giorni sono apprendimento e i dati possono essere rumorosi.
+
 ---
 
 ## Chiuse
