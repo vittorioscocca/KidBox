@@ -15,13 +15,6 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
 
 ## Aperte
 
-### 1. Wizard di onboarding a 2 pagine
-- **Cambio**: iOS 2.3.0 / Android 2.2.9 (53), in revisione dal 19/09/2026. Nome, cognome e famiglia in una schermata sola (`setup`), poi `invite` o `join_family`.
-- **Previsione**: iniziato → completato passa dal **56% al 75%** per utenti unici sui 28 giorni.
-- **Misura**: tabella «Funnel per UTENTI unici» di `ga4-daily-report.js` — utenti con `onboarding_step_shown` contro utenti con `onboarding_completed`.
-- **Data**: 15/10/2026 (serve che la release sia in store e adottata: 1-2 settimane).
-- **Se smentita**: l'abbandono non era nella lunghezza del wizard; il 4 su 10 che se ne va lo fa per un motivo che non abbiamo ancora misurato, e va cercato parlando con le persone invece che nei numeri.
-
 ### 2. Link d'invito a 7 giorni
 - **Cambio**: stessa release. Il link scadeva in 24 ore.
 - **Previsione**: `family_join_failed.reason=expired` scende **sotto il 10%** dei tentativi di join falliti, e il rapporto inviti generati → `/join` visti (contatore `inviteLandingPing`) **sale rispetto alla media di settembre**.
@@ -88,6 +81,17 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
 ---
 
 ## Chiuse
+
+### 1. Wizard di onboarding a 2 pagine
+- **Cambio**: iOS 2.3.0 / Android 2.2.9 (53), in revisione dal 19/09/2026. Nome, cognome e famiglia in una schermata sola (`setup`), poi `invite` o `join_family`.
+- **Previsione**: iniziato → completato passa dal **56% al 75%** per utenti unici sui 28 giorni.
+- **Misura**: tabella «Funnel per UTENTI unici» di `ga4-daily-report.js` — utenti con `onboarding_step_shown` contro utenti con `onboarding_completed`.
+- **Data**: 15/10/2026 (serve che la release sia in store e adottata: 1-2 settimane).
+- **Se smentita**: l'abbandono non era nella lunghezza del wizard; il 4 su 10 che se ne va lo fa per un motivo che non abbiamo ancora misurato, e va cercato parlando con le persone invece che nei numeri.
+- **VERDETTO (19/10/2026): smentita per due punti, con la direzione giusta.** Persone uniche GA4, onboarding iniziato → completato: **54%** prima (19/08-18/09, 54 su 100) e **73%** dopo (26/09-18/10, 37 su 51), contro il 75% previsto. Il 56% di partenza scritto qui era leggermente più alto di quello misurato oggi sulla stessa finestra.
+- **Cosa impariamo:** accorciare il wizard ha fatto salire il completamento di 19 punti, quindi la lunghezza contava. Resta fuori circa un quarto di chi inizia: il motivo sta altrove. Nessun effetto sul login: chi tenta l'accesso dopo aver visto la schermata era il 41% con le tre schermate illustrative PRIMA del login e il 40% senza. Quindi le schermate illustrative non spostano il login, e rimetterle (o metterle prima del login) non è un'idea da riprovare senza un motivo nuovo.
+- **Limiti:** 51 persone nella finestra «dopo», e per una parte di quei giorni convivevano ancora le versioni vecchie del wizard. La differenza di due punti dal 75% è dentro il rumore.
+
 
 ### 9. Il costo per famiglia vera è sceso davvero (decisione sulla pubblicità)
 - **Cambio**: nessuna modifica nuova. Si verifica se il calo della settimana del 21/09 è reale. I numeri:
