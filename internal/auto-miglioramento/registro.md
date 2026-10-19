@@ -67,14 +67,16 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
 - **Se smentita** (meno di 5 richieste con link): le famiglie continuano a chiedere direttamente su WhatsApp e il problema non era il motivo dell'invito; prima di altro lavoro sulle richieste, chiedere a 2-3 famiglie vere come si sono organizzate l'ultima volta che serviva qualcuno.
 
 ### 10. Campagna Google per app, solo Android, ottimizzata su «famiglia creata»
-- **Cambio**: prima campagna Google Ads dell'account 868-406-1522, dopo le tre campagne Meta (ferme dal 03/10, 601,82 € spesi in tutto). GA4 collegato a Google Ads il 15/10/2026; conversione importata `family_created` Android, categoria «Registrazione». Una sola campagna: tipo app, Android, Italia, 10 € al giorno per 15 giorni (150 €), messaggio unico «chi prende Marco giovedì?». Niente Meta in parallelo.
+- **Cambio**: prima campagna Google Ads dell'account 868-406-1522, dopo le tre campagne Meta (ferme dal 03/10, 601,82 € spesi in tutto). GA4 collegato a Google Ads il 15/10/2026; conversione importata `family_created` Android, categoria «Registrazione». Una sola campagna: tipo app, Android, Italia, 10 € al giorno (150 € previsti; con la fine prorogata al 07/11, fino a 230 €), messaggio unico «chi prende Marco giovedì?». Niente Meta in parallelo.
 - **Previsione** (scritta il 15/10/2026, prima di spendere; le soglie sono stime mie dai dati di Meta, non concordate):
   - **(a)** costo per `family_created` **sotto 5 €**;
   - **(b)** almeno **1 famiglia su 12** tra quelle create dalla campagna arriva a 2+ membri entro 14 giorni dalla creazione.
 - **Misura**:
   - (a) spesa e conversioni dell'account Google Ads; controllo incrociato con `family_created` Android di GA4 nelle stesse date;
   - (b) `node scripts/console-daily-report.js --cohorts-from <lunedì della settimana d'avvio>` sulle coorti dell'avvio. Il conteggio delle famiglie 2+ è su tutta la settimana: non si attribuisce alla sola campagna, e va detto.
-- **Data**: 14 giorni dopo l'ultimo giorno di spesa (campagna di 15 giorni). **Da fissare qui il giorno d'avvio.**
+- **Data**: **21/11/2026**, cioè 14 giorni dopo la fine programmata (07/11), perché le famiglie con 2+ membri maturano dopo.
+- **Avvio**: pubblicata il 16/10/2026 con inizio il 16/10 e fine il 30/10; l'utente ha spostato la fine al 07/11 il 19/10 perché per 4 giorni la campagna non ha mostrato annunci. I giorni senza spesa non costano: il tetto resta 10 € al giorno, quindi fino a 230 €.
+- **Stato al 19/10**: stato «Idoneo», 0 impressioni, 0 clic. Diagnostica pulita su account, asset, budget, obiettivi e indicatori: Google la dà «in programma». Ipotesi: la conversione `family_created` è nata il 15/10 e senza storia l'ottimizzazione consegna poco. Piano: attendere fino al 21/10; se ancora 0 impressioni, passare **temporaneamente** a «Volume di installazioni» per qualche giorno e tornare alle azioni in-app. Una deviazione così va scritta qui con data, perché per quei giorni si misurano installazioni e non famiglie create.
 - **Non misurabile se**: meno di 100 € spesi, o meno di 30 `family_created` dalla campagna.
 - **Decisione, scritta ora**:
   - (a) e (b) confermate → seconda tornata di 15 giorni, sempre su Android; poi valutare Apple Search Ads per l'iPhone;
