@@ -81,7 +81,8 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
 ---
 
 ## Chiuse
-
+- **DEVIAZIONE (20/10/2026): da «Azioni in-app» a «Volume di installazioni», senza costo target.** Dopo 5 giorni a zero impressioni e diagnostica pulita, l'utente ha cambiato l'obiettivo di offerta, con un giorno di anticipo sul piano. Stesso budget (10 €/giorno), Italia, italiano, fine 07/11.
+- **Conseguenza per la misura:** finché resta su «Volume di installazioni» la campagna ottimizza le installazioni, non le famiglie create: la previsione (a) sul costo per `family_created` si legge comunque dal conteggio di GA4 (`family_created` Android nelle stesse date), ma non è più ciò che la campagna cerca. Piano: dopo circa 7 giorni e qualche famiglia creata come storia, tornare a «Azioni in-app» e scrivere qui la data. I giorni in «installazioni» vanno dichiarati nel verdetto del 21/11.
 ### 1. Wizard di onboarding a 2 pagine
 - **Cambio**: iOS 2.3.0 / Android 2.2.9 (53), in revisione dal 19/09/2026. Nome, cognome e famiglia in una schermata sola (`setup`), poi `invite` o `join_family`.
 - **Previsione**: iniziato → completato passa dal **56% al 75%** per utenti unici sui 28 giorni.
