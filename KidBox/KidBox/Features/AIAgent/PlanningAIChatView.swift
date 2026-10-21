@@ -99,6 +99,11 @@ struct PlanningAIChatView: View {
                 modelContext: modelContext
             )
             vm = newVM
+            // Dalla ricerca: la frase resta nel campo, da mandare o correggere.
+            if focus == nil, let draft = coordinator.pendingAssistantDraft {
+                coordinator.pendingAssistantDraft = nil
+                newVM.inputText = draft
+            }
             await Task.yield()
             await newVM.loadOrCreateConversation()
 

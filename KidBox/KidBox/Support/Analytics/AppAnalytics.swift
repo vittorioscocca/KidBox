@@ -190,6 +190,20 @@ enum AppAnalytics {
         ])
     }
 
+    /// Tocco su un risultato di «Cerca in KidBox»; `inText` = trovato nel
+    /// testo (note, testo letto), non nel titolo.
+    static func searchResultOpened(kind: String, inText: Bool) {
+        Analytics.logEvent("search_result_opened", parameters: [
+            "kind": kind,
+            "in_text": inText ? "true" : "false"
+        ])
+    }
+
+    /// «Chiedi all'assistente» in fondo ai risultati della ricerca.
+    static func searchAskedAssistant() {
+        Analytics.logEvent("search_ask_assistant", parameters: nil)
+    }
+
     static func aiBriefingReceived() {
         Analytics.logEvent("ai_briefing_received", parameters: nil)
     }

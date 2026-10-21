@@ -153,90 +153,123 @@ enum AgentLinks {
         return first
     }
 
+    /// Una voce dell'app, già trovata: la usa anche la ricerca in Home
+    /// (`KBSearchIndex`), che sa quale voce ha toccato l'utente.
+    enum Item {
+        case expense(KBExpense), document(KBDocument), note(KBNote), event(KBCalendarEvent)
+        case todo(KBTodoItem), grocery, visit(KBMedicalVisit), exam(KBMedicalExam), treatment(KBTreatment)
+        case ticket(KBWalletTicket), homeItem(KBHomeItem), housePayment(KBHousePayment)
+        case vehicle(KBVehicle), pet(KBPet), trip(KBTrip)
+    }
+
     @MainActor
     private static func destination(kind: Kind, _ link: Link, in s: AgentMemorySnapshot) -> Destination {
-        let fid = s.familyId
+        if let item = find(kind: kind, link, in: s) { return destination(of: item, in: s) }
+        return Destination(routes: section(kind, familyId: s.familyId), found: false)
+    }
+
+    @MainActor
+    private static func find(kind: Kind, _ link: Link, in s: AgentMemorySnapshot) -> Item? {
         switch kind {
         case .expense:
-            if let e = best(s.expenses, link, title: \.title, date: { $0.date }) {
-                return Destination(routes: [.expensesHome(familyId: fid, highlightExpenseId: nil), .expenseDetail(familyId: fid, expenseId: e.id)], found: true)
-            }
-            return Destination(routes: [.expensesHome(familyId: fid, highlightExpenseId: nil)], found: false)
+            return best(s.expenses, link, title: \.title, date: { $0.date }).map(Item.expense)
         case .document:
-            if let d = best(s.documents, link, title: \.title, date: { $0.createdAt }) {
-                return documentDestination(d, in: s)
-            }
-            return Destination(routes: [.documentsHome], found: false)
+            return best(s.documents, link, title: \.title, date: { $0.createdAt }).map(Item.document)
         case .note:
-            if let n = best(s.notes, link, title: \.title, date: { $0.updatedAt }) {
-                return Destination(routes: [.notesHome(familyId: fid), .noteDetail(familyId: fid, noteId: n.id)], found: true)
-            }
-            return Destination(routes: [.notesHome(familyId: fid)], found: false)
+            return best(s.notes, link, title: \.title, date: { $0.updatedAt }).map(Item.note)
         case .event:
-            let e = best(s.events, link, title: \.title, date: { $0.startDate })
-            return Destination(routes: [.calendar(familyId: fid, highlightEventId: e?.id)], found: e != nil)
+            return best(s.events, link, title: \.title, date: { $0.startDate }).map(Item.event)
         case .todo:
-            if let t = best(s.todos, link, title: \.title, date: { $0.dueAt ?? $0.createdAt }), let listId = t.listId {
-                return Destination(routes: [.todo, .todoList(familyId: fid, childId: t.childId, listId: listId)], found: true)
-            }
-            return Destination(routes: [.todo], found: false)
+            return best(s.todos.filter { $0.listId != nil }, link, title: \.title, date: { $0.dueAt ?? $0.createdAt }).map(Item.todo)
         case .grocery:
-            return Destination(routes: [.shoppingList(familyId: fid)], found: true)
+            return .grocery
         case .visit:
             // Una visita nel quaderno non ha titolo: è «VISITA n — data» con
             // motivo, medico, diagnosi e referti. Si confronta con tutto quello,
             // e la data da sola basta.
-            if let v = best(s.visits, link, texts: { [$0.reason, $0.doctorName ?? "", $0.diagnosis ?? ""] + attachmentTitles("visit:\($0.id)", s) },
-                            date: { $0.date }, dayIsIdentity: true) {
-                return Destination(routes: healthRoutes(fid, v.childId, list: .pediatricVisits(familyId: fid, childId: v.childId))
-                    + [.pediatricVisitDetail(familyId: fid, childId: v.childId, visitId: v.id)], found: true)
-            }
-            return Destination(routes: [.pediatricChildSelector(familyId: fid)], found: false)
+            return best(s.visits, link, texts: { [$0.reason, $0.doctorName ?? "", $0.diagnosis ?? ""] + attachmentTitles("visit:\($0.id)", s) },
+                        date: { $0.date }, dayIsIdentity: true).map(Item.visit)
         case .exam:
-            if let e = best(s.exams, link, texts: { [$0.name] + attachmentTitles(ExamAttachmentTag.make($0.id), s) },
-                            date: { $0.resultDate ?? $0.deadline ?? $0.createdAt }, dayIsIdentity: true) {
-                return Destination(routes: healthRoutes(fid, e.childId, list: .pediatricExams(familyId: fid, childId: e.childId))
-                    + [.examDetail(familyId: fid, childId: e.childId, examId: e.id)], found: true)
-            }
-            return Destination(routes: [.pediatricChildSelector(familyId: fid)], found: false)
+            return best(s.exams, link, texts: { [$0.name] + attachmentTitles(ExamAttachmentTag.make($0.id), s) },
+                        date: { $0.resultDate ?? $0.deadline ?? $0.createdAt }, dayIsIdentity: true).map(Item.exam)
         case .treatment:
-            if let t = best(s.treatments, link, texts: { [$0.drugName] + attachmentTitles("treatment:\($0.id)", s) }, date: { $0.startDate }) {
-                if !t.petId.isEmpty {
-                    return Destination(routes: [.petsHome(familyId: fid), .petDetail(familyId: fid, petId: t.petId)], found: true)
-                }
-                return Destination(routes: healthRoutes(fid, t.childId, list: .pediatricTreatments(familyId: fid, childId: t.childId))
-                    + [.pediatricTreatmentDetail(familyId: fid, childId: t.childId, treatmentId: t.id)], found: true)
-            }
-            return Destination(routes: [.pediatricChildSelector(familyId: fid)], found: false)
+            return best(s.treatments, link, texts: { [$0.drugName] + attachmentTitles("treatment:\($0.id)", s) }, date: { $0.startDate }).map(Item.treatment)
         case .ticket:
-            if let t = best(s.walletTickets, link, title: \.title, date: { $0.eventDate ?? .distantPast }) {
-                return Destination(routes: [.walletHome(familyId: fid), .walletTicketDetail(familyId: fid, ticketId: t.id)], found: true)
-            }
-            return Destination(routes: [.walletHome(familyId: fid)], found: false)
+            return best(s.walletTickets, link, title: \.title, date: { $0.eventDate ?? .distantPast }).map(Item.ticket)
         case .home:
-            if let h = best(s.homeItems, link, title: \.name, date: { $0.createdAt }) {
-                return Destination(routes: [.homeItemsHome(familyId: fid), .homeItemDetail(familyId: fid, itemId: h.id)], found: true)
-            }
-            if let p = best(s.housePayments, link, title: \.name, date: { $0.createdAt }) {
-                return Destination(routes: [.homeItemsHome(familyId: fid), .housePaymentDetail(familyId: fid, paymentId: p.id)], found: true)
-            }
-            return Destination(routes: [.homeItemsHome(familyId: fid)], found: false)
+            return best(s.homeItems, link, title: \.name, date: { $0.createdAt }).map(Item.homeItem)
+                ?? best(s.housePayments, link, title: \.name, date: { $0.createdAt }).map(Item.housePayment)
         case .vehicle:
-            if let v = best(s.vehicles, link, title: \.name, date: { $0.createdAt }) {
-                return Destination(routes: [.vehiclesHome(familyId: fid), .vehicleDetail(familyId: fid, vehicleId: v.id)], found: true)
-            }
-            return Destination(routes: [.vehiclesHome(familyId: fid)], found: false)
+            return best(s.vehicles, link, title: \.name, date: { $0.createdAt }).map(Item.vehicle)
         case .pet:
-            if let p = best(s.pets, link, title: \.name, date: { $0.createdAt }) {
-                return Destination(routes: [.petsHome(familyId: fid), .petDetail(familyId: fid, petId: p.id)], found: true)
-            }
-            return Destination(routes: [.petsHome(familyId: fid)], found: false)
+            return best(s.pets, link, title: \.name, date: { $0.createdAt }).map(Item.pet)
         case .trip:
-            if let t = best(s.trips, link, title: \.name, date: { $0.startDate }) {
-                return Destination(routes: [.travelList(familyId: fid), .travelTripDetail(familyId: fid, tripId: t.id)], found: true)
-            }
-            return Destination(routes: [.travelList(familyId: fid)], found: false)
+            return best(s.trips, link, title: \.name, date: { $0.startDate }).map(Item.trip)
         }
+    }
+
+    /// La sezione, quando la voce non c'è più.
+    static func section(_ kind: Kind, familyId fid: String) -> [Route] {
+        switch kind {
+        case .expense: return [.expensesHome(familyId: fid, highlightExpenseId: nil)]
+        case .document: return [.documentsHome]
+        case .note: return [.notesHome(familyId: fid)]
+        case .event: return [.calendar(familyId: fid)]
+        case .todo: return [.todo]
+        case .grocery: return [.shoppingList(familyId: fid)]
+        case .visit, .exam, .treatment: return [.pediatricChildSelector(familyId: fid)]
+        case .ticket: return [.walletHome(familyId: fid)]
+        case .home: return [.homeItemsHome(familyId: fid)]
+        case .vehicle: return [.vehiclesHome(familyId: fid)]
+        case .pet: return [.petsHome(familyId: fid)]
+        case .trip: return [.travelList(familyId: fid)]
+        }
+    }
+
+    /// Le schermate di una voce: la sezione e il dettaglio, sopra chi la apre.
+    @MainActor
+    static func destination(of item: Item, in s: AgentMemorySnapshot) -> Destination {
+        let fid = s.familyId
+        let routes: [Route]
+        switch item {
+        case .expense(let e):
+            routes = [.expensesHome(familyId: fid, highlightExpenseId: nil), .expenseDetail(familyId: fid, expenseId: e.id)]
+        case .document(let d):
+            return documentDestination(d, in: s)
+        case .note(let n):
+            routes = [.notesHome(familyId: fid), .noteDetail(familyId: fid, noteId: n.id)]
+        case .event(let e):
+            routes = [.calendar(familyId: fid, highlightEventId: e.id)]
+        case .todo(let t):
+            guard let listId = t.listId else { return Destination(routes: [.todo], found: true) }
+            routes = [.todo, .todoList(familyId: fid, childId: t.childId, listId: listId)]
+        case .grocery:
+            routes = [.shoppingList(familyId: fid)]
+        case .visit(let v):
+            routes = healthRoutes(fid, v.childId, list: .pediatricVisits(familyId: fid, childId: v.childId))
+                + [.pediatricVisitDetail(familyId: fid, childId: v.childId, visitId: v.id)]
+        case .exam(let e):
+            routes = healthRoutes(fid, e.childId, list: .pediatricExams(familyId: fid, childId: e.childId))
+                + [.examDetail(familyId: fid, childId: e.childId, examId: e.id)]
+        case .treatment(let t):
+            routes = t.petId.isEmpty
+                ? healthRoutes(fid, t.childId, list: .pediatricTreatments(familyId: fid, childId: t.childId))
+                    + [.pediatricTreatmentDetail(familyId: fid, childId: t.childId, treatmentId: t.id)]
+                : [.petsHome(familyId: fid), .petDetail(familyId: fid, petId: t.petId)]
+        case .ticket(let t):
+            routes = [.walletHome(familyId: fid), .walletTicketDetail(familyId: fid, ticketId: t.id)]
+        case .homeItem(let h):
+            routes = [.homeItemsHome(familyId: fid), .homeItemDetail(familyId: fid, itemId: h.id)]
+        case .housePayment(let p):
+            routes = [.homeItemsHome(familyId: fid), .housePaymentDetail(familyId: fid, paymentId: p.id)]
+        case .vehicle(let v):
+            routes = [.vehiclesHome(familyId: fid), .vehicleDetail(familyId: fid, vehicleId: v.id)]
+        case .pet(let p):
+            routes = [.petsHome(familyId: fid), .petDetail(familyId: fid, petId: p.id)]
+        case .trip(let t):
+            routes = [.travelList(familyId: fid), .travelTripDetail(familyId: fid, tripId: t.id)]
+        }
+        return Destination(routes: routes, found: true)
     }
 
     /// Un allegato si apre dove vive (la visita, l'oggetto di casa…), un

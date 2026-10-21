@@ -38,6 +38,10 @@ final class AppCoordinator: ObservableObject {
     /// Ultimo `screen_name` inviato a GA4, per evitare fire duplicati su path invariato.
     private var lastFiredScreenName: String?
 
+    /// Frase da mettere nel campo dell'assistente quando si apre (da «Chiedi
+    /// all'assistente» della ricerca): la legge e la consuma `PlanningAIChatView`.
+    var pendingAssistantDraft: String?
+
     /// La radice sotto la pila, scelta dalla barra in basso: Home o Notizie.
     /// L'assistente non è una radice: si apre sopra (vedi `RootHostView`).
     @Published var rootTab: KBRootTab = .home {
@@ -633,6 +637,8 @@ final class AppCoordinator: ObservableObject {
             return "chat_supporto"
         case .askExpert:
             return "assistente_ai"
+        case .search:
+            return "cerca"
         case .news:
             return "notizie"
         case .newsSaved:
@@ -816,6 +822,8 @@ final class AppCoordinator: ObservableObject {
             PasswordDetailView(familyId: familyId, entryId: entryId)
         case .askExpert:
             PlanningAIChatView()
+        case .search(let familyId):
+            KBSearchView(familyId: familyId)
 
         case .news(let familyId):
             NewsView(familyId: familyId)

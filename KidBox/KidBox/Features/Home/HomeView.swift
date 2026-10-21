@@ -311,6 +311,28 @@ struct HomeView: View {
         .padding(.top, 4)
     }
 
+    /// «Cerca in KidBox»: sembra un campo, apre la schermata di ricerca
+    /// (`KBSearchView`), dove la tastiera compare da sola.
+    private func homeSearchBar(familyId: String) -> some View {
+        Button {
+            coordinator.navigate(to: .search(familyId: familyId))
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                Text("Cerca in KidBox")
+                Spacer()
+            }
+            .font(.system(size: 16))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemFill)))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("Cerca in KidBox"))
+    }
+
     /// Due pulsanti per scegliere tra vista a lista raggruppata e vista a griglia libera (drag & drop).
     private var homeLayoutModeToggle: some View {
         HStack(spacing: 2) {
@@ -376,6 +398,9 @@ struct HomeView: View {
             ScrollView {
                 VStack(spacing: 14) {
                     homeTitleHeader
+                    if hasFamily, let familyId = activeFamily?.id {
+                        homeSearchBar(familyId: familyId)
+                    }
 
                     // HERO — carosello circolare: prima slide = foto famiglia (invariata), poi slide promozionali.
                     // Oltre l'ultima slide si torna alla prima (e viceversa), come un loop infinito.

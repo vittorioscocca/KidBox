@@ -49,6 +49,28 @@
         }
       }
     },
+    "(senza titolo)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(untitled)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(sin título)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(sans titre)"
+          }
+        }
+      }
+    },
     "Andat. media" : {
       "localizations" : {
         "en" : {
@@ -67,6 +89,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Allure moy."
+          }
+        }
+      }
+    },
+    "Cerca fra spese, documenti (anche nel testo letto), note, calendario, to-do, salute, wallet, casa, veicoli, animali e viaggi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search expenses, documents (including their scanned text), notes, calendar, to-dos, health, wallet, home, vehicles, pets and trips."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca en gastos, documentos (también en el texto leído), notas, calendario, tareas, salud, wallet, casa, vehículos, mascotas y viajes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cherchez dans les dépenses, les documents (y compris le texte lu), les notes, le calendrier, les tâches, la santé, le wallet, la maison, les véhicules, les animaux et les voyages."
+          }
+        }
+      }
+    },
+    "Cerca in KidBox" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search KidBox"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar en KidBox"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher dans KidBox"
+          }
+        }
+      }
+    },
+    "Chiedi all'assistente: «%@»" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask the assistant: «%@»"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pregunta al asistente: «%@»"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demander à l'assistant : « %@ »"
           }
         }
       }
@@ -115,6 +203,50 @@
         }
       }
     },
+    "Lista della spesa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shopping list"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista de la compra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste de courses"
+          }
+        }
+      }
+    },
+    "Nessun risultato per «%@»." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No results for «%@»."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ningún resultado para «%@»."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun résultat pour « %@ »."
+          }
+        }
+      }
+    },
     "Non trovo più «%@»: ti apro la sezione." : {
       "localizations" : {
         "en" : {
@@ -137,6 +269,28 @@
         }
       }
     },
+    "Per le domande sui dati, come «quanto abbiamo speso di scuola?». Usa un messaggio AI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For questions about your data, like «how much did we spend on school?». Uses one AI message."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para preguntas sobre los datos, como «¿cuánto hemos gastado en el colegio?». Usa un mensaje de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour les questions sur les données, comme « combien avons-nous dépensé pour l'école ? ». Utilise un message IA."
+          }
+        }
+      }
+    },
     "Puoi correggere i km a mano, ad esempio se le scarpe sono già state usate: le corse nuove si sommano a questo valore." : {
       "localizations" : {
         "en" : {
@@ -155,6 +309,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vous pouvez corriger les km à la main, par exemple si les chaussures ont déjà servi : les nouvelles courses s'ajoutent à cette valeur."
+          }
+        }
+      }
+    },
+    "To-do" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-dos"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tareas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tâches"
+          }
+        }
+      }
+    },
+    "Veicoli" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vehicles"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vehículos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Véhicules"
           }
         }
       }
