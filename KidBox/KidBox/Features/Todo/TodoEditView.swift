@@ -20,6 +20,7 @@ struct TodoEditView: View {
     
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var coordinator: AppCoordinator
     
     // Members for assignee picker
     @Query private var members: [KBFamilyMember]
@@ -398,7 +399,7 @@ struct TodoEditView: View {
                 around: hasDate && hasTime ? dueDate : nil
             )
         }
-        .sheet(item: $sentRequest, onDismiss: { dismiss() }) { created in
+        .sheet(item: $sentRequest, onDismiss: { finishRequest() }) { created in
             FamilyRequestSentSheet(created: created)
         }
         .sheet(isPresented: $isVisibilitySheetPresented) {
@@ -665,11 +666,19 @@ extension TodoEditView {
                 // Il foglio del link; alla sua chiusura si chiude anche l'editor.
                 sentRequest = created
             } else {
-                dismiss()
+                finishRequest()
             }
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    /// La richiesta non è ancora un to-do: lo diventa al primo «Ci penso io».
+    /// Si torna in Home, dove la richiesta aperta si vede subito; restando
+    /// nella lista to-do non comparirebbe niente e sembrerebbe non aver funzionato.
+    fileprivate func finishRequest() {
+        dismiss()
+        coordinator.selectRootTab(.home)
     }
 
     /// Nome della famiglia sull'invito, come in `InviteCodeViewModel`.
