@@ -126,6 +126,16 @@ Il giro del 24/09/2026 (Android 2.3.7):
 5. **I cambi di comportamento voluti** vanno detti anche se non sono bug
    (esempio: avviso di uscita ritardato di 5 minuti).
 
+## Screenshot dell'App Store
+
+`node scripts/asc-screenshots.js --version X.Y.Z [--only it,en] [--apply]` carica
+`internal/store-listings/screenshots/final/<it|en|es|fr>/` nel set `APP_IPHONE_67`
+(il 6,9" sta lì: `APP_IPHONE_69` non esiste nell'API) e **sostituisce** le immagini
+del set. Senza `--apply` elenca solo cosa c'è. Le immagini si rifanno dalla modalità
+demo del simulatore (`-KBDemoSeed`, vedi `internal/store-listings/README.md`) e da
+`screenshots/compose.py`. Una lingua senza set proprio usa quelli della lingua
+principale; iPad e Mac hanno set a parte e restano quelli di prima.
+
 ## Abbonamenti e schede insieme alla release
 
 - Abbonamenti nuovi o modificati: `/abbonamenti-store`. Su Apple si mandano in revisione dalle pagine degli abbonamenti, **non** dalla pagina della versione, e vanno nella stessa bozza della versione che li mostra.
