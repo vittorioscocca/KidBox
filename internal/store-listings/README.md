@@ -81,3 +81,17 @@ col testo vuoto**: va scritto sulla versione in vendita e anche su quella in
 preparazione o in revisione. Il 07/10/2026 era vuoto ovunque (quello del 29/09
 si era perso coi cambi di versione); riscritto su iOS 2.4.1, Mac 2.4.0 e Mac
 2.4.1 (in revisione), con la prova che si attiva dall'app.
+
+## Screenshot degli store (iOS, 6,9")
+
+`screenshots/final/<it|en|es|fr>/01-home.png`, `02-calendar.png`, `03-todo.png`:
+1320×2868, didascalia + schermata vera. Le schermate grezze sono in `raw/`, la
+composizione è `screenshots/compose.py` (didascalie nel dizionario in testa).
+Come si rifanno: build di sviluppo nel simulatore iPhone 17 Pro Max con
+`-KBDemoSeed -KBDemoReset -KBDemoLang <lingua> -KBDemoHero screenshots/famiglia.jpg
+-AppleLanguages "(<lingua>)"`: famiglia inventata, nessun login, nessun dato vero.
+Orologio 9:41 con `xcrun simctl status_bar … override`. Build ad-hoc firmata
+(`CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO`), altrimenti manca l'App Group;
+serve anche `Library/Application Support` nel container del gruppo. Regole di
+Apple sulle immagini: niente prezzi, URL, altre piattaforme né riconoscimenti.
+**Non ancora caricati su App Store Connect.**
