@@ -58,6 +58,14 @@ Applicate il 04/10/2026 su iOS 2.4.0 e Mac 2.4.0 (barra in basso, Notizie,
 notizie salvate, assistente unico, carte di pagamento; sul Mac le Notizie
 nella barra laterale e Touch ID al posto di Face ID). Play 2.4.7 in
 `play-whatsnew-2.4.7.txt`, da incollare nella console.
+Applicate il 21/10/2026 su iOS 2.4.2 e Mac 2.4.2 (in `PREPARE_FOR_SUBMISSION`, note
+vuote prima): «Cerca in KidBox» dalla lente in Home e barre nelle sezioni (to-do,
+calendario, spese, documenti), link dell'assistente alla voce citata, scarpe da
+corsa nel Piano Fitness, avviso dopo «Chiedi a…», notifiche delle dosi annullate a
+cura finita. Il Mac non ha la lente globale né le scarpe (Apple Salute); le
+due frasi su cura finita e link dell'assistente sono scritte per Mac senza averle
+provate su Mac. Play: nessuna nota 2.4.2 per questa versione in `play-whatsnew-2.4.2.txt`
+(è di un'altra versione Android: non toccata).
 Applicate il 05/10/2026 su iOS 2.4.1 e Mac 2.4.1 (tetto mensile dei messaggi
 AI, contatore nella chat dell'assistente, avviso a mese finito, assistente più
 efficiente). Play 2.4.8 in `play-whatsnew-2.4.8.txt` (versione più corta: il

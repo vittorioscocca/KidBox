@@ -1,0 +1,31 @@
+# Novità macOS 2.4.2 — testi «Novità» per App Store Connect (Mac)
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 21/10/2026 sulle modifiche dopo la 2.4.1 (in vendita anche su Mac). Rispetto a iOS mancano la lente «Cerca in KidBox» in Home (non c'è sul Mac) e le scarpe da corsa (le corse vengono da Apple Salute, che sul Mac non c'è). Etichette tra virgolette = quelle del catalogo stringhe.
+
+## it
+
+• Ricerca dentro le sezioni: ora puoi cercare anche in to-do, calendario, spese e documenti, senza uscire dalla schermata. Nelle spese e nei documenti la ricerca guarda in tutto lo storico.
+• L'assistente ti porta dritto alla voce: quando cita una spesa, un documento, una nota, un evento o una visita, un tocco la apre.
+• Chiedi a…: dopo l'invio un avviso ti ricorda che il to-do nasce quando qualcuno risponde «Ci penso io» e che lo stato lo vedi in Home.
+• Quando una cura finisce, anche le notifiche delle dosi si annullano, pure se l'ha chiusa un altro dispositivo.
+
+## en-GB
+
+• Search inside sections: you can now search to-dos, calendar, expenses and documents without leaving the screen. In expenses and documents the search covers your whole history.
+• The assistant takes you straight to the item: when it mentions an expense, a document, a note, an event or a visit, one tap opens it.
+• Ask…: after sending, a notice reminds you that the to-do appears when someone replies "I'll do it" and that you can see its status on Home.
+• When a treatment ends, the dose notifications are cancelled too, even if it was closed from another device.
+
+## es-ES
+
+• Búsqueda dentro de las secciones: ahora también puedes buscar en tareas, calendario, gastos y documentos sin salir de la pantalla. En gastos y documentos la búsqueda mira todo el historial.
+• El asistente te lleva directo a la entrada: cuando cita un gasto, un documento, una nota, un evento o una visita, un toque la abre.
+• Pregunta a…: tras el envío, un aviso te recuerda que la tarea nace cuando alguien responde «Me encargo yo» y que su estado lo ves en Inicio.
+• Cuando termina un tratamiento, también se cancelan las notificaciones de las dosis, aunque lo haya cerrado otro dispositivo.
+
+## fr-FR
+
+• Recherche dans les rubriques : vous pouvez maintenant chercher aussi dans les tâches, le calendrier, les dépenses et les documents, sans quitter l'écran. Dans les dépenses et les documents, la recherche couvre tout l'historique.
+• L'assistant vous mène droit à l'élément : quand il cite une dépense, un document, une note, un événement ou une visite, un appui l'ouvre.
+• Demander à… : après l'envoi, un avis vous rappelle que la tâche naît quand quelqu'un répond « Je m'en occupe » et que son état se voit dans l'Accueil.
+• Quand un traitement se termine, les notifications des doses sont aussi annulées, même s'il a été clos depuis un autre appareil.
