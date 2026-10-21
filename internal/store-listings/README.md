@@ -108,3 +108,8 @@ intestazione e ricerca. L'API non lo permette ancora per noi: la relazione `plac
 della localizzazione esiste (`appAssetLibraryPlacements`, tipi `PRODUCT_PAGE_HEADER_ASSET`
 e `APP_STORE_SEARCH_RESULTS_ASSET`) ma non è documentata come caricare il file.
 
+**Intestazione della pagina prodotto** (diversa da quella della ricerca): `screenshots/header-pagina/<lingua>/header.png`.
+L'anteprima di ASC ritaglia i lati e copre il fondo con la scheda dell'app, quindi testo e telefoni
+stanno in un gruppo più piccolo verso il centro. Si caricano in «Intestazione»; in «Risultati della
+ricerca» restano quelle di `header/` (a figura intera, che lì vanno bene).
+

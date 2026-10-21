@@ -1,7 +1,8 @@
 """Immagine per «Intestazione e risultati di ricerca» (5244x2950), nello stile degli screenshot.
 
 Testo a sinistra, due telefoni inclinati a destra; tutto vicino al centro per stare
-nella zona sicura. Uso: python3 compose-header.py  → header/<lingua>/header.png
+nella zona sicura. Uso: python3 compose-header.py  → header/<lingua>/header.png (ricerca, intera)
+                                   header-pagina/<lingua>/header.png (pagina prodotto, gruppo compatto al centro)
 """
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import os
@@ -97,6 +98,35 @@ def make(lang):
     img.save(f"header/{lang}/header.png")
 
 
+def make_compact(lang):
+    """Pagina prodotto: l'App Store ritaglia i lati e copre il fondo con la scheda dell'app,
+    quindi testo e telefoni stanno in un gruppo più piccolo, spostato verso il centro."""
+    title, sub = TEXTS[lang]
+    img = background()
+    d = ImageDraw.Draw(img)
+    back = phone(Image.open(f"raw/{lang}/02-calendar.png").convert("RGB"), 660).rotate(7, resample=Image.BICUBIC, expand=True)
+    front = phone(Image.open(f"raw/{lang}/01-home.png").convert("RGB"), 690).rotate(-8, resample=Image.BICUBIC, expand=True)
+    shadowed(img, back, (3470, 470), blur=40, dy=34)
+    shadowed(img, front, (3050, 540), blur=40, dy=34)
+    f1 = fit_block(title, 1640, 220, HEAVY)
+    f2 = fit_block(sub, 1640, 72, DEMI)
+    l1, l2 = title.split("\n"), sub.split("\n")
+    lh1, lh2 = int(f1.size * 1.08), int(f2.size * 1.25)
+    total = lh1 * len(l1) + 70 + lh2 * len(l2)
+    y = 1330 - total // 2
+    x = 1380
+    for line in l1:
+        d.text((x, y), line, font=f1, fill=INK, anchor="la")
+        y += lh1
+    y += 70
+    for line in l2:
+        d.text((x, y), line, font=f2, fill=(70, 38, 10), anchor="la")
+        y += lh2
+    os.makedirs(f"header-pagina/{lang}", exist_ok=True)
+    img.save(f"header-pagina/{lang}/header.png")
+
+
 for lang in TEXTS:
     make(lang)
+    make_compact(lang)
 print("ok")
