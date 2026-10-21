@@ -58,6 +58,7 @@ Applicate il 04/10/2026 su iOS 2.4.0 e Mac 2.4.0 (barra in basso, Notizie,
 notizie salvate, assistente unico, carte di pagamento; sul Mac le Notizie
 nella barra laterale e Touch ID al posto di Face ID). Play 2.4.7 in
 `play-whatsnew-2.4.7.txt`, da incollare nella console.
+Play 2.5.0 (77) in `play-whatsnew-2.5.0.txt`, da incollare nella console, 5 punti sotto i 500 caratteri per lingua: ricerca globale e nelle sezioni, link dell'assistente, scarpe da corsa (Health Connect), avviso dopo «Chiedi a…». Esclusa la riga sulla cura chiusa altrove, per stare nel limite: la modifica c'è nel codice.
 Applicate il 21/10/2026 su iOS 2.4.2 e Mac 2.4.2 (in `PREPARE_FOR_SUBMISSION`, note
 vuote prima): «Cerca in KidBox» dalla lente in Home e barre nelle sezioni (to-do,
 calendario, spese, documenti), link dell'assistente alla voce citata, scarpe da

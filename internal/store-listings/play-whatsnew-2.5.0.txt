@@ -1,0 +1,28 @@
+<it-IT>
+• Cerca in KidBox: la lente in Home cerca in tutta l'app sul telefono, senza AI, e apre la voce trovata.
+• Ricerca anche dentro to-do, calendario, spese e documenti.
+• L'assistente ti porta alla voce che cita con un tocco.
+• Piano Fitness: aggiungi le scarpe da corsa, con km fatti e km rimasti (corse da Health Connect).
+• Dopo «Chiedi a…» un avviso dice che il to-do nasce alla risposta e che lo stato è in Home.
+</it-IT>
+<en-US>
+• Search KidBox: the magnifier on Home searches the whole app on your phone, no AI, and opens what it finds.
+• Search inside to-dos, calendar, expenses and documents too.
+• The assistant takes you to the item it mentions with one tap.
+• Fitness Plan: add running shoes, with km run and km left (runs from Health Connect).
+• After "Ask…" a notice says the to-do appears when someone replies and its status is on Home.
+</en-US>
+<fr-FR>
+• Rechercher dans KidBox : la loupe de l'Accueil cherche dans toute l'app, sans IA, et ouvre le résultat.
+• Recherche aussi dans les tâches, le calendrier, les dépenses et les documents.
+• L'assistant vous mène à l'élément cité en un appui.
+• Plan Fitness : ajoutez vos chaussures de course, km faits et restants (courses via Health Connect).
+• Après « Demander à… », un avis indique que la tâche naît à la réponse et que son état est dans l'Accueil.
+</fr-FR>
+<es-ES>
+• Buscar en KidBox: la lupa de Inicio busca en toda la app, sin IA, y abre lo encontrado.
+• Búsqueda también dentro de tareas, calendario, gastos y documentos.
+• El asistente te lleva a la entrada que cita con un toque.
+• Plan Fitness: añade tus zapatillas, con km hechos y km restantes (carreras de Health Connect).
+• Tras «Pregunta a…», un aviso dice que la tarea nace al responder y que su estado está en Inicio.
+</es-ES>
