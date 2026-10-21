@@ -97,3 +97,14 @@ serve anche `Library/Application Support` nel container del gruppo. Regole di
 Apple sulle immagini: niente prezzi, URL, altre piattaforme né riconoscimenti.
 Per l'assistente serve `defaults write … kb_ai_is_enabled -bool true` nel simulatore.
 **Non ancora caricati su App Store Connect.**
+
+## Immagine «Intestazione e risultati di ricerca» (5244×2950)
+
+`screenshots/header/<it|en|es|fr>/header.png`, generata da `screenshots/compose-header.py`
+(titolo «KidBox, l'agente della tua famiglia», due telefoni inclinati, tutto vicino al
+centro per la zona sicura). **Da caricare a mano**: in ASC → pagina prodotto → «Intestazione
+e risultati di ricerca» → «Carica», una per lingua; Apple consiglia la stessa risorsa per
+intestazione e ricerca. L'API non lo permette ancora per noi: la relazione `placements`
+della localizzazione esiste (`appAssetLibraryPlacements`, tipi `PRODUCT_PAGE_HEADER_ASSET`
+e `APP_STORE_SEARCH_RESULTS_ASSET`) ma non è documentata come caricare il file.
+
