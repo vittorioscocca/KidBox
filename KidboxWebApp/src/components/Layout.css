@@ -45,3 +45,50 @@
     font-size: 1.25rem;
   }
 }
+
+/* Campo di ricerca delle liste (spese, calendario, storico interventi). */
+.kb-list-search {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 8px 0 12px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.cal-search-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cal-search-results button {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.cal-search-title {
+  font-weight: 600;
+}
+
+.cal-search-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+}

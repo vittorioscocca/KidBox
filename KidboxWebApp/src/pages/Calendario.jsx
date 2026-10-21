@@ -434,6 +434,7 @@ export default function Calendario() {
   const [addDate, setAddDate] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null);
   const [editingReminder, setEditingReminder] = useState(null);
+  const [calSearch, setCalSearch] = useState("");
   // Da un link dell'assistente: `/calendario?apri=<id>` porta al giorno e apre l'evento.
   useOpenParam(
     (id) => events.find((e) => e.id === id),
@@ -518,6 +519,36 @@ export default function Calendario() {
       ]),
     [events, feedEvents, anchorYear]
   );
+  // Titolo, note e luogo degli eventi; titolo e note dei promemoria. Le serie
+  // compaiono una volta sola, alla prossima data.
+  const calQuery = calSearch.trim();
+  const searchResults = useMemo(() => {
+    if (!calQuery) return null;
+    const fold = (x) => String(x ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const q = fold(calQuery);
+    const now = Date.now();
+    const window = [new Date(now), new Date(now + 400 * 86400000)];
+    const foundEvents = events
+      .filter((e) => [e.title, e.notes, e.location].some((f) => fold(f).includes(q)))
+      .map((e) => {
+        const next = e.recurrenceRaw && e.recurrenceRaw !== "none" ? expandEvents([e], ...window)[0] : null;
+        return { event: e, millis: (next ?? e).startDate?.toMillis?.() ?? 0 };
+      });
+    return {
+      upcoming: foundEvents.filter((x) => x.millis >= now).sort((a, b) => a.millis - b.millis),
+      past: foundEvents.filter((x) => x.millis < now).sort((a, b) => b.millis - a.millis),
+      reminders: reminders.filter((todo) => [todo.title, todo.notes].some((f) => fold(f).includes(q))),
+    };
+  }, [calQuery, events, reminders]);
+
+  const fmtResultDate = (millis) =>
+    new Intl.DateTimeFormat(locale === "en" ? "en-US" : "it-IT", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(new Date(millis));
+
   const openEvent = (e) => {
     if (e?._feed) setOpenedFeedEvent(e);
     else setEditingEvent(e?._series ?? e);
@@ -612,6 +643,13 @@ export default function Calendario() {
         </div>
       </div>
 
+      <input
+        className="kb-list-search"
+        placeholder={t.calendar.searchPlaceholder}
+        value={calSearch}
+        onChange={(e) => setCalSearch(e.target.value)}
+      />
+
       <div className="cal-heading">
         {heading()}
         {view === "day" && (
@@ -621,6 +659,35 @@ export default function Calendario() {
 
       {error && <p className="error">{error}</p>}
 
+      {searchResults ? (
+        searchResults.upcoming.length + searchResults.past.length + searchResults.reminders.length === 0 ? (
+          <p className="pw-hint">{t.calendar.searchNoResults}</p>
+        ) : (
+          <ul className="cal-search-results">
+            {[...searchResults.upcoming, ...searchResults.past].map(({ event, millis }) => (
+              <li key={event.id}>
+                <button onClick={() => setEditingEvent(event)}>
+                  <span className="cal-search-title">{event.title}</span>
+                  <span className="cal-search-meta">
+                    {[fmtResultDate(millis), event.location].filter(Boolean).join(" · ")}
+                  </span>
+                </button>
+              </li>
+            ))}
+            {searchResults.reminders.map((todo) => (
+              <li key={"rem-" + todo.id}>
+                <button onClick={() => setEditingReminder(todo)}>
+                  <span className="cal-search-title">{todo.title}</span>
+                  <span className="cal-search-meta">
+                    {todo.dueAt?.toMillis ? fmtResultDate(todo.dueAt.toMillis()) : ""}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : (
+        <>
       {view === "day" && (
         <TimeGridView
           days={[anchor]}
@@ -680,6 +747,9 @@ export default function Calendario() {
           locale={locale}
           weekStart={weekStart}
         />
+      )}
+
+        </>
       )}
 
       {(showAdd || editingEvent) && !editingReminder && (

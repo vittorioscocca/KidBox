@@ -557,6 +557,8 @@ export const translations = {
       syntheticEvening: (place) => `Sera a ${place}`,
     },
     garage: {
+      searchPlaceholder: "Cerca negli interventi",
+      searchNoResults: "Nessun intervento trovato.",
       title: "Garage",
       addVehicle: "Nuovo veicolo",
       addEvent: "Nuovo intervento",
@@ -1207,6 +1209,8 @@ export const translations = {
 
     },
     calendar: {
+      searchPlaceholder: "Cerca eventi e promemoria",
+      searchNoResults: "Nessun risultato.",
       feeds: {
         help: {
           title: "Come trovo il link?",
@@ -1500,6 +1504,8 @@ export const translations = {
       keyMissingHint: "Le foto sono cifrate con la chiave di questa famiglia, non ancora depositata. Apri KidBox su iPhone o Android con questo account per renderla disponibile anche qui.",
     },
     expenses: {
+      searchPlaceholder: "Cerca nelle spese",
+      searchNoResults: "Nessuna spesa trovata.",
       title: "Spese",
       new: "Nuova spesa",
       edit: "Modifica spesa",
@@ -2246,6 +2252,8 @@ export const translations = {
       syntheticEvening: (place) => `Evening in ${place}`,
     },
     garage: {
+      searchPlaceholder: "Search service history",
+      searchNoResults: "No services found.",
       title: "Garage",
       addVehicle: "New vehicle",
       addEvent: "New service",
@@ -2896,6 +2904,8 @@ export const translations = {
 
     },
     calendar: {
+      searchPlaceholder: "Search events and reminders",
+      searchNoResults: "No results.",
       feeds: {
         help: {
           title: "How do I find the link?",
@@ -3189,6 +3199,8 @@ export const translations = {
       keyMissingHint: "Photos are encrypted with this family's key, which is not deposited yet. Open KidBox on iPhone or Android with this account to make it available here too.",
     },
     expenses: {
+      searchPlaceholder: "Search expenses",
+      searchNoResults: "No expenses found.",
       title: "Expenses",
       new: "New expense",
       edit: "Edit expense",
@@ -3887,6 +3899,8 @@ export const translations = {
       syntheticEvening: (place) => `Soirée à ${place}`,
     },
     garage: {
+      searchPlaceholder: "Rechercher dans les interventions",
+      searchNoResults: "Aucune intervention trouvée.",
       title: "Garage",
       addVehicle: "Nouveau véhicule",
       addEvent: "Nouvelle intervention",
@@ -4531,6 +4545,8 @@ export const translations = {
       },
     },
     calendar: {
+      searchPlaceholder: "Rechercher événements et rappels",
+      searchNoResults: "Aucun résultat.",
       feeds: {
         help: {
           title: "Comment trouver le lien ?",
@@ -4823,6 +4839,8 @@ export const translations = {
       keyMissingHint: "Les photos sont chiffrées avec la clé de cette famille, pas encore déposée. Ouvrez KidBox sur iPhone ou Android avec ce compte pour la rendre disponible ici aussi.",
     },
     expenses: {
+      searchPlaceholder: "Rechercher dans les dépenses",
+      searchNoResults: "Aucune dépense trouvée.",
       title: "Dépenses",
       new: "Nouvelle dépense",
       edit: "Modifier la dépense",
@@ -5521,6 +5539,8 @@ export const translations = {
       syntheticEvening: (place) => `Noche en ${place}`,
     },
     garage: {
+      searchPlaceholder: "Buscar en las intervenciones",
+      searchNoResults: "Ninguna intervención encontrada.",
       title: "Garaje",
       addVehicle: "Nuevo vehículo",
       addEvent: "Nueva intervención",
@@ -6165,6 +6185,8 @@ export const translations = {
       },
     },
     calendar: {
+      searchPlaceholder: "Buscar eventos y recordatorios",
+      searchNoResults: "Sin resultados.",
       feeds: {
         help: {
           title: "¿Cómo encuentro el enlace?",
@@ -6457,6 +6479,8 @@ export const translations = {
       keyMissingHint: "Las fotos están cifradas con la clave de esta familia, aún no depositada. Abre KidBox en iPhone o Android con esta cuenta para que esté disponible también aquí.",
     },
     expenses: {
+      searchPlaceholder: "Buscar en los gastos",
+      searchNoResults: "Ningún gasto encontrado.",
       title: "Gastos",
       new: "Nuevo gasto",
       edit: "Editar gasto",

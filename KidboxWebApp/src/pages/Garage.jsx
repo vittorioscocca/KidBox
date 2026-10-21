@@ -40,6 +40,7 @@ export default function Garage() {
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null);
   const [pendingTag, setPendingTag] = useState(null);
+  const [eventSearch, setEventSearch] = useState("");
 
   useEffect(() => {
     if (!currentFamilyId) return undefined;
@@ -71,6 +72,18 @@ export default function Garage() {
     for (const e of events) map.set(e.vehicleId, [...(map.get(e.vehicleId) || []), e]);
     return map;
   }, [events]);
+
+  // Storico interventi del veicolo aperto: titolo, tipo, officina e note.
+  const eventsShown = useMemo(() => {
+    if (!selected) return [];
+    const list = eventsByVehicle.get(selected.id) || [];
+    const fold = (x) => String(x ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const q = fold(eventSearch.trim());
+    if (!q) return list;
+    return list.filter((ev) =>
+      [ev.title, ev.notes, ev.garageName, eventTypeInfo(ev.eventTypeRaw).it, eventTypeInfo(ev.eventTypeRaw).en].some((f) => fold(f).includes(q))
+    );
+  }, [selected, eventsByVehicle, eventSearch]);
 
   const fmt = (millis) =>
     millis
@@ -286,11 +299,21 @@ export default function Garage() {
               </button>
             </h3>
 
+            {(eventsByVehicle.get(selected.id) || []).length > 0 && (
+              <input
+                className="kb-list-search"
+                placeholder={g.searchPlaceholder}
+                value={eventSearch}
+                onChange={(e) => setEventSearch(e.target.value)}
+              />
+            )}
             {(eventsByVehicle.get(selected.id) || []).length === 0 ? (
               <p className="pw-hint">{g.noEvents}</p>
+            ) : eventsShown.length === 0 ? (
+              <p className="pw-hint">{g.searchNoResults}</p>
             ) : (
               <ul className="an-events">
-                {(eventsByVehicle.get(selected.id) || []).map((ev) => {
+                {eventsShown.map((ev) => {
                   const ty = eventTypeInfo(ev.eventTypeRaw);
                   return (
                     <li key={ev.id}>

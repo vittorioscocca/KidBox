@@ -50,6 +50,7 @@ export default function Spese() {
   const [categoryFilter, setCategoryFilter] = useState(null);
   const [editing, setEditing] = useState(null);
   const [creating, setCreating] = useState(false);
+  const [search, setSearch] = useState("");
   // Da un link dell'assistente: `/spese?apri=<id>` apre la spesa.
   useOpenParam((id) => expenses.find((e) => e.id === id), (e) => setEditing(e));
 
@@ -182,6 +183,47 @@ export default function Spese() {
     }
   };
 
+  // Con una ricerca attiva si cerca in tutto lo storico, non nel periodo
+  // scelto: chi cerca «la bolletta» non sa in che mese l'ha messa.
+  const searchQuery = search.trim().toLowerCase();
+  const searchHits = useMemo(() => {
+    if (!searchQuery) return [];
+    const fold = (x) => String(x ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const q = fold(searchQuery);
+    return expenses
+      .filter((e) => {
+        const cat = categoryFromId(currentFamilyId, e.categoryId);
+        const amount = Number(e.amount ?? 0).toFixed(2);
+        return [e.title, e.notes, cat?.name, amount, amount.replace(".", ",")].some((f) => fold(f).includes(q));
+      })
+      .sort((a, b) => (b.date?.toMillis?.() ?? 0) - (a.date?.toMillis?.() ?? 0));
+  }, [expenses, searchQuery, currentFamilyId]);
+
+  const renderExpense = (e) => {
+    const cat = categoryFromId(currentFamilyId, e.categoryId);
+    const d = e.date?.toDate?.();
+    return (
+      <li key={e.id}>
+        <span className="expense-icon" style={{ background: `${cat?.color ?? "#9E9E9E"}22` }}>
+          {cat?.icon ?? "•"}
+        </span>
+        <button className="expense-main" onClick={() => setEditing(e)}>
+          <span className="expense-title">{e.title}</span>
+          <span className="expense-meta">
+            {cat?.name ?? t.expenses.noCategory}
+            {d &&
+              ` · ${new Intl.DateTimeFormat(locale === "en" ? "en-US" : "it-IT", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "2-digit",
+              }).format(d)}`}
+          </span>
+        </button>
+        <span className="expense-amount">{formatAmount(e.amount, locale)}</span>
+      </li>
+    );
+  };
+
   return (
     <div className="expenses-page">
       <div className="overview-header">
@@ -191,6 +233,21 @@ export default function Spese() {
         </button>
       </div>
 
+      <input
+        className="kb-list-search"
+        placeholder={t.expenses.searchPlaceholder}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      {searchQuery ? (
+        searchHits.length === 0 ? (
+          <p className="pw-hint">{t.expenses.searchNoResults}</p>
+        ) : (
+          <ul className="expense-list">{searchHits.map(renderExpense)}</ul>
+        )
+      ) : (
+      <>
       <div className="seg-control period-picker">
         {PERIODS.map((p) => (
           <button
@@ -282,34 +339,11 @@ export default function Spese() {
           </section>
 
           <ul className="expense-list">
-            {visible.map((e) => {
-              const cat = categoryFromId(currentFamilyId, e.categoryId);
-              const d = e.date?.toDate?.();
-              return (
-                <li key={e.id}>
-                  <span
-                    className="expense-icon"
-                    style={{ background: `${cat?.color ?? "#9E9E9E"}22` }}
-                  >
-                    {cat?.icon ?? "•"}
-                  </span>
-                  <button className="expense-main" onClick={() => setEditing(e)}>
-                    <span className="expense-title">{e.title}</span>
-                    <span className="expense-meta">
-                      {cat?.name ?? t.expenses.noCategory}
-                      {d &&
-                        ` · ${new Intl.DateTimeFormat(
-                          locale === "en" ? "en-US" : "it-IT",
-                          { day: "2-digit", month: "2-digit", year: "2-digit" }
-                        ).format(d)}`}
-                    </span>
-                  </button>
-                  <span className="expense-amount">{formatAmount(e.amount, locale)}</span>
-                </li>
-              );
-            })}
+            {visible.map(renderExpense)}
           </ul>
         </>
+      )}
+      </>
       )}
 
       {(creating || editing) && (
