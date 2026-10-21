@@ -637,8 +637,6 @@ final class AppCoordinator: ObservableObject {
             return "chat_supporto"
         case .askExpert:
             return "assistente_ai"
-        case .search:
-            return "cerca"
         case .news:
             return "notizie"
         case .newsSaved:
@@ -822,8 +820,6 @@ final class AppCoordinator: ObservableObject {
             PasswordDetailView(familyId: familyId, entryId: entryId)
         case .askExpert:
             PlanningAIChatView()
-        case .search(let familyId):
-            KBSearchView(familyId: familyId)
 
         case .news(let familyId):
             NewsView(familyId: familyId)

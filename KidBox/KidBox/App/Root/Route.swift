@@ -88,9 +88,6 @@ enum Route: Hashable {
     /// Le notizie salvate col segnalibro: di chi le salva, non della famiglia.
     case newsSaved
 
-    /// «Cerca in KidBox» dalla Home (`KBSearchView`).
-    case search(familyId: String)
-
     // MARK: - Spese
     /// `highlightExpenseId`: spesa arrivata da notifica, che la home apre
     /// appena la sincronizzazione la porta in locale.

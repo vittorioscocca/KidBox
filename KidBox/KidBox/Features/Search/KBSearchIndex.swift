@@ -48,6 +48,7 @@ struct KBSearchIndex {
         .ticket, .home, .vehicle, .pet, .trip, .grocery,
     ]
     static let perSection = 8
+    static let perSingleSection = 50
 
     let snapshot: AgentMemorySnapshot
     private let entries: [Entry]
@@ -69,8 +70,10 @@ struct KBSearchIndex {
             let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !clean.isEmpty else { return }
             let body = text.compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }.joined(separator: "\n")
+            // La riga sotto il titolo (persona, data, importo) si cerca anche lei:
+            // «Marco visita», «84,20», «ottobre».
             out.append(Entry(id: "\(kind.rawValue):\(id)", kind: kind, item: item, title: clean, subtitle: subtitle, date: date, text: body,
-                             foldedTitle: AgentRelevance.fold(clean), foldedText: AgentRelevance.fold(body)))
+                             foldedTitle: AgentRelevance.fold(clean), foldedText: AgentRelevance.fold(subtitle + "\n" + body)))
         }
 
         for e in s.expenses {
@@ -121,26 +124,35 @@ struct KBSearchIndex {
     }
 
     /// Tutte le parole della ricerca, nel titolo o nel testo: prima le voci
-    /// col titolo che corrisponde, poi le più recenti.
-    func search(_ query: String) -> [Section] {
+    /// col titolo che corrisponde, poi le più recenti. `kinds` vuoto = tutte
+    /// le sezioni; con una sezione scelta e niente scritto si vedono le sue
+    /// voci più recenti.
+    func search(_ query: String, kinds: Set<AgentLinks.Kind> = []) -> [Section] {
         let words = AgentRelevance.fold(query)
             .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
             .map(String.init)
-        guard !words.isEmpty, words.joined().count >= 2 else { return [] }
+        let typed = !words.isEmpty && words.joined().count >= 2
+        guard typed || !kinds.isEmpty else { return [] }
 
         var hits: [Hit] = []
-        for e in entries {
+        for e in entries where kinds.isEmpty || kinds.contains(e.kind) {
+            guard typed else {
+                hits.append(Hit(entry: e, snippet: nil, inTitle: true))
+                continue
+            }
             let inTitle = words.allSatisfy { e.foldedTitle.contains($0) }
             guard inTitle || words.allSatisfy({ e.foldedTitle.contains($0) || e.foldedText.contains($0) }) else { continue }
             hits.append(Hit(entry: e, snippet: inTitle ? nil : Self.snippet(e.text, words: words), inTitle: inTitle))
         }
+        // Con una sola sezione scelta si vede di più: è una lista, non un riepilogo.
+        let limit = kinds.count == 1 ? Self.perSingleSection : Self.perSection
         let grouped = Dictionary(grouping: hits, by: \.entry.kind)
         return Self.order.compactMap { kind in
             guard let list = grouped[kind], !list.isEmpty else { return nil }
             let sorted = list.sorted {
                 $0.inTitle != $1.inTitle ? $0.inTitle : $0.entry.date > $1.entry.date
             }
-            return Section(kind: kind, hits: Array(sorted.prefix(Self.perSection)))
+            return Section(kind: kind, hits: Array(sorted.prefix(limit)))
         }
     }
 

@@ -247,6 +247,28 @@
         }
       }
     },
+    "Niente in questa sezione." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing in this section."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada en esta sección."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien dans cette section."
+          }
+        }
+      }
+    },
     "Non trovo più «%@»: ti apro la sezione." : {
       "localizations" : {
         "en" : {
