@@ -371,6 +371,39 @@ async function main() {
     })
   );
 
+  // 5. Google Ads (collegato a GA4 dal 15/10/2026): costo, clic e impression
+  // per giorno e campagna, ultimi 14 giorni. Isolato: se la combinazione di
+  // metriche non è accettata o non ci sono dati, il resto del report non cade.
+  out.ads = { rows: [], sessions: [] };
+  try {
+    out.ads.rows = rows(
+      await runReport(tok, {
+        dateRanges: [{ startDate: shiftDay(yesterday, -13), endDate: yesterday }],
+        dimensions: [{ name: "date" }, { name: "sessionGoogleAdsCampaignName" }],
+        metrics: [
+          { name: "advertiserAdCost" },
+          { name: "advertiserAdClicks" },
+          { name: "advertiserAdImpressions" },
+        ],
+        orderBys: [{ dimension: { dimensionName: "date" } }],
+        limit: 200,
+      })
+    ).filter((r) => r.sessionGoogleAdsCampaignName !== "(not set)");
+    out.ads.sessions = rows(
+      await runReport(tok, {
+        dateRanges: [{ startDate: shiftDay(yesterday, -13), endDate: yesterday }],
+        dimensions: [{ name: "date" }],
+        metrics: [{ name: "sessions" }, { name: "newUsers" }],
+        dimensionFilter: {
+          filter: { fieldName: "sessionMedium", stringFilter: { value: "cpc" } },
+        },
+        orderBys: [{ dimension: { dimensionName: "date" } }],
+      })
+    );
+  } catch (e) {
+    out.notes.push(`Google Ads in GA4 non letto: ${e.message}`);
+  }
+
   if (asJson) {
     process.stdout.write(JSON.stringify(out, null, 2) + "\n");
     return;
@@ -495,6 +528,20 @@ function print(o) {
   L.push("");
   L.push("## Paesi ieri (utenti attivi, tutte le piattaforme)");
   L.push(o.web.countries.map((r) => `${r.country}=${r.activeUsers}`).join(", ") || "(nessuno)");
+  L.push("");
+
+  // Google Ads
+  L.push("## Google Ads (da GA4, 14 giorni) — data, campagna, costo, clic, impression");
+  if (!o.ads.rows.length) {
+    L.push("(nessun costo, clic o impression di Google Ads registrato da GA4: la campagna non consegna, oppure i dati non sono ancora importati)");
+  }
+  for (const r of o.ads.rows) {
+    L.push(
+      `${r.date}  ${pad(r.sessionGoogleAdsCampaignName, 34)}${pad(num(r.advertiserAdCost), 8)}${pad(r.advertiserAdClicks, 6)}${r.advertiserAdImpressions}`
+    );
+  }
+  L.push("Sessioni con medium cpc (data=sessioni/nuovi utenti): " +
+    (o.ads.sessions.map((r) => `${r.date}=${r.sessions}/${r.newUsers}`).join(", ") || "nessuna"));
   L.push("");
 
   if (o.notes.length) {

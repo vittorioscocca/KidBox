@@ -161,6 +161,10 @@ pre_signup_screen_shown → login_attempted → signup_completed → onboarding_
 
 **Funnel a 28 giorni per utenti unici** (dalla tabella dello script GA4): una riga per gradino con il tasso di passaggio, e in particolare: installazioni strumentate → login visto → registrati → onboarding iniziato → completato → famiglia creata → invito generato → join tentato → entrati → contenuto creato → contenuto letto da un altro membro. È il numero di riferimento del prodotto; commenta i cambiamenti settimana su settimana, non giorno su giorno.
 
+**Richieste con link `/r` (non lette dal report: farlo a mano finché non c'è uno script)**: il secondo link esterno oltre a `/join`. Conteggio con la ricetta di `/richieste` (collection group `requests`, senza le famiglie `ZZZ-…`): create con `external`, aperte, risposte, famiglie passate a 2+ membri da lì. Al 21/10/2026: 0 da famiglie vere (scommessa 8, verifica 02/11).
+
+**Google Ads in GA4**: la sezione «Google Ads» dello script GA4 legge costo, clic e impression per campagna (14 giorni) e le sessioni `cpc`. Zero in tutte le righe = la campagna non consegna (scommessa 10). Il costo arriva solo con l'importazione dei costi attiva nel collegamento GA4–Ads e non è retroattivo.
+
 **Inviti**: invite_prompt_shown → accepted (il foglio contestuale, regola 19) · invite_generated (GA4) → pagina /join vista → tap store (contatore console, dal 15/09) → family_join_attempted → family_joined / family_join_failed (con i reason se disponibili). Leggi `family_join_failed` insieme al numero di *utenti* che lo generano: il 15/09 si è scoperto che 17 dei 26 fallimenti di 28 giorni venivano da 3 persone in due giornate di test; il join di per sé funziona. Il buco vero del funnel è tra invito generato e tentativo di join (44 utenti → 15 in 28 giorni): la pagina /join dice ora se il link viene aperto e se si va allo store.
 
 **Uso (GA4)**: content_created e content_shared_read (per utente attivo), ai_message_sent, paywall_shown / subscription_started.
