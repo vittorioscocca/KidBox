@@ -572,7 +572,7 @@ private struct PlanningAIChatInnerView: View {
                 if todayEventsCount > 0 {
                     briefingChip(
                         icon: "clock",
-                        label: "\(todayEventsCount) event\(todayEventsCount == 1 ? "o" : "i") oggi",
+                        label: String(localized: "\(todayEventsCount) eventi oggi"),
                         color: .blue
                     )
                 }
@@ -581,7 +581,7 @@ private struct PlanningAIChatInnerView: View {
                 if urgentTodosCount > 0 {
                     briefingChip(
                         icon: "exclamationmark.circle.fill",
-                        label: "\(urgentTodosCount) urgent\(urgentTodosCount == 1 ? "e" : "i")",
+                        label: String(localized: "\(urgentTodosCount) urgenti"),
                         color: .red
                     )
                 }
@@ -590,7 +590,7 @@ private struct PlanningAIChatInnerView: View {
                 if todayDosesCount > 0 {
                     briefingChip(
                         icon: "pills.fill",
-                        label: "\(todayDosesCount) dos\(todayDosesCount == 1 ? "e" : "i")",
+                        label: String(localized: "\(todayDosesCount) dosi"),
                         color: .green
                     )
                 }
