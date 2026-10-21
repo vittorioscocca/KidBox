@@ -84,8 +84,9 @@ si era perso coi cambi di versione); riscritto su iOS 2.4.1, Mac 2.4.0 e Mac
 
 ## Screenshot degli store (iOS, 6,9")
 
-`screenshots/final/<it|en|es|fr>/01-home.png`, `02-calendar.png`, `03-todo.png`:
-1320×2868, didascalia + schermata vera. Le schermate grezze sono in `raw/`, la
+`screenshots/final/<it|en|es|fr>/01-home.png` … `05-assistant.png` (home con richiesta,
+calendario, to-do, spese, assistente): 1320×2868, nello stile del set già in vendita
+(sfondo arancione, titolo nero molto grande, telefono con isola disegnata). Le schermate grezze sono in `raw/`, la
 composizione è `screenshots/compose.py` (didascalie nel dizionario in testa).
 Come si rifanno: build di sviluppo nel simulatore iPhone 17 Pro Max con
 `-KBDemoSeed -KBDemoReset -KBDemoLang <lingua> -KBDemoHero screenshots/famiglia.jpg
@@ -94,4 +95,5 @@ Orologio 9:41 con `xcrun simctl status_bar … override`. Build ad-hoc firmata
 (`CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO`), altrimenti manca l'App Group;
 serve anche `Library/Application Support` nel container del gruppo. Regole di
 Apple sulle immagini: niente prezzi, URL, altre piattaforme né riconoscimenti.
+Per l'assistente serve `defaults write … kb_ai_is_enabled -bool true` nel simulatore.
 **Non ancora caricati su App Store Connect.**
