@@ -20,7 +20,7 @@ struct TodoEditView: View {
     
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var coordinator: AppCoordinator
+    @State private var showSentNotice = false
     
     // Members for assignee picker
     @Query private var members: [KBFamilyMember]
@@ -399,8 +399,15 @@ struct TodoEditView: View {
                 around: hasDate && hasTime ? dueDate : nil
             )
         }
-        .sheet(item: $sentRequest, onDismiss: { finishRequest() }) { created in
+        .sheet(item: $sentRequest, onDismiss: { showSentNotice = true }) { created in
             FamilyRequestSentSheet(created: created)
+        }
+        // La richiesta non è ancora un to-do (lo diventa al primo «Ci penso io»):
+        // senza questo avviso la lista sembrerebbe non aver registrato niente.
+        .alert("Richiesta inviata", isPresented: $showSentNotice) {
+            Button("OK") { dismiss() }
+        } message: {
+            Text("Diventa un to-do quando qualcuno risponde «Ci penso io». In Home ne vedi lo stato.")
         }
         .sheet(isPresented: $isVisibilitySheetPresented) {
             VisibilityPickerSheet(
@@ -666,19 +673,11 @@ extension TodoEditView {
                 // Il foglio del link; alla sua chiusura si chiude anche l'editor.
                 sentRequest = created
             } else {
-                finishRequest()
+                showSentNotice = true
             }
         } catch {
             errorMessage = error.localizedDescription
         }
-    }
-
-    /// La richiesta non è ancora un to-do: lo diventa al primo «Ci penso io».
-    /// Si torna in Home, dove la richiesta aperta si vede subito; restando
-    /// nella lista to-do non comparirebbe niente e sembrerebbe non aver funzionato.
-    fileprivate func finishRequest() {
-        dismiss()
-        coordinator.selectRootTab(.home)
     }
 
     /// Nome della famiglia sull'invito, come in `InviteCodeViewModel`.

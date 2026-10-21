@@ -57560,6 +57560,28 @@
         }
       }
     },
+    "Diventa un to-do quando qualcuno risponde «Ci penso io». In Home ne vedi lo stato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It becomes a to-do when someone replies “I’ll do it”. You can see its status on Home."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se convierte en tarea cuando alguien responde «Me encargo yo». Su estado se ve en Inicio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elle devient une tâche quand quelqu’un répond « Je m’en occupe ». Son état est visible dans l’Accueil."
+          }
+        }
+      }
+    },
     "Richiesta inviata" : {
       "comment" : "Pro trial request already sent to the family owner",
       "localizations" : {
