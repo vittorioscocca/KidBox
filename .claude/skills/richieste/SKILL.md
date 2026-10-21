@@ -99,6 +99,23 @@ come i to-do: niente chiave di famiglia, così la push può mostrarlo.
   famiglia, `requests` è in `FAMILY_SUBCOLLECTIONS`).
 - Push silenziosa che toglie la notifica agli altri quando qualcuno la prende.
 - Tipi `grocery` ed `event` (oggi solo `kind: "todo"`).
-- Previsione da registrare in `/auto-miglioramento`: 4 settimane dopo la
-  release, ≥10 richieste con link e ≥2 famiglie passate a 2+ membri da lì;
+- Previsione **registrata** (scommessa 8 in `/auto-miglioramento`, verifica
+  02/11/2026): ≥10 richieste con link e ≥2 famiglie passate a 2+ membri da lì;
   falsificata sotto 5 richieste con link.
+
+## Stato e come si misura
+
+- **Pubblicato** su iOS (2.3.9), Android (2.4.5), web e server; confermato
+  dall'utente il 21/10/2026.
+- **I link esterni di KidBox sono due**: `/join` (invito a una famiglia) e `/r`
+  (richiesta di un to-do, che porta anche l'invito nel frammento `&k=`). Il
+  report giornaliero conta solo `/join` (`inviteLandingPing`): le richieste
+  esterne non ci compaiono finché chi risponde non preme «Entra nella famiglia».
+- **Il report non legge `requests`.** Per misurare: `runQuery` su
+  `collectionId: requests` con `allDescendants: true`, token `gcloud auth
+  print-access-token`; scartare le famiglie `ZZZ-…`; per ogni richiesta con
+  `external` non nullo contare `createdAt`, `external.openedAt` (aperta),
+  `external.answeredAt` (risposta) e `status`. Per gli ingressi incrociare
+  `external.inviteId` con `invites.usedAt`.
+- **Lettura del 21/10/2026**: 6 richieste, 2 vere (01/10, senza link), 0 con
+  link da famiglie vere. Le altre 4 sono prove nelle `ZZZ-…`.
