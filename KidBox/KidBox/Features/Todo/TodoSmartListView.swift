@@ -13,6 +13,7 @@ struct TodoSmartListView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Query private var todos: [KBTodoItem]
+    @State private var searchText = ""
     @Query private var members: [KBFamilyMember]
     
     private let remote = TodoRemoteStore()
@@ -50,6 +51,10 @@ struct TodoSmartListView: View {
     private var currentUid: String? { Auth.auth().currentUser?.uid }
 
     private var filteredTodos: [KBTodoItem] {
+        kindTodos.filter { $0.matchesSearch(searchText, members: members) }
+    }
+
+    private var kindTodos: [KBTodoItem] {
         let visible = todos.filter { $0.isVisible(to: currentUid) }
         let me = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
@@ -89,7 +94,7 @@ struct TodoSmartListView: View {
     var body: some View {
         List {
             if filteredTodos.isEmpty {
-                Text("Nessun elemento")
+                Text(searchText.isEmpty ? "Nessun elemento" : "Nessun risultato")
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(filteredTodos) { todo in
@@ -114,6 +119,7 @@ struct TodoSmartListView: View {
             await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
         }
         .navigationTitle(title)
+        .searchable(text: $searchText, prompt: "Cerca nei to-do")
         .toolbar {
             if kind != .completed {
                 ToolbarItem(placement: .topBarTrailing) {

@@ -1250,6 +1250,26 @@ final class DocumentFolderViewModel: ObservableObject {
         return url
     }
 
+    /// Cerca in tutti i documenti della famiglia, non solo nella cartella
+    /// aperta: titolo, nome del file e testo letto. Il testo dei documenti
+    /// d'identità non entra mai, come nel quaderno dell'assistente.
+    func searchDocuments(_ query: String) -> [KBDocument] {
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let modelContext, !q.isEmpty else { return [] }
+        let fid = familyId
+        let descriptor = FetchDescriptor<KBDocument>(
+            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        let uid = Auth.auth().currentUser?.uid
+        let visible = ((try? modelContext.fetch(descriptor)) ?? []).filteredToVisibleDocuments(currentUid: uid)
+        return visible.filter { d in
+            let isIdentity = d.notes?.hasPrefix(KBWalletDocumentKind.notesPrefix) == true
+            let fields = [d.title, d.fileName, isIdentity ? "" : (d.extractedText ?? "")]
+            return fields.contains { $0.range(of: q, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+        }
+    }
+
     func open(_ doc: KBDocument) {
         guard let modelContext else { return }
         errorText = nil

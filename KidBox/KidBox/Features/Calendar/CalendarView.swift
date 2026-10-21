@@ -141,6 +141,7 @@ struct CalendarView: View {
     }
 
     @State private var selectedDate = Date()
+    @State private var searchText = ""
     @State private var addSheetDate: AddSheetDate?
     @State private var editingEvent: KBCalendarEvent?
     @State private var editingReminder: KBTodoItem?
@@ -257,10 +258,99 @@ struct CalendarView: View {
         }
     }
 
+    // MARK: - Ricerca
+
+    private var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func matchesSearch(_ fields: [String?]) -> Bool {
+        let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return fields.contains { ($0 ?? "").range(of: q, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+    }
+
+    /// Titolo, note e luogo degli eventi; titolo e note dei promemoria. Le
+    /// ricorrenze compaiono una volta sola, alla prossima data.
+    private var searchResults: some View {
+        let now = Date()
+        let window = DateInterval(start: now, end: now.addingTimeInterval(400 * 86_400))
+        let foundEvents: [(date: Date, event: KBCalendarEvent)] = events
+            .filter { matchesSearch([$0.title, $0.notes, $0.location]) }
+            .map { event in
+                let next = event.recurrence != .none
+                    ? event.occurrences(in: window).first?.startDate
+                    : nil
+                return (next ?? event.startDate, event)
+            }
+        let foundReminders = reminders.filter { matchesSearch([$0.title, $0.notes]) }
+        let upcoming = foundEvents.filter { $0.date >= now }.sorted { $0.date < $1.date }
+        let past = foundEvents.filter { $0.date < now }.sorted { $0.date > $1.date }
+        return List {
+            if foundEvents.isEmpty && foundReminders.isEmpty {
+                Text("Nessun risultato").foregroundStyle(.secondary)
+            }
+            if !upcoming.isEmpty {
+                Section("Prossimi") {
+                    ForEach(upcoming, id: \.event.id) { item in
+                        searchEventRow(item.event, date: item.date)
+                    }
+                }
+            }
+            if !past.isEmpty {
+                Section("Passati") {
+                    ForEach(past, id: \.event.id) { item in
+                        searchEventRow(item.event, date: item.date)
+                    }
+                }
+            }
+            if !foundReminders.isEmpty {
+                Section("Promemoria") {
+                    ForEach(foundReminders) { todo in
+                        Button { editingReminder = todo } label: {
+                            CalendarReminderRow(todo: todo, onToggleDone: { toggleReminderDone(todo) })
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .scrollContentBackground(.hidden)
+    }
+
+    private func searchEventRow(_ event: KBCalendarEvent, date: Date) -> some View {
+        Button { editingEvent = event } label: {
+            HStack(spacing: 12) {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(kbCategoryColor(event.category))
+                    .frame(width: 4)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(event.title).font(.body)
+                    Text(date, format: .dateTime.weekday().day().month().year())
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if let loc = event.location, !loc.isEmpty {
+                        Label(loc, systemImage: "mappin.and.ellipse")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                if event.recurrence != .none {
+                    Image(systemName: "repeat").foregroundStyle(.secondary)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
+    }
+
     var body: some View {
         ZStack {
             backgroundColor.ignoresSafeArea()
             
+            if isSearching {
+                searchResults
+            } else {
             VStack(spacing: 0) {
                 modePicker
                 if showsDevicePrompt {
@@ -275,7 +365,9 @@ struct CalendarView: View {
                 Divider()
                 currentModeView
             }
+            }
         }
+        .searchable(text: $searchText, prompt: "Cerca eventi e promemoria")
         .kbRefreshable {
             await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
                 SyncCenter.shared.stopCalendarRealtime()

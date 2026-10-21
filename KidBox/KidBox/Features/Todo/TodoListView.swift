@@ -24,6 +24,7 @@ struct TodoListView: View {
     }
     
     @Query private var todos: [KBTodoItem]
+    @State private var searchText = ""
     @Query private var members: [KBFamilyMember]
     
     private let remote = TodoRemoteStore()
@@ -81,6 +82,7 @@ struct TodoListView: View {
             !$0.isDeleted &&
             $0.isVisible(to: currentUid)
         }
+        .filter { $0.matchesSearch(searchText, members: members) }
     }
     
     /// Lista con solo To-Do di altri (tutti non visibili al membro corrente).
@@ -103,7 +105,7 @@ struct TodoListView: View {
         ScrollViewReader { proxy in
             List {
                 if visibleTodos.isEmpty {
-                    Text("Nessun To-Do")
+                    Text(searchText.isEmpty ? "Nessun To-Do" : "Nessun risultato")
                         .foregroundStyle(.secondary)
                         .listRowBackground(cardBackground)
                 } else {
@@ -133,6 +135,7 @@ struct TodoListView: View {
             .scrollContentBackground(.hidden)   // ← nasconde il grigio di sistema
             .background(backgroundColor)
             .navigationTitle(listName)
+            .searchable(text: $searchText, prompt: "Cerca nei to-do")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -482,5 +485,20 @@ struct TodoListView: View {
         let id: String
         /// nil = nuovo todo, non-nil = edit di un todo esistente
         let todoId: String?
+    }
+}
+
+
+extension KBTodoItem {
+    /// Ricerca nei to-do: titolo, note e a chi è assegnato (membro o persona fuori dall'app).
+    func matchesSearch(_ query: String, members: [KBFamilyMember]) -> Bool {
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return true }
+        var haystack = [title, notes ?? "", assignedExternalName ?? ""]
+        if let uid = assignedTo, !uid.isEmpty,
+           let name = members.first(where: { $0.userId == uid })?.displayName {
+            haystack.append(name)
+        }
+        return haystack.contains { $0.range(of: q, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
     }
 }

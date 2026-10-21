@@ -173,7 +173,49 @@ struct DocumentFolderView: View {
     // MARK: - Body
     
     var body: some View {
-        baseContent.modifier(applyCommonModifiers())
+        Group {
+            if isSearching {
+                searchResultsContent
+            } else {
+                baseContent
+            }
+        }
+        .modifier(applyCommonModifiers())
+        .searchable(text: $searchText, prompt: "Cerca nei documenti")
+    }
+
+    // MARK: - Ricerca
+
+    @State private var searchText = ""
+
+    private var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Risultati su tutta la famiglia, qualunque cartella sia aperta.
+    private var searchResultsContent: some View {
+        let results = viewModel.searchDocuments(searchText)
+        return ScrollView {
+            LazyVStack(spacing: 0) {
+                if results.isEmpty {
+                    Text("Nessun risultato")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 32)
+                }
+                ForEach(results) { doc in
+                    Button { viewModel.open(doc) } label: {
+                        DocumentRow(doc: doc)
+                            .contentShape(Rectangle())
+                            .padding(.horizontal)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .background(backgroundColor)
     }
     
     // MARK: - Base content

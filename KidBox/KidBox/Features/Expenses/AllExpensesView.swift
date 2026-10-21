@@ -21,6 +21,17 @@ struct AllExpensesView: View {
     @ObservedObject var vm: ExpensesViewModel
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
+    @State private var searchText = ""
+
+    private var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Con una ricerca attiva la lista è quella dei risultati, su tutto lo
+    /// storico; periodo e totali tornano quando il campo si svuota.
+    private var shownExpenses: [KBExpense] {
+        isSearching ? vm.search(searchText) : vm.expenses
+    }
 
     private var backgroundColor: Color {
         colorScheme == .dark
@@ -35,26 +46,28 @@ struct AllExpensesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                PeriodPickerView(vm: vm)
-                    .padding(.horizontal, 16)
+                if !isSearching {
+                    PeriodPickerView(vm: vm)
+                        .padding(.horizontal, 16)
 
-                // Stessa card della home: il totale del periodo scelto va letto
-                // anche qui, altrimenti cambiando filtro non si sa su cosa si
-                // sta guardando la lista.
-                TotalSummaryCard(vm: vm)
-                    .padding(.horizontal, 16)
+                    // Stessa card della home: il totale del periodo scelto va letto
+                    // anche qui, altrimenti cambiando filtro non si sa su cosa si
+                    // sta guardando la lista.
+                    TotalSummaryCard(vm: vm)
+                        .padding(.horizontal, 16)
+                }
 
-                if vm.expenses.isEmpty {
-                    Text("Nessuna spesa nel periodo scelto")
+                if shownExpenses.isEmpty {
+                    Text(isSearching ? "Nessun risultato" : "Nessuna spesa nel periodo scelto")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.top, 32)
                 } else {
                     VStack(spacing: 0) {
-                        ForEach(vm.expenses) { expense in
+                        ForEach(shownExpenses) { expense in
                             ExpenseRowView(expense: expense, vm: vm)
-                            if expense.id != vm.expenses.last?.id {
+                            if expense.id != shownExpenses.last?.id {
                                 Divider().padding(.leading, vm.isSelecting ? 68 : 56)
                             }
                         }
@@ -80,6 +93,7 @@ struct AllExpensesView: View {
         }
         .background(backgroundColor)
         .navigationTitle("Tutte le spese")
+        .searchable(text: $searchText, prompt: "Cerca nelle spese")
         .navigationBarTitleDisplayMode(.inline)
         // Questa schermata non agganciava il listener all'apparire: lo faceva
         // solo il pull-to-refresh. Senza, entrando qui il conteggio dei

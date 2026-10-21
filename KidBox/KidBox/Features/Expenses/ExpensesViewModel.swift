@@ -176,6 +176,30 @@ final class ExpensesViewModel: ObservableObject {
         computeCharts(from: expenses, in: range)
     }
     
+    /// Cerca in tutte le spese della famiglia, senza il filtro di periodo:
+    /// chi cerca «la bolletta» non sa in che mese l'ha messa. Titolo, note,
+    /// categoria e importo.
+    func search(_ query: String) -> [KBExpense] {
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return [] }
+        let fid = familyId
+        let descriptor = FetchDescriptor<KBExpense>(
+            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        let all = (try? modelContext.fetch(descriptor)) ?? []
+        return all.filter { expense in
+            let fields = [
+                expense.title,
+                expense.notes ?? "",
+                categoryForId(expense.categoryId)?.name ?? "",
+                String(format: "%.2f", expense.amount),
+                String(format: "%.2f", expense.amount).replacingOccurrences(of: ".", with: ",")
+            ]
+            return fields.contains { $0.range(of: q, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+        }
+    }
+
     // MARK: Chart computation
     
     private func computeCharts(from list: [KBExpense], in range: (start: Date, end: Date)) {
