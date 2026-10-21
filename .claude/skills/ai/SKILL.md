@@ -168,7 +168,13 @@ c'è più si apre la sezione con un avviso. La regola sta nelle regole stabili
 conversazioni. Sul web il link diventa un indirizzo con `?apri=<id>`
 (Salute: `persona`, `modulo`, `apri`; Casa e Wallet: anche `tipo`) che la
 pagina legge con `useOpenParam`: una pagina nuova che deve aprirsi da un link
-li deve leggere, altrimenti si apre la sezione e basta. Evento GA4 `ai_link_opened`
+li deve leggere, altrimenti si apre la sezione e basta. **Trappola del 21/10:** una visita nel quaderno non ha titolo («VISITA 1 —
+03/09/2026», poi motivo e referti) e Haiku scrive link come «Visita 1 —
+03/09/2026» o «visita dal gastroenterologo»: confrontati col solo motivo
+finivano nella sezione. Visite ed esami si cercano su motivo, medico,
+diagnosi e titoli dei referti, la data basta da sola, le parole vuote
+(«referto», «visita») non contano e un tipo sbagliato ripiega sugli altri.
+Un tipo nuovo senza titolo proprio va trattato allo stesso modo. Evento GA4 `ai_link_opened`
 (`kind`, `found`). Provata su Haiku il 21/10: titoli esatti, data aggiunta solo
 con i doppioni, nessun link per una voce che non c'è.
 
