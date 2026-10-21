@@ -126,6 +126,7 @@ enum TreatmentNotificationManager {
     /// una notifica dose.
     @MainActor
     static func rescheduleActiveTreatments(context: ModelContext, treatmentId: String? = nil) {
+        cancelStoppedTreatments(context: context)
         let descriptor = FetchDescriptor<KBTreatment>(
             predicate: #Predicate {
                 $0.reminderEnabled == true &&
@@ -140,6 +141,22 @@ enum TreatmentNotificationManager {
         where (treatmentId == nil || treatment.id == treatmentId)
             && KBDeviceReminderLedger.contains(KBDeviceReminderLedger.treatment(treatment.id)) {
             rescheduleIfNeeded(treatment: treatment, childName: displayName(for: treatment, context: context))
+        }
+    }
+
+    /// Disarma le cure terminate, sospese o eliminate da un altro dispositivo:
+    /// il sync aggiorna il modello ma non tocca le notifiche già pianificate qui.
+    @MainActor
+    private static func cancelStoppedTreatments(context: ModelContext) {
+        let descriptor = FetchDescriptor<KBTreatment>(
+            predicate: #Predicate {
+                $0.isActive == false || $0.isDeleted == true || $0.reminderEnabled == false
+            }
+        )
+        guard let stopped = try? context.fetch(descriptor) else { return }
+        for treatment in stopped
+        where KBDeviceReminderLedger.contains(KBDeviceReminderLedger.treatment(treatment.id)) {
+            cancel(treatmentId: treatment.id)
         }
     }
 

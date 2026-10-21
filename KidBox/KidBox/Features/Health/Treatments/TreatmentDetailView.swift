@@ -840,6 +840,7 @@ struct TreatmentDetailView: View {
     
     private func stopTreatment() {
         let uid = Auth.auth().currentUser?.uid ?? "local"
+        TreatmentNotificationManager.cancel(treatmentId: treatment.id)
         treatment.isActive = false; treatment.updatedAt = Date(); treatment.updatedBy = uid
         try? modelContext.save()
         SyncCenter.shared.enqueueTreatmentUpsert(treatmentId: treatment.id, familyId: treatment.familyId, modelContext: modelContext)
@@ -851,6 +852,9 @@ struct TreatmentDetailView: View {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         treatment.isActive = true; treatment.updatedAt = Date(); treatment.updatedBy = uid
         try? modelContext.save()
+        if treatment.reminderEnabled {
+            TreatmentNotificationManager.schedule(treatment: treatment, childName: subjectDisplayName)
+        }
         SyncCenter.shared.enqueueTreatmentUpsert(treatmentId: treatment.id, familyId: treatment.familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
