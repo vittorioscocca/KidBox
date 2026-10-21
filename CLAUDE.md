@@ -67,5 +67,8 @@ i suoi commit si vedono solo con `git -C KidBoxAndroid`.
 ## Segreti
 
 Nessun segreto nel repo. Portachiavi macOS (account `kidbox`) o impersonazione
-di service account con `gcloud`: la mappa completa è in
+di service account con `gcloud`. **Prima di cercare un accesso, deploy o
+credenziale, leggere `internal/accessi.md`** (deploy per superficie, funzioni e
+segreti, Firebase, Apple, Google Play, Google Ads, GitHub, Gmail, cosa Claude
+non può fare); le fonti dei report analytics sono in
 `internal/analytics-accessi.md`.

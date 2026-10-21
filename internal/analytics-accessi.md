@@ -6,7 +6,8 @@ ottiene il token, cosa fare se smette di funzionare. **Nessun segreto in
 questo file né nel repo**: i segreti stanno nel Portachiavi macOS (account
 `kidbox`) o passano dall'impersonazione di service account con `gcloud`.
 
-Aggiornato al 20/09/2026. Progetto Firebase/GCP: `kidbox-42cd7`. Utente
+Aggiornato al 20/09/2026. Deploy, funzioni, Firebase, Apple, Play, Google Ads e
+GitHub sono in `accessi.md`. Progetto Firebase/GCP: `kidbox-42cd7`. Utente
 gcloud: `ing.vittorioscocca@gmail.com` (Owner del progetto).
 
 ## Portachiavi macOS
