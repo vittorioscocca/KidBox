@@ -16,7 +16,7 @@ export const AGENT_LINK_RULE =
   "- Quando parli di una voce precisa delle schede (una spesa, un documento, una nota, un evento, un to-do, una visita…) " +
   "o l'utente cerca qualcosa («trovami…», «dov'è…», «la bolletta di…»), mettila come link, così si apre con un tocco: " +
   "[titolo esatto come nella scheda](apri:TIPO), oppure [titolo](apri:TIPO/AAAA-MM-GG) con la data della voce se più voci " +
-  "hanno lo stesso titolo. TIPO: spese, documento, nota, evento, todo, listaspesa, visita, esame, cura, biglietto, casa, " +
+  "hanno lo stesso titolo; per visite, esami e cure metti sempre la data. TIPO: spese, documento, nota, evento, todo, listaspesa, visita, esame, cura, biglietto, casa, " +
   "veicolo, animale, viaggio. Solo voci che ci sono nelle schede, mai altri indirizzi; non dire «clicca qui»: il link è il titolo.";
 
 const KINDS = ["spese", "documento", "nota", "evento", "todo", "listaspesa", "visita", "esame", "cura", "biglietto", "casa", "veicolo", "animale", "viaggio"];
@@ -47,13 +47,30 @@ export function parseAgentLink(label, href) {
   return { kind, title, day: m[2] || null };
 }
 
-const words = (text) => new Set(text.split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 2));
+/** Parole che non distinguono una voce dall'altra: «Referto gastroscopia» deve trovare la visita «Gastroscopia». */
+const STOPWORDS = new Set([
+  "del", "della", "dello", "dei", "degli", "delle", "per", "con", "dal", "alla", "allo",
+  "referto", "referti", "visita", "visite", "esame", "esami", "documento", "allegato",
+  "risultato", "risultati", "cura", "terapia", "spesa", "nota",
+]);
+
+const words = (text) =>
+  new Set(text.split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 2 && !STOPWORDS.has(w)));
+
+const localDay = (millis) => {
+  const d = new Date(millis);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+export const bestMatch = (items, link, title, date) => bestOf(items, link, (x) => [title(x)], date);
 
 /**
  * La voce più simile al titolo: uguale, poi contenuta, poi più di metà delle
- * parole in comune; a parità vince il giorno indicato, poi la più recente.
+ * parole in comune. Il primo testo è il nome della voce, gli altri (diagnosi,
+ * referti allegati) contano meno. Con `dayIsIdentity` il giorno indicato basta
+ * anche senza parole in comune. A parità vince il giorno indicato, poi la più recente.
  */
-export function bestMatch(items, link, title, date) {
+export function bestOf(items, link, texts, date, { dayIsIdentity = false } = {}) {
   const wanted = fold(link.title).trim();
   if (!wanted) return null;
   const wantedWords = words(wanted);
@@ -62,19 +79,25 @@ export function bestMatch(items, link, title, date) {
   let bestScore = 0;
   let bestDistance = Infinity;
   for (const item of items || []) {
-    const t = fold(title(item) || "").trim();
-    if (!t) continue;
-    let score;
-    if (t === wanted) score = 1000;
-    else if (t.includes(wanted) || wanted.includes(t)) score = 500;
-    else {
-      let common = 0;
-      for (const w of words(t)) if (wantedWords.has(w)) common += 1;
-      // «Bolletta gas» per «Bolletta luce»: una parola su due non basta.
-      if (common === 0 || common * 2 <= wantedWords.size) continue;
-      score = 100 * common;
-    }
+    let score = 0;
+    texts(item).forEach((raw, index) => {
+      const t = fold(raw || "").trim();
+      if (!t) return;
+      const primary = index === 0;
+      let textScore = 0;
+      if (t === wanted) textScore = primary ? 1000 : 400;
+      else if (t.includes(wanted) || (words(t).size > 0 && wanted.includes(t))) textScore = primary ? 500 : 300;
+      else {
+        let common = 0;
+        for (const w of words(t)) if (wantedWords.has(w)) common += 1;
+        // «Bolletta gas» per «Bolletta luce»: una parola su due non basta.
+        if (common > 0 && common * 2 > wantedWords.size) textScore = 100 * common;
+      }
+      score = Math.max(score, textScore);
+    });
     const d = date(item) ?? 0;
+    if (dayIsIdentity && link.day && d && localDay(d) === link.day) score += 50;
+    if (score === 0) continue;
     const distance = day != null && !Number.isNaN(day) ? Math.abs(d - day) : -d;
     if (score > bestScore || (score === bestScore && distance < bestDistance)) {
       best = item;
@@ -96,10 +119,30 @@ const health = (modulo, childId, id) => open("/salute", { persona: childId, modu
  * e si apre la sezione.
  */
 export function agentLinkDestination(link, s) {
+  const first = destinationOfKind(link.kind, link, s);
+  if (first.found) return first;
+  for (const kind of FALLBACK_ORDER) {
+    if (kind === link.kind) continue;
+    const other = destinationOfKind(kind, link, s);
+    if (other.found) return other;
+  }
+  return first;
+}
+
+/**
+ * Ordine in cui si cerca negli altri tipi quando quello indicato non ha la
+ * voce: il modello a volte scrive `visita` per il referto di una gastroscopia
+ * o `documento` per una visita. La lista della spesa no: «trovata» lo è sempre.
+ */
+const FALLBACK_ORDER = ["documento", "visita", "esame", "cura", "spese", "nota", "evento", "todo", "biglietto", "casa", "veicolo", "animale", "viaggio"];
+
+const attachmentTitles = (tag, s) => (s.documents || []).filter((d) => d.notes === tag).map((d) => d.title || d.fileName);
+
+function destinationOfKind(kind, link, s) {
   const h = s.health || { visits: [], exams: [], treatments: [] };
   const hit = (url) => ({ url, found: true });
   const miss = (url) => ({ url, found: false });
-  switch (link.kind) {
+  switch (kind) {
     case "spese": {
       const e = bestMatch(s.expenses, link, (x) => x.title, (x) => x.when);
       return e ? hit(open("/spese", { apri: e.id })) : miss("/spese");
@@ -123,15 +166,25 @@ export function agentLinkDestination(link, s) {
     case "listaspesa":
       return hit("/spesa");
     case "visita": {
-      const v = bestMatch(h.visits, link, (x) => x.reason || x.doctorName, (x) => x.date);
+      // Una visita nel quaderno non ha titolo: è «VISITA n — data» con motivo,
+      // medico, diagnosi e referti. Si confronta con tutto quello, e la data da sola basta.
+      const v = bestOf(
+        h.visits, link,
+        (x) => [x.reason, x.doctorName, x.diagnosis, ...attachmentTitles(`visit:${x.id}`, s)],
+        (x) => x.date, { dayIsIdentity: true }
+      );
       return v ? hit(health("visits", v.childId, v.id)) : miss("/salute");
     }
     case "esame": {
-      const e = bestMatch(h.exams, link, (x) => x.name, (x) => x.deadline ?? x.createdAt);
+      const e = bestOf(
+        h.exams, link,
+        (x) => [x.name, ...attachmentTitles(`exam:${x.id}`, s)],
+        (x) => x.resultDate ?? x.deadline ?? x.createdAt, { dayIsIdentity: true }
+      );
       return e ? hit(health("exams", e.childId, e.id)) : miss("/salute");
     }
     case "cura": {
-      const t = bestMatch(h.treatments, link, (x) => x.drugName, (x) => x.startDate);
+      const t = bestOf(h.treatments, link, (x) => [x.drugName, ...attachmentTitles(`treatment:${x.id}`, s)], (x) => x.startDate);
       if (!t) return miss("/salute");
       return hit(t.petId ? open("/animali", { apri: t.petId }) : health("treatments", t.childId, t.id));
     }

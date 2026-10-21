@@ -24,7 +24,7 @@ enum AgentLinks {
     - Quando parli di una voce precisa delle schede (una spesa, un documento, una nota, un evento, un to-do, una visita…) \
     o l'utente cerca qualcosa («trovami…», «dov'è…», «la bolletta di…»), mettila come link, così si apre con un tocco: \
     [titolo esatto come nella scheda](apri:TIPO), oppure [titolo](apri:TIPO/AAAA-MM-GG) con la data della voce se più voci \
-    hanno lo stesso titolo. TIPO: spese, documento, nota, evento, todo, listaspesa, visita, esame, cura, biglietto, casa, \
+    hanno lo stesso titolo; per visite, esami e cure metti sempre la data. TIPO: spese, documento, nota, evento, todo, listaspesa, visita, esame, cura, biglietto, casa, \
     veicolo, animale, viaggio. Solo voci che ci sono nelle schede, mai altri indirizzi; non dire «clicca qui»: il link è il titolo.
     """
 
@@ -133,10 +133,30 @@ enum AgentLinks {
         var found: Bool
     }
 
+    /// Ordine in cui si cerca negli altri tipi quando quello indicato non ha
+    /// la voce: il modello a volte scrive `visita` per il referto di una
+    /// gastroscopia o `documento` per una visita. La lista della spesa no:
+    /// «trovata» lo è sempre.
+    private static let fallbackOrder: [Kind] = [
+        .document, .visit, .exam, .treatment, .expense, .note, .event, .todo,
+        .ticket, .home, .vehicle, .pet, .trip,
+    ]
+
     @MainActor
     static func destination(for link: Link, in s: AgentMemorySnapshot) -> Destination {
+        let first = destination(kind: link.kind, link, in: s)
+        if first.found { return first }
+        for kind in fallbackOrder where kind != link.kind {
+            let other = destination(kind: kind, link, in: s)
+            if other.found { return other }
+        }
+        return first
+    }
+
+    @MainActor
+    private static func destination(kind: Kind, _ link: Link, in s: AgentMemorySnapshot) -> Destination {
         let fid = s.familyId
-        switch link.kind {
+        switch kind {
         case .expense:
             if let e = best(s.expenses, link, title: \.title, date: { $0.date }) {
                 return Destination(routes: [.expensesHome(familyId: fid, highlightExpenseId: nil), .expenseDetail(familyId: fid, expenseId: e.id)], found: true)
@@ -163,19 +183,24 @@ enum AgentLinks {
         case .grocery:
             return Destination(routes: [.shoppingList(familyId: fid)], found: true)
         case .visit:
-            if let v = best(s.visits, link, title: { $0.reason.isEmpty ? ($0.doctorName ?? "") : $0.reason }, date: { $0.date }) {
+            // Una visita nel quaderno non ha titolo: è «VISITA n — data» con
+            // motivo, medico, diagnosi e referti. Si confronta con tutto quello,
+            // e la data da sola basta.
+            if let v = best(s.visits, link, texts: { [$0.reason, $0.doctorName ?? "", $0.diagnosis ?? ""] + attachmentTitles("visit:\($0.id)", s) },
+                            date: { $0.date }, dayIsIdentity: true) {
                 return Destination(routes: healthRoutes(fid, v.childId, list: .pediatricVisits(familyId: fid, childId: v.childId))
                     + [.pediatricVisitDetail(familyId: fid, childId: v.childId, visitId: v.id)], found: true)
             }
             return Destination(routes: [.pediatricChildSelector(familyId: fid)], found: false)
         case .exam:
-            if let e = best(s.exams, link, title: \.name, date: { $0.deadline ?? $0.createdAt }) {
+            if let e = best(s.exams, link, texts: { [$0.name] + attachmentTitles(ExamAttachmentTag.make($0.id), s) },
+                            date: { $0.resultDate ?? $0.deadline ?? $0.createdAt }, dayIsIdentity: true) {
                 return Destination(routes: healthRoutes(fid, e.childId, list: .pediatricExams(familyId: fid, childId: e.childId))
                     + [.examDetail(familyId: fid, childId: e.childId, examId: e.id)], found: true)
             }
             return Destination(routes: [.pediatricChildSelector(familyId: fid)], found: false)
         case .treatment:
-            if let t = best(s.treatments, link, title: \.drugName, date: { $0.startDate }) {
+            if let t = best(s.treatments, link, texts: { [$0.drugName] + attachmentTitles("treatment:\($0.id)", s) }, date: { $0.startDate }) {
                 if !t.petId.isEmpty {
                     return Destination(routes: [.petsHome(familyId: fid), .petDetail(familyId: fid, petId: t.petId)], found: true)
                 }
@@ -277,14 +302,34 @@ enum AgentLinks {
         [.pediatricHome(familyId: fid, childId: childId), list]
     }
 
+    /// Parole che non distinguono una voce dall'altra: «Referto gastroscopia»
+    /// deve trovare la visita «Gastroscopia».
+    private static let stopwords: Set<String> = [
+        "del", "della", "dello", "dei", "degli", "delle", "per", "con", "dal", "alla", "allo",
+        "referto", "referti", "visita", "visite", "esame", "esami", "documento", "allegato",
+        "risultato", "risultati", "cura", "terapia", "spesa", "nota",
+    ]
+
     private static func words(_ text: String) -> Set<String> {
         let parts: [Substring] = text.split(whereSeparator: { !$0.isLetter && !$0.isNumber })
-        return Set(parts.filter { $0.count > 2 }.map(String.init))
+        return Set(parts.filter { $0.count > 2 }.map(String.init)).subtracting(stopwords)
     }
 
-    /// La voce più simile al titolo: uguale, poi contenuta, poi parole in
-    /// comune; a parità vince il giorno indicato, poi la più recente.
+    /// Titoli dei documenti allegati a una voce (tag `visit:<id>`…).
+    private static func attachmentTitles(_ tag: String, _ s: AgentMemorySnapshot) -> [String] {
+        s.documents.filter { $0.notes == tag }.map(\.title)
+    }
+
     static func best<T>(_ items: [T], _ link: Link, title: (T) -> String, date: (T) -> Date) -> T? {
+        best(items, link, texts: { [title($0)] }, date: date)
+    }
+
+    /// La voce più simile al titolo: uguale, poi contenuta, poi più di metà
+    /// delle parole in comune. Il primo testo è il nome della voce, gli altri
+    /// (diagnosi, referti allegati) contano meno. Con `dayIsIdentity` il giorno
+    /// indicato basta anche senza parole in comune. A parità vince il giorno
+    /// indicato, poi la più recente.
+    static func best<T>(_ items: [T], _ link: Link, texts: (T) -> [String], date: (T) -> Date, dayIsIdentity: Bool = false) -> T? {
         let wanted = AgentRelevance.fold(link.title).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !wanted.isEmpty else { return nil }
         let wantedWords = words(wanted)
@@ -297,21 +342,27 @@ enum AgentLinks {
         var bestScore = 0
         var bestDistance = TimeInterval.infinity
         for item in items {
-            let t = AgentRelevance.fold(title(item)).trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !t.isEmpty else { continue }
             var score = 0
-            if t == wanted {
-                score = 1000
-            } else if t.contains(wanted) || wanted.contains(t) {
-                score = 500
-            } else {
-                let common = words(t).intersection(wantedWords).count
-                // Più di metà delle parole chieste: una parola sola in comune
-                // («Bolletta gas» per «Bolletta luce») non è la voce cercata.
-                guard common > 0, common * 2 > wantedWords.count else { continue }
-                score = 100 * common
+            for (index, raw) in texts(item).enumerated() {
+                let t = AgentRelevance.fold(raw).trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !t.isEmpty else { continue }
+                let primary = index == 0
+                var textScore = 0
+                if t == wanted {
+                    textScore = primary ? 1000 : 400
+                } else if t.contains(wanted) || (!words(t).isEmpty && wanted.contains(t)) {
+                    textScore = primary ? 500 : 300
+                } else {
+                    let common = words(t).intersection(wantedWords).count
+                    // Più di metà delle parole chieste: una parola sola in comune
+                    // («Bolletta gas» per «Bolletta luce») non è la voce cercata.
+                    if common > 0, common * 2 > wantedWords.count { textScore = 100 * common }
+                }
+                score = max(score, textScore)
             }
             let d = date(item)
+            if dayIsIdentity, let day, Calendar.current.isDate(d, inSameDayAs: day) { score += 50 }
+            guard score > 0 else { continue }
             let distance = day.map { abs(d.timeIntervalSince($0)) } ?? -d.timeIntervalSince1970
             if score > bestScore || (score == bestScore && distance < bestDistance) {
                 bestItem = item
