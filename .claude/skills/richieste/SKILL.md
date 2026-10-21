@@ -105,8 +105,7 @@ come i to-do: niente chiave di famiglia, così la push può mostrarlo.
 
 ## Stato e come si misura
 
-- **Dopo l'invio si torna in Home** (iOS `finishRequest` in `TodoEditView`, Android `onRequestSent` di `TodoListScreen`): la richiesta non è un to-do finché qualcuno non preme «Ci penso io», quindi restando nella lista non si vedrebbe niente e sembrerebbe non aver funzionato. La richiesta aperta sta nella scheda in cima alla Home.
-
+- **Dopo l'invio un avviso dice dove si vede lo stato** (iOS: `alert` in `TodoEditView`; Android: snackbar lungo in `TodoListScreen`, stringa `requests_sent_where`): la richiesta non è un to-do finché qualcuno non preme «Ci penso io», quindi nella lista non compare niente e sembrerebbe non aver funzionato. La richiesta aperta sta nella scheda in cima alla Home. Prima si tornava in Home di colpo (commit 34ab60b0 / e40ae90), sostituito dall'avviso.
 - **Pubblicato** su iOS (2.3.9), Android (2.4.5), web e server; confermato
   dall'utente il 21/10/2026.
 - **I link esterni di KidBox sono due**: `/join` (invito a una famiglia) e `/r`
