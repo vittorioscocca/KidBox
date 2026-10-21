@@ -28,7 +28,7 @@ struct TodoEditView: View {
     // Load todo if editing
     @Query private var editTodos: [KBTodoItem]
     
-    private var currentUID: String? { Auth.auth().currentUser?.uid }
+    private var currentUID: String? { KBUid.current }
     
     // Form state
     @State private var title = ""
@@ -490,7 +490,7 @@ struct TodoEditView: View {
     private func save() async {
         errorMessage = nil
         
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let now = Date()
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)

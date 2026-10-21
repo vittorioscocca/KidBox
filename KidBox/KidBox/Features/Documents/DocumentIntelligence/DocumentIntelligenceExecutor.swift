@@ -28,7 +28,7 @@ final class DocumentIntelligenceExecutor {
     ) {
         self.modelContext = modelContext
         self.familyId = familyId
-        self.uid = Auth.auth().currentUser?.uid ?? "local"
+        self.uid = KBUid.current ?? "local"
         self.documentId = documentId
         self.childIds = Set(children.map { $0.id })
         self.vehicleIds = Set(vehicles.map { $0.id })

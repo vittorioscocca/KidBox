@@ -85,7 +85,7 @@ struct DocumentDetailView: View {
                     entryPoint: origin
                 )
             }
-            if document.createdBy != Auth.auth().currentUser?.uid {
+            if document.createdBy != KBUid.current {
                 AppAnalytics.contentSharedRead(type: "documents")
             }
         }
@@ -94,7 +94,7 @@ struct DocumentDetailView: View {
                 selectedScope: $pickerScope,
                 selectedMemberIds: $pickerMemberIds,
                 members: members,
-                currentUid: Auth.auth().currentUser?.uid,
+                currentUid: KBUid.current,
                 scopeSectionTitle: "Chi può vedere questo documento?",
                 onConfirm: { scope, ids in
                     persistVisibility(scope: scope, memberIds: ids)
@@ -115,7 +115,7 @@ struct DocumentDetailView: View {
             ? ids.sorted()
             : []
 
-        let uid = Auth.auth().currentUser?.uid ?? document.updatedBy
+        let uid = KBUid.current ?? document.updatedBy
         if s == KBVisibilityScope.onlyCreator, document.createdBy.isEmpty {
             document.createdBy = uid
         }

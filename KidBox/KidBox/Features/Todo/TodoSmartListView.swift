@@ -48,7 +48,7 @@ struct TodoSmartListView: View {
     
     // MARK: - Filtro Swift per kind
     
-    private var currentUid: String? { Auth.auth().currentUser?.uid }
+    private var currentUid: String? { KBUid.current }
 
     private var filteredTodos: [KBTodoItem] {
         kindTodos.filter { $0.matchesSearch(searchText, members: members) }
@@ -56,7 +56,7 @@ struct TodoSmartListView: View {
 
     private var kindTodos: [KBTodoItem] {
         let visible = todos.filter { $0.isVisible(to: currentUid) }
-        let me = Auth.auth().currentUser?.uid ?? "local"
+        let me = KBUid.current ?? "local"
         let now = Date()
         let startOfDay = Calendar.current.startOfDay(for: now)
         let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay) ?? now
@@ -245,7 +245,7 @@ struct TodoSmartListView: View {
     
     @MainActor
     private func toggleDone(_ todo: KBTodoItem) async {
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let now = Date()
         
         todo.isDone.toggle()
@@ -271,7 +271,7 @@ struct TodoSmartListView: View {
     
     private func deleteAllCompleted() {
         Task { @MainActor in
-            let uid = Auth.auth().currentUser?.uid ?? "local"
+            let uid = KBUid.current ?? "local"
             let now = Date()
             
             for todo in filteredTodos {
@@ -295,7 +295,7 @@ struct TodoSmartListView: View {
     
     private func deleteTodos(offsets: IndexSet) {
         Task { @MainActor in
-            let uid = Auth.auth().currentUser?.uid ?? "local"
+            let uid = KBUid.current ?? "local"
             
             let now = Date()
 

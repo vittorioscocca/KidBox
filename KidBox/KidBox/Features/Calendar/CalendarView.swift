@@ -56,7 +56,7 @@ struct CalendarView: View {
     var highlightEventId: String? = nil
     
     private var events: [KBCalendarEvent] {
-        let uid = Auth.auth().currentUser?.uid
+        let uid = KBUid.current
         return allEvents.filter {
             $0.familyId == familyId && !$0.isDeleted && $0.isVisible(to: uid)
         }
@@ -65,7 +65,7 @@ struct CalendarView: View {
     /// Solo i to-do con una scadenza: gli altri vivono nel backlog «Da fare»
     /// e non hanno un giorno in cui disegnarli.
     private var reminders: [KBTodoItem] {
-        let uid = Auth.auth().currentUser?.uid
+        let uid = KBUid.current
         return allTodos.filter {
             $0.familyId == familyId && !$0.isDeleted && $0.dueAt != nil && $0.isVisible(to: uid)
         }
@@ -583,7 +583,7 @@ struct CalendarView: View {
     private static let pushEventWaitTimeout: UInt64 = 25_000_000_000
 
     private func deleteEvent(_ event: KBCalendarEvent) {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
+        guard let uid = KBUid.current else { return }
         let eventId = event.id
         let fid     = event.familyId
         if event.linkedHealthItemId != nil {
@@ -616,7 +616,7 @@ struct CalendarView: View {
 
     /// Spunta o despunta un promemoria dal calendario, senza aprirlo.
     private func toggleReminderDone(_ todo: KBTodoItem) {
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let done = !todo.isDone
         if done {
             // Un promemoria fatto non deve più suonare.
@@ -638,7 +638,7 @@ struct CalendarView: View {
     }
 
     private func deleteReminder(_ todo: KBTodoItem) {
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         TodoReminderService.cancel(todoId: todo.id)
         todo.reminderEnabled = false
         todo.reminderId = nil
@@ -1919,7 +1919,7 @@ struct CalendarEventFormView: View {
     private var isNewEvent: Bool { event == nil }
     
     private var currentUid: String? {
-        Auth.auth().currentUser?.uid
+        KBUid.current
     }
     
     private var canEditVisibility: Bool {
@@ -2373,7 +2373,7 @@ struct CalendarEventFormView: View {
     }
     
     private func save() {
-        let uid  = Auth.auth().currentUser?.uid ?? ""
+        let uid  = KBUid.current ?? ""
         let now  = Date()
         let mins = hasReminder ? reminderOptions[reminderIndex].minutes : nil
         // Urgente senza promemoria non vuol dire niente: non c'è niente da

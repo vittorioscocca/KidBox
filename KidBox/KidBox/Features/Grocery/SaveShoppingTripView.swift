@@ -111,7 +111,7 @@ struct SaveShoppingTripView: View {
         isSaving = true
         defer { isSaving = false }
 
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let now = Date()
         let store = storeName.trimmingCharacters(in: .whitespacesAndNewlines)
         let lines = purchasedItems.map {

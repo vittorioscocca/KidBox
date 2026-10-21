@@ -144,7 +144,7 @@ struct GroceryEditView: View {
         isSaving = true
         defer { isSaving = false }
         
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let now = Date()
         let trimmedCategory = category.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedNotes    = notes.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -45,7 +45,7 @@ enum FirstContentInvitePrompt {
     /// Chiave per utente, non per dispositivo: due account sullo stesso
     /// telefono sono due persone, e ciascuna ha diritto alla sua occasione.
     private static var doneKey: String {
-        doneKeyPrefix + (Auth.auth().currentUser?.uid ?? "anonymous")
+        doneKeyPrefix + (KBUid.current ?? "anonymous")
     }
 
     static var isDone: Bool {

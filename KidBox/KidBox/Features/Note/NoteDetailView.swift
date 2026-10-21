@@ -121,7 +121,7 @@ struct NoteDetailView: View {
                     entryPoint: origin
                 )
             }
-            if n.createdBy != Auth.auth().currentUser?.uid {
+            if n.createdBy != KBUid.current {
                 AppAnalytics.contentSharedRead(type: "notes")
             }
         }
@@ -223,7 +223,7 @@ struct NoteDetailView: View {
     }
 
     private var currentUid: String? {
-        Auth.auth().currentUser?.uid
+        KBUid.current
     }
 
     private var isNoteEmpty: Bool {
@@ -332,7 +332,7 @@ struct NoteDetailView: View {
     private func commitSave(bodyOverride: String? = nil) {
         guard isDirty else { return }
         let latestBody = bodyOverride ?? richTextStore.flushPendingHTML?() ?? bodyHTML
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
 
         // Nota nuova mai salvata: la riga in SwiftData nasce solo adesso, al
         // primo salvataggio reale (vedi `loadOrCreate`), non prima.

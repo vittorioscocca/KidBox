@@ -107,7 +107,7 @@ struct ExpenseDetailView: View {
         }
         .onAppear {
             loadData()
-            if let expense, expense.createdByUid != Auth.auth().currentUser?.uid {
+            if let expense, expense.createdByUid != KBUid.current {
                 AppAnalytics.contentSharedRead(type: "expenses")
             }
         }

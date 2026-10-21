@@ -69,7 +69,7 @@ struct FamilyRequestAskSheet: View {
             around: around,
             todos: todos,
             events: events,
-            currentUid: Auth.auth().currentUser?.uid
+            currentUid: KBUid.current
         )
     }
 
@@ -292,7 +292,7 @@ struct FamilyRequestsHomeSection: View {
             ForEach(requests) { request in
                 FamilyRequestCard(
                     request: request,
-                    names: FamilyRequestNames(members: members, me: Auth.auth().currentUser?.uid),
+                    names: FamilyRequestNames(members: members, me: KBUid.current),
                     open: {
                         coordinator.presentedFamilyRequest = FamilyRequestRef(familyId: familyId, requestId: request.id)
                     },
@@ -462,7 +462,7 @@ struct FamilyRequestDetailSheet: View {
     }
 
     private var names: FamilyRequestNames {
-        FamilyRequestNames(members: members, me: Auth.auth().currentUser?.uid)
+        FamilyRequestNames(members: members, me: KBUid.current)
     }
 
     var body: some View {

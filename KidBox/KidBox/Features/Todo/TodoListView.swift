@@ -74,7 +74,7 @@ struct TodoListView: View {
         allLists.first(where: { $0.id == listId })?.name ?? "Lista"
     }
     
-    private var currentUid: String? { Auth.auth().currentUser?.uid }
+    private var currentUid: String? { KBUid.current }
 
     private var visibleTodos: [KBTodoItem] {
         todos.filter {
@@ -379,7 +379,7 @@ struct TodoListView: View {
     
     @MainActor
     private func toggleDone(_ todo: KBTodoItem) async {
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let now = Date()
         
         let before = "isDone=\(todo.isDone) isDeleted=\(todo.isDeleted) syncState=\(todo.syncState.rawValue)"
@@ -419,7 +419,7 @@ struct TodoListView: View {
     
     private func deleteTodos(offsets: IndexSet) {
         Task { @MainActor in
-            let uid = Auth.auth().currentUser?.uid ?? "local"
+            let uid = KBUid.current ?? "local"
             let now = Date()
             
             KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] deleteTodos offsets=\(offsets) visibleCount=\(visibleTodos.count) listId=\(listId)")

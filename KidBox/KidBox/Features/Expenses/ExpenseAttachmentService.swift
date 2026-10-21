@@ -96,7 +96,7 @@ final class ExpenseAttachmentService {
         familyId: String,
         modelContext: ModelContext
     ) -> KBDocumentCategory {
-        let uid    = Auth.auth().currentUser?.uid ?? "local"
+        let uid    = KBUid.current ?? "local"
         let rootId = Self.speseRootId(familyId: familyId)
         let rid    = rootId   // copia locale per #Predicate
         
@@ -146,7 +146,7 @@ final class ExpenseAttachmentService {
         expenseTitle: String,
         modelContext: ModelContext
     ) -> KBDocumentCategory {
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         
         // ── 1. Root "Spese" — ID deterministico ─────────────────────────────
         let speseFolder = ensureExpensesRootFolder(familyId: familyId, modelContext: modelContext)
@@ -222,7 +222,7 @@ final class ExpenseAttachmentService {
         
         KBLog.storage.kbDebug("Loaded local file bytes=\(data.count) file=\(url.lastPathComponent)")
         
-        let uid         = Auth.auth().currentUser?.uid ?? "local"
+        let uid         = KBUid.current ?? "local"
         let now         = Date()
         let docId       = UUID().uuidString
         let originalFileName = url.lastPathComponent

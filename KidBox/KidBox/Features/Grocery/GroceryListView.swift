@@ -461,7 +461,7 @@ struct GroceryListView: View {
 
     private func delete(_ item: KBGroceryItem) {
         Task { @MainActor in
-            let uid = Auth.auth().currentUser?.uid ?? "local"
+            let uid = KBUid.current ?? "local"
             item.isDeleted = true
             item.updatedBy = uid
             item.updatedAt = Date()
@@ -477,7 +477,7 @@ struct GroceryListView: View {
     
     @MainActor
     private func togglePurchased(_ item: KBGroceryItem) async {
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let now = Date()
         
         item.isPurchased.toggle()
@@ -496,7 +496,7 @@ struct GroceryListView: View {
     
     private func deleteItems(offsets: IndexSet, from list: [KBGroceryItem]) {
         Task { @MainActor in
-            let uid = Auth.auth().currentUser?.uid ?? "local"
+            let uid = KBUid.current ?? "local"
             let now = Date()
             
             for i in offsets {
@@ -522,7 +522,7 @@ struct GroceryListView: View {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
         if lines.count > 1 {
-            let uid = Auth.auth().currentUser?.uid ?? "local"
+            let uid = KBUid.current ?? "local"
             let now = Date()
             let isFirstGroceryItem = ((try? modelContext.fetchCount(FetchDescriptor<KBGroceryItem>(predicate: #Predicate<KBGroceryItem> {
                 $0.familyId == familyId && $0.isDeleted == false
@@ -562,7 +562,7 @@ struct GroceryListView: View {
     
     private func deleteAllPurchased() {
         Task { @MainActor in
-            let uid = Auth.auth().currentUser?.uid ?? "local"
+            let uid = KBUid.current ?? "local"
             let now = Date()
             
             for item in purchased {

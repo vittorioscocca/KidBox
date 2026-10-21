@@ -682,7 +682,7 @@ struct HomeSummaryGrid: View {
 
     // MARK: - Etichette
 
-    private var currentUid: String? { Auth.auth().currentUser?.uid }
+    private var currentUid: String? { KBUid.current }
 
     /// "oggi 08:00", "domani 16:00", "ven 05/09".
     private static func dayLabel(_ date: Date, allDay: Bool) -> String {

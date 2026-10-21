@@ -68,7 +68,7 @@ struct TodoHomeView: View {
     private var familyId: String { activeFamily?.id ?? "" }
     private var childId: String { activeChild?.id ?? "" }
 
-    private var currentUid: String? { Auth.auth().currentUser?.uid }
+    private var currentUid: String? { KBUid.current }
     
     // I todo sono di FAMIGLIA, non di un figlio: qui non si filtra per childId.
     //
@@ -123,7 +123,7 @@ struct TodoHomeView: View {
     private var allCount: Int { visibleTodos.filter { !$0.isDone }.count }
     
     private var assignedToMeCount: Int {
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         return visibleTodos.filter { !$0.isDone && $0.assignedTo == uid }.count
     }
     
@@ -132,7 +132,7 @@ struct TodoHomeView: View {
     private var notCompletedCount: Int { visibleTodos.filter { !$0.isDone }.count }
     
     private var notAssignedToMeCount: Int {
-        let uid = Auth.auth().currentUser?.uid ?? ""
+        let uid = KBUid.current ?? ""
         return visibleTodos.filter { !$0.isDone && $0.assignedTo != uid }.count
     }
     
@@ -577,7 +577,7 @@ struct TodoHomeView: View {
                 familyId: familyId,
                 childId: childId,
                 name: name,
-                createdBy: Auth.auth().currentUser?.uid
+                createdBy: KBUid.current
             )
             modelContext.insert(list)
             listId = list.id
@@ -609,7 +609,7 @@ struct TodoHomeView: View {
         let listId = list.id
         let fid = familyId
         let cid = childId
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let now = Date()
         
         KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] deleteList START listId=\(listId) fid=\(fid) cid=\(cid)")

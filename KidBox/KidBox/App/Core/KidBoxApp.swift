@@ -38,6 +38,9 @@ struct KidBoxApp: App {
         KBLog.app.kbInfo("KidBoxApp init")
         let container = ModelContainerProvider.makeContainer(inMemory: false)
         self.modelContainer = container
+        #if DEBUG
+        KBDemoSeed.runIfRequested(container: container)
+        #endif
         _appDelegate.wrappedValue.modelContainer = container
         if ModelContainerProvider.didQuarantineCorruptedStoreThisLaunch {
             KBLog.sync.kbInfo("SwiftData store was quarantined — scheduling bootstrap + flushGlobal")

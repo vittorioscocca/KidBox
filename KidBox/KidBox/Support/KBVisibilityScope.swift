@@ -40,6 +40,11 @@ enum KBVisibilityScope {
         createdBy: String?,
         currentUid: String?
     ) -> Bool {
+        #if DEBUG
+        // Demo per gli screenshot (`-KBDemoSeed`): senza utente Firebase il
+        // contenuto della famiglia finta resterebbe tutto invisibile.
+        let currentUid = currentUid ?? (CommandLine.arguments.contains("-KBDemoSeed") ? KBDemoSeed.meUid : nil)
+        #endif
         guard let currentUid, !currentUid.isEmpty else { return false }
         let s = normalized(scope)
         switch s {

@@ -131,7 +131,7 @@ struct DocumentFolderView: View {
     
     /// Membri (escluso utente corrente) per `VisibilityPickerSheet`.
     private var selectableVisibilityMembers: [KBFamilyMember] {
-        let uid = Auth.auth().currentUser?.uid
+        let uid = KBUid.current
         return visibilityMembers.filter { $0.userId != uid }
     }
     
@@ -1231,7 +1231,7 @@ private extension DocumentFolderView {
                                 set: { view.viewModel.pendingUploadVisibilityMemberIds = $0 }
                             ),
                             members: view.selectableVisibilityMembers,
-                            currentUid: Auth.auth().currentUser?.uid,
+                            currentUid: KBUid.current,
                             isNewDocument: true,
                             scopeSectionTitle: "Chi può vedere questo documento"
                         ) {

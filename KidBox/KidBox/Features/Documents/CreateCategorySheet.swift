@@ -80,7 +80,7 @@ struct CreateCategorySheet: View {
             return
         }
         
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let now = Date()
         
         KBLog.data.kbInfo("CreateCategorySheet save started familyId=\(familyId) title=\(t)")

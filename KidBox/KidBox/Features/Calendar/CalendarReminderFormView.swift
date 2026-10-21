@@ -97,7 +97,7 @@ struct CalendarReminderFormView: View {
         )
     }
 
-    private var currentUid: String? { Auth.auth().currentUser?.uid }
+    private var currentUid: String? { KBUid.current }
     private var isNew: Bool { todo == nil }
 
     private var backgroundColor: Color {
@@ -407,7 +407,7 @@ struct CalendarReminderFormView: View {
     @MainActor
     private func save() async {
         errorMessage = nil
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let now = Date()
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)

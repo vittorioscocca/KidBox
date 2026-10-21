@@ -110,7 +110,7 @@ struct NotesHomeView: View {
     }
 
     private var currentUid: String? {
-        Auth.auth().currentUser?.uid
+        KBUid.current
     }
     
     init(familyId: String) {
@@ -156,7 +156,7 @@ struct NotesHomeView: View {
                 }
                 if let text = coordinator.pendingShareText {
                     coordinator.pendingShareText = nil
-                    let uid = Auth.auth().currentUser?.uid ?? "local"
+                    let uid = KBUid.current ?? "local"
                     let noteId = UUID().uuidString
                     let note = KBNote(
                         id: noteId, familyId: familyId,

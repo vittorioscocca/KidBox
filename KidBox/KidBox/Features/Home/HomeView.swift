@@ -90,7 +90,7 @@ struct HomeView: View {
     @Query(sort: \KBUserProfile.updatedAt, order: .reverse) private var profiles: [KBUserProfile]
     
     private var myProfile: KBUserProfile? {
-        guard let uid = Auth.auth().currentUser?.uid else { return nil }
+        guard let uid = KBUid.current else { return nil }
         return profiles.first(where: { $0.uid == uid })
     }
     
@@ -609,6 +609,14 @@ struct HomeView: View {
             // il task riparte, e svuotare farebbe sfarfallare la sezione.
             if openFamilyRequests.first?.familyId != activeFamilyId { openFamilyRequests = [] }
             guard !activeFamilyId.isEmpty else { return }
+            #if DEBUG
+            // Demo per gli screenshot: la richiesta aperta è inventata, il
+            // listener di Firestore non c'è senza utente.
+            if let demo = KBDemoSeed.demoRequest(familyId: activeFamilyId) {
+                openFamilyRequests = [demo]
+                return
+            }
+            #endif
             for await list in FamilyRequestService.observeOpen(familyId: activeFamilyId) {
                 withAnimation(.easeInOut(duration: 0.2)) { openFamilyRequests = list }
             }
@@ -679,7 +687,7 @@ struct HomeView: View {
     
     @MainActor
     private func bootstrapMyAvatarIfNeeded() async {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
+        guard let uid = KBUid.current else { return }
         if let avatarData = myProfile?.avatarData, !avatarData.isEmpty { return }
         
         let fid = effectiveFamilyIdForAvatar
@@ -1003,7 +1011,7 @@ private struct HomeCardGrid: View {
         PasswordsHomeBadgeAck.homeBadgeCount(
             entries: passwordEntries,
             familyId: familyId,
-            currentUid: Auth.auth().currentUser?.uid
+            currentUid: KBUid.current
         )
     }
     
@@ -1658,7 +1666,7 @@ private struct HomeCategoryList: View {
         PasswordsHomeBadgeAck.homeBadgeCount(
             entries: passwordEntries,
             familyId: familyId,
-            currentUid: Auth.auth().currentUser?.uid
+            currentUid: KBUid.current
         )
     }
 

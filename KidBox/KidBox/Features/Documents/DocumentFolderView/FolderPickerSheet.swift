@@ -86,7 +86,7 @@ struct FolderPickerSheet: View {
             allFolders = []
             return
         }
-        let viewerUid = Auth.auth().currentUser?.uid
+        let viewerUid = KBUid.current
         allFolders = cats.filter {
             DocumentFolderSubtreeVisibility.folderIsBrowsable(
                 folder: $0,

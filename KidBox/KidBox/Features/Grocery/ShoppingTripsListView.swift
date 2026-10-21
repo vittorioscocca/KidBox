@@ -136,7 +136,7 @@ struct ShoppingTripsListView: View {
         // Scontrino e spesa sono lo stesso fatto e si modificano insieme:
         // lasciare nei totali una spesa senza più il suo dettaglio, e non più
         // raggiungibile da nessuna schermata, sarebbe la sorpresa peggiore.
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         trip.isDeleted = true
         trip.updatedBy = uid
         trip.updatedAt = Date()

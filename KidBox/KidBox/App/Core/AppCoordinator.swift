@@ -398,6 +398,17 @@ final class AppCoordinator: ObservableObject {
     ///
     /// - Parameter modelContext: SwiftData context used for profile upsert and bootstrap.
     func startSessionListener(modelContext: ModelContext) {
+        #if DEBUG
+        // Demo per gli screenshot (`-KBDemoSeed`): nessun utente Firebase, la
+        // sessione è finta e il listener non parte, altrimenti la riporterebbe
+        // a «non autenticato».
+        if CommandLine.arguments.contains("-KBDemoSeed") {
+            isCheckingAuth = false
+            isAuthenticated = true
+            uid = KBDemoSeed.meUid
+            return
+        }
+        #endif
         guard authHandle == nil else {
             KBLog.auth.kbDebug("startSessionListener ignored (already started)")
             return

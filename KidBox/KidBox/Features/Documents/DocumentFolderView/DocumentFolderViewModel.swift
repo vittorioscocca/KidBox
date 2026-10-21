@@ -237,7 +237,7 @@ final class DocumentFolderViewModel: ObservableObject {
                     predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
                 ))
                 KBLog.data.kbDebug("DocumentFolderVM reload full-family fetch: allCats=\(allCats.count) allDocs=\(allDocs.count) ms=\(Int(Date().timeIntervalSince(t1)*1000)) folderId=\(folderId ?? "root")")
-                let viewerUid = Auth.auth().currentUser?.uid
+                let viewerUid = KBUid.current
                 folderList = folderList.filter {
                     DocumentFolderSubtreeVisibility.folderIsBrowsable(
                         folder: $0,
@@ -476,7 +476,7 @@ final class DocumentFolderViewModel: ObservableObject {
     /// Esegue lo spostamento del documento nella cartella destinazione (nil = root).
     func moveDocument(_ doc: KBDocument, toFolderId destId: String?) {
         guard let modelContext else { return }
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let now = Date()
         
         doc.categoryId = destId
@@ -534,7 +534,7 @@ final class DocumentFolderViewModel: ObservableObject {
     /// Crea una copia del documento nella cartella destinazione.
     func copyDocument(_ doc: KBDocument, toFolderId destId: String?) {
         guard let modelContext else { return }
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let now = Date()
         let newId = UUID().uuidString
         
@@ -618,7 +618,7 @@ final class DocumentFolderViewModel: ObservableObject {
     /// Esegue lo spostamento della cartella (cambia parentId).
     func moveFolder(_ folder: KBDocumentCategory, toFolderId destId: String?) {
         guard let modelContext else { return }
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let now = Date()
         
         folder.parentId = destId
@@ -666,7 +666,7 @@ final class DocumentFolderViewModel: ObservableObject {
     /// Copia la cartella (senza i suoi contenuti) nella destinazione.
     func copyFolder(_ folder: KBDocumentCategory, toFolderId destId: String?) {
         guard let modelContext else { return }
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let now = Date()
         let newId = UUID().uuidString
         let nextOrder = (folders.map(\.sortOrder).max() ?? 0) + 1
@@ -841,7 +841,7 @@ final class DocumentFolderViewModel: ObservableObject {
             let rawTitle = forcedTitle ?? fileURL.deletingPathExtension().lastPathComponent
             let title    = rawTitle.hasPrefix("share_") ? String(rawTitle.dropFirst("share_".count)) : rawTitle
 
-            let uid        = Auth.auth().currentUser?.uid ?? "local"
+            let uid        = KBUid.current ?? "local"
             let now        = Date()
             let documentId = UUID().uuidString
             let storagePath = "families/\(familyId)/documents/\(documentId)/\(uploadFileName).kbenc"
@@ -958,7 +958,7 @@ final class DocumentFolderViewModel: ObservableObject {
             let rawTitle = forcedTitle ?? url.deletingPathExtension().lastPathComponent
             let title    = rawTitle.hasPrefix("share_") ? String(rawTitle.dropFirst("share_".count)) : rawTitle
 
-            let uid        = Auth.auth().currentUser?.uid ?? "local"
+            let uid        = KBUid.current ?? "local"
             let now        = Date()
             let documentId = UUID().uuidString
             let storagePath = "families/\(familyId)/documents/\(documentId)/\(uploadFileName).kbenc"
@@ -1033,7 +1033,7 @@ final class DocumentFolderViewModel: ObservableObject {
             let mime = compressed.mimeType
             let size = Int64(uploadData.count)
             let title = url.deletingPathExtension().lastPathComponent
-            let uid = Auth.auth().currentUser?.uid ?? "local"
+            let uid = KBUid.current ?? "local"
             let now = Date()
             let documentId = UUID().uuidString
             let storagePath = "families/\(familyId)/documents/\(documentId)/\(fileName).kbenc"
@@ -1107,7 +1107,7 @@ final class DocumentFolderViewModel: ObservableObject {
     
     private func fetchDocs(modelContext: ModelContext) throws -> [KBDocument] {
         let fid = familyId
-        let currentUid = Auth.auth().currentUser?.uid
+        let currentUid = KBUid.current
         let raw: [KBDocument]
         if let pid = folderId {
             raw = try modelContext.fetch(FetchDescriptor<KBDocument>(
@@ -1132,7 +1132,7 @@ final class DocumentFolderViewModel: ObservableObject {
         let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return }
         
-        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let uid = KBUid.current ?? "local"
         let now = Date()
         let nextOrder = (folders.map(\.sortOrder).max() ?? 0) + 1
         let folder = KBDocumentCategory(
@@ -1163,7 +1163,7 @@ final class DocumentFolderViewModel: ObservableObject {
         let newName = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !newName.isEmpty else { return }
         folder.title = newName; folder.updatedAt = Date()
-        folder.updatedBy = Auth.auth().currentUser?.uid ?? "local"
+        folder.updatedBy = KBUid.current ?? "local"
         folder.syncState = .pendingUpsert; folder.lastSyncError = nil
         do {
             try modelContext.save()
@@ -1178,7 +1178,7 @@ final class DocumentFolderViewModel: ObservableObject {
         let newName = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !newName.isEmpty else { return }
         doc.title = newName; doc.updatedAt = Date()
-        doc.updatedBy = Auth.auth().currentUser?.uid ?? "local"
+        doc.updatedBy = KBUid.current ?? "local"
         doc.syncState = .pendingUpsert; doc.lastSyncError = nil
         do {
             try modelContext.save()
@@ -1261,7 +1261,7 @@ final class DocumentFolderViewModel: ObservableObject {
             predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false },
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
-        let uid = Auth.auth().currentUser?.uid
+        let uid = KBUid.current
         let visible = ((try? modelContext.fetch(descriptor)) ?? []).filteredToVisibleDocuments(currentUid: uid)
         return visible.filter { d in
             let isIdentity = d.notes?.hasPrefix(KBWalletDocumentKind.notesPrefix) == true
@@ -1275,7 +1275,7 @@ final class DocumentFolderViewModel: ObservableObject {
         errorText = nil
         KBLog.storage.kbInfo("DocVM open: id=\(doc.id) fileName=\(doc.fileName) localPath=\(doc.localPath ?? "nil") notes=\(doc.notes ?? "nil") storagePath=\(doc.storagePath)")
         Task { @MainActor in
-            let userId = Auth.auth().currentUser?.uid ?? "local"
+            let userId = KBUid.current ?? "local"
             let isPlain = DocumentCryptoService.storedKBDocumentPayloadIsPlaintext(notes: doc.notes, storagePath: doc.storagePath)
             KBLog.storage.kbInfo("DocVM open: isPlain=\(isPlain) docId=\(doc.id)")
             if !isPlain,
@@ -1387,7 +1387,7 @@ final class DocumentFolderViewModel: ObservableObject {
                 storagePath: doc.storagePath,
                 notes: doc.notes,
                 familyId: doc.familyId,
-                userId: Auth.auth().currentUser?.uid ?? "local"
+                userId: KBUid.current ?? "local"
             )
             KBLog.storage.kbInfo("DocVM downloadToLocal: decrypted bytes=\(finalData.count) docId=\(doc.id)")
             let previewTmp = try Self.writePreviewFile(finalData, doc: doc)

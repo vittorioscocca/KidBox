@@ -214,7 +214,7 @@ enum FamilyRequestService {
         familyName: String,
         inviterName: String
     ) async throws -> Created {
-        guard let uid = Auth.auth().currentUser?.uid else { throw Failure.notAuthenticated }
+        guard let uid = KBUid.current else { throw Failure.notAuthenticated }
         guard let expires = expiresAt(dueAt: dueAt, hasTime: dueHasTime) else { throw Failure.dueInPast }
 
         let requestId = UUID().uuidString

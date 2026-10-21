@@ -257,7 +257,7 @@ private struct KidBoxFolderPickerLevel: View {
             let allDocs = try modelContext.fetch(FetchDescriptor<KBDocument>(
                 predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
             ))
-            let viewerUid = Auth.auth().currentUser?.uid
+            let viewerUid = KBUid.current
             func filterBrowsable(_ raw: [KBDocumentCategory]) -> [KBDocumentCategory] {
                 raw.filter {
                     DocumentFolderSubtreeVisibility.folderIsBrowsable(
@@ -291,7 +291,7 @@ private struct KidBoxFolderPickerLevel: View {
             }
             
             // Documenti
-            let uid = Auth.auth().currentUser?.uid
+            let uid = KBUid.current
             if let pid {
                 docs = try modelContext.fetch(FetchDescriptor<KBDocument>(
                     predicate: #Predicate { $0.familyId == fid && $0.categoryId == pid && $0.isDeleted == false },
