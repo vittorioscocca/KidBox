@@ -80,3 +80,8 @@
 .md a {
   color: var(--accent2);
 }
+
+/* Link dell'assistente a una voce dell'app: si apre qui, non in una scheda nuova. */
+.md a.md-agent-link {
+  font-weight: 600;
+}

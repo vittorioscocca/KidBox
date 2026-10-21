@@ -23,6 +23,7 @@ import {
 } from "../services/travelItinerary";
 import { placeImageURL } from "../services/travelPlaceImage";
 import "./Viaggi.css";
+import { useOpenParam } from "../hooks/useOpenParam";
 
 /* ── Copertina ───────────────────────────────────────────────────────────── */
 
@@ -85,6 +86,8 @@ export default function Viaggi() {
   const [trips, setTrips] = useState([]);
   const [content, setContent] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
+  // Da un link dell'assistente: `?apri=<id>` apre la scheda.
+  useOpenParam((id) => trips.find((x) => x.id === id), (x) => setSelectedId(x.id));
   const [error, setError] = useState(null);
 
   useEffect(() => {

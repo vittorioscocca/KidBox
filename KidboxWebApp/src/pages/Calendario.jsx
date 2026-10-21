@@ -44,6 +44,7 @@ import {
   weekdayName,
 } from "../calendarUtils";
 import "./Calendario.css";
+import { useOpenParam } from "../hooks/useOpenParam";
 
 const VIEWS = ["day", "week", "month", "year"];
 /**
@@ -433,6 +434,18 @@ export default function Calendario() {
   const [addDate, setAddDate] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null);
   const [editingReminder, setEditingReminder] = useState(null);
+  // Da un link dell'assistente: `/calendario?apri=<id>` porta al giorno e apre l'evento.
+  useOpenParam(
+    (id) => events.find((e) => e.id === id),
+    (e) => {
+      const start = e.startDate?.toDate?.();
+      if (start) {
+        setAnchor(start);
+        setSelectedDate(start);
+      }
+      setEditingEvent(e);
+    }
+  );
   /** Quale delle due schede è aperta quando si crea qualcosa di nuovo. */
   const [newItemKind, setNewItemKind] = useState("event");
 

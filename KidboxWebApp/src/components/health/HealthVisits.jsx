@@ -5,7 +5,7 @@
  * prescrizioni, appunti, prossima visita) su un'unica pagina: in un browser la
  * navigazione a step non aggiunge niente, i campi sono gli stessi.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Modal from "../Modal";
 import {
   DOCTOR_SPECIALIZATIONS,
@@ -58,9 +58,18 @@ export default function HealthVisits({
   locale,
   onError,
   onBack,
+  openItemId = null,
+  onItemOpened,
 }) {
   const v = h.visits;
   const [selectedId, setSelectedId] = useState(null);
+  // Da un link dell'assistente (`Salute`): la voce si apre appena è nella lista.
+  useEffect(() => {
+    if (!openItemId || !visits.some((item) => item.id === openItemId)) return;
+    setSelectedId(openItemId);
+    onItemOpened?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openItemId, visits]);
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState(null);

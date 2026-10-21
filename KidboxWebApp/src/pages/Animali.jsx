@@ -19,6 +19,7 @@ import { petsFolderId } from "../services/pets";
 import PetModal from "../components/PetModal";
 import PetEventModal from "../components/PetEventModal";
 import "./Animali.css";
+import { useOpenParam } from "../hooks/useOpenParam";
 
 export default function Animali() {
   const { currentFamilyId } = useFamily();
@@ -33,6 +34,8 @@ export default function Animali() {
   const [error, setError] = useState(null);
 
   const [selectedId, setSelectedId] = useState(null);
+  // Da un link dell'assistente: `?apri=<id>` apre la scheda.
+  useOpenParam((id) => pets.find((x) => x.id === id), (x) => setSelectedId(x.id));
   const [editingPet, setEditingPet] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null);
   const [pendingTag, setPendingTag] = useState(null);

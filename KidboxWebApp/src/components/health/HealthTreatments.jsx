@@ -8,7 +8,7 @@
  * Il promemoria della cura resta una notifica locale del dispositivo: qui si
  * mostra il suo stato e lo si trasporta invariato, senza fingere di armarlo.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Modal from "../Modal";
 import {
   DOSAGE_UNITS,
@@ -60,10 +60,19 @@ export default function HealthTreatments({
   locale,
   onError,
   onBack,
+  openItemId = null,
+  onItemOpened,
 }) {
   const c = h.treatments;
   const [editing, setEditing] = useState(null);
   const [openId, setOpenId] = useState(null);
+  // Da un link dell'assistente (`Salute`): la voce si apre appena è nella lista.
+  useEffect(() => {
+    if (!openItemId || !treatments.some((item) => item.id === openItemId)) return;
+    setOpenId(openItemId);
+    onItemOpened?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openItemId, treatments]);
   const [showEnded, setShowEnded] = useState(false);
   const [period, setPeriod] = useState(emptyPeriod);
   const [search, setSearch] = useState("");

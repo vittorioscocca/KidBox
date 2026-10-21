@@ -178,6 +178,33 @@ export default function Salute() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subjectId]);
 
+  /**
+   * Da un link dell'assistente: `/salute?persona=<id>&modulo=visits&apri=<id>`.
+   * In due tempi, perché cambiare persona chiude il modulo (qui sopra): prima
+   * la persona, poi il modulo, poi il modulo apre la voce (`openItemId`).
+   * Va dopo l'azzeramento: nello stesso giro i due effetti girano in ordine.
+   */
+  const [pendingItem, setPendingItem] = useState(null);
+  useEffect(() => {
+    const id = searchParams.get("apri");
+    if (!id) return;
+    setPendingItem({ persona: searchParams.get("persona"), modulo: searchParams.get("modulo"), id });
+    const next = new URLSearchParams(searchParams);
+    next.delete("apri");
+    next.delete("persona");
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+  useEffect(() => {
+    if (!pendingItem) return;
+    if (pendingItem.persona && subjects.some((x) => x.id === pendingItem.persona) && pendingItem.persona !== subjectId) {
+      setSubjectId(pendingItem.persona);
+      return;
+    }
+    if (pendingItem.modulo && moduleKey !== pendingItem.modulo) openModuleKey(pendingItem.modulo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingItem, subjects, subjectId, moduleKey]);
+
   const active = useMemo(
     () => activeTreatmentsOf(treatments, doseLogs),
     [treatments, doseLogs]
@@ -208,6 +235,8 @@ export default function Salute() {
     locale,
     onError: (err) => setError(err?.message || String(err)),
     onBack: () => openModuleKey(null),
+    openItemId: pendingItem?.id ?? null,
+    onItemOpened: () => setPendingItem(null),
   };
 
   const modules = [

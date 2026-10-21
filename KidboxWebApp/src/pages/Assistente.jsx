@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useFamily } from "../FamilyContext";
 import { useAuth } from "../AuthContext";
 import { useTranslation } from "../i18n/LocaleContext";
@@ -23,7 +24,8 @@ import { loadSettings, setHealthContextSendPreference } from "../services/settin
 import { executeActions, processReply } from "../services/aiActions";
 import { extractAndStore } from "../services/aiMemory";
 import { loadFamilyKey } from "../services/familyKey";
-import { aiMessageSent } from "../services/analytics";
+import { aiLinkOpened, aiMessageSent } from "../services/analytics";
+import { agentLinkDestination, parseAgentLink } from "../services/agentLinks";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import MarkdownText from "../components/MarkdownText";
@@ -147,6 +149,37 @@ export default function Assistente({ variant = "page", onClose, focus = null, on
    * Salute (`aiPrefs.healthContextSendPreference`), e con «Chiedi ogni volta»
    * la domanda aspetta la scelta senza essere ancora salvata.
    */
+  /**
+   * Link dell'assistente a una voce (`agentLinks.js`): la voce si cerca nel
+   * quaderno dell'ultima domanda, o in uno letto adesso dopo un ricaricamento.
+   * Il pannello si chiude da sé cambiando pagina; sulla stessa pagina lo si chiude qui.
+   */
+  const navigate = useNavigate();
+  const lastSnapshot = useRef(null);
+  const openAgentLink = async (label, href) => {
+    const link = parseAgentLink(label, href);
+    if (!link || !currentFamilyId || !user) return;
+    try {
+      const snapshot =
+        lastSnapshot.current?.familyId === currentFamilyId
+          ? lastSnapshot.current
+          : await loadMemorySnapshot({
+              familyId: currentFamilyId,
+              userId: user.uid,
+              familyName: currentFamily?.name || "la famiglia",
+              members,
+              children,
+            });
+      lastSnapshot.current = snapshot;
+      const dest = agentLinkDestination(link, snapshot);
+      aiLinkOpened(link.kind, dest.found);
+      navigate(dest.url);
+      if (isPanel) onClose?.();
+    } catch (err) {
+      setError(err.message || String(err));
+    }
+  };
+
   const send = async (preset) => {
     const text = (preset ?? draft).trim();
     if (!text || sending || !currentFamilyId || !user) return;
@@ -162,6 +195,7 @@ export default function Assistente({ variant = "page", onClose, focus = null, on
         members,
         children,
       });
+      lastSnapshot.current = snapshot;
       const plan = planContext(snapshot, {
         question: text,
         focus,
@@ -567,7 +601,7 @@ export default function Assistente({ variant = "page", onClose, focus = null, on
                   <div className="ai-bubble">
                     {/* Come nella chat di Salute: la risposta arriva in
                         Markdown, la domanda è il testo digitato. */}
-                    {m.role === "assistant" ? <MarkdownText text={m.content} /> : m.content}
+                    {m.role === "assistant" ? <MarkdownText text={m.content} onAgentLink={openAgentLink} /> : m.content}
                   </div>
                   <span className="ai-time">{fmtWhen(m.createdAt)}</span>
                 </div>

@@ -169,6 +169,9 @@ export const contentSharedRead = (type) => log("content_shared_read", { content_
 export const aiPaywallShown = (context) => log("ai_paywall_shown", { context });
 export const aiMessageSent = (agentType, plan) =>
   log("ai_message_sent", { agent_type: agentType, plan });
+/** Clic su un link dell'assistente a una voce (`agentLinks.js`); `found` falso = aperta la sezione. */
+export const aiLinkOpened = (kind, found) =>
+  log("ai_link_opened", { kind, found: found ? "true" : "false" });
 export const aiBriefingReceived = () => log("ai_briefing_received");
 export const paywallShown = (triggerFeature, planShown) =>
   log("paywall_shown", { trigger_feature: triggerFeature, plan_shown: planShown });

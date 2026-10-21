@@ -26,6 +26,7 @@ import { listenHome } from "./homeItems";
 import { listenTripContent, listenTrips } from "./trips";
 import { listenWallet } from "./wallet";
 import { effectiveExpiry, listenWalletDocuments } from "./walletDocuments";
+import { AGENT_LINK_RULE } from "./agentLinks";
 import { expandEvents } from "../calendarUtils";
 import { isVisibleTo } from "../visibility";
 import { categoryFromId } from "../expenseCategories";
@@ -191,6 +192,7 @@ export async function loadMemorySnapshot({ familyId, userId, familyName, members
           notes.filter(visible).map(async (n) => {
             try {
               return {
+                id: n.id,
                 title: (await decryptString(n.titleEnc, familyKey)) || "",
                 body: noteHtmlToText(await decryptString(n.bodyEnc, familyKey)) || "",
                 updatedAt: toMillis(n.updatedAt) ?? 0,
@@ -961,6 +963,7 @@ export function agentRules(familyName, locale, now = new Date()) {
     "- Salute: linguaggio semplice, adatto a un genitore. Puoi spiegare referti, valori, cure, vaccini e visite; non fare diagnosi e non cambiare terapie: quando la questione è clinica, dopo aver risposto ricorda di sentire il medico.",
     "- Pianificazione: aiuta a trovare spazi liberi e a non dimenticare scadenze; quando proponi un evento o un to-do indica titolo, data/ora e chi se ne occupa.",
     "- Le password non sono nella tua memoria: se te le chiedono, rimanda alla sezione Password dell'app.",
+    AGENT_LINK_RULE,
     `- Date: oggi è ${day(now)}, domani è ${day(tomorrow)}. Prima di dire «domani», «dopodomani» o un giorno della settimana controlla la data scritta nelle schede: non contare a memoria.`,
     `- Rispondi in ${responseLanguageName(locale)}, con tono caldo e pratico, senza preamboli.`,
   ].join("\n");

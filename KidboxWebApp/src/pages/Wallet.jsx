@@ -32,6 +32,7 @@ import PaymentCardDetail from "../components/PaymentCardDetail";
 import CardPhotoSlots from "../components/CardPhotoSlots";
 import { deletePaymentCard, listenPaymentCards, savePaymentCard } from "../services/paymentCards";
 import "./Wallet.css";
+import { useOpenParam } from "../hooks/useOpenParam";
 
 export default function Wallet() {
   const { currentFamilyId } = useFamily();
@@ -54,6 +55,11 @@ export default function Wallet() {
   const [editingTicket, setEditingTicket] = useState(null);
   const [editingCard, setEditingCard] = useState(null);
   const [detail, setDetail] = useState(null); // { type: "ticket"|"card", id }
+  // Da un link dell'assistente: `/wallet?tipo=ticket|doc&apri=<id>`.
+  useOpenParam(
+    (id, params) => (params.get("tipo") === "doc" ? walletDocs : tickets).find((x) => x.id === id),
+    (x, params) => setDetail({ type: params.get("tipo") === "doc" ? "doc" : "ticket", id: x.id })
+  );
   const [toast, setToast] = useState(null);
 
   useEffect(() => {

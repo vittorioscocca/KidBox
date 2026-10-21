@@ -20,6 +20,7 @@ import { imagesToPdf, isConvertibleImage, mergePdfs, unlockPdf } from "../servic
 import DocumentViewer from "../components/DocumentViewer";
 import Modal from "../components/Modal";
 import "./Documenti.css";
+import { useOpenParam } from "../hooks/useOpenParam";
 
 /** Da una sola immagine si eredita il nome; da più si dice quante sono. */
 function defaultPdfNameFor(images) {
@@ -187,6 +188,24 @@ export default function Documenti() {
       setBusy(null);
     }
   };
+
+  // Da un link dell'assistente: `/documenti?apri=<id>` entra nella cartella
+  // del documento (e in quelle che la contengono) e lo apre.
+  useOpenParam(
+    (id) => documents.find((d) => d.id === id),
+    (d) => {
+      const chain = [];
+      let folderId = d.categoryId ?? null;
+      while (folderId && chain.length < 12) {
+        const folder = folders.find((f) => f.id === folderId);
+        if (!folder) break;
+        chain.unshift(folder);
+        folderId = folder.parentId ?? null;
+      }
+      setPath(chain);
+      openDocument(d);
+    }
+  );
 
   const downloadDocument = async (docData) => {
     setBusy(t.documents.loading);

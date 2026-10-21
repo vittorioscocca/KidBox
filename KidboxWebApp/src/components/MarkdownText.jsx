@@ -17,6 +17,7 @@
  * cancelletto.
  */
 import "./MarkdownText.css";
+import { isAgentHref } from "../services/agentLinks";
 
 const ORDERED = /^(\d+)\.\s+/;
 const BULLET = /^[-*]\s+/;
@@ -91,7 +92,7 @@ function parseBlocks(source) {
 /** `**grassetto**`, `*corsivo*`, `` `codice` ``, `[testo](url)`. */
 const INLINE = /(\*\*[^*]+\*\*|__[^_]+__|\*[^*\n]+\*|_[^_\n]+_|`[^`]+`|\[[^\]]+\]\([^)\s]+\))/g;
 
-function renderInline(text) {
+function renderInline(text, onAgentLink) {
   const out = [];
   let last = 0;
   let match;
@@ -111,6 +112,29 @@ function renderInline(text) {
       // diventare un link cliccabile. Quello che si scarta resta a video com'era
       // scritto — riscriverlo col solo testo perderebbe pezzi, per esempio le
       // parentesi dentro l'indirizzo.
+      // `apri:` = link dell'assistente a una voce dell'app (`agentLinks.js`):
+      // lo apre chi ha passato `onAgentLink`, altrimenti resta il solo titolo.
+      if (isAgentHref(href)) {
+        out.push(
+          onAgentLink ? (
+            <a
+              key={key}
+              href="#"
+              className="md-agent-link"
+              onClick={(ev) => {
+                ev.preventDefault();
+                onAgentLink(label, href);
+              }}
+            >
+              {label}
+            </a>
+          ) : (
+            label
+          )
+        );
+        last = match.index + token.length;
+        continue;
+      }
       out.push(
         /^https?:\/\//i.test(href) ? (
           <a key={key} href={href} target="_blank" rel="noreferrer noopener">
@@ -129,7 +153,7 @@ function renderInline(text) {
   return out;
 }
 
-export default function MarkdownText({ text }) {
+export default function MarkdownText({ text, onAgentLink }) {
   const blocks = parseBlocks(text);
   return (
     <div className="md">
@@ -139,7 +163,7 @@ export default function MarkdownText({ text }) {
             const Tag = `h${Math.min(block.level + 2, 6)}`;
             return (
               <Tag key={i} className={`md-h md-h${block.level}`}>
-                {renderInline(block.text)}
+                {renderInline(block.text, onAgentLink)}
               </Tag>
             );
           }
@@ -147,13 +171,13 @@ export default function MarkdownText({ text }) {
             return block.ordered ? (
               <ol key={i} className="md-list">
                 {block.items.map((item, j) => (
-                  <li key={j}>{renderInline(item)}</li>
+                  <li key={j}>{renderInline(item, onAgentLink)}</li>
                 ))}
               </ol>
             ) : (
               <ul key={i} className="md-list">
                 {block.items.map((item, j) => (
-                  <li key={j}>{renderInline(item)}</li>
+                  <li key={j}>{renderInline(item, onAgentLink)}</li>
                 ))}
               </ul>
             );
@@ -166,7 +190,7 @@ export default function MarkdownText({ text }) {
           default:
             return (
               <p key={i} className="md-p">
-                {renderInline(block.text)}
+                {renderInline(block.text, onAgentLink)}
               </p>
             );
         }

@@ -21,6 +21,7 @@ import { useFamilyMembers } from "../hooks/useFamilyMembers";
 import RichTextEditor from "../components/RichTextEditor";
 import VisibilityPickerModal, { visibilityChipLabel } from "../components/VisibilityPickerModal";
 import "./Note.css";
+import { useOpenParam } from "../hooks/useOpenParam";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -61,6 +62,8 @@ export default function Note() {
   const [rawNotes, setRawNotes] = useState([]);
   const [notes, setNotes] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  // Da un link dell'assistente: `/note?apri=<id>` apre la nota.
+  useOpenParam((id) => rawNotes.find((n) => n.id === id), (n) => setSelectedId(n.id));
   const [search, setSearch] = useState("");
   const [error, setError] = useState(null);
 

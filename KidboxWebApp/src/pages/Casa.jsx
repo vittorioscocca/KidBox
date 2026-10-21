@@ -21,6 +21,7 @@ import { formatAmount } from "../expenseCategories";
 import HomeItemModal from "../components/HomeItemModal";
 import HousePaymentModal from "../components/HousePaymentModal";
 import "./Casa.css";
+import { useOpenParam } from "../hooks/useOpenParam";
 
 export default function Casa() {
   const { currentFamilyId } = useFamily();
@@ -35,6 +36,11 @@ export default function Casa() {
   const [error, setError] = useState(null);
 
   const [selected, setSelected] = useState(null); // { type: "item"|"payment", id }
+  // Da un link dell'assistente: `/casa?tipo=item|payment&apri=<id>`.
+  useOpenParam(
+    (id, params) => (params.get("tipo") === "payment" ? payments : items).find((x) => x.id === id),
+    (x, params) => setSelected({ type: params.get("tipo") === "payment" ? "payment" : "item", id: x.id })
+  );
   const [editingItem, setEditingItem] = useState(null);
   const [editingPayment, setEditingPayment] = useState(null);
   const [pendingTag, setPendingTag] = useState(null);

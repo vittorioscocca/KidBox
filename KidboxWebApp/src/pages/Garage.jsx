@@ -20,6 +20,7 @@ import { formatAmount } from "../expenseCategories";
 import VehicleModal from "../components/VehicleModal";
 import VehicleEventModal from "../components/VehicleEventModal";
 import "./Garage.css";
+import { useOpenParam } from "../hooks/useOpenParam";
 
 export default function Garage() {
   const { currentFamilyId } = useFamily();
@@ -34,6 +35,8 @@ export default function Garage() {
   const [error, setError] = useState(null);
 
   const [selectedId, setSelectedId] = useState(null);
+  // Da un link dell'assistente: `?apri=<id>` apre la scheda.
+  useOpenParam((id) => vehicles.find((x) => x.id === id), (x) => setSelectedId(x.id));
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null);
   const [pendingTag, setPendingTag] = useState(null);

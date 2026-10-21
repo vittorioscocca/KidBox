@@ -4,7 +4,7 @@
  * L'ordinamento è dal più recente al meno recente (scadenza, altrimenti
  * creazione), lo stesso di visite, cure e vaccini.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Modal from "../Modal";
 import {
   EXAM_STATUSES,
@@ -50,10 +50,19 @@ export default function HealthExams({
   locale,
   onError,
   onBack,
+  openItemId = null,
+  onItemOpened,
 }) {
   const x = h.exams;
   const [editing, setEditing] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
+  // Da un link dell'assistente (`Salute`): la voce si apre appena è nella lista.
+  useEffect(() => {
+    if (!openItemId || !exams.some((item) => item.id === openItemId)) return;
+    setSelectedId(openItemId);
+    onItemOpened?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openItemId, exams]);
   const [statusFilter, setStatusFilter] = useState(null);
   const [search, setSearch] = useState("");
   const [period, setPeriod] = useState(emptyPeriod);

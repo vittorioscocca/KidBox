@@ -24,6 +24,7 @@ import {
 } from "../expenseCategories";
 import Modal from "../components/Modal";
 import "./Spese.css";
+import { useOpenParam } from "../hooks/useOpenParam";
 
 function expensesCol(familyId) {
   return collection(db, "families", familyId, "expenses");
@@ -49,6 +50,8 @@ export default function Spese() {
   const [categoryFilter, setCategoryFilter] = useState(null);
   const [editing, setEditing] = useState(null);
   const [creating, setCreating] = useState(false);
+  // Da un link dell'assistente: `/spese?apri=<id>` apre la spesa.
+  useOpenParam((id) => expenses.find((e) => e.id === id), (e) => setEditing(e));
 
   useEffect(() => {
     if (!currentFamilyId) return undefined;

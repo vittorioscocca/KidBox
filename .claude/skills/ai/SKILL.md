@@ -156,8 +156,8 @@ Tipi: `grocery_add`, `todo_add`, `event_add`, `note_add`, `health_reminder`,
 `request_add` (richieste di famiglia, vedi `/richieste`). **Non esiste
 `expense_add`**: le spese le propone Document Intelligence.
 
-**Link alle voci (`AgentLinks.swift` / `AgentLinks.kt`, dal 21/10/2026, solo
-iOS e Android).** Non è un'azione: è markdown nel testo,
+**Link alle voci (`AgentLinks.swift` / `AgentLinks.kt` / `agentLinks.js`, dal
+21/10/2026, sulle tre piattaforme).** Non è un'azione: è markdown nel testo,
 `[titolo esatto](apri:TIPO)` o `(apri:TIPO/AAAA-MM-GG)` se due voci si chiamano
 uguale. Il modello **non vede id** (token a ogni domanda, e li inventerebbe):
 al tocco la voce si cerca per titolo nello snapshot del quaderno (uguale →
@@ -165,8 +165,10 @@ contenuto → più di metà delle parole, poi la data, poi la più recente); se 
 c'è più si apre la sezione con un avviso. La regola sta nelle regole stabili
 (`PROMPT_RULE`, stesso testo sulle due app); il testo salvato resta con
 `apri:`, quindi il formato non si può cambiare senza rompere i link già nelle
-conversazioni. Sul web la regola manca: lì un `apri:` sarebbe un link rotto,
-quindi va portata con un resolver suo. Evento GA4 `ai_link_opened`
+conversazioni. Sul web il link diventa un indirizzo con `?apri=<id>`
+(Salute: `persona`, `modulo`, `apri`; Casa e Wallet: anche `tipo`) che la
+pagina legge con `useOpenParam`: una pagina nuova che deve aprirsi da un link
+li deve leggere, altrimenti si apre la sezione e basta. Evento GA4 `ai_link_opened`
 (`kind`, `found`). Provata su Haiku il 21/10: titoli esatti, data aggiunta solo
 con i doppioni, nessun link per una voce che non c'è.
 
