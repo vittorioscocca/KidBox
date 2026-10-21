@@ -175,6 +175,7 @@ struct AgentChatSheet: View {
     var body: some View {
         ModalNavContainer {
             PlanningAIChatView(focus: focus)
+                .environment(\.agentSheetDismiss, { dismiss() })
                 .toolbar {
                     #if !targetEnvironment(macCatalyst)
                     ToolbarItem(placement: .cancellationAction) {
@@ -187,6 +188,18 @@ struct AgentChatSheet: View {
     }
 }
 
+/// Chi presenta l'assistente in un foglio lo chiude prima di aprire un link.
+private struct AgentSheetDismissKey: EnvironmentKey {
+    static let defaultValue: (() -> Void)? = nil
+}
+
+extension EnvironmentValues {
+    var agentSheetDismiss: (() -> Void)? {
+        get { self[AgentSheetDismissKey.self] }
+        set { self[AgentSheetDismissKey.self] = newValue }
+    }
+}
+
 // MARK: - Inner view (riceve il ViewModel già costruito)
 
 private struct PlanningAIChatInnerView: View {
@@ -195,6 +208,7 @@ private struct PlanningAIChatInnerView: View {
     @Environment(\.colorScheme)  private var colorScheme
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var coordinator: AppCoordinator
+    @Environment(\.agentSheetDismiss) private var agentSheetDismiss
     
     let familyId: String
 
@@ -302,7 +316,7 @@ private struct PlanningAIChatInnerView: View {
                         messageRow: { message, isStreaming, onTick in
                             VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 6) {
                                 AIChatBubbleView(
-                                    text: message.content,
+                                    text: message.role == .assistant ? AgentLinks.prepare(message.content) : message.content,
                                     isUser: message.role == .user,
                                     date: message.createdAt,
                                     streamReveal: isStreaming && message.role == .assistant,
@@ -316,6 +330,11 @@ private struct PlanningAIChatInnerView: View {
                         }
                     )
                     .scrollDismissesKeyboard(.interactively)
+                    .environment(\.openURL, OpenURLAction { url in
+                        guard let link = AgentLinks.parse(url) else { return .systemAction }
+                        openAgentLink(link)
+                        return .handled
+                    })
                     .onTapGesture {
                         UIApplication.shared.sendAction(
                             #selector(UIResponder.resignFirstResponder),
@@ -712,6 +731,34 @@ private struct PlanningAIChatInnerView: View {
         }
     }
     
+    // MARK: - Link alle voci dell'app
+
+    /// Un link dell'assistente: la voce si cerca nel quaderno e le sue
+    /// schermate si impilano sopra la chat. Dal foglio di Salute il foglio si
+    /// chiude prima, o la navigazione resterebbe sotto.
+    private func openAgentLink(_ link: AgentLinks.Link) {
+        let snap = vm.snapshot ?? AgentMemorySnapshot.load(familyId: familyId, familyName: "", modelContext: modelContext)
+        let dest = AgentLinks.destination(for: link, in: snap)
+        AppAnalytics.aiLinkOpened(kind: link.kind.rawValue, found: dest.found)
+        if !dest.found {
+            actionResultIsError = true
+            actionResultMessage = String(localized: "Non trovo più «\(link.title)»: ti apro la sezione.")
+        }
+        let go = {
+            for route in dest.routes { coordinator.navigate(to: route) }
+            if let docId = dest.documentId { coordinator.pendingOpenDocumentId = docId }
+        }
+        if let closeSheet = agentSheetDismiss {
+            closeSheet()
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(400))
+                go()
+            }
+        } else {
+            go()
+        }
+    }
+
     // MARK: - Action cards inline
     
     @ViewBuilder

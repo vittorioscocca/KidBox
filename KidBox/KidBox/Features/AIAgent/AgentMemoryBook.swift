@@ -140,6 +140,8 @@ struct AgentMemorySnapshot {
     let chat: [KBChatMessage]
     let documents: [KBDocument]
     let documentCategoryNames: [String: String]
+    /// Cartella madre di ogni cartella: serve ai link dell'assistente (`AgentLinks`).
+    let documentCategoryParents: [String: String?]
     let walletTickets: [KBWalletTicket]
     let loyaltyCards: [KBLoyaltyCard]
     let pets: [KBPet]
@@ -220,6 +222,7 @@ struct AgentMemorySnapshot {
                 .filter { !$0.isDeleted && $0.isVisibleToCurrentUser(currentUid: uid) }
                 .sorted { $0.updatedAt > $1.updatedAt },
             documentCategoryNames: Dictionary(documentCategories.map { ($0.id, $0.title) }, uniquingKeysWith: { first, _ in first }),
+            documentCategoryParents: Dictionary(documentCategories.map { ($0.id, $0.parentId) }, uniquingKeysWith: { first, _ in first }),
             walletTickets: fetch(FetchDescriptor<KBWalletTicket>(predicate: #Predicate { $0.familyId == fid }))
                 .filter { !$0.isDeleted && $0.isVisible(to: uid) },
             loyaltyCards: fetch(FetchDescriptor<KBLoyaltyCard>(predicate: #Predicate { $0.familyId == fid }))
@@ -1276,6 +1279,7 @@ enum AgentPrompt {
         - Pianificazione: aiuta a trovare spazi liberi e a non dimenticare scadenze; quando proponi un evento o un to-do \
         indica titolo, data/ora e chi se ne occupa.
         - Le password non sono nella tua memoria: se te le chiedono, rimanda alla sezione Password dell'app.
+        \(AgentLinks.promptRule)
         - Date: oggi è \(promptDay(now)), domani è \(promptDay(tomorrow)). Prima di dire «domani», «dopodomani» o un giorno \
         della settimana controlla la data scritta nelle schede: non contare a memoria.
         - Rispondi in \(MealPlanPromptBuilder.responseLanguageName()), con tono caldo e pratico, senza preamboli.

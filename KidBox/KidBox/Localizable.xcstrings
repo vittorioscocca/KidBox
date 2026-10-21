@@ -115,6 +115,28 @@
         }
       }
     },
+    "Non trovo più «%@»: ti apro la sezione." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can't find «%@» anymore: opening the section."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya no encuentro «%@»: abro la sección."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je ne trouve plus « %@ » : j'ouvre la section."
+          }
+        }
+      }
+    },
     "Puoi correggere i km a mano, ad esempio se le scarpe sono già state usate: le corse nuove si sommano a questo valore." : {
       "localizations" : {
         "en" : {

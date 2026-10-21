@@ -148,6 +148,15 @@ né cambi di terapia, il medico per le questioni cliniche. Pianificazione:
 titolo, data/ora e chi. Lingua: quella dell'app. Seguono intestazione date e
 blocco azioni (`KIDBOX_ACTIONS`) come prima.
 
+Link alle voci (iOS e Android dal 21/10/2026, `AgentLinks`): una voce citata o
+cercata va scritta `[titolo esatto](apri:TIPO)` (spese, documento, nota,
+evento, todo, listaspesa, visita, esame, cura, biglietto, casa, veicolo,
+animale, viaggio), con `/AAAA-MM-GG` se più voci hanno lo stesso titolo. Al
+tocco il client cerca la voce per titolo nello snapshot e impila le sue
+schermate sopra la chat (dal foglio di Salute il foglio si chiude prima); un
+allegato si apre dove vive (visita, casa, veicolo…), un documento d'identità
+nel Wallet. Nessun id nel prompt. Il web non ha ancora la regola.
+
 ## Dove vive il codice
 
 | | Quaderno | Chat |

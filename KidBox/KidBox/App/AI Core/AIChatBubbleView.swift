@@ -303,7 +303,14 @@ struct AIChatBubbleView: View {
         let ch = text[i]
         if ch == "\n" { return 1 }
         if ch == " " { return 2 }
-        return min(4, text.count - index)
+        // L'indirizzo di un link si salta in un colpo: a metà comparirebbe
+        // grezzo, `](kidbox-agent://open?k=…`, finché non si chiude la parentesi.
+        let step = min(4, text.count - index)
+        let window = text[i..<text.index(i, offsetBy: min(step + 1, text.count - index))]
+        if let open = window.range(of: "](")?.lowerBound, let close = text[open...].firstIndex(of: ")") {
+            return text.distance(from: i, to: close) + 1
+        }
+        return step
     }
 
     private var bubbleBackground: Color {

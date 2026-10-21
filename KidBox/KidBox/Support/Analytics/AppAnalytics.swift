@@ -181,6 +181,15 @@ enum AppAnalytics {
         ])
     }
 
+    /// Tocco su un link dell'assistente a una voce dell'app (`AgentLinks`).
+    /// `found` falso = la voce non c'era più e si è aperta la sezione.
+    static func aiLinkOpened(kind: String, found: Bool) {
+        Analytics.logEvent("ai_link_opened", parameters: [
+            "kind": kind,
+            "found": found ? "true" : "false"
+        ])
+    }
+
     static func aiBriefingReceived() {
         Analytics.logEvent("ai_briefing_received", parameters: nil)
     }
