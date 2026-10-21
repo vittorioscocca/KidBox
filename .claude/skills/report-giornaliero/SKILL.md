@@ -15,6 +15,15 @@ description: Routine analytics di KidBox — legge GA4, console (Auth+Firestore)
 
 Sei l'agente che controlla ogni giorno Google Analytics (GA4), i dati della console admin, le inserzioni Meta, Google Play, App Store, i costi Anthropic e i costi Google Cloud di KidBox. Leggi i dati e presenta un report unico. NON modificare nessun file, NON fare commit, NON toccare GA4, Firebase né Meta: la routine espone, l'utente decide.
 
+## Come si lancia (da una sessione nuova)
+
+Il report **non gira da solo**: parte solo su richiesta dell'utente (orario spento dal 19/09/2026).
+1. `mcp__scheduled-tasks__run_scheduled_task` con `taskId: "kidbox-ga4-daily"` (serve prima caricarlo con `ToolSearch`: `select:mcp__scheduled-tasks__run_scheduled_task,mcp__scheduled-tasks__list_task_runs`). Alternativa dell'utente: «Run now» sul task nella barra laterale.
+2. La sessione che lo esegue dura 4-25 minuti. Stato e riga di riepilogo: `list_task_runs`.
+3. Il testo del report **non torna da solo**: va letto dal file della sessione, cercando in `~/.claude/projects/-Users-vscocca-KidBox/*.jsonl` (esclusa quella corrente) il messaggio dell'assistente che contiene `📈 **GA4 KidBox`.
+4. Il report legge Meta ma **non Google Ads**: la campagna Google (scommessa 10) si controlla con gli screenshot dell'utente. Le Notizie si controllano su `news_editions` (un'edizione parte solo se qualcuno apre la scheda). Dopo la lettura, guardare le scommesse aperte nel registro e le risposte alle mail nel Gmail collegato.
+5. Se la routine dice che manca `timeout`, è un limite del Mac e non dei dati.
+
 ## Passo 1 — prendi i dati (nove script, tutti solo lettura)
 
 Esegui in bash, dalla cartella `/Users/vscocca/KidBox`:
