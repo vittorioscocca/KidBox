@@ -5,6 +5,7 @@
  *
  *   node scripts/asc-screenshots.js --version 2.4.2 [--platform IOS] \
  *        [--display APP_IPHONE_67] [--dir <cartella>] [--only it,en] [--apply]
+ *        [--replace 02-chiuso.png]
  *
  * Senza --apply mostra, per ogni lingua, i set presenti e le immagini che ci
  * sono dentro, e non tocca nulla. Con --apply SOSTITUISCE le immagini del set
@@ -12,6 +13,10 @@
  * Si può scrivere solo su una versione in PREPARE_FOR_SUBMISSION,
  * WAITING_FOR_REVIEW o simili. Le immagini della versione in vendita non si
  * toccano: se serve tornare indietro, si rimettono quelle.
+ *
+ * Con --replace <file> tocca una sola immagine per lingua: cancella quella col
+ * nome dato e carica il file omonimo della cartella, allo stesso posto. Le
+ * altre del set restano come sono.
  *
  * Autenticazione come asc-whatsnew.js (chiave .p8 nel Portachiavi).
  */
@@ -35,6 +40,7 @@ const DIR = arg("dir", "internal/store-listings/screenshots/final");
 const DISPLAY = arg("display", "APP_IPHONE_67");
 const APPLY = process.argv.includes("--apply");
 const ONLY = arg("only") ? arg("only").split(",") : null; // es. --only it
+const REPLACE = arg("replace"); // es. --replace 02-chiuso.png
 if (!VERSION) {
   console.error("Uso: --version X.Y.Z [--platform IOS] [--dir <cartella>] [--display APP_IPHONE_67] [--apply]");
   process.exit(2);
@@ -167,7 +173,9 @@ async function waitComplete(tok, ids) {
     if (ONLY && !ONLY.includes(dirName)) continue;
     const folder = path.join(DIR, dirName);
     if (!fs.existsSync(folder)) { console.log(`\n── ${locale}: cartella ${folder} assente, salto`); continue; }
-    const files = fs.readdirSync(folder).filter((f) => f.endsWith(".png")).sort().map((f) => path.join(folder, f));
+    const files = REPLACE
+      ? [path.join(folder, REPLACE)].filter((f) => fs.existsSync(f))
+      : fs.readdirSync(folder).filter((f) => f.endsWith(".png")).sort().map((f) => path.join(folder, f));
     const loc = byLocale[locale];
     console.log(`\n── ${locale}: ${files.length} file da caricare`);
     if (!loc) { console.log("   localizzazione assente sulla versione: salto"); continue; }
@@ -183,6 +191,20 @@ async function waitComplete(tok, ids) {
       console.log(`   nel set ${DISPLAY}: ${old.length} immagini (${old.map((s) => s.attributes.fileName).join(", ")})`);
     } else {
       console.log(`   il set ${DISPLAY} non esiste: verrà creato`);
+    }
+    if (REPLACE) {
+      const target = old.find((s) => s.attributes.fileName === REPLACE);
+      console.log(target ? `   da sostituire: ${REPLACE} (posizione ${old.indexOf(target) + 1})` : `   ${REPLACE} non c'è nel set: verrà aggiunta in fondo`);
+      if (!APPLY || !set || files.length === 0) continue;
+      const id = await upload(tok, set.id, files[0]);
+      await waitComplete(tok, [id]);
+      if (target) await call(tok, "DELETE", `/appScreenshots/${target.id}`);
+      const order = target ? old.map((s) => (s.id === target.id ? id : s.id)) : [...old.map((s) => s.id), id];
+      await call(tok, "PATCH", `/appScreenshotSets/${set.id}/relationships/appScreenshots`, {
+        data: order.map((x) => ({ type: "appScreenshots", id: x })),
+      });
+      console.log(`   sostituita ${REPLACE} ✔`);
+      continue;
     }
     if (!APPLY) continue;
 

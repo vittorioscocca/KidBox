@@ -13,6 +13,8 @@
 //  `-KBDemoReset` cancella prima i dati locali della demo e li rifà.
 //  `-KBDemoSection <sezione>` parte su quella voce della barra laterale
 //  (`SidebarSection.rawValue`: calendar, todo, expenses, assistant…).
+//  `-KBDemoPush` con `-KBDemoSection`: apre la sezione sopra la Home, per la
+//  barra in basso (Duo chiuso).
 //  `-KBDemoLandscape` mette l'interfaccia in orizzontale (iPad, iPhone Duo
 //  aperto): senza Simulator.app il simulatore non si gira.
 //  Non esiste in Release: tutto sta dentro `#if DEBUG`.

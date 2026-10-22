@@ -450,6 +450,12 @@ final class AppCoordinator: ObservableObject {
             if let i = args.firstIndex(of: "-KBDemoSection"), args.indices.contains(i + 1),
                let section = SidebarSection(rawValue: args[i + 1]) {
                 sidebarSection = section
+                // `-KBDemoPush`: con la barra in basso (Duo chiuso) la sezione
+                // si apre sopra la Home. Con la barra laterale no: la
+                // ripeterebbe sopra sé stessa.
+                if section != .dashboard, args.contains("-KBDemoPush") {
+                    path = [section.route(familyId: KBDemoSeed.familyId)]
+                }
             }
             return
         }
