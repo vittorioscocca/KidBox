@@ -68,17 +68,19 @@ def text(img, lang, x, y_mid, max_w, t_size, s_size, gap):
         y += lh2
 
 
-# Nei risultati di ricerca l'App Store mostra solo una fascia larga 3:1 al
-# centro (5244×~1750, y da ~600 a ~2350): testo e dispositivi stanno dentro,
-# con margine. Visto il 22/10/2026: alla prima versione tagliava sottotitolo e
-# fondo dei Duo.
-SEARCH_BAND = 1400
+# Nei risultati di ricerca l'App Store mostra solo una fascia larga 3:1, e
+# non è centrata: parte dall'alto (y ~0–1740 su 2950). Visto il 22/10/2026 in
+# due tentativi: centrando nella fascia di mezzo tagliava ancora sottotitolo e
+# fondo dei Duo. Tutto sta fra ~650 e ~1700, dentro sia la fascia alta sia
+# quella centrale.
+SEARCH_MID = 1175
+SEARCH_BAND = 960
 
 
 def make(lang):
     img = header.background()
-    place(img, lang, 2700, 4900, H // 2, SEARCH_BAND, 50, 40)
-    text(img, lang, 500, H // 2, 2000, 270, 100, 90)
+    place(img, lang, 2750, 4850, SEARCH_MID, SEARCH_BAND, 40, 30)
+    text(img, lang, 560, SEARCH_MID, 1900, 220, 84, 70)
     os.makedirs(f"header-duo/{lang}", exist_ok=True)
     img.save(f"header-duo/{lang}/header.png")
 
