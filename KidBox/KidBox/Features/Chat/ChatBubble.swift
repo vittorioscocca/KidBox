@@ -129,9 +129,18 @@ struct ChatBubble: View {
         }
     }
     
-    private var textIsShort: Bool {
-        let text = message.text ?? ""
-        return text.count <= 30 && !text.contains("\n")
+    /// Posto per ora e spunte in fondo all'ultima riga: stesso testo dell'ora in
+    /// caption2, trasparente, più lo spazio delle spunte. Lo spazio normale
+    /// iniziale lascia andare a capo il blocco intero.
+    private var timeReserve: AttributedString {
+        var reserve = " \u{00A0}\u{00A0}\u{00A0}"
+        if message.editedAt != nil { reserve += String(localized: "Modificato") + "\u{00A0}" }
+        reserve += cachedTimeString
+        if isOwn { reserve += "\u{00A0}\u{00A0}\u{00A0}\u{00A0}\u{00A0}" }
+        var s = AttributedString(reserve)
+        s.font = .caption2
+        s.foregroundColor = .clear
+        return s
     }
     
     private var maxBubbleWidth: CGFloat {
@@ -352,8 +361,8 @@ struct ChatBubble: View {
                 bubbleContent
             }
             .padding(.horizontal, 12)
-            .padding(.top, 10)
-            .padding(.bottom, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 6)
             .frame(
                 maxWidth: shouldConstrainToMaxWidth ? maxBubbleWidth : nil,
                 alignment: isOwn ? .trailing : .leading
@@ -385,30 +394,21 @@ struct ChatBubble: View {
                         timeAndChecks
                     }
                 } else {
-                    if textIsShort {
-                        HStack(alignment: .lastTextBaseline, spacing: 6) {
-                            Text(cachedHighlightedText)
-                                .font(.body)
-                                .foregroundStyle(isOwn ? .white : .primary)
-                                .lineLimit(1)
-                                .fixedSize(horizontal: true, vertical: true)
-                            timeAndChecks
-                        }
-                        .fixedSize(horizontal: true, vertical: true)
-                    } else {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(cachedHighlightedText)
-                                .font(.body)
-                                .foregroundStyle(isOwn ? .white : .primary)
-                                .multilineTextAlignment(.leading)
-                                .lineLimit(nil)
-                                .fixedSize(horizontal: false, vertical: true)
-                            HStack {
-                                Spacer(minLength: 0)
-                                timeAndChecks
-                            }
-                        }
-                        .frame(maxWidth: max(maxBubbleWidth - 24, 100), alignment: .leading)
+                    // Come WhatsApp: ora e spunte in basso a destra, un po' sotto
+                    // l'ultima riga. In coda al testo c'è uno spazio trasparente
+                    // largo quanto l'ora: se ci sta resta accanto all'ultima
+                    // parola, altrimenti va a capo da solo.
+                    ChatHuggingMaxWidth(maxWidth: max(maxBubbleWidth - 24, 100)) {
+                    ZStack(alignment: .bottomTrailing) {
+                        Text(cachedHighlightedText + timeReserve)
+                            .font(.body)
+                            .foregroundStyle(isOwn ? .white : .primary)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(nil)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.bottom, 7)
+                        timeAndChecks
+                    }
                     }
                 }
             }
@@ -1921,5 +1921,20 @@ struct SenderAvatarView: View {
 extension Comparable {
     func clamped(to r: ClosedRange<Self>) -> Self {
         min(max(self, r.lowerBound), r.upperBound)
+    }
+}
+
+/// Limita la larghezza senza allargare: `frame(maxWidth:)` prende tutta la
+/// larghezza offerta e ogni bolla di testo diventava larga al massimo.
+struct ChatHuggingMaxWidth: Layout {
+    let maxWidth: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = min(proposal.width ?? maxWidth, maxWidth)
+        return subviews.first?.sizeThatFits(ProposedViewSize(width: width, height: nil)) ?? .zero
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews.first?.place(at: bounds.origin, proposal: ProposedViewSize(width: bounds.width, height: bounds.height))
     }
 }
