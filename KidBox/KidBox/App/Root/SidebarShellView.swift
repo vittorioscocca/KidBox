@@ -233,83 +233,33 @@ struct SidebarShellView: View {
     }
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            // ── Family switcher ──────────────────────────────────────────────
-            Button {
-                showFamilySwitcher = true
-            } label: {
-                HStack(spacing: 10) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.accentColor.opacity(0.15))
-                            .frame(width: 32, height: 32)
-                        Image(systemName: "house.fill")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Color.accentColor)
+        Group {
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                // iPhone Duo aperto: `NavigationSplitView` su un iPhone apre la
+                // barra laterale SOPRA il contenuto (col Duo non del tutto
+                // aperto, visto il 22/10/2026). L'utente la vuole sempre
+                // integrata come su iPad: si affiancano a mano.
+                HStack(spacing: 0) {
+                    NavigationStack {
+                        VStack(spacing: 0) { sidebarColumn }
+                            .background(Color(.secondarySystemBackground))
                     }
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(activeFamily?.name ?? "Seleziona famiglia")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                        Text("Cambia famiglia")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.tertiary)
+                    .frame(width: 280)
+                    Divider()
+                        .ignoresSafeArea()
+                    detailColumn
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .sheet(isPresented: $showFamilySwitcher) {
-                FamilySwitcherView()
-                    .environmentObject(coordinator)
-            }
-
-            Divider()
-
-            let available = chatEnabled ? SidebarSection.main : SidebarSection.main.filter { $0 != .chat }
-            let mainResults = filtered(available)
-            let accountResults = filtered(SidebarSection.account)
-            List(selection: $coordinator.sidebarSection) {
-                if mainResults.isEmpty && accountResults.isEmpty {
-                    ContentUnavailableView.search(text: searchText)
-                } else {
-                    if !mainResults.isEmpty {
-                        Section {
-                            ForEach(mainResults) { sidebarRow($0) }
-                        }
-                    }
-                    if !accountResults.isEmpty {
-                        Section("Account") {
-                            ForEach(accountResults) { sidebarRow($0) }
-                        }
-                    }
+            } else {
+                NavigationSplitView(columnVisibility: $columnVisibility) {
+                    VStack(spacing: 0) { sidebarColumn }
+                        .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 320)
+                } detail: {
+                    detailColumn
+                        .navigationSplitViewColumnWidth(min: 560, ideal: 820)
                 }
+                .navigationSplitViewStyle(.balanced)
             }
-            .listStyle(.sidebar)
-            .searchable(text: $searchText, placement: .sidebar, prompt: "Cerca sezione")
-            .navigationTitle("KidBox")
-            .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 320)
-            // Quando cambia la famiglia attiva, aggiorna il detail column
-            .onChange(of: resolvedFamilyId) { _, _ in
-                coordinator.path.removeAll()
-            }
-        } detail: {
-            NavigationStack(path: $coordinator.path) {
-                rootDetail
-                    .navigationDestination(for: Route.self) { route in
-                        coordinator.makeDestination(for: route)
-                    }
-            }
-            .navigationSplitViewColumnWidth(min: 560, ideal: 820)
         }
-        .navigationSplitViewStyle(.balanced)
         // Switching section starts a fresh navigation stack in the detail column.
         .onChange(of: coordinator.sidebarSection) { _, _ in
             coordinator.path.removeAll()
@@ -317,14 +267,110 @@ struct SidebarShellView: View {
     }
 
     @ViewBuilder
+    private var sidebarColumn: some View {
+        // ── Family switcher ──────────────────────────────────────────────
+        Button {
+            showFamilySwitcher = true
+        } label: {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(Color.accentColor.opacity(0.15))
+                        .frame(width: 32, height: 32)
+                    Image(systemName: "house.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(activeFamily?.name ?? "Seleziona famiglia")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text("Cambia famiglia")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showFamilySwitcher) {
+            FamilySwitcherView()
+                .environmentObject(coordinator)
+        }
+
+        Divider()
+
+        let available = chatEnabled ? SidebarSection.main : SidebarSection.main.filter { $0 != .chat }
+        let mainResults = filtered(available)
+        let accountResults = filtered(SidebarSection.account)
+        List(selection: $coordinator.sidebarSection) {
+            if mainResults.isEmpty && accountResults.isEmpty {
+                ContentUnavailableView.search(text: searchText)
+            } else {
+                if !mainResults.isEmpty {
+                    Section {
+                        ForEach(mainResults) { sidebarRow($0) }
+                    }
+                }
+                if !accountResults.isEmpty {
+                    Section("Account") {
+                        ForEach(accountResults) { sidebarRow($0) }
+                    }
+                }
+            }
+        }
+        .listStyle(.sidebar)
+        // Su iPhone lo stile `.sidebar` ricade su `.insetGrouped`: righe in una
+        // scheda bianca staccata dal fondo grigio. Fondo unico come su iPad.
+        .scrollContentBackground(isPhone ? .hidden : .automatic)
+        .searchable(text: $searchText, placement: .sidebar, prompt: "Cerca sezione")
+        .navigationTitle("KidBox")
+        // Quando cambia la famiglia attiva, aggiorna il detail column
+        .onChange(of: resolvedFamilyId) { _, _ in
+            coordinator.path.removeAll()
+        }
+    }
+
+    private var detailColumn: some View {
+        NavigationStack(path: $coordinator.path) {
+            rootDetail
+                .navigationDestination(for: Route.self) { route in
+                    coordinator.makeDestination(for: route)
+                }
+        }
+    }
+
+    private var isPhone: Bool { UIDevice.current.userInterfaceIdiom == .phone }
+
+    @ViewBuilder
     private func sidebarRow(_ section: SidebarSection) -> some View {
-        Label {
+        let row = Label {
             Text(section.title)
         } icon: {
             Image(systemName: section.systemImage)
                 .foregroundStyle(section.tint)
         }
         .tag(section)
+        if isPhone {
+            // Niente scheda né separatori: la voce scelta si evidenzia a
+            // pillola, come la barra laterale dell'iPad.
+            row
+                .listRowSeparator(.hidden)
+                .listRowBackground(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(coordinator.sidebarSection == section ? Color(.systemGray4) : .clear)
+                        .padding(.horizontal, 8)
+                )
+        } else {
+            row
+        }
     }
 
     @ViewBuilder

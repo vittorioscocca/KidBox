@@ -38,6 +38,11 @@ enum AppOrientation {
     /// Ripristina gli orientamenti di default (riporta a portrait su iPhone).
     static func reset() { apply(nil) }
 
+    #if DEBUG
+    /// Solo per gli screenshot della demo (`-KBDemoLandscape`).
+    static func forceForDemo(_ mask: UIInterfaceOrientationMask) { apply(mask) }
+    #endif
+
     /// Rilegge la maschera di default dopo un cambio di schermo (il Duo che si
     /// apre o si chiude), se nessuna anteprima la sta forzando.
     static func refresh() {

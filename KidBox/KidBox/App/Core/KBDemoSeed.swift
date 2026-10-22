@@ -11,14 +11,28 @@
 //  `-KBDemoLang it|en|es|fr` sceglie la lingua dei contenuti inventati.
 //  `-KBDemoHero <file>` usa quell'immagine come foto della famiglia.
 //  `-KBDemoReset` cancella prima i dati locali della demo e li rifà.
+//  `-KBDemoSection <sezione>` parte su quella voce della barra laterale
+//  (`SidebarSection.rawValue`: calendar, todo, expenses, assistant…).
+//  `-KBDemoLandscape` mette l'interfaccia in orizzontale (iPad, iPhone Duo
+//  aperto): senza Simulator.app il simulatore non si gira.
 //  Non esiste in Release: tutto sta dentro `#if DEBUG`.
 //
 
 #if DEBUG
 import Foundation
 import SwiftData
+import UIKit
 
 enum KBDemoSeed {
+
+    /// Vedi `-KBDemoLandscape` in testa al file.
+    @MainActor
+    static func applyLandscapeIfRequested() async {
+        guard CommandLine.arguments.contains("-KBDemoSeed"),
+              CommandLine.arguments.contains("-KBDemoLandscape") else { return }
+        try? await Task.sleep(for: .milliseconds(600))
+        AppOrientation.forceForDemo(.landscapeRight)
+    }
 
     static let familyId = "demo-rossi"
     static let meUid = "demo-anna"

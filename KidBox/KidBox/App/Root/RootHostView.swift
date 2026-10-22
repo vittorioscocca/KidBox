@@ -138,10 +138,14 @@ struct RootHostView: View {
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
-            if sidebar {
-                coordinator.adoptSidebarLayout(familyId: resolvedActiveFamilyId)
-            } else if sidebarLayout != nil {
-                coordinator.adoptTabBarLayout(familyId: resolvedActiveFamilyId)
+            // Al primo giro non c'è niente da spostare: la sezione è quella di
+            // partenza (Home, o quella chiesta dalla demo).
+            if sidebarLayout != nil {
+                if sidebar {
+                    coordinator.adoptSidebarLayout(familyId: resolvedActiveFamilyId)
+                } else {
+                    coordinator.adoptTabBarLayout(familyId: resolvedActiveFamilyId)
+                }
             }
             sidebarLayout = sidebar
         }
@@ -258,6 +262,9 @@ struct RootHostView: View {
     var body: some View {
         rootContent
         .environment(\.kbUsesSidebarShell, usesSidebarShell)
+        #if DEBUG
+        .task { await KBDemoSeed.applyLandscapeIfRequested() }
+        #endif
         .onGeometryChange(for: Bool.self) { proxy in
             proxy.size.width > proxy.size.height
         } action: { isLandscape in

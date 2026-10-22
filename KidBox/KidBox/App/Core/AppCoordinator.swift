@@ -444,6 +444,13 @@ final class AppCoordinator: ObservableObject {
             isCheckingAuth = false
             isAuthenticated = true
             uid = KBDemoSeed.meUid
+            // `-KBDemoSection <sezione>`: parte su quella voce della barra
+            // laterale (iPad, iPhone Duo aperto), per gli screenshot.
+            let args = CommandLine.arguments
+            if let i = args.firstIndex(of: "-KBDemoSection"), args.indices.contains(i + 1),
+               let section = SidebarSection(rawValue: args[i + 1]) {
+                sidebarSection = section
+            }
             return
         }
         #endif
