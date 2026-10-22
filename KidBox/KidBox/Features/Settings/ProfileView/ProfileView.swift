@@ -235,8 +235,11 @@ struct ProfileView: View {
                         let normalized = deleteConfirmText
                             .trimmingCharacters(in: .whitespacesAndNewlines)
                             .uppercased()
-                        guard normalized == "ELIMINA" else {
-                            deleteError = "Per confermare, digita ELIMINA."
+                        // Il campo chiede la parola nella lingua dell'app
+                        // («Type DELETE», «Tapez SUPPRIMER»…): vanno accettate tutte.
+                        let confirmWords: Set<String> = ["ELIMINA", "DELETE", "SUPPRIMER", "ELIMINAR"]
+                        guard confirmWords.contains(normalized) else {
+                            deleteError = String(localized: "Per confermare, digita ELIMINA.")
                             return
                         }
                         isDeletingAccount = true

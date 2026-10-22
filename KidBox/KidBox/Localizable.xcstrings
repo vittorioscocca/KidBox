@@ -22010,6 +22010,28 @@
         }
       }
     },
+    "Per confermare, digita ELIMINA." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To confirm, type DELETE."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para confirmar, escribe ELIMINAR."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour confirmer, tapez SUPPRIMER."
+          }
+        }
+      }
+    },
     "Dimensione" : {
       "localizations" : {
         "en" : {
