@@ -14,14 +14,21 @@ import UIKit
 enum AppOrientation {
 
     /// Orientamenti di default: tutti su iPad e sullo schermo grande dell'iPhone
-    /// Duo aperto (larghezza E altezza regular), portrait sull'iPhone e sul Duo
-    /// chiuso. Non basta la larghezza: un iPhone Max in orizzontale ha larghezza
-    /// regular, e dopo l'anteprima di un PDF non tornerebbe più in verticale.
+    /// Duo aperto, portrait sull'iPhone e sul Duo chiuso.
+    ///
+    /// Si guarda il lato corto dello schermo, non i size class: mentre il Duo si
+    /// apre la scena ha ancora i tratti dello schermo esterno, e un iPhone Max in
+    /// orizzontale ha larghezza regular (dopo l'anteprima di un PDF non
+    /// tornerebbe più in verticale). Lato corto: iPhone fino a ~440 pt, Duo
+    /// chiuso ~466, Duo aperto ~669.
+    ///
+    /// NB: l'orizzontale dev'essere dichiarato anche in Info.plist per l'iPhone
+    /// (`INFOPLIST_KEY_UISupportedInterfaceOrientations`): iOS incrocia le due
+    /// maschere, e con il solo portrait il Duo aperto restava girato.
     static func defaultMask(for scene: UIWindowScene?) -> UIInterfaceOrientationMask {
         if UIDevice.current.userInterfaceIdiom == .pad { return .all }
-        guard let traits = scene?.traitCollection else { return .portrait }
-        let large = traits.horizontalSizeClass == .regular && traits.verticalSizeClass == .regular
-        return large ? .all : .portrait
+        guard let bounds = scene?.screen.bounds else { return .portrait }
+        return min(bounds.width, bounds.height) >= 600 ? .all : .portrait
     }
 
     /// Consente la rotazione (portrait + landscape, escluso capovolto) e forza

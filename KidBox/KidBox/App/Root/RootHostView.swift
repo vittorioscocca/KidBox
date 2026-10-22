@@ -135,8 +135,10 @@ struct RootHostView: View {
             }
             sidebarLayout = sidebar
         }
-        // Il Duo che si chiude in orizzontale deve tornare in verticale.
-        AppOrientation.refresh()
+        // Il Duo che si apre può girare in orizzontale, quello che si chiude
+        // torna in verticale. Al giro dopo: la scena deve già stare sul nuovo
+        // schermo quando si rilegge la maschera.
+        DispatchQueue.main.async { AppOrientation.refresh() }
         #endif
     }
     
