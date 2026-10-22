@@ -56,17 +56,18 @@ final class AppDelegate: NSObject,
 
     // MARK: - Orientation
 
-    /// Maschera orientamenti supportati, dinamica. L'app è portrait-only su iPhone, ma
-    /// l'anteprima documenti/PDF (QuickLook / PDFKit) la imposta temporaneamente a `.all`
-    /// così il documento ruota con il dispositivo, poi `AppOrientation.reset()` ripristina.
-    static var supportedOrientations: UIInterfaceOrientationMask =
-        UIDevice.current.userInterfaceIdiom == .pad ? .all : .portrait
+    /// Maschera orientamenti forzata. `nil` = quella di default, che dipende dallo
+    /// schermo (`AppOrientation.defaultMask`): portrait sull'iPhone, tutti su iPad e
+    /// iPhone Duo aperto. L'anteprima documenti/PDF (QuickLook / PDFKit) la imposta
+    /// temporaneamente a `.allButUpsideDown` così il documento ruota con il
+    /// dispositivo, poi `AppOrientation.reset()` ripristina.
+    static var supportedOrientations: UIInterfaceOrientationMask?
 
     func application(
         _ application: UIApplication,
         supportedInterfaceOrientationsFor window: UIWindow?
     ) -> UIInterfaceOrientationMask {
-        AppDelegate.supportedOrientations
+        AppDelegate.supportedOrientations ?? AppOrientation.defaultMask(for: window?.windowScene)
     }
     
     // MARK: - App lifecycle

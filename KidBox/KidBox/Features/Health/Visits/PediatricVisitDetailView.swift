@@ -10,6 +10,7 @@ import FirebaseAuth
 struct PediatricVisitDetailView: View {
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.kbUsesSidebarShell) private var usesSidebarShell
     @Environment(\.colorScheme)  private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
     
@@ -86,17 +87,18 @@ struct PediatricVisitDetailView: View {
                 AppAnalytics.contentSharedRead(type: "health")
             }
         }
-        // Su iPhone e iPad l'assistente si apre dalla barra in basso, già
-        // centrato su questa visita (AgentFocus.forRoute); il pulsante resta sul Mac.
-        #if targetEnvironment(macCatalyst)
+        // Sull'iPhone l'assistente si apre dalla barra in basso, già
+        // centrato su questa visita (AgentFocus.forRoute); il pulsante
+        // resta dove la barra in basso non c'è (Mac, iPad, iPhone Duo aperto).
         .overlay(alignment: .bottomTrailing) {
-            if let visit, let child = childForAI {
-                AskAIButton(visit: visit, child: child)
-                    .padding(.trailing, 20)
-                    .padding(.bottom, 96)
+            if usesSidebarShell {
+                if let visit, let child = childForAI {
+                    AskAIButton(visit: visit, child: child)
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 96)
+                }
             }
         }
-        #endif
         .sheet(isPresented: $showEditSheet) {
             if let visit {
                 PediatricVisitEditView(

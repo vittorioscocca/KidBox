@@ -57,6 +57,7 @@ struct PediatricHomeView: View {
     
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.kbUsesSidebarShell) private var usesSidebarShell
     @Environment(\.colorScheme) private var colorScheme
     
     let familyId: String
@@ -321,18 +322,19 @@ struct PediatricHomeView: View {
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Salute")
         .navigationBarTitleDisplayMode(.large)
-        // Su iPhone e iPad l'assistente si apre dalla barra in basso, già
-        // centrato su questa persona (AgentFocus.forRoute); il pulsante resta sul Mac.
-        #if targetEnvironment(macCatalyst)
+        // Sull'iPhone l'assistente si apre dalla barra in basso, già
+        // centrato su questa persona (AgentFocus.forRoute); il pulsante
+        // resta dove la barra in basso non c'è (Mac, iPad, iPhone Duo aperto).
         .overlay(alignment: .bottomTrailing) {
-            HealthAskAIButton(
-                subjectName: subjectName,
-                subjectId:   childId
-            )
-            .padding(.trailing, 20)
-            .padding(.bottom, 32)
+            if usesSidebarShell {
+                HealthAskAIButton(
+                    subjectName: subjectName,
+                    subjectId:   childId
+                )
+                .padding(.trailing, 20)
+                .padding(.bottom, 32)
+            }
         }
-        #endif
     }
     
     // MARK: - Header

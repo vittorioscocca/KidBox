@@ -1,36 +1,41 @@
 //
-//  MacShellView.swift
+//  SidebarShellView.swift
 //  KidBox
 //
-//  Desktop-class shell for Mac Catalyst: a NavigationSplitView with a
-//  persistent sidebar of the app sections and a detail column that reuses
-//  the exact same feature views as iOS/iPad via `AppCoordinator.makeDestination`.
+//  Shell a barra laterale: una NavigationSplitView con le sezioni dell'app a
+//  sinistra e una colonna di dettaglio che riusa le stesse view di iPhone via
+//  `AppCoordinator.makeDestination`.
+//
+//  Dove si usa:
+//  - Mac Catalyst: sempre.
+//  - iPad e iPhone Duo aperto: quando la larghezza è regular (la sceglie
+//    `RootHostView`); con larghezza compact (Duo chiuso, iPad in Split View
+//    stretta) torna la barra in basso dell'iPhone.
 //
 //  Design notes:
-//  - This file is compiled ONLY on Mac Catalyst (`#if targetEnvironment(macCatalyst)`),
-//    so the iPhone/iPad UI is completely untouched.
-//  - The sidebar selects a *section*; the detail column hosts its own
-//    `NavigationStack` bound to `coordinator.path`, so drill-down inside a
-//    section (e.g. opening a note detail) keeps working via `coordinator.navigate(to:)`.
+//  - The sidebar selects a *section* (`coordinator.sidebarSection`); the detail
+//    column hosts its own `NavigationStack` bound to `coordinator.path`, so
+//    drill-down inside a section keeps working via `coordinator.navigate(to:)`.
 //  - Section → root view mapping mirrors the Home grid cards, so titles,
 //    icons and colors stay consistent with the rest of the app.
 //  - On Mac the Home grid is redundant (the sidebar replaces it), so the
-//    `Home` section shows a lightweight dashboard (`MacDashboardView`) instead.
+//    `Home` section shows a lightweight dashboard (`MacDashboardView`); on
+//    iPad and iPhone Duo it shows the real `HomeView`, with everything that
+//    lives only there (invites, layout toggle, family requests).
 //
-
-#if targetEnvironment(macCatalyst)
 
 import SwiftUI
 import SwiftData
 
 // MARK: - Sections
 
-/// Top-level sections shown in the Mac sidebar.
+/// Top-level sections shown in the sidebar.
 ///
 /// Order here = order in the sidebar. Each case maps to a `Route` already
 /// handled by `AppCoordinator.makeDestination(for:)` (except `.dashboard`,
-/// which is rendered as a dedicated Mac dashboard).
-enum MacSection: String, CaseIterable, Identifiable {
+/// which is rendered as the dashboard: `HomeView` on iPad/iPhone, a lighter
+/// one on Mac).
+enum SidebarSection: String, CaseIterable, Identifiable {
     case dashboard
     case calendar
     case todo
@@ -58,16 +63,18 @@ enum MacSection: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     /// Main app sections (top group in the sidebar).
-    static let main: [MacSection] = [
+    static let main: [SidebarSection] = [
         .dashboard, .calendar, .todo, .notes, .shopping, .photos, .health,
         .chat, .documents, .expenses, .wallet, .passwords, .location, .pets,
         .homeItems, .vehicles, .travel, .assistant, .news
     ]
 
     /// Account / family management sections (bottom group in the sidebar).
-    static let account: [MacSection] = [.family, .profile, .settings]
+    static let account: [SidebarSection] = [.family, .profile, .settings]
 
-    var title: String {
+    /// Dal catalogo delle stringhe: `Text(String)` non traduce, e la barra
+    /// laterale era rimasta in italiano su un Mac in inglese.
+    var title: LocalizedStringResource {
         switch self {
         case .dashboard: return "Home"
         case .calendar:  return "Calendario"
@@ -192,7 +199,7 @@ enum MacSection: String, CaseIterable, Identifiable {
 
 // MARK: - Shell
 
-struct MacShellView: View {
+struct SidebarShellView: View {
 
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
@@ -201,7 +208,9 @@ struct MacShellView: View {
     @Query(sort: \KBFamily.updatedAt, order: .reverse)
     private var families: [KBFamily]
 
-    @State private var selection: MacSection? = .dashboard
+    /// Su iPad in verticale la barra laterale resterebbe nascosta dietro il
+    /// pulsante: la si mostra accanto al dettaglio, come su Mac.
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var searchText: String = ""
     @State private var showFamilySwitcher = false
     @AppStorage(KBChatAvailability.defaultsKey) private var chatEnabled = true
@@ -215,16 +224,16 @@ struct MacShellView: View {
     }
 
     /// Sections matching the current search query (case/diacritic-insensitive).
-    private func filtered(_ sections: [MacSection]) -> [MacSection] {
+    private func filtered(_ sections: [SidebarSection]) -> [SidebarSection] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return sections }
         return sections.filter {
-            $0.title.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) != nil
+            String(localized: $0.title).range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) != nil
         }
     }
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             // ── Family switcher ──────────────────────────────────────────────
             Button {
                 showFamilySwitcher = true
@@ -264,10 +273,10 @@ struct MacShellView: View {
 
             Divider()
 
-            let available = chatEnabled ? MacSection.main : MacSection.main.filter { $0 != .chat }
+            let available = chatEnabled ? SidebarSection.main : SidebarSection.main.filter { $0 != .chat }
             let mainResults = filtered(available)
-            let accountResults = filtered(MacSection.account)
-            List(selection: $selection) {
+            let accountResults = filtered(SidebarSection.account)
+            List(selection: $coordinator.sidebarSection) {
                 if mainResults.isEmpty && accountResults.isEmpty {
                     ContentUnavailableView.search(text: searchText)
                 } else {
@@ -302,13 +311,13 @@ struct MacShellView: View {
         }
         .navigationSplitViewStyle(.balanced)
         // Switching section starts a fresh navigation stack in the detail column.
-        .onChange(of: selection) { _, _ in
+        .onChange(of: coordinator.sidebarSection) { _, _ in
             coordinator.path.removeAll()
         }
     }
 
     @ViewBuilder
-    private func sidebarRow(_ section: MacSection) -> some View {
+    private func sidebarRow(_ section: SidebarSection) -> some View {
         Label {
             Text(section.title)
         } icon: {
@@ -320,9 +329,13 @@ struct MacShellView: View {
 
     @ViewBuilder
     private var rootDetail: some View {
-        if let section = selection {
+        if let section = coordinator.sidebarSection {
             if section == .dashboard {
+                #if targetEnvironment(macCatalyst)
                 MacDashboardView()
+                #else
+                HomeView()
+                #endif
             } else if section.requiresFamily {
                 if let fid = resolvedFamilyId, !fid.isEmpty {
                     coordinator.makeDestination(for: section.route(familyId: fid))
@@ -346,8 +359,22 @@ struct MacShellView: View {
     }
 }
 
+// MARK: - Environment
+
+extension EnvironmentValues {
+    /// `true` quando l'app mostra la barra laterale e non la barra in basso.
+    /// Le schermate che sull'iPhone affidano l'assistente alla barra in basso
+    /// (Salute) mostrano allora il loro pulsante.
+    #if targetEnvironment(macCatalyst)
+    @Entry var kbUsesSidebarShell: Bool = true
+    #else
+    @Entry var kbUsesSidebarShell: Bool = false
+    #endif
+}
+
 // MARK: - Mac Dashboard (no card grid)
 
+#if targetEnvironment(macCatalyst)
 /// Landing view for the `Home` section on Mac.
 ///
 /// The card grid used on iPhone/iPad is intentionally omitted here — navigation
@@ -407,5 +434,4 @@ private struct MacDashboardView: View {
         .navigationTitle("Home")
     }
 }
-
 #endif

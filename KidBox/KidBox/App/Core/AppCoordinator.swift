@@ -57,6 +57,44 @@ final class AppCoordinator: ObservableObject {
         rootTab = tab
     }
 
+    /// La sezione scelta nella barra laterale (Mac, iPad e iPhone Duo aperto):
+    /// la radice sotto la pila quando non c'è la barra in basso.
+    @Published var sidebarSection: SidebarSection? = .dashboard
+
+    /// Barra in basso → barra laterale (il Duo si apre, l'iPad esce da Split
+    /// View): se la prima schermata della pila è la radice di una sezione,
+    /// diventa la sezione scelta e il resto della pila resta dov'è.
+    func adoptSidebarLayout(familyId: String?) {
+        guard let first = path.first else {
+            sidebarSection = rootTab == .news ? .news : .dashboard
+            return
+        }
+        let fid = familyId ?? ""
+        if let section = SidebarSection.allCases.first(where: { $0 != .dashboard && $0.route(familyId: fid) == first }) {
+            sidebarSection = section
+            path.removeFirst()
+        } else {
+            sidebarSection = .dashboard
+        }
+    }
+
+    /// Barra laterale → barra in basso (il Duo si chiude): la sezione scelta
+    /// torna in cima alla pila sopra la Home, così si resta dove si era.
+    func adoptTabBarLayout(familyId: String?) {
+        let section = sidebarSection ?? .dashboard
+        if section == .dashboard {
+            rootTab = .home
+        } else if section == .news && path.isEmpty {
+            rootTab = .news
+        } else {
+            rootTab = .home
+            let fid = familyId ?? ""
+            if !section.requiresFamily || !fid.isEmpty {
+                path.insert(section.route(familyId: fid), at: 0)
+            }
+        }
+    }
+
     // MARK: - Session state
     
     /// Whether there is a currently authenticated Firebase user.
@@ -1617,6 +1655,7 @@ final class AppCoordinator: ObservableObject {
         // «Radice» vuol dire Home: dopo join, cambio famiglia o uscita non si
         // riparte dalle Notizie.
         rootTab = .home
+        sidebarSection = .dashboard
         // `activeFamilyId` non viene azzerato qui: resta in UserDefaults / App Group
         // così dopo join + resetToRoot() la root vede ancora la famiglia attiva.
         if let id = activeFamilyId {

@@ -100,21 +100,67 @@ struct RootHostView: View {
     @State private var showTabBarConsent = false
     @State private var showTabBarUpgrade = false
     @State private var showTabBarOwnerOnly = false
+
+    // MARK: Barra laterale (iPad, iPhone Duo aperto)
+
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    /// Il layout in uso, cambiato solo in `applyLayout`: prima si sposta la
+    /// pila (sezione ↔ prima schermata), poi si cambia guscio. Se il guscio
+    /// cambiasse da solo con la larghezza, la barra laterale nascerebbe con la
+    /// sezione vecchia e il suo `onChange` svuoterebbe la pila.
+    @State private var sidebarLayout: Bool?
+
+    private var usesSidebarShell: Bool {
+        #if targetEnvironment(macCatalyst)
+        true
+        #else
+        sidebarLayout ?? (horizontalSizeClass == .regular)
+        #endif
+    }
+
+    /// Larghezza regular (iPad, Duo aperto) → barra laterale; compact (Duo
+    /// chiuso, iPad in Split View stretta) → barra in basso dell'iPhone.
+    private func applyLayout(for sizeClass: UserInterfaceSizeClass?) {
+        #if !targetEnvironment(macCatalyst)
+        guard let sizeClass else { return }
+        let sidebar = sizeClass == .regular
+        if let current = sidebarLayout, current == sidebar { return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            if sidebar {
+                coordinator.adoptSidebarLayout(familyId: resolvedActiveFamilyId)
+            } else if sidebarLayout != nil {
+                coordinator.adoptTabBarLayout(familyId: resolvedActiveFamilyId)
+            }
+            sidebarLayout = sidebar
+        }
+        // Il Duo che si chiude in orizzontale deve tornare in verticale.
+        AppOrientation.refresh()
+        #endif
+    }
     
     // MARK: - View
 
     /// Root container.
     ///
-    /// - iOS/iPadOS: the classic `NavigationStack` driven by `coordinator.path`.
-    /// - Mac Catalyst: no outer stack here — `makeRootView()` resolves to
-    ///   `MacShellView`, which provides its own `NavigationSplitView` + detail
-    ///   `NavigationStack`. Wrapping it again would create a duplicate
-    ///   `navigationDestination(for: Route.self)`.
+    /// - Barra in basso (iPhone, Duo chiuso): the classic `NavigationStack`
+    ///   driven by `coordinator.path`.
+    /// - Barra laterale (Mac, iPad, Duo aperto): no outer stack here —
+    ///   `makeRootView()` resolves to `SidebarShellView`, which provides its own
+    ///   `NavigationSplitView` + detail `NavigationStack`. Wrapping it again
+    ///   would create a duplicate `navigationDestination(for: Route.self)`.
     @ViewBuilder
     private var rootContent: some View {
-        #if targetEnvironment(macCatalyst)
-        coordinator.makeRootView()
-        #else
+        if usesSidebarShell {
+            coordinator.makeRootView()
+        } else {
+            tabBarRootContent
+        }
+    }
+
+    @ViewBuilder
+    private var tabBarRootContent: some View {
         NavigationStack(path: $coordinator.path) {
             withTabBar(coordinator.makeRootView(), on: true)
                 .navigationDestination(for: Route.self) { route in
@@ -126,7 +172,6 @@ struct RootHostView: View {
         .background(KBTabBarScrollObserver(isActive: showsTabBar))
         .onChange(of: coordinator.path) { _, _ in KBTabBarScrollState.shared.set(false) }
         .onChange(of: coordinator.rootTab) { _, _ in KBTabBarScrollState.shared.set(false) }
-        #endif
     }
 
     /// La barra c'è sulle due radici e su Salute (dove prima c'era il pulsante
@@ -200,6 +245,10 @@ struct RootHostView: View {
 
     var body: some View {
         rootContent
+        .environment(\.kbUsesSidebarShell, usesSidebarShell)
+        .onChange(of: horizontalSizeClass, initial: true) { _, newValue in
+            applyLayout(for: newValue)
+        }
         .task(id: coordinator.isAuthenticated) {
             guard coordinator.isAuthenticated else { return }
             await CrashAnalyzer.analyzeIfNeeded()

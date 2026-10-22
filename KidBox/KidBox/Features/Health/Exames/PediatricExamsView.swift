@@ -47,6 +47,7 @@ struct PediatricExamsView: View {
     
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.kbUsesSidebarShell) private var usesSidebarShell
     @Environment(\.colorScheme)  private var colorScheme
     
     let familyId: String
@@ -198,17 +199,18 @@ struct PediatricExamsView: View {
             prompt: "Cerca esame"
         )
         .toolbar { toolbarItems }
-        // Su iPhone e iPad l'assistente si apre dalla barra in basso, già
-        // centrato sugli esami (AgentFocus.forRoute); il pulsante resta sul Mac.
-        #if targetEnvironment(macCatalyst)
+        // Sull'iPhone l'assistente si apre dalla barra in basso, già
+        // centrato sugli esami (AgentFocus.forRoute); il pulsante
+        // resta dove la barra in basso non c'è (Mac, iPad, iPhone Duo aperto).
         .overlay(alignment: .bottomTrailing) {
-            if !isSelecting && !exams.isEmpty {
-                ExamsAskAIButton(subjectName: childName, scope: .all(filtered))
-                    .padding(.trailing, 20)
-                    .padding(.bottom, 96)
+            if usesSidebarShell {
+                if !isSelecting && !exams.isEmpty {
+                    ExamsAskAIButton(subjectName: childName, scope: .all(filtered))
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 96)
+                }
             }
         }
-        #endif
         // Avvia il realtime UNA SOLA VOLTA (non si riavvia al pop dalla Detail)
         .task {
             guard !realtimeStarted else { return }

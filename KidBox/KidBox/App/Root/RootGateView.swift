@@ -20,6 +20,9 @@ struct RootGateView: View {
     
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
+    /// Barra laterale (Mac, iPad, iPhone Duo aperto) o barra in basso: la
+    /// decide `RootHostView` dalla larghezza.
+    @Environment(\.kbUsesSidebarShell) private var usesSidebarShell
 
     /// Priming permesso notifiche mostrato una sola volta. La chiave in
     /// `UserDefaults` è la memoria: una volta deciso (sì o no) non si ripresenta.
@@ -101,17 +104,17 @@ struct RootGateView: View {
                     .overlay { ProgressView().tint(.white) }
             } else if shouldShowHome {
                 Group {
-                    #if targetEnvironment(macCatalyst)
-                    MacShellView()
-                    #else
-                    // Le due radici della barra in basso (vedi RootHostView).
-                    switch coordinator.rootTab {
-                    case .home:
-                        HomeView()
-                    case .news:
-                        NewsView(familyId: newsFamilyId)
+                    if usesSidebarShell {
+                        SidebarShellView()
+                    } else {
+                        // Le due radici della barra in basso (vedi RootHostView).
+                        switch coordinator.rootTab {
+                        case .home:
+                            HomeView()
+                        case .news:
+                            NewsView(familyId: newsFamilyId)
+                        }
                     }
-                    #endif
                 }
                 .fullScreenCover(isPresented: $showPushPriming) {
                     PushPrimingView { didAccept in

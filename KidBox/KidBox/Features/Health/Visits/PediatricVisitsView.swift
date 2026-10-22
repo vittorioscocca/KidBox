@@ -10,6 +10,7 @@ import FirebaseAuth
 struct PediatricVisitsView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.kbUsesSidebarShell) private var usesSidebarShell
     @Environment(\.colorScheme)  private var colorScheme
     
     @Query private var visits:   [KBMedicalVisit]
@@ -203,23 +204,24 @@ struct PediatricVisitsView: View {
         } message: {
             Text("Le visite verranno rimosse da tutti i dispositivi.")
         }
-        // Su iPhone e iPad l'assistente si apre dalla barra in basso, già
-        // centrato sulle visite (AgentFocus.forRoute); il pulsante resta sul Mac.
-        #if targetEnvironment(macCatalyst)
+        // Sull'iPhone l'assistente si apre dalla barra in basso, già
+        // centrato sulle visite (AgentFocus.forRoute); il pulsante
+        // resta dove la barra in basso non c'è (Mac, iPad, iPhone Duo aperto).
         .overlay(alignment: .bottomTrailing) {
-            if let selectedPerson, !filteredVisits.isEmpty, !isSelecting {
-                PediatricVisitsAskAIButton(
-                    person: selectedPerson,
-                    visits: filteredVisits,
-                    selectedPeriod: selectedPeriod
-                ) { person, visits, period in
-                    handleAskAI(person: person, visits: visits, period: period)
+            if usesSidebarShell {
+                if let selectedPerson, !filteredVisits.isEmpty, !isSelecting {
+                    PediatricVisitsAskAIButton(
+                        person: selectedPerson,
+                        visits: filteredVisits,
+                        selectedPeriod: selectedPeriod
+                    ) { person, visits, period in
+                        handleAskAI(person: person, visits: visits, period: period)
+                    }
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 96)
                 }
-                .padding(.trailing, 20)
-                .padding(.bottom, 96)
             }
         }
-        #endif
         .environment(\.locale, kbDeviceLocale())
         .environment(\.calendar, kbDeviceCalendar())
     }
