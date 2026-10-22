@@ -821,7 +821,9 @@ private struct ChatConversationView: View {
                 bottomStack
             }
         }
-        .background(backgroundColor)
+        // Anche sotto la tastiera: su iOS 26 è trasparente e arrotondata, e dietro
+        // si vedeva il nero della finestra invece dello sfondo della chat.
+        .background { backgroundColor.ignoresSafeArea() }
 #if targetEnvironment(macCatalyst)
         .overlay {
             if isDragTargeted {
