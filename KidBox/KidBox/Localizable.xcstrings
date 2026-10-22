@@ -247,6 +247,28 @@
         }
       }
     },
+    "Niente da mostrare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing to show"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada que mostrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien à afficher"
+          }
+        }
+      }
+    },
     "Niente in questa sezione." : {
       "localizations" : {
         "en" : {
@@ -291,6 +313,28 @@
         }
       }
     },
+    "Note recenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent notes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notas recientes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes récentes"
+          }
+        }
+      }
+    },
     "Per le domande sui dati, come «quanto abbiamo speso di scuola?». Usa un messaggio AI." : {
       "localizations" : {
         "en" : {
@@ -309,6 +353,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pour les questions sur les données, comme « combien avons-nous dépensé pour l'école ? ». Utilise un message IA."
+          }
+        }
+      }
+    },
+    "Prossimi impegni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coming up"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Próximos compromisos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prochains rendez-vous"
           }
         }
       }
@@ -335,6 +401,28 @@
         }
       }
     },
+    "Spese recenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent expenses"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gastos recientes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dépenses récentes"
+          }
+        }
+      }
+    },
     "To-do" : {
       "localizations" : {
         "en" : {
@@ -353,6 +441,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tâches"
+          }
+        }
+      }
+    },
+    "Ultime foto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Latest photos"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Últimas fotos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dernières photos"
+          }
+        }
+      }
+    },
+    "Vedi tutto ›" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See all ›"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver todo ›"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout voir ›"
           }
         }
       }

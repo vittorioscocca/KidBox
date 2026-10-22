@@ -109,21 +109,31 @@ struct RootHostView: View {
     /// cambiasse da solo con la larghezza, la barra laterale nascerebbe con la
     /// sezione vecchia e il suo `onChange` svuoterebbe la pila.
     @State private var sidebarLayout: Bool?
+    /// La finestra è più larga che alta. Serve solo al Duo: aperto in verticale
+    /// ha larghezza regular ma è stretto, e lì l'utente vuole la barra in basso.
+    @State private var windowIsLandscape = false
 
     private var usesSidebarShell: Bool {
         #if targetEnvironment(macCatalyst)
         true
         #else
-        sidebarLayout ?? (horizontalSizeClass == .regular)
+        sidebarLayout ?? wantsSidebar ?? false
         #endif
     }
 
-    /// Larghezza regular (iPad, Duo aperto) → barra laterale; compact (Duo
-    /// chiuso, iPad in Split View stretta) → barra in basso dell'iPhone.
-    private func applyLayout(for sizeClass: UserInterfaceSizeClass?) {
+    /// Barra laterale: iPad con larghezza regular (in verticale e in
+    /// orizzontale), iPhone Duo aperto solo in orizzontale. Barra in basso:
+    /// iPhone, Duo chiuso, Duo aperto in verticale, iPad in Split View stretta.
+    /// `nil` finché SwiftUI non ha ancora un size class.
+    private var wantsSidebar: Bool? {
+        guard let horizontalSizeClass else { return nil }
+        guard horizontalSizeClass == .regular else { return false }
+        return UIDevice.current.userInterfaceIdiom == .pad || windowIsLandscape
+    }
+
+    private func applyLayout(sidebar: Bool?) {
         #if !targetEnvironment(macCatalyst)
-        guard let sizeClass else { return }
-        let sidebar = sizeClass == .regular
+        guard let sidebar else { return }
         if let current = sidebarLayout, current == sidebar { return }
         var transaction = Transaction()
         transaction.disablesAnimations = true
@@ -248,8 +258,13 @@ struct RootHostView: View {
     var body: some View {
         rootContent
         .environment(\.kbUsesSidebarShell, usesSidebarShell)
-        .onChange(of: horizontalSizeClass, initial: true) { _, newValue in
-            applyLayout(for: newValue)
+        .onGeometryChange(for: Bool.self) { proxy in
+            proxy.size.width > proxy.size.height
+        } action: { isLandscape in
+            windowIsLandscape = isLandscape
+        }
+        .onChange(of: wantsSidebar, initial: true) { _, newValue in
+            applyLayout(sidebar: newValue)
         }
         .task(id: coordinator.isAuthenticated) {
             guard coordinator.isAuthenticated else { return }

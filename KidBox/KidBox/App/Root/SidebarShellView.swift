@@ -377,8 +377,9 @@ extension EnvironmentValues {
 #if targetEnvironment(macCatalyst)
 /// Landing view for the `Home` section on Mac.
 ///
-/// The card grid used on iPhone/iPad is intentionally omitted here — navigation
-/// lives in the sidebar. We keep the family hero as a welcome banner.
+/// The card grid used on iPhone is intentionally omitted here — navigation
+/// lives in the sidebar. Family hero as a welcome banner, then the same widget
+/// dashboard as iPad (`HomeWidgetDashboard`).
 private struct MacDashboardView: View {
 
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -423,9 +424,17 @@ private struct MacDashboardView: View {
                 }
                 .id(activeFamily?.heroPhotoUpdatedAt ?? activeFamily?.updatedAt)
 
-                Text("Scegli una sezione dalla barra laterale per iniziare.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                // Le sezioni sono nella barra laterale: qui si vede cosa c'è
+                // dentro, come nella Home della web app.
+                if let fid = activeFamily?.id, !fid.isEmpty {
+                    HomeWidgetDashboard(familyId: fid) { section in
+                        coordinator.sidebarSection = section
+                    }
+                } else {
+                    Text("Scegli una sezione dalla barra laterale per iniziare.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
             }
             .padding(24)
             .frame(maxWidth: 900, alignment: .leading)

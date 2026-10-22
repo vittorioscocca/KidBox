@@ -26,6 +26,9 @@ import Combine
 struct HomeView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
+    /// Con la barra laterale (iPad, iPhone Duo aperto) le sezioni sono già lì:
+    /// la Home mostra la dashboard a riquadri invece di elencarle di nuovo.
+    @Environment(\.kbUsesSidebarShell) private var usesSidebarShell
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
@@ -293,7 +296,9 @@ struct HomeView: View {
             }
             Spacer(minLength: 8)
             #if !targetEnvironment(macCatalyst)
-            homeLayoutModeToggle
+            if !usesSidebarShell {
+                homeLayoutModeToggle
+            }
             #endif
             if hasFamily {
                 Button {
@@ -436,7 +441,7 @@ struct HomeView: View {
                     // Finché la checklist è viva resta fuori, come le slide
                     // promozionali: una famiglia appena creata avrebbe sei
                     // tessere vuote proprio dove le serve una spinta.
-                    if showHomeDashboard, hasFamily, !onboarding.isVisible {
+                    if showHomeDashboard, hasFamily, !onboarding.isVisible, !usesSidebarShell {
                         HomeSummaryGrid(familyId: activeFamilyId) { destination in
                             navigate(to: destination)
                         }
@@ -468,15 +473,25 @@ struct HomeView: View {
                         navigate(to: destination)
                     }
                     #else
-                    // iOS/iPadOS: l'utente sceglie tra lista raggruppata e griglia libera riordinabile
-                    switch homeLayoutMode {
-                    case .list:
-                        HomeCategoryList(hasFamily: hasFamily, familyId: activeFamilyId) { destination in
-                            navigate(to: destination)
+                    if usesSidebarShell {
+                        // Barra laterale: le sezioni sono già lì, qui si vede
+                        // cosa c'è dentro (come la Home della web app).
+                        if hasFamily {
+                            HomeWidgetDashboard(familyId: activeFamilyId) { section in
+                                coordinator.sidebarSection = section
+                            }
                         }
-                    case .grid:
-                        HomeCardGrid(hasFamily: hasFamily, familyId: activeFamilyId, initialOrder: HomeCatalog.flatOrder) { destination in
-                            navigate(to: destination)
+                    } else {
+                        // iPhone: l'utente sceglie tra lista raggruppata e griglia libera riordinabile
+                        switch homeLayoutMode {
+                        case .list:
+                            HomeCategoryList(hasFamily: hasFamily, familyId: activeFamilyId) { destination in
+                                navigate(to: destination)
+                            }
+                        case .grid:
+                            HomeCardGrid(hasFamily: hasFamily, familyId: activeFamilyId, initialOrder: HomeCatalog.flatOrder) { destination in
+                                navigate(to: destination)
+                            }
                         }
                     }
                     #endif
