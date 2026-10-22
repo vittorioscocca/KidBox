@@ -40,16 +40,9 @@ struct ChatInputBar: View {
     
     private let tint = KBTheme.bubbleTint
     
-    private var backgroundColor: Color {
-        colorScheme == .dark
-        ? Color(red: 0.18, green: 0.18, blue: 0.18)
-        : Color(.systemBackground)
-    }
-    
-    private var fieldBackground: Color {
-        colorScheme == .dark
-        ? Color(red: 0.22, green: 0.22, blue: 0.22)
-        : Color(.secondarySystemBackground)
+    /// Fondo dei pulsanti tondi secondari (+ e microfono), come nella barra di Claude.
+    private var circleFill: Color {
+        Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06)
     }
     
     private var isTextEmpty: Bool {
@@ -78,7 +71,7 @@ struct ChatInputBar: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .background(backgroundColor)
+        // Lo sfondo è il vetro della card che la contiene (ChatView.composer).
         .animation(.easeInOut(duration: 0.2), value: isRecording)
         .animation(.easeInOut(duration: 0.2), value: isRecordingLocked)
         .animation(.easeInOut(duration: 0.15), value: activeMentionSuggestions?.map { $0.uid })
@@ -151,12 +144,12 @@ struct ChatInputBar: View {
                 }
             }
         }
-        .background(fieldBackground)
+        .padding(.top, 6)
         .overlay(
             Rectangle()
                 .frame(height: 0.5)
                 .foregroundStyle(Color.primary.opacity(0.08)),
-            alignment: .top
+            alignment: .bottom
         )
     }
 
@@ -182,41 +175,59 @@ struct ChatInputBar: View {
 
 private extension ChatInputBar {
     
+    /// Due piani come la barra di Claude: il testo sopra a tutta larghezza,
+    /// sotto il + a sinistra e microfono/invio a destra.
     var normalBar: some View {
-        HStack(spacing: 10) {
-            Menu {
-                Button { onMediaTap() } label: {
-                    Label("Foto e Video", systemImage: "photo.on.rectangle")
-                }
-                Button { onCameraTap() } label: {
-                    Label("Fotocamera", systemImage: "camera")
-                }
-                Button { onDocumentTap() } label: {
-                    Label("Documento", systemImage: "doc")
-                }
-                Button { onContactTap() } label: {
-                    Label("Contatto", systemImage: "person.crop.circle")
-                }
-                Button { onLocationTap() } label: {
-                    Label("Invia posizione", systemImage: "location.fill")
-                }
-            } label: {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(tint)
-            }
-            .disabled(isRecording)
-            
+        VStack(alignment: .leading, spacing: 4) {
             messageField
             
-            if isTextEmpty {
-                micButton
-            } else {
-                sendButton
+            HStack(spacing: 10) {
+                Menu {
+                    Button { onMediaTap() } label: {
+                        Label("Foto e Video", systemImage: "photo.on.rectangle")
+                    }
+                    Button { onCameraTap() } label: {
+                        Label("Fotocamera", systemImage: "camera")
+                    }
+                    Button { onDocumentTap() } label: {
+                        Label("Documento", systemImage: "doc")
+                    }
+                    Button { onContactTap() } label: {
+                        Label("Contatto", systemImage: "person.crop.circle")
+                    }
+                    Button { onLocationTap() } label: {
+                        Label("Invia posizione", systemImage: "location.fill")
+                    }
+                } label: {
+                    circleIcon("plus", weight: .regular)
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
+                }
+                // Il Menu colora l'etichetta col tint di sistema (blu).
+                .tint(.primary)
+                .disabled(isRecording)
+                .accessibilityLabel("Allega")
+                
+                Spacer(minLength: 0)
+                
+                if isTextEmpty {
+                    micButton
+                } else {
+                    sendButton
+                }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 10)
+        .padding(.top, 6)
+        .padding(.bottom, 10)
+    }
+    
+    func circleIcon(_ systemName: String, weight: Font.Weight) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 18, weight: weight))
+            .foregroundStyle(.primary)
+            .frame(width: 38, height: 38)
+            .background(circleFill, in: Circle())
+            .contentShape(Circle())
     }
     
     var messageField: some View {
@@ -232,34 +243,25 @@ private extension ChatInputBar {
                     }
                 },
                 minHeight: 40,
-                maxHeight: 120
+                maxHeight: 140
             )
-            .padding(.leading, 4)   // ← spazio extra per il cursore
             .frame(height: inputHeight)
             
             if isTextEmpty {
+                // Allineato al testo: inset del UITextView 6 a sinistra, 9 in alto.
                 Text("Messaggio…")
                     .foregroundStyle(.secondary)
-                    .padding(.leading, 18)
-                    .padding(.trailing, 14)
-                    .padding(.vertical, 10)
+                    .padding(.leading, 6)
+                    .padding(.top, 9)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
         }
-        .background(fieldBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        )
+        .padding(.horizontal, 4)
     }
     
     var micButton: some View {
-        Image(systemName: "mic.circle.fill")
-            .font(.system(size: 32))
-            .foregroundStyle(tint)
-            .contentShape(Rectangle())
+        circleIcon("mic", weight: .medium)
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
@@ -290,16 +292,22 @@ private extension ChatInputBar {
                     }
             )
             .allowsHitTesting(true)
+            .accessibilityLabel("Tieni premuto per registrare")
     }
     
     var sendButton: some View {
         Button(action: onSendText) {
-            Image(systemName: "arrow.up.circle.fill")
-                .font(.system(size: 32))
-                .foregroundStyle(tint)
+            Image(systemName: "arrow.up")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 38, height: 38)
+                .background(tint, in: Circle())
         }
+        .buttonStyle(.plain)
         .disabled(isSending || isRecording)
+        .opacity(isSending ? 0.5 : 1)
         .transition(.scale.combined(with: .opacity))
+        .accessibilityLabel("Invia")
     }
     
     private var recordingBar: some View {

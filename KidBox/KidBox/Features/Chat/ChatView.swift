@@ -636,12 +636,6 @@ private struct ChatConversationView: View {
         : Color(red: 0.961, green: 0.957, blue: 0.945)
     }
     
-    private var barBackground: Color {
-        colorScheme == .dark
-        ? Color(red: 0.18, green: 0.18, blue: 0.18)
-        : Color(.secondarySystemBackground)
-    }
-    
     private var pillBackground: Color {
         colorScheme == .dark
         ? Color(red: 0.22, green: 0.22, blue: 0.22)
@@ -821,37 +815,10 @@ private struct ChatConversationView: View {
                     soloFamilyHint
                 }
             }
-            
-            errorBanner
-            typingBanner
-            
-            if viewModel.isEditing { editingBar }
-            if viewModel.isReplying { replyBar }
-            if isSelecting {
-                ZStack(alignment: .bottom) {
-                    selectionBar
-                    if showDeleteBar {
-                        deleteOverlayBar
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                            .zIndex(100)
-                    }
-                }
-            } else {
-                Divider()
-                if isLoadingMedia {
-                    HStack(spacing: 8) {
-                        ProgressView().controlSize(.small)
-                        Text("Caricamento media…")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
-                    .background(.ultraThinMaterial)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-                mediaGroupPreviewStrip
-                inputBar
+            // Barra di scrittura sospesa sopra i messaggi, che le scorrono dietro
+            // il vetro; segue la tastiera con un po' di respiro.
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                bottomStack
             }
         }
         .background(backgroundColor)
@@ -1287,8 +1254,6 @@ private struct ChatConversationView: View {
     private var mediaGroupPreviewStrip: some View {
         if !pendingGroupItems.isEmpty {
             VStack(spacing: 0) {
-                Divider()
-                
                 HStack(spacing: 0) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 6) {
@@ -1331,7 +1296,6 @@ private struct ChatConversationView: View {
                     }
                     .padding(.trailing, 12)
                 }
-                .background(.ultraThinMaterial)
             }
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .animation(.spring(response: 0.3, dampingFraction: 0.85), value: pendingGroupItems.count)
@@ -1792,7 +1756,8 @@ private struct ChatConversationView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(barBackground)
+        .padding(.horizontal, 4)
+        .padding(.top, 8)
         .fixedSize(horizontal: false, vertical: true)
     }
     
@@ -1820,7 +1785,8 @@ private struct ChatConversationView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(barBackground)
+        .padding(.horizontal, 4)
+        .padding(.top, 8)
         .fixedSize(horizontal: false, vertical: true)
     }
     
@@ -1943,7 +1909,9 @@ private struct ChatConversationView: View {
         if let error = viewModel.errorText {
             Text(error)
                 .font(.caption).foregroundStyle(.red)
-                .padding(.horizontal).padding(.top, 4)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .glassEffect(.regular, in: Capsule())
+                .padding(.horizontal, 12)
         }
     }
     
@@ -1959,9 +1927,11 @@ private struct ChatConversationView: View {
                 TypingDotsView()
                 Text(typingLabel)
                     .font(.caption).foregroundStyle(.secondary)
-                Spacer()
             }
-            .padding(.horizontal, 16).padding(.vertical, 6)
+            .padding(.horizontal, 12).padding(.vertical, 6)
+            .glassEffect(.regular, in: Capsule())
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 12)
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .animation(.easeInOut(duration: 0.2), value: viewModel.typingUsers)
         }
@@ -1975,6 +1945,54 @@ private struct ChatConversationView: View {
         }
     }
     
+    // MARK: - Bottom stack
+
+    private var bottomStack: some View {
+        VStack(spacing: 6) {
+            errorBanner
+            typingBanner
+            if isSelecting {
+                ZStack(alignment: .bottom) {
+                    selectionBar
+                    if showDeleteBar {
+                        deleteOverlayBar
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .zIndex(100)
+                    }
+                }
+            } else {
+                if isLoadingMedia {
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text("Caricamento media…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .glassEffect(.regular, in: Capsule())
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                composer
+            }
+        }
+    }
+
+    /// La card di scrittura: modifica/risposta e media in attesa stanno dentro
+    /// lo stesso vetro del campo, come un unico oggetto.
+    private var composer: some View {
+        VStack(spacing: 0) {
+            if viewModel.isEditing { editingBar }
+            if viewModel.isReplying { replyBar }
+            mediaGroupPreviewStrip
+            inputBar
+        }
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .padding(.horizontal, 12)
+        .padding(.top, 4)
+        .padding(.bottom, 10)
+    }
+
     // MARK: - Input bar
     
     private var inputBar: some View {
