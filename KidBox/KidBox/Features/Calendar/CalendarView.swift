@@ -736,7 +736,7 @@ private struct YearOverviewView: View {
     private static let todayYear: Int = Calendar.current.component(.year, from: Date())
     private static let firstYear: Int = todayYear - 40
     private static let lastYear:  Int = todayYear + 40
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 14, alignment: .top), count: 3)
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: 3)
     
     /// Anno in cima: già quello giusto dal primo frame, senza saltarci dopo.
     @State private var scrolledYear: Int?
@@ -779,7 +779,7 @@ private struct YearOverviewView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, 8)
                     .padding(.top, 8)
                     .padding(.bottom, 28)
                     .id(y)
@@ -834,6 +834,9 @@ private struct MiniMonthView: View {
     }
     // ─────────────────────────────────────────────────────────────────────
     
+    private static let weekHeight: CGFloat = 22
+    private static let weekSpacing: CGFloat = 2
+    
     /// Solo le settimane che hanno giorni del mese: `calendarDays` ne dà
     /// sempre sei, qui le righe vuote in fondo non servono.
     private var weeks: [[Date?]] {
@@ -848,21 +851,26 @@ private struct MiniMonthView: View {
             Text(monthAbbrev(monthDate))
                 .font(.title3.weight(.bold))
                 .foregroundStyle(isCurrentMonth ? Color.accentColor : .primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .padding(.leading, 2)
             
-            VStack(spacing: 2) {
+            VStack(spacing: Self.weekSpacing) {
                 ForEach(weeks.indices, id: \.self) { w in
                     HStack(spacing: 0) {
                         ForEach(0..<7, id: \.self) { d in
                             if let date = weeks[w][d] {
                                 miniDayCell(date)
                             } else {
-                                Color.clear.frame(maxWidth: .infinity).frame(height: 22)
+                                Color.clear.frame(maxWidth: .infinity).frame(height: Self.weekHeight)
                             }
                         }
                     }
                 }
             }
+            // Sempre sei settimane di spazio, come Apple: righe di mesi
+            // regolari e anni tutti alti uguali, così l'apertura cade giusta.
+            .frame(height: Self.weekHeight * 6 + Self.weekSpacing * 5, alignment: .top)
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .contentShape(Rectangle())
@@ -877,14 +885,25 @@ private struct MiniMonthView: View {
         let hasEvent   = datesWithEvents.contains(comps)
         
         ZStack {
-            Circle()
-                .fill(isSelected ? Color.accentColor : Color.clear)
-                .frame(width: 19, height: 19)
-            
+            // Il numero non deve mai chiedere più della sua cella: con un cerchio
+            // fisso da 19 punti sette giorni ne volevano 133, e su un iPhone da
+            // 402 punti la colonna ne ha 116 — i numeri sconfinavano nel mese
+            // accanto. Il cerchio è uno sfondo che si adatta alla cella.
             Text(date, format: .dateTime.day())
                 .font(.system(size: 11, weight: isToday ? .bold : .medium))
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .foregroundStyle(isSelected ? .white : isToday ? .accentColor : .primary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background {
+                    if isSelected {
+                        Circle()
+                            .fill(Color.accentColor)
+                            .aspectRatio(1, contentMode: .fit)
+                            .frame(maxWidth: 19, maxHeight: 19)
+                    }
+                }
             
             if hasEvent && !isSelected {
                 Circle()
@@ -894,7 +913,7 @@ private struct MiniMonthView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 22)
+        .frame(height: Self.weekHeight)
         .contentShape(Rectangle())
         .onTapGesture { onSelectDate(date) }
     }
