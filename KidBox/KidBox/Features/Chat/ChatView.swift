@@ -1116,8 +1116,19 @@ private struct ChatConversationView: View {
     
     private func handleMessagesChange() {
         guard !viewModel.isPaginating else { return }
-        dayGroups = buildGroups()
+        let newGroups = buildGroups()
+        // Messaggi tolti (eliminati per me, o rimossi dal server): quelli che
+        // restano scorrono al loro posto invece di saltare.
+        let oldCount = dayGroups.reduce(0) { $0 + $1.messages.count }
+        let newCount = newGroups.reduce(0) { $0 + $1.messages.count }
+        if newCount < oldCount {
+            withAnimation(Self.deletionAnimation) { dayGroups = newGroups }
+        } else {
+            dayGroups = newGroups
+        }
     }
+    
+    static let deletionAnimation: Animation = .spring(duration: 0.35, bounce: 0.12)
     
     private func handleGalleryGoToMessage(_ msgId: String?) {
         guard let msgId else { return }

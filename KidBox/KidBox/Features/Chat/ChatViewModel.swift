@@ -1535,10 +1535,14 @@ final class ChatViewModel: NSObject, ObservableObject {
                     try await group.waitForAll()
                 }
                 await MainActor.run {
-                    for msg in selected {
-                        msg.isDeletedForEveryone = true
-                        msg.isDeleted = false      // keep visible as tombstone
-                        msg.syncState = .synced; msg.lastSyncError = nil
+                    // Le bolle diventano «Messaggio eliminato», più basse: le
+                    // altre scorrono al loro posto invece di saltare.
+                    withAnimation(.spring(duration: 0.35, bounce: 0.12)) {
+                        for msg in selected {
+                            msg.isDeletedForEveryone = true
+                            msg.isDeleted = false      // keep visible as tombstone
+                            msg.syncState = .synced; msg.lastSyncError = nil
+                        }
                     }
                     try? modelContext.save(); self.reloadLocal()
                 }
