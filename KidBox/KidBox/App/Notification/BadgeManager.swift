@@ -63,19 +63,20 @@ final class BadgeManager: ObservableObject {
                 let expensesCount = data["expenses"]  as? Int ?? 0
                 let walletCount   = data["wallet"]    as? Int ?? 0
                 
-                Task {
-                    await MainActor.run {
-                        if !self.activeSections.contains("chat")      { self.chat      = chatCount }
-                        if !self.activeSections.contains("documents") { self.documents = docCount }
-                        if !self.activeSections.contains("location")  { self.location  = locCount }
-                        if !self.activeSections.contains("todos")     { self.todos     = todoCount }
-                        if !self.activeSections.contains("shopping")  { self.shopping  = shoppingCount }
-                        if !self.activeSections.contains("notes")     { self.notes     = notesCount }
-                        if !self.activeSections.contains("calendar")  { self.calendar  = calendarCount }
-                        if !self.activeSections.contains("expenses")  { self.expenses  = expensesCount }
-                        if !self.activeSections.contains("wallet")    { self.wallet    = walletCount }
-                        self.refreshAppBadge()
-                    }
+                // Al giro dopo del run loop, non in un Task: il job del MainActor
+                // può girare mentre SwiftUI aggiorna le viste («Publishing changes
+                // from within view updates», nove avvisi a ogni avvio).
+                DispatchQueue.main.async {
+                    if !self.activeSections.contains("chat")      { self.update(\.chat, chatCount) }
+                    if !self.activeSections.contains("documents") { self.update(\.documents, docCount) }
+                    if !self.activeSections.contains("location")  { self.update(\.location, locCount) }
+                    if !self.activeSections.contains("todos")     { self.update(\.todos, todoCount) }
+                    if !self.activeSections.contains("shopping")  { self.update(\.shopping, shoppingCount) }
+                    if !self.activeSections.contains("notes")     { self.update(\.notes, notesCount) }
+                    if !self.activeSections.contains("calendar")  { self.update(\.calendar, calendarCount) }
+                    if !self.activeSections.contains("expenses")  { self.update(\.expenses, expensesCount) }
+                    if !self.activeSections.contains("wallet")    { self.update(\.wallet, walletCount) }
+                    self.refreshAppBadge()
                 }
             }
     }
@@ -94,13 +95,30 @@ final class BadgeManager: ObservableObject {
         }
     }
     
-    @MainActor func clearChat()      { self.chat      = 0 }
-    @MainActor func clearDocuments() { self.documents = 0 }
-    @MainActor func clearLocation()  { self.location  = 0 }
-    @MainActor func clearTodos()     { self.todos     = 0 }
-    @MainActor func clearShopping()  { self.shopping  = 0 }
-    @MainActor func clearNotes()     { self.notes     = 0 }
-    @MainActor func clearCalendar()  { self.calendar  = 0 }
-    @MainActor func clearExpenses()  { self.expenses  = 0 }
-    @MainActor func clearWallet()    { self.wallet    = 0 }
+    /// Pubblica solo se il valore cambia: ogni assegnazione a un `@Published`
+    /// ridisegna chi lo osserva, anche quando il numero è lo stesso.
+    private func update(_ keyPath: ReferenceWritableKeyPath<BadgeManager, Int>, _ value: Int) {
+        guard self[keyPath: keyPath] != value else { return }
+        self[keyPath: keyPath] = value
+    }
+
+    /// Gli azzeramenti arrivano spesso da `onAppear`, cioè durante
+    /// l'aggiornamento delle viste: si applicano al giro dopo.
+    private func clear(_ keyPath: ReferenceWritableKeyPath<BadgeManager, Int>) {
+        guard self[keyPath: keyPath] != 0 else { return }
+        DispatchQueue.main.async {
+            self.update(keyPath, 0)
+            self.refreshAppBadge()
+        }
+    }
+
+    @MainActor func clearChat()      { clear(\.chat) }
+    @MainActor func clearDocuments() { clear(\.documents) }
+    @MainActor func clearLocation()  { clear(\.location) }
+    @MainActor func clearTodos()     { clear(\.todos) }
+    @MainActor func clearShopping()  { clear(\.shopping) }
+    @MainActor func clearNotes()     { clear(\.notes) }
+    @MainActor func clearCalendar()  { clear(\.calendar) }
+    @MainActor func clearExpenses()  { clear(\.expenses) }
+    @MainActor func clearWallet()    { clear(\.wallet) }
 }

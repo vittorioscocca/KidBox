@@ -61,7 +61,9 @@ struct KBTabBarScrollObserver: UIViewRepresentable {
 
     func updateUIView(_ view: ObserverView, context: Context) {
         context.coordinator.isActive = isActive
-        if !isActive { KBTabBarScrollState.shared.set(false) }
+        // Al giro dopo: qui SwiftUI sta ancora aggiornando le viste, e pubblicare
+        // adesso è «Publishing changes from within view updates».
+        if !isActive { DispatchQueue.main.async { KBTabBarScrollState.shared.set(false) } }
     }
 
     static func dismantleUIView(_ view: ObserverView, coordinator: Coordinator) {

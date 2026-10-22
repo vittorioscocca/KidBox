@@ -139,8 +139,8 @@ struct NoteDetailView: View {
                 }
             }
             Task { @MainActor in
+                // Ricalcola anche il badge dell'icona, al giro dopo.
                 BadgeManager.shared.clearNotes()
-                BadgeManager.shared.refreshAppBadge()
                 await CountersService.shared.reset(familyId: familyId, field: .notes)
             }
         }
