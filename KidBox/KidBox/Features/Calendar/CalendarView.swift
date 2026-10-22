@@ -2060,7 +2060,9 @@ struct CalendarEventFormView: View {
                                     Label("Tutto il giorno", systemImage: "sun.max")
                                         .foregroundStyle(primaryText)
                                 }
-                                .tint(buttonBg)
+                                // Verde di sistema: col colore dei pulsanti (bianco in dark mode)
+                                // traccia e pallino erano entrambi bianchi, acceso e spento uguali.
+                                .tint(.green)
                                 
                                 Divider()
                                 
@@ -2093,7 +2095,7 @@ struct CalendarEventFormView: View {
                                     Label("Promemoria", systemImage: "bell")
                                         .foregroundStyle(primaryText)
                                 }
-                                .tint(buttonBg)
+                                .tint(.green)
                                 
                                 if hasReminder {
                                     Divider()
@@ -2109,7 +2111,7 @@ struct CalendarEventFormView: View {
                                         Label("Urgente", systemImage: "alarm.waves.left.and.right")
                                             .foregroundStyle(primaryText)
                                     }
-                                    .tint(buttonBg)
+                                    .tint(.green)
                                     Text(kbUrgentFooterText)
                                         .font(.caption)
                                         .foregroundStyle(secondaryText)

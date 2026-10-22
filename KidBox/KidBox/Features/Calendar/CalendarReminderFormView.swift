@@ -288,7 +288,9 @@ struct CalendarReminderFormView: View {
             Toggle(isOn: $hasTime) {
                 Label("Ora", systemImage: "clock")
             }
-            .tint(buttonBg)
+            // Verde di sistema: col colore dei pulsanti (bianco in dark mode)
+            // traccia e pallino erano entrambi bianchi, acceso e spento uguali.
+            .tint(.green)
             if hasTime {
                 HStack {
                     Spacer()
@@ -301,7 +303,7 @@ struct CalendarReminderFormView: View {
             Toggle(isOn: $isUrgent) {
                 Label("Urgente", systemImage: "alarm.waves.left.and.right")
             }
-            .tint(buttonBg)
+            .tint(.green)
             Text(kbUrgentFooterText)
                 .font(.caption)
                 .foregroundStyle(.secondary)
