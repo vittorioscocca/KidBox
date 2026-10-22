@@ -327,22 +327,24 @@ def compose(kind, lang, name, title, out=None):
 
 TITLES = {name: titles for name, titles in SLIDES}
 
-for kind in DEVICES:
-    if not os.path.isdir(f"raw-{kind}"):
-        continue
-    if os.path.isdir(f"final-{kind}"):
-        shutil.rmtree(f"final-{kind}")
-    for lang in sorted(os.listdir(f"raw-{kind}")):
-        if kind == "duo":
-            for out, layout, open_name, closed_name, titles in DUO_SLIDES:
-                titles = titles or TITLES[open_name]
-                if layout == "open":
-                    if os.path.exists(f"raw-duo/{lang}/{open_name}.png"):
-                        compose("duo", lang, open_name, titles[lang], out)
-                elif os.path.exists(f"raw-duo-closed/{lang}/{closed_name}.png"):
-                    compose_duo(lang, out, layout, open_name, closed_name, titles[lang])
+# `compose-header-duo.py` importa le cornici da qui senza rifare le slide.
+if __name__ == "__main__":
+    for kind in DEVICES:
+        if not os.path.isdir(f"raw-{kind}"):
             continue
-        for name, titles in SLIDES:
-            if os.path.exists(f"raw-{kind}/{lang}/{name}.png"):
-                compose(kind, lang, name, titles[lang])
-print("ok")
+        if os.path.isdir(f"final-{kind}"):
+            shutil.rmtree(f"final-{kind}")
+        for lang in sorted(os.listdir(f"raw-{kind}")):
+            if kind == "duo":
+                for out, layout, open_name, closed_name, titles in DUO_SLIDES:
+                    titles = titles or TITLES[open_name]
+                    if layout == "open":
+                        if os.path.exists(f"raw-duo/{lang}/{open_name}.png"):
+                            compose("duo", lang, open_name, titles[lang], out)
+                    elif os.path.exists(f"raw-duo-closed/{lang}/{closed_name}.png"):
+                        compose_duo(lang, out, layout, open_name, closed_name, titles[lang])
+                continue
+            for name, titles in SLIDES:
+                if os.path.exists(f"raw-{kind}/{lang}/{name}.png"):
+                    compose(kind, lang, name, titles[lang])
+    print("ok")
