@@ -33,6 +33,12 @@ final class LinkPreviewStore: ObservableObject {
     /// Idempotente: se l'URL è già in cache (o in corso) non fa nulla.
     func fetchIfNeeded(for url: URL) {
         guard previews[url] == nil else { return }
+        // Anteprima già salvata (anche da un avvio precedente): pronta subito,
+        // senza il riquadro di caricamento che lampeggia all'apertura della chat.
+        if let cached = LinkMetadataService.cachedMetadata(for: url) {
+            previews[url] = .ready(cached)
+            return
+        }
         previews[url] = .loading
         Task {
             let meta = await LinkMetadataService.shared.fetch(url: url)
@@ -55,16 +61,16 @@ struct LinkPreviewMetadata {
 actor LinkMetadataService {
     static let shared = LinkMetadataService()
     private init() {}
-    private let prefix = "linkMeta_"
+    private static let prefix = "linkMeta_"
     
     func fetch(url: URL) async -> LinkPreviewMetadata? {
-        if let cached = readCache(url: url) { return cached }
+        if let cached = Self.cachedMetadata(for: url) { return cached }
         guard let meta = await fetchRemote(url: url) else { return nil }
         writeCache(meta, url: url)
         return meta
     }
     
-    private func readCache(url: URL) -> LinkPreviewMetadata? {
+    nonisolated static func cachedMetadata(for url: URL) -> LinkPreviewMetadata? {
         guard let dict = UserDefaults.standard.dictionary(forKey: prefix + url.absoluteString)
         else { return nil }
         return LinkPreviewMetadata(
@@ -79,7 +85,7 @@ actor LinkMetadataService {
         if let t = m.title { dict["title"] = t }
         if let d = m.description { dict["description"] = d }
         if let i = m.imageURL { dict["imageURL"] = i.absoluteString }
-        UserDefaults.standard.set(dict, forKey: prefix + url.absoluteString)
+        UserDefaults.standard.set(dict, forKey: Self.prefix + url.absoluteString)
     }
     
     private func fetchRemote(url: URL) async -> LinkPreviewMetadata? {

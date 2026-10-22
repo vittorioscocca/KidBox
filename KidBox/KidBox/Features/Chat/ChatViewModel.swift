@@ -428,32 +428,40 @@ final class ChatViewModel: NSObject, ObservableObject {
         let deletedForMe = !myUID.isEmpty && dto.deletedFor.contains(myUID)
         let desc = FetchDescriptor<KBChatMessage>(predicate: #Predicate { $0.id == mid })
         if let existing = try? modelContext.fetch(desc).first {
+            // Ogni assegnazione su un @Model notifica le view anche a valore
+            // identico: a ogni snapshot del listener (cache, poi server, poi ogni
+            // modifica) tutte le bubble della pagina si ridisegnavano. Si scrive
+            // solo ciò che cambia davvero.
+            func put<T: Equatable>(_ kp: ReferenceWritableKeyPath<KBChatMessage, T>, _ value: T) {
+                if existing[keyPath: kp] != value { existing[keyPath: kp] = value }
+            }
             let localBefore        = existing.isDeleted
-            existing.senderName    = dto.senderName
+            put(\.senderName, dto.senderName)
             // Only update text when we actually have a resolved value — never overwrite a
             // visible message with nil just because decryption or the DTO had no text field.
-            if let resolved = textForModel { existing.text = resolved }
-            existing.editedAt      = dto.editedAt
-            existing.mediaURL      = dto.mediaURL
-            if let grpURLs  = dto.mediaGroupURLsJSON  { existing.mediaGroupURLsJSON  = grpURLs }
-            if let grpTypes = dto.mediaGroupTypesJSON { existing.mediaGroupTypesJSON = grpTypes }
-            if let payload = dto.contactPayloadJSON { existing.contactPayloadJSON = payload }
-            existing.reactionsJSON = dto.reactionsJSON
-            existing.mentionsJSON  = dto.mentionsJSON
-            existing.readBy        = Array(Set(existing.readBy + dto.readBy))
+            if let resolved = textForModel { put(\.text, resolved) }
+            put(\.editedAt, dto.editedAt)
+            put(\.mediaURL, dto.mediaURL)
+            if let grpURLs  = dto.mediaGroupURLsJSON  { put(\.mediaGroupURLsJSON, grpURLs) }
+            if let grpTypes = dto.mediaGroupTypesJSON { put(\.mediaGroupTypesJSON, grpTypes) }
+            if let payload = dto.contactPayloadJSON { put(\.contactPayloadJSON, payload) }
+            put(\.reactionsJSON, dto.reactionsJSON)
+            put(\.mentionsJSON, dto.mentionsJSON)
+            let mergedReadBy = Set(existing.readBy).union(dto.readBy)
+            if mergedReadBy != Set(existing.readBy) { existing.readBy = mergedReadBy.sorted() }
             // isDeletedForEveryone is signalled by dto.isDeleted (softDelete sets this on Firestore).
             // Once a message is a tombstone it stays a tombstone.
             if dto.isDeleted && !existing.isDeletedForEveryone {
                 existing.isDeletedForEveryone = true
                 existing.isDeleted = false   // keep in local store for tombstone display
             } else {
-                existing.isDeleted = localBefore || deletedForMe
+                put(\.isDeleted, localBefore || deletedForMe)
             }
-            existing.syncState     = .synced; existing.lastSyncError = nil
-            existing.replyToId     = dto.replyToId
-            existing.latitude      = dto.latitude; existing.longitude = dto.longitude
-            if let size = dto.mediaFileSize, size > 0 { existing.mediaFileSize = size }
-            if let w = dto.mediaWidth, let h = dto.mediaHeight { existing.mediaWidth = w; existing.mediaHeight = h }
+            put(\.syncStateRaw, KBSyncState.synced.rawValue); put(\.lastSyncError, nil)
+            put(\.replyToId, dto.replyToId)
+            put(\.latitude, dto.latitude); put(\.longitude, dto.longitude)
+            if let size = dto.mediaFileSize, size > 0 { put(\.mediaFileSize, size) }
+            if let w = dto.mediaWidth, let h = dto.mediaHeight { put(\.mediaWidth, w); put(\.mediaHeight, h) }
             if existing.type == .audio, existing.senderId != myUID,
                existing.mediaURL != nil, existing.transcriptStatus == .none {
                 startTranscriptIfNeeded(for: existing, modelContext: modelContext)

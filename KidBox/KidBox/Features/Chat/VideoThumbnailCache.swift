@@ -24,6 +24,11 @@ final class VideoThumbnailCache {
         return d
     }
     
+    /// Solo memoria, senza toccare il disco: si può chiamare mentre si costruisce la view.
+    func memoryImage(_ key: String) -> UIImage? {
+        mem.object(forKey: key as NSString)
+    }
+    
     func get(_ key: String) -> UIImage? {
         if let img = mem.object(forKey: key as NSString) { return img }
         let url = fileURL(for: key)

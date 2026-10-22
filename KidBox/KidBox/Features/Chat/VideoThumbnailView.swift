@@ -15,6 +15,15 @@ struct VideoThumbnailView: View {
     var onImageSize: ((CGSize) -> Void)? = nil
     
     @State private var image: UIImage?
+    @State private var showsSpinner = false
+    
+    init(videoURL: URL, cacheKey: String, onImageSize: ((CGSize) -> Void)? = nil) {
+        self.videoURL = videoURL
+        self.cacheKey = cacheKey
+        self.onImageSize = onImageSize
+        // Rientro in chat: l'anteprima già vista c'è dal primo frame.
+        _image = State(initialValue: VideoThumbnailCache.shared.memoryImage(cacheKey))
+    }
     
     var body: some View {
         Group {
@@ -25,9 +34,13 @@ struct VideoThumbnailView: View {
             } else {
                 ZStack {
                     RoundedRectangle(cornerRadius: 10).fill(Color(.tertiarySystemBackground))
-                    ProgressView()
+                    if showsSpinner { ProgressView() }
                 }
                 .task(id: cacheKey) { await load() }
+                .task(id: cacheKey) {
+                    try? await Task.sleep(for: .milliseconds(400))
+                    if !Task.isCancelled { showsSpinner = true }
+                }
             }
         }
     }

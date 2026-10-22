@@ -224,15 +224,49 @@ struct ChatDayGroup: Identifiable {
     var id: String { day }
 }
 
+// MARK: - ChatScrollMemory
+
+/// Dove l'utente ha lasciato la chat di ogni famiglia: l'ultimo messaggio
+/// (il più in basso) che aveva sullo schermo. Solo in memoria, di proposito:
+/// finché l'app resta viva si rientra lì; dopo un kill si riparte dal fondo.
+@MainActor
+enum ChatScrollMemory {
+    private static var lastSeen: [String: String] = [:]
+
+    static func lastSeenMessageId(familyId: String) -> String? { lastSeen[familyId] }
+
+    static func remember(_ messageId: String?, familyId: String) {
+        lastSeen[familyId] = messageId
+    }
+}
+
+/// Righe attualmente sullo schermo. Classe e non stato: aggiornarla a ogni
+/// scroll non deve ridisegnare la lista, serve solo quando si esce.
+private final class ChatVisibleRows {
+    var ids = Set<String>()
+}
+
+private struct ChatScrollMetrics: Equatable {
+    let contentHeight: CGFloat
+    let distanceFromBottom: CGFloat
+
+    init(_ geo: ScrollGeometry) {
+        contentHeight = geo.contentSize.height
+        distanceFromBottom = geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height
+    }
+}
+
 // MARK: - ChatMessageList
 
 private struct ChatMessageList: View {
-    
+
+    let familyId: String
     let dayGroups: [ChatDayGroup]
     let isLoadingOlder: Bool
     let hasMoreMessages: Bool
     let messagesIsEmpty: Bool
     let lastMessageId: String?
+    let lastMessageIsOwn: Bool
     let isPaginating: Bool
     let searchScrollTarget: String?
     
@@ -251,15 +285,89 @@ private struct ChatMessageList: View {
     @State private var floatingDateLabel: String = ""
     @State private var showFloatingDate: Bool = false
     @State private var hideDateTask: Task<Void, Never>? = nil
-    
+    /// La lista resta invisibile finché non è nel punto giusto (fondo o ultimo
+    /// messaggio visto): niente righe che si montano e scorrono davanti all'utente.
+    @State private var isPositioned = false
+    @State private var positionedAt: Date = .distantPast
+    @State private var visibleRows = ChatVisibleRows()
+    /// Vicino al fondo per scelta dell'utente: aggiornato solo quando scorre, non
+    /// quando il contenuto cresce, così un messaggio alto in arrivo non lo falsa.
+    @State private var isNearBottom = true
+    /// Primo messaggio in lista quando si è chiesta la pagina precedente.
+    @State private var olderPageAnchor: String?
+
+    private var firstMessageId: String? { dayGroups.first?.messages.first?.id }
+
     var body: some View {
         ScrollViewReader { proxy in
             ZStack(alignment: .top) {
                 scrollBody(proxy: proxy)
+                    .opacity(isPositioned ? 1 : 0)
                 floatingDatePill
                 scrollToBottomButton(proxy: proxy)
             }
         }
+    }
+
+    // MARK: Posizione iniziale e memoria
+
+    /// Gira in un `.task(id: dayGroups.isEmpty)`: i gruppi arrivano dall'onAppear
+    /// del padre, che può girare dopo il nostro, e quando arrivano il task
+    /// riparte con i valori nuovi.
+    private func positionInitially(proxy: ScrollViewProxy) async {
+        guard !isPositioned else { return }
+        if dayGroups.isEmpty {
+            // Chat davvero vuota: si mostra. Se i messaggi arrivano prima, il
+            // task viene annullato e riparte con la lista piena.
+            try? await Task.sleep(for: .milliseconds(150))
+            guard !Task.isCancelled else { return }
+            reveal(target: nil)
+            return
+        }
+        let target = restoreTarget()
+        scrollToInitialTarget(target, proxy: proxy)
+        // Secondo passaggio: la LazyVStack ha misurato le righe vere intorno al
+        // bersaglio e le altezze stimate non lo spostano più.
+        try? await Task.sleep(for: .milliseconds(32))
+        guard !Task.isCancelled else { return }
+        scrollToInitialTarget(target, proxy: proxy)
+        reveal(target: target)
+    }
+    
+    private func reveal(target: String?) {
+        isNearBottom = target == nil
+        positionedAt = Date()
+        withAnimation(.easeOut(duration: 0.12)) { isPositioned = true }
+        onMarkRead()
+    }
+
+    /// Il messaggio su cui rientrare, se l'utente aveva lasciato la chat più su
+    /// del fondo o se nel frattempo sono arrivati messaggi nuovi. `nil` = fondo.
+    private func restoreTarget() -> String? {
+        guard searchText.isEmpty,
+              let id = ChatScrollMemory.lastSeenMessageId(familyId: familyId),
+              id != lastMessageId,
+              dayGroups.contains(where: { $0.messages.contains(where: { $0.id == id }) })
+        else { return nil }
+        return id
+    }
+
+    private func scrollToInitialTarget(_ target: String?, proxy: ScrollViewProxy) {
+        if let target {
+            proxy.scrollTo(target, anchor: .bottom)
+        } else {
+            proxy.scrollTo("bottom", anchor: .bottom)
+        }
+    }
+
+    private func rememberPosition() {
+        guard isPositioned, searchText.isEmpty else { return }
+        let lastVisible = isNearBottom
+        ? lastMessageId
+        : dayGroups.reversed().lazy
+            .flatMap { $0.messages.reversed() }
+            .first { visibleRows.ids.contains($0.id) }?.id
+        ChatScrollMemory.remember(lastVisible ?? lastMessageId, familyId: familyId)
     }
     
     private func scrollBody(proxy: ScrollViewProxy) -> some View {
@@ -287,9 +395,16 @@ private struct ChatMessageList: View {
                     daySeparator(group: group)
                     ForEach(group.messages) { msg in
                         onBubbleRow(msg, proxy).equatable()
+                            .onScrollVisibilityChange(threshold: 0.3) { [visibleRows] isVisible in
+                                if isVisible {
+                                    visibleRows.ids.insert(msg.id)
+                                } else {
+                                    visibleRows.ids.remove(msg.id)
+                                }
+                            }
                     }
                 }
-                
+
                 Color.clear.frame(height: 1).id("bottom")
             }
             .padding(.vertical, 10)
@@ -300,6 +415,8 @@ private struct ChatMessageList: View {
                 }
             }
         }
+        // Si apre già sul fondo dal primo frame, senza scorrere dall'alto.
+        .defaultScrollAnchor(.bottom, for: .initialOffset)
         .onScrollGeometryChange(for: Bool.self) { geo in
             geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height > 200
         } action: { _, shouldShow in
@@ -307,20 +424,48 @@ private struct ChatMessageList: View {
                 showScrollToBottom = shouldShow
             }
         }
+        .onScrollGeometryChange(for: ChatScrollMetrics.self) { geo in
+            ChatScrollMetrics(geo)
+        } action: { old, new in
+            // Solo gli spostamenti dell'utente (contenuto della stessa altezza):
+            // un messaggio in arrivo allunga il contenuto ma non sposta l'utente.
+            guard isPositioned, old.contentHeight == new.contentHeight else { return }
+            isNearBottom = new.distanceFromBottom < 120
+        }
         .onScrollGeometryChange(for: Bool.self) { geo in
             geo.contentOffset.y < 80
         } action: { wasNearTop, isNearTop in
-            if isNearTop && !wasNearTop { onNearTop() }
+            guard isPositioned, isNearTop, !wasNearTop else { return }
+            olderPageAnchor = firstMessageId
+            onNearTop()
         }
         .onChange(of: lastMessageId) { _, id in
-            guard id != nil, !isPaginating else { return }
-            withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+            guard id != nil, !isPaginating, isPositioned else { return }
+            // Un messaggio nuovo porta in fondo solo se l'utente era già lì o se
+            // l'ha mandato lui: chi sta leggendo più su resta dov'è (c'è la freccia).
+            guard isNearBottom || lastMessageIsOwn else { return }
+            // Appena aperta la chat (listener che recupera dal server) si resta
+            // attaccati al fondo senza animazione: niente scorrimento visibile.
+            if Date().timeIntervalSince(positionedAt) < 1.5 {
+                proxy.scrollTo("bottom", anchor: .bottom)
+            } else {
+                withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+            }
+            isNearBottom = true
             onMarkRead()
         }
-        .onAppear {
-            proxy.scrollTo("bottom", anchor: .bottom)
-            onMarkRead()
+        .onChange(of: firstMessageId) { oldFirst, newFirst in
+            // Messaggi più vecchi inseriti in cima (paginazione): si resta sul
+            // messaggio che l'utente stava guardando invece di saltare in alto.
+            guard isPositioned, searchText.isEmpty,
+                  let oldFirst, oldFirst == olderPageAnchor, oldFirst != newFirst,
+                  dayGroups.contains(where: { $0.messages.contains(where: { $0.id == oldFirst }) })
+            else { return }
+            olderPageAnchor = nil
+            proxy.scrollTo(oldFirst, anchor: .top)
         }
+        .task(id: dayGroups.isEmpty) { await positionInitially(proxy: proxy) }
+        .onDisappear { rememberPosition() }
     }
     
     private func daySeparator(group: ChatDayGroup) -> some View {
@@ -392,11 +537,13 @@ private struct ChatMessageList: View {
 
 struct BubbleRowView: View, Equatable {
     static func == (lhs: BubbleRowView, rhs: BubbleRowView) -> Bool {
+        // Campi grezzi: `reactions` e `readBy` decodificano JSON a ogni confronto.
         lhs.msg.id == rhs.msg.id &&
         lhs.msg.text == rhs.msg.text &&
-        lhs.msg.reactions == rhs.msg.reactions &&
-        lhs.msg.syncState == rhs.msg.syncState &&
-        lhs.msg.readBy == rhs.msg.readBy &&
+        lhs.msg.reactionsJSON == rhs.msg.reactionsJSON &&
+        lhs.msg.syncStateRaw == rhs.msg.syncStateRaw &&
+        lhs.msg.readByJSON == rhs.msg.readByJSON &&
+        lhs.repliedTo?.id == rhs.repliedTo?.id &&
         lhs.highlightedMessageId == rhs.highlightedMessageId &&
         lhs.isSelecting == rhs.isSelecting &&
         lhs.selectedMessageIds == rhs.selectedMessageIds
@@ -639,11 +786,13 @@ private struct ChatConversationView: View {
     var body: some View {
         VStack(spacing: 0) {
             ChatMessageList(
+                familyId: familyId,
                 dayGroups: dayGroups,
                 isLoadingOlder: viewModel.isLoadingOlder,
                 hasMoreMessages: viewModel.hasMoreMessages,
                 messagesIsEmpty: viewModel.messages.isEmpty,
                 lastMessageId: viewModel.messages.last?.id,
+                lastMessageIsOwn: viewModel.messages.last?.senderId == Auth.auth().currentUser?.uid,
                 isPaginating: viewModel.isPaginating,
                 searchScrollTarget: searchScrollTarget,
                 messageForReaction: $messageForReaction,
@@ -1254,7 +1403,8 @@ private struct ChatConversationView: View {
         return BubbleRowView(
             msg: msg,
             proxy: proxy,
-            repliedTo: viewModel.messages.first(where: { $0.id == msg.replyToId }),
+            // Solo per le risposte: prima scorreva tutti i messaggi per ogni riga.
+            repliedTo: msg.replyToId.flatMap { rid in viewModel.messages.last(where: { $0.id == rid }) },
             isOwn: isOwn,
             canAct: canAct,
             messageForReaction: $messageForReaction,
