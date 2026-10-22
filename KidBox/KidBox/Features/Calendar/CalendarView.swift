@@ -733,64 +733,72 @@ private struct YearOverviewView: View {
     @Binding var selectedDate: Date
     let onSelectDate: (Date) -> Void
     
-    private let todayYear: Int = Calendar.current.component(.year, from: Date())
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 3)
+    private static let todayYear: Int = Calendar.current.component(.year, from: Date())
+    private static let firstYear: Int = todayYear - 40
+    private static let lastYear:  Int = todayYear + 40
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 14, alignment: .top), count: 3)
     
-    private var firstYear: Int { todayYear - 40 }
-    private var lastYear:  Int { todayYear + 40 }
+    /// Anno in cima: già quello giusto dal primo frame, senza saltarci dopo.
+    @State private var scrolledYear: Int?
+    /// Nascosta finché non è sull'anno giusto: con quarant'anni sopra, la prima
+    /// posizione si basa su altezze stimate e cade a metà dell'anno prima.
+    @State private var isPositioned = false
     
-    private func anchorID(for y: Int) -> String { "year-\(y)" }
+    init(year: Int, datesForYear: @escaping (Int) -> Set<DateComponents>,
+         selectedDate: Binding<Date>, onSelectDate: @escaping (Date) -> Void) {
+        self.year = year
+        self.datesForYear = datesForYear
+        self._selectedDate = selectedDate
+        self.onSelectDate = onSelectDate
+        _scrolledYear = State(initialValue: min(max(year, Self.firstYear), Self.lastYear))
+    }
     
+    /// Come la vista Anno di Calendario di Apple: l'anno grande al centro, tre
+    /// colonne di mesi senza riquadri, numeri leggibili e solo le settimane
+    /// che servono. Colori e pulsanti restano quelli di KidBox.
     var body: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                    ForEach(firstYear...lastYear, id: \.self) { y in
-                        Section {
-                            let yearDates = datesForYear(y)
-                            LazyVGrid(columns: columns, spacing: 12) {
-                                ForEach(1...12, id: \.self) { month in
-                                    MiniMonthView(
-                                        year:            y,
-                                        month:           month,
-                                        datesWithEvents: yearDates,
-                                        selectedDate:    selectedDate,
-                                        onSelectDate:    onSelectDate
-                                    )
-                                }
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                ForEach(Self.firstYear...Self.lastYear, id: \.self) { y in
+                    VStack(spacing: 14) {
+                        Text(String(y))
+                            .font(.system(size: 34, weight: .bold))
+                            .foregroundStyle(y == Self.todayYear ? Color.accentColor : .primary)
+                            .frame(maxWidth: .infinity)
+                        let yearDates = datesForYear(y)
+                        LazyVGrid(columns: columns, spacing: 22) {
+                            ForEach(1...12, id: \.self) { month in
+                                MiniMonthView(
+                                    year:            y,
+                                    month:           month,
+                                    datesWithEvents: yearDates,
+                                    selectedDate:    selectedDate,
+                                    onSelectDate:    onSelectDate
+                                )
                             }
-                            .padding(.horizontal)
-                            .padding(.bottom, 20)
-                        } header: {
-                            HStack(spacing: 8) {
-                                Text(String(y))
-                                    .font(.title2.weight(.bold))
-                                if y == todayYear {
-                                    Text("oggi")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.white)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 3)
-                                        .background(Color.accentColor, in: Capsule())
-                                }
-                                Spacer()
-                            }
-                            .padding(.horizontal)
-                            .padding(.vertical, 8)
-                            .background(.thinMaterial)
-                            .id(anchorID(for: y))
                         }
                     }
-                }
-                .padding(.top, 4)
-            }
-            .onAppear {
-                let targetYear = Calendar.current.component(.year, from: selectedDate)
-                let clamped    = min(max(targetYear, firstYear), lastYear)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    proxy.scrollTo(anchorID(for: clamped), anchor: .top)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+                    .padding(.bottom, 28)
+                    .id(y)
                 }
             }
+            .scrollTargetLayout()
+        }
+        .scrollPosition(id: $scrolledYear, anchor: .top)
+        .opacity(isPositioned ? 1 : 0)
+        .task {
+            guard !isPositioned, let target = scrolledYear else { return }
+            // Due passaggi: il secondo, con le righe vere misurate, corregge.
+            for _ in 0..<2 {
+                proxy.scrollTo(target, anchor: .top)
+                try? await Task.sleep(for: .milliseconds(30))
+            }
+            proxy.scrollTo(target, anchor: .top)
+            withAnimation(.easeOut(duration: 0.12)) { isPositioned = true }
+        }
         }
     }
 }
@@ -805,16 +813,13 @@ private struct MiniMonthView: View {
     let selectedDate:    Date
     let onSelectDate:    (Date) -> Void
     
-    @Environment(\.colorScheme) private var colorScheme
-    
-    private var cardBackground: Color {
-        colorScheme == .dark
-        ? Color(red: 0.18, green: 0.18, blue: 0.18)
-        : Color(.systemBackground)
-    }
-    
     private var monthDate: Date {
         Calendar.current.date(from: DateComponents(year: year, month: month, day: 1)) ?? Date()
+    }
+    
+    private var isCurrentMonth: Bool {
+        let now = Calendar.current.dateComponents([.year, .month], from: Date())
+        return now.year == year && now.month == month
     }
     
     // ── FIX: DateFormatter rispetta il locale di sistema ──────────────────
@@ -823,46 +828,43 @@ private struct MiniMonthView: View {
         let f = DateFormatter()
         f.locale = locale
         f.setLocalizedDateFormatFromTemplate("MMM")
-        return f.string(from: date).capitalized(with: locale)
+        return f.string(from: date)
+            .replacingOccurrences(of: ".", with: "")
+            .capitalized(with: locale)
     }
     // ─────────────────────────────────────────────────────────────────────
     
+    /// Solo le settimane che hanno giorni del mese: `calendarDays` ne dà
+    /// sempre sei, qui le righe vuote in fondo non servono.
+    private var weeks: [[Date?]] {
+        let days = calendarDays(for: monthDate)
+        return stride(from: 0, to: days.count, by: 7)
+            .map { Array(days[$0..<($0 + 7)]) }
+            .filter { week in week.contains { $0 != nil } }
+    }
+    
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(monthAbbrev(monthDate))
-                .font(.caption.weight(.semibold))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 4)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(isCurrentMonth ? Color.accentColor : .primary)
+                .padding(.leading, 2)
             
-            let symbols = orderedWeekdayInitials()
-            HStack(spacing: 0) {
-                ForEach(symbols.indices, id: \.self) { i in
-                    Text(symbols[i])
-                        .font(.system(size: 7))
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                }
-            }
-            
-            let days = calendarDays(for: monthDate)
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: 1), count: 7),
-                spacing: 1
-            ) {
-                ForEach(days.indices, id: \.self) { i in
-                    if let date = days[i] {
-                        miniDayCell(date)
-                    } else {
-                        Color.clear.frame(height: 16)
+            VStack(spacing: 2) {
+                ForEach(weeks.indices, id: \.self) { w in
+                    HStack(spacing: 0) {
+                        ForEach(0..<7, id: \.self) { d in
+                            if let date = weeks[w][d] {
+                                miniDayCell(date)
+                            } else {
+                                Color.clear.frame(maxWidth: .infinity).frame(height: 22)
+                            }
+                        }
                     }
                 }
             }
         }
-        .padding(8)
-        .frame(maxWidth: .infinity, minHeight: 168, alignment: .topLeading)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous).fill(cardBackground)
-        )
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .contentShape(Rectangle())
         .onTapGesture { onSelectDate(monthDate) }
     }
@@ -874,23 +876,26 @@ private struct MiniMonthView: View {
         let comps      = Calendar.current.dateComponents([.year, .month, .day], from: date)
         let hasEvent   = datesWithEvents.contains(comps)
         
-        ZStack(alignment: .bottom) {
+        ZStack {
             Circle()
-                .fill(isSelected ? Color.accentColor : isToday ? Color.accentColor.opacity(0.15) : Color.clear)
-                .frame(width: 16, height: 16)
+                .fill(isSelected ? Color.accentColor : Color.clear)
+                .frame(width: 19, height: 19)
             
             Text(date, format: .dateTime.day())
-                .font(.system(size: 8))
+                .font(.system(size: 11, weight: isToday ? .bold : .medium))
+                .monospacedDigit()
                 .foregroundStyle(isSelected ? .white : isToday ? .accentColor : .primary)
             
             if hasEvent && !isSelected {
                 Circle()
                     .fill(Color.accentColor)
                     .frame(width: 3, height: 3)
-                    .offset(y: 6)
+                    .offset(y: 9)
             }
         }
-        .frame(height: 18)
+        .frame(maxWidth: .infinity)
+        .frame(height: 22)
+        .contentShape(Rectangle())
         .onTapGesture { onSelectDate(date) }
     }
 }
