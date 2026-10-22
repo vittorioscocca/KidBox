@@ -5,7 +5,7 @@
  *
  *   node scripts/asc-screenshots.js --version 2.4.2 [--platform IOS] \
  *        [--display APP_IPHONE_67] [--dir <cartella>] [--only it,en] [--apply]
- *        [--replace 02-chiuso.png]
+ *        [--replace 02-chiuso.png] [--custom-page "Pagina prodotto KidBox"]
  *
  * Senza --apply mostra, per ogni lingua, i set presenti e le immagini che ci
  * sono dentro, e non tocca nulla. Con --apply SOSTITUISCE le immagini del set
@@ -17,6 +17,10 @@
  * Con --replace <file> tocca una sola immagine per lingua: cancella quella col
  * nome dato e carica il file omonimo della cartella, allo stesso posto. Le
  * altre del set restano come sono.
+ *
+ * Con --custom-page <nome> scrive sulla pagina prodotto personalizzata con quel
+ * nome, nella sua versione in PREPARE_FOR_SUBMISSION (non la invia in
+ * revisione), invece che sulla versione dell'app.
  *
  * Autenticazione come asc-whatsnew.js (chiave .p8 nel Portachiavi).
  */
@@ -41,7 +45,8 @@ const DISPLAY = arg("display", "APP_IPHONE_67");
 const APPLY = process.argv.includes("--apply");
 const ONLY = arg("only") ? arg("only").split(",") : null; // es. --only it
 const REPLACE = arg("replace"); // es. --replace 02-chiuso.png
-if (!VERSION) {
+const CUSTOM_PAGE = arg("custom-page");
+if (!VERSION && !CUSTOM_PAGE) {
   console.error("Uso: --version X.Y.Z [--platform IOS] [--dir <cartella>] [--display APP_IPHONE_67] [--apply]");
   process.exit(2);
 }
@@ -159,14 +164,29 @@ async function waitComplete(tok, ids) {
 
 (async () => {
   const tok = auth(privateKey());
-  const versions = await call(tok, "GET", `/apps/${APP_ID}/appStoreVersions?filter[platform]=${PLATFORM}&filter[versionString]=${VERSION}&fields[appStoreVersions]=platform,versionString,appVersionState`);
-  const v = versions.data?.[0];
-  if (!v) { console.error(`Nessuna versione ${VERSION} per ${PLATFORM}.`); process.exit(1); }
-  const state = v.attributes.appVersionState;
-  console.log(`${PLATFORM} ${VERSION} — ${state} (${v.id}) — set ${DISPLAY}`);
-  if (!EDITABLE.has(state)) { console.error(`Stato ${state}: le immagini non sono modificabili.`); process.exit(1); }
-
-  const locs = await call(tok, "GET", `/appStoreVersions/${v.id}/appStoreVersionLocalizations?limit=50&fields[appStoreVersionLocalizations]=locale`);
+  let locs, LOC_TYPE, LOC_REL;
+  if (CUSTOM_PAGE) {
+    const pages = await call(tok, "GET", `/apps/${APP_ID}/appCustomProductPages?limit=50`);
+    const page = (pages.data || []).find((pg) => pg.attributes.name === CUSTOM_PAGE);
+    if (!page) { console.error(`Nessuna pagina personalizzata «${CUSTOM_PAGE}».`); process.exit(1); }
+    const vers = await call(tok, "GET", `/appCustomProductPages/${page.id}/appCustomProductPageVersions?limit=20`);
+    const cv = (vers.data || []).find((x) => x.attributes.state === "PREPARE_FOR_SUBMISSION");
+    if (!cv) { console.error(`«${CUSTOM_PAGE}» non ha una versione in preparazione: creane una in App Store Connect.`); process.exit(1); }
+    console.log(`Pagina «${CUSTOM_PAGE}» versione ${cv.attributes.version} — ${cv.attributes.state} (${cv.id}) — set ${DISPLAY}`);
+    locs = await call(tok, "GET", `/appCustomProductPageVersions/${cv.id}/appCustomProductPageLocalizations?limit=50`);
+    LOC_TYPE = "appCustomProductPageLocalizations";
+    LOC_REL = "appCustomProductPageLocalization";
+  } else {
+    const versions = await call(tok, "GET", `/apps/${APP_ID}/appStoreVersions?filter[platform]=${PLATFORM}&filter[versionString]=${VERSION}&fields[appStoreVersions]=platform,versionString,appVersionState`);
+    const v = versions.data?.[0];
+    if (!v) { console.error(`Nessuna versione ${VERSION} per ${PLATFORM}.`); process.exit(1); }
+    const state = v.attributes.appVersionState;
+    console.log(`${PLATFORM} ${VERSION} — ${state} (${v.id}) — set ${DISPLAY}`);
+    if (!EDITABLE.has(state)) { console.error(`Stato ${state}: le immagini non sono modificabili.`); process.exit(1); }
+    locs = await call(tok, "GET", `/appStoreVersions/${v.id}/appStoreVersionLocalizations?limit=50&fields[appStoreVersionLocalizations]=locale`);
+    LOC_TYPE = "appStoreVersionLocalizations";
+    LOC_REL = "appStoreVersionLocalization";
+  }
   const byLocale = Object.fromEntries((locs.data || []).map((l) => [l.attributes.locale, l]));
 
   for (const [dirName, locale] of Object.entries(LOCALES)) {
@@ -180,7 +200,7 @@ async function waitComplete(tok, ids) {
     console.log(`\n── ${locale}: ${files.length} file da caricare`);
     if (!loc) { console.log("   localizzazione assente sulla versione: salto"); continue; }
 
-    const sets = await call(tok, "GET", `/appStoreVersionLocalizations/${loc.id}/appScreenshotSets?include=appScreenshots&limit=50`);
+    const sets = await call(tok, "GET", `/${LOC_TYPE}/${loc.id}/appScreenshotSets?limit=50`);
     const present = (sets.data || []).map((s) => s.attributes.screenshotDisplayType);
     console.log(`   set presenti: ${present.join(", ") || "(nessuno)"}`);
     let set = (sets.data || []).find((s) => s.attributes.screenshotDisplayType === DISPLAY);
@@ -213,7 +233,7 @@ async function waitComplete(tok, ids) {
         data: {
           type: "appScreenshotSets",
           attributes: { screenshotDisplayType: DISPLAY },
-          relationships: { appStoreVersionLocalization: { data: { type: "appStoreVersionLocalizations", id: loc.id } } },
+          relationships: { [LOC_REL]: { data: { type: LOC_TYPE, id: loc.id } } },
         },
       });
       set = made.data;
