@@ -209,3 +209,36 @@ escluderla in modo definitivo.
 chiamata va in `AppDelegate` accanto ad `AppCheckInstaller.install()`, doppio
 ramo debug/produzione (in simulatore App Attest non esiste: serve il debug
 provider con la web API key, da xcconfig e non nel sorgente), iOS 14+.
+
+## 22/10/2026 — il calo al 34% sono i simulatori iOS, non gli utenti
+
+Firestore giorno per giorno: 70% (20/10) → 55% (21/10) → **34%** (22/10, 32.903
+richieste). Scomposto per ora e per piattaforma:
+
+- le VALID **Android** restano dove erano (8–10 mila al giorno): Play Integrity
+  sta bene, e il codice Android di App Check non cambia dal 19/09;
+- le **INVALID** passano da 3–5 mila a 21.589 al giorno, e salgono **solo nelle
+  ore delle sessioni di sviluppo iOS** (21/10 14–18, 22/10 10–18 e 20–22: gli
+  orari dei commit su ricerca, demo per gli screenshot, Duo, iPad, chat). Di
+  notte restano a 30–140 l'ora, come prima.
+
+**Causa:** su iOS `AppCheckInstaller` usa `AppCheckDebugProviderFactory` in
+DEBUG e nel Simulatore, e l'app iOS in Firebase ha **zero debug token
+registrati** (Android ne ha due, gli Xiaomi). Ogni simulatore genera e conserva
+un token suo (`GACAppCheckDebugToken` nelle preferenze dell'app): il 21–22/10 ne
+erano attivi **sei diversi** (iPhone 17 Pro Max, iPhone 18 Pro, iPad Pro 11 e
+13, KB Demo Duo, KB Demo iPad 13), tutti rifiutati → INVALID con `app_id =
+UNKNOWN`. Lo stesso vale per un iPhone vero con una build lanciata da Xcode.
+
+**Cosa NON è:** né le build in revisione (girano in Release, con App Attest) né
+un guasto dei client in store. L'enforcement è `UNENFORCED` su tutti i servizi,
+quindi nessun utente ne ha risentito.
+
+**La lezione:** una giornata di lavoro sui simulatori iOS sposta il cancello di
+decine di punti. Prima di leggere un calo, guardare se le INVALID seguono le
+ore di sviluppo; e con l'enforcement acceso il Simulatore smetterebbe di
+funzionare finché il suo token non è registrato (Firebase → App Check → app
+iOS → Gestisci token di debug).
+
+Resta aperto, ed è un'altra cosa: un fondo di 3–5 mila INVALID al giorno anche
+nei giorni senza sviluppo iOS, che da solo tiene il cancello sotto il 90%.
