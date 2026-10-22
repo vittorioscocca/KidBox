@@ -142,6 +142,10 @@ struct CalendarView: View {
 
     @State private var selectedDate = Date()
     @State private var searchText = ""
+    /// La ricerca si apre dalla lente in alto a destra, come in Calendario di
+    /// Apple, invece di occupare sempre una riga sotto il titolo.
+    @State private var isSearchActive = false
+    @FocusState private var isSearchFocused: Bool
     @State private var addSheetDate: AddSheetDate?
     @State private var editingEvent: KBCalendarEvent?
     @State private var editingReminder: KBTodoItem?
@@ -317,6 +321,44 @@ struct CalendarView: View {
         .scrollContentBackground(.hidden)
     }
 
+    private var searchBar: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField("Cerca eventi e promemoria", text: $searchText)
+                    .focused($isSearchFocused)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
+                if !searchText.isEmpty {
+                    Button { searchText = "" } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .glassEffect(.regular, in: Capsule())
+            
+            Button("Annulla") { closeSearch() }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+    }
+    
+    private func openSearch() {
+        withAnimation(.easeInOut(duration: 0.2)) { isSearchActive = true }
+        isSearchFocused = true
+    }
+    
+    private func closeSearch() {
+        isSearchFocused = false
+        searchText = ""
+        withAnimation(.easeInOut(duration: 0.2)) { isSearchActive = false }
+    }
+
     private func searchEventRow(_ event: KBCalendarEvent, date: Date) -> some View {
         Button { editingEvent = event } label: {
             HStack(spacing: 12) {
@@ -348,11 +390,16 @@ struct CalendarView: View {
         ZStack {
             backgroundColor.ignoresSafeArea()
             
+            VStack(spacing: 0) {
+            if isSearchActive {
+                searchBar
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
             if isSearching {
                 searchResults
             } else {
             VStack(spacing: 0) {
-                modePicker
+                if !isSearchActive { modePicker }
                 if showsDevicePrompt {
                     DeviceCalendarPromptCard(
                         onConnect: {
@@ -366,8 +413,8 @@ struct CalendarView: View {
                 currentModeView
             }
             }
+            }
         }
-        .searchable(text: $searchText, prompt: "Cerca eventi e promemoria")
         .kbRefreshable {
             await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
                 SyncCenter.shared.stopCalendarRealtime()
@@ -385,6 +432,14 @@ struct CalendarView: View {
                     Image(systemName: (deviceCalendars.isShowing || !feedStore.feeds.isEmpty) ? "calendar.badge.checkmark" : "calendar.badge.plus")
                 }
                 .accessibilityLabel("Calendari collegati")
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    if isSearchActive { closeSearch() } else { openSearch() }
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                }
+                .accessibilityLabel("Cerca")
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
@@ -862,7 +917,67 @@ private struct MonthDetailView: View {
     let onDeleteReminder:        (KBTodoItem) -> Void
     let onAddEvent:              (Date) -> Void
     
-    @State private var displayedMonth = Date()
+    /// Mese in testa alla griglia, come indice `anno × 12 + mese − 1`: i mesi
+    /// scorrono in verticale una pagina alla volta, come in Calendario di Apple.
+    @State private var visibleMonth: Int?
+    @State private var displayedMonth: Date
+    
+    private static let rowHeight: CGFloat = 52
+    /// Sei settimane per ogni mese (`calendarDays` dà sempre 42 celle): pagine
+    /// tutte alte uguali, quindi lo scorrimento a pagine cade sempre giusto.
+    private static let gridHeight: CGFloat = rowHeight * 6
+    /// Dieci anni prima e dopo oggi: la vista Anno serve per i salti più lunghi.
+    private static let monthRange: ClosedRange<Int> = {
+        let today = monthIndex(Date())
+        return (today - 120)...(today + 120)
+    }()
+    
+    static func monthIndex(_ date: Date) -> Int {
+        let c = Calendar.current.dateComponents([.year, .month], from: date)
+        return (c.year ?? 2000) * 12 + (c.month ?? 1) - 1
+    }
+    
+    static func monthDate(_ index: Int) -> Date {
+        Calendar.current.date(from: DateComponents(year: index / 12, month: index % 12 + 1, day: 1)) ?? Date()
+    }
+    
+    init(
+        selectedDate: Binding<Date>,
+        datesWithEvents: Set<DateComponents>,
+        events: [KBEventOccurrence],
+        deviceEvents: [DeviceCalendarEvent],
+        reminders: [KBTodoItem],
+        cardBackground: Color,
+        familyId: String,
+        onEditEvent: @escaping (KBCalendarEvent) -> Void,
+        onOpenDeviceEvent: @escaping (DeviceCalendarEvent) -> Void,
+        onVisibleMonthChange: @escaping (Date) -> Void,
+        onDeleteEvent: @escaping (KBCalendarEvent) -> Void,
+        onEditReminder: @escaping (KBTodoItem) -> Void,
+        onToggleReminder: @escaping (KBTodoItem) -> Void,
+        onDeleteReminder: @escaping (KBTodoItem) -> Void,
+        onAddEvent: @escaping (Date) -> Void
+    ) {
+        self._selectedDate = selectedDate
+        self.datesWithEvents = datesWithEvents
+        self.events = events
+        self.deviceEvents = deviceEvents
+        self.reminders = reminders
+        self.cardBackground = cardBackground
+        self.familyId = familyId
+        self.onEditEvent = onEditEvent
+        self.onOpenDeviceEvent = onOpenDeviceEvent
+        self.onVisibleMonthChange = onVisibleMonthChange
+        self.onDeleteEvent = onDeleteEvent
+        self.onEditReminder = onEditReminder
+        self.onToggleReminder = onToggleReminder
+        self.onDeleteReminder = onDeleteReminder
+        self.onAddEvent = onAddEvent
+        // Già sul mese giusto dal primo frame, senza partire da dieci anni fa.
+        let index = Self.monthIndex(selectedDate.wrappedValue)
+        _visibleMonth = State(initialValue: index)
+        _displayedMonth = State(initialValue: Self.monthDate(index))
+    }
     
     private var eventsOnSelectedDate: [KBEventOccurrence] {
         events.filter { eventOccursOnDay($0, day: selectedDate) }
@@ -888,82 +1003,129 @@ private struct MonthDetailView: View {
             }
     }
     
-    // ── FIX: DateFormatter rispetta il locale di sistema ──────────────────
-    private func monthTitle(_ date: Date) -> String {
+    private func monthName(_ date: Date) -> String {
         let locale = appLocale()
         let f = DateFormatter()
         f.locale = locale
-        f.dateFormat = "MMMM yyyy"
+        f.setLocalizedDateFormatFromTemplate("MMMM")
         return f.string(from: date).capitalized(with: locale)
     }
-    // ─────────────────────────────────────────────────────────────────────
+    
+    private var isOnCurrentMonth: Bool {
+        Self.monthIndex(displayedMonth) == Self.monthIndex(Date())
+    }
     
     var body: some View {
         VStack(spacing: 0) {
-            monthGrid
+            monthHeader
                 .padding(.horizontal)
                 .padding(.top, 8)
-            
-            Divider().padding(.vertical, 8)
-            
+            weekdayHeader
+                .padding(.horizontal)
+                .padding(.top, 10)
+                .padding(.bottom, 6)
+            monthPager
+            Divider().padding(.bottom, 8)
             dayEventsList
         }
-        .onAppear { displayedMonth = selectedDate }
         .onChange(of: displayedMonth) { _, month in onVisibleMonthChange(month) }
         .onChange(of: selectedDate) { _, newVal in
-            let selComps = Calendar.current.dateComponents([.year, .month], from: newVal)
-            let curComps = Calendar.current.dateComponents([.year, .month], from: displayedMonth)
-            if selComps != curComps { displayedMonth = newVal }
+            // Giorno scelto da fuori (Anno, notifica, «Oggi»): la griglia lo raggiunge.
+            let target = Self.monthIndex(newVal)
+            guard target != visibleMonth, Self.monthRange.contains(target) else { return }
+            withAnimation(.easeInOut(duration: 0.35)) { visibleMonth = target }
         }
     }
     
-    private var monthGrid: some View {
-        VStack(spacing: 8) {
-            HStack {
-                Button {
-                    displayedMonth = Calendar.current.date(
-                        byAdding: .month, value: -1, to: displayedMonth) ?? displayedMonth
-                } label: {
-                    Image(systemName: "chevron.left").foregroundStyle(.secondary)
-                }
-                Spacer()
-                // ── FIX: usa monthTitle con DateFormatter ─────────────────
-                Text(monthTitle(displayedMonth))
-                    .font(.headline)
-                // ─────────────────────────────────────────────────────────
-                Spacer()
-                Button {
-                    displayedMonth = Calendar.current.date(
-                        byAdding: .month, value: 1, to: displayedMonth) ?? displayedMonth
-                } label: {
-                    Image(systemName: "chevron.right").foregroundStyle(.secondary)
+    /// «Ottobre 2026» grande a sinistra, come il titolo di Calendario; «Oggi»
+    /// compare solo lontano dal mese corrente.
+    private var monthHeader: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(monthName(displayedMonth))
+                .font(.largeTitle.weight(.bold))
+                .contentTransition(.numericText())
+            Text(String(Calendar.current.component(.year, from: displayedMonth)))
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+            if !isOnCurrentMonth {
+                Button("Oggi") { selectedDate = Date() }
+                    .font(.subheadline.weight(.semibold))
+                    .buttonStyle(.glass)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: displayedMonth)
+    }
+    
+    private var weekdayHeader: some View {
+        let weekdays = orderedWeekdayInitials()
+        return HStack(spacing: 0) {
+            ForEach(weekdays.indices, id: \.self) { i in
+                Text(weekdays[i])
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+    
+    /// I mesi uno sotto l'altro, una pagina per mese: si scorre in su e in giù
+    /// per cambiare mese, come in Calendario di Apple.
+    private var monthPager: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            LazyVStack(spacing: 0) {
+                ForEach(Self.monthRange, id: \.self) { index in
+                    monthPage(index)
+                        .frame(height: Self.gridHeight)
                 }
             }
-            
-            let weekdays = orderedWeekdayInitials()
-            HStack(spacing: 0) {
-                ForEach(weekdays.indices, id: \.self) { i in
-                    Text(weekdays[i])
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
+            .scrollTargetLayout()
+        }
+        .scrollTargetBehavior(.paging)
+        .scrollPosition(id: $visibleMonth)
+        .frame(height: Self.gridHeight)
+        .onChange(of: visibleMonth) { _, index in
+            // Il titolo segue la pagina mentre scorre.
+            guard let index else { return }
+            displayedMonth = Self.monthDate(index)
+        }
+        .onScrollPhaseChange { _, phase in
+            // A pagina ferma si sceglie un giorno del nuovo mese: oggi se è il
+            // mese corrente, altrimenti il primo. Durante lo scorrimento no, o la
+            // lista sotto cambierebbe a ogni mese attraversato.
+            guard phase == .idle, let index = visibleMonth,
+                  Self.monthIndex(selectedDate) != index else { return }
+            selectedDate = index == Self.monthIndex(Date()) ? Date() : Self.monthDate(index)
+        }
+    }
+    
+    private func monthPage(_ index: Int) -> some View {
+        let days = calendarDays(for: Self.monthDate(index))
+        return VStack(spacing: 0) {
+            ForEach(0..<6, id: \.self) { row in
+                let week = Array(days[(row * 7)..<(row * 7 + 7)])
+                HStack(spacing: 0) {
+                    ForEach(0..<7, id: \.self) { col in
+                        if let date = week[col] {
+                            dayCell(date)
+                        } else {
+                            Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                    }
                 }
-            }
-            
-            let days = calendarDays(for: displayedMonth)
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7),
-                spacing: 4
-            ) {
-                ForEach(days.indices, id: \.self) { i in
-                    if let date = days[i] {
-                        dayCell(date)
-                    } else {
-                        Color.clear.frame(height: 36)
+                .frame(height: Self.rowHeight)
+                .overlay(alignment: .top) {
+                    // Una riga sottile sopra ogni settimana che ha giorni del mese.
+                    if week.contains(where: { $0 != nil }) {
+                        Rectangle()
+                            .fill(Color.primary.opacity(0.12))
+                            .frame(height: 0.5)
                     }
                 }
             }
         }
+        .padding(.horizontal)
     }
     
     @ViewBuilder
@@ -982,9 +1144,9 @@ private struct MonthDetailView: View {
             
             Circle()
                 .fill(hasEvent ? Color.accentColor.opacity(0.7) : Color.clear)
-                .frame(width: 4, height: 4)
+                .frame(width: 5, height: 5)
         }
-        .frame(height: 40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture { selectedDate = date }
     }
