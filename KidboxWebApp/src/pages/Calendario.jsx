@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   collection,
   doc,
@@ -257,10 +257,149 @@ function TimeGridView({
 
 /* ── Vista Mese: eventi elencati dentro la cella ──────────────────────── */
 
-function MonthView({ anchor, events, remindersOn, selectedDate, onSelectDay, onSelectEvent, onSelectReminder, onCreateAt, locale, weekStart }) {
-  const cells = calendarDays(anchor.getFullYear(), anchor.getMonth(), weekStart);
-  const initials = weekdayInitials(locale, weekStart);
+/** Dieci anni prima e dopo oggi: la vista Anno serve per i salti più lunghi. */
+const MONTH_PAGES_EACH_SIDE = 120;
+/** Mese come indice `anno × 12 + mese`, una pagina della vista Mese. */
+const monthIndex = (d) => d.getFullYear() * 12 + d.getMonth();
+const monthDate = (i) => new Date(Math.floor(i / 12), i % 12, 1);
+/** Altezza esatta di una pagina: `clientHeight` arrotonda, e su 120 pagine
+    mezzo pixel diventa un mese fuori posto. */
+const pageHeight = (el) => el.getBoundingClientRect().height;
+
+function MonthPage({ index, events, remindersOn, selectedDate, onSelectDay, onSelectEvent, onSelectReminder, onCreateAt, locale, weekStart }) {
+  const first = monthDate(index);
+  const cells = calendarDays(first.getFullYear(), first.getMonth(), weekStart);
   const today = new Date();
+  const weeks = Array.from({ length: 6 }, (_, r) => cells.slice(r * 7, r * 7 + 7));
+
+  return weeks.map((week, r) => (
+    // Una riga sottile sopra ogni settimana che ha giorni del mese.
+    <div key={r} className={"mv-week" + (week.some(Boolean) ? " has-days" : "")}>
+      {week.map((d, i) => {
+        if (!d) return <div key={i} className="mv-cell out" />;
+        const dayEvents = events
+          .filter((e) => eventOccursOnDay(e, d))
+          .sort((a, b) => (a.startDate?.toMillis?.() ?? 0) - (b.startDate?.toMillis?.() ?? 0));
+        return (
+          <div
+            key={i}
+            className={"mv-cell" + (isSameDay(d, selectedDate) ? " selected" : "")}
+            onClick={() => onSelectDay(d)}
+            // Doppio click sulla cella: nuovo evento in quel giorno, come il
+            // doppio click sulla colonna oraria nelle viste giorno/settimana.
+            onDoubleClick={() => onCreateAt(d)}
+          >
+            <div className="mv-daynum-row">
+              <span className={"mv-daynum" + (isSameDay(d, today) ? " today" : "")}>
+                {d.getDate()}
+              </span>
+            </div>
+            <div className="mv-events">
+              {dayEvents.slice(0, 4).map((e) => {
+                const color = eventColor(e);
+                const start = e.startDate?.toDate?.();
+                return (
+                  <button
+                    key={e.id}
+                    className="mv-event"
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      onSelectEvent(e);
+                    }}
+                    onDoubleClick={(ev) => ev.stopPropagation()}
+                  >
+                    <span className="mv-dot" style={{ background: color }} />
+                    <span className="mv-title">{e.title}</span>
+                    {!e.isAllDay && start && (
+                      <span className="mv-time">{timeLabel(start, locale)}</span>
+                    )}
+                  </button>
+                );
+              })}
+              {remindersOn(d).slice(0, 3).map((todo) => (
+                <button
+                  key={todo.id}
+                  className={"mv-event mv-reminder" + (todo.isDone ? " done" : "")}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    onSelectReminder(todo);
+                  }}
+                  onDoubleClick={(ev) => ev.stopPropagation()}
+                >
+                  <span className="mv-dot mv-dot-reminder" />
+                  <span className="mv-title">{todo.title}</span>
+                </button>
+              ))}
+              {dayEvents.length > 4 && (
+                <span className="mv-more">+{dayEvents.length - 4}</span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  ));
+}
+
+/**
+ * I mesi uno sotto l'altro, una pagina per mese: si scorre in su e in giù per
+ * cambiare mese, come `MonthDetailView` su iOS. Il titolo segue la pagina
+ * mentre scorre (`onVisibleMonthChange`); a pagina ferma `onSettleMonth`
+ * sceglie un giorno del nuovo mese. Un `anchor` cambiato da fuori (Oggi, vista
+ * Anno, link dell'assistente) porta la griglia al suo mese.
+ */
+function MonthView({ anchor, onVisibleMonthChange, onSettleMonth, locale, weekStart, ...pageProps }) {
+  const initials = weekdayInitials(locale, weekStart);
+  const firstIndex = useMemo(() => monthIndex(new Date()) - MONTH_PAGES_EACH_SIDE, []);
+  const pageCount = MONTH_PAGES_EACH_SIDE * 2 + 1;
+  const anchorIndex = monthIndex(anchor);
+  const scrollerRef = useRef(null);
+  const visibleRef = useRef(anchorIndex);
+  const [visible, setVisible] = useState(anchorIndex);
+  const settleTimer = useRef(null);
+
+  // Già sul mese giusto dal primo frame; a ogni ridimensionamento la pagina
+  // guardata resta quella (le pagine sono alte quanto lo spazio disponibile).
+  useLayoutEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return undefined;
+    const pin = () => {
+      el.scrollTop = (visibleRef.current - firstIndex) * pageHeight(el);
+    };
+    pin();
+    const ro = new ResizeObserver(pin);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      clearTimeout(settleTimer.current);
+    };
+  }, [firstIndex]);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    const target = anchorIndex - firstIndex;
+    if (!el || anchorIndex === visibleRef.current || target < 0 || target >= pageCount) return;
+    const far = Math.abs(anchorIndex - visibleRef.current) > 2;
+    visibleRef.current = anchorIndex;
+    setVisible(anchorIndex);
+    el.scrollTo({ top: target * pageHeight(el), behavior: far ? "auto" : "smooth" });
+  }, [anchorIndex, firstIndex, pageCount]);
+
+  const onScroll = (e) => {
+    const el = e.currentTarget;
+    const h = pageHeight(el);
+    if (!h) return;
+    const index = firstIndex + Math.round(el.scrollTop / h);
+    if (index !== visibleRef.current) {
+      visibleRef.current = index;
+      setVisible(index);
+      onVisibleMonthChange(monthDate(index));
+    }
+    // Durante lo scorrimento no, o il giorno scelto cambierebbe a ogni mese
+    // attraversato.
+    clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => onSettleMonth(visibleRef.current), 160);
+  };
 
   return (
     <div className="month-view">
@@ -269,71 +408,16 @@ function MonthView({ anchor, events, remindersOn, selectedDate, onSelectDay, onS
           <span key={i}>{w}</span>
         ))}
       </div>
-      <div className="month-view-grid">
-        {cells.map((d, i) => {
-          if (!d) return <div key={i} className="mv-cell out" />;
-          const inMonth = d.getMonth() === anchor.getMonth();
-          const dayEvents = events
-            .filter((e) => eventOccursOnDay(e, d))
-            .sort((a, b) => (a.startDate?.toMillis?.() ?? 0) - (b.startDate?.toMillis?.() ?? 0));
+      <div className="mv-scroller" ref={scrollerRef} onScroll={onScroll}>
+        {Array.from({ length: pageCount }, (_, p) => {
+          const index = firstIndex + p;
+          // Si disegnano solo la pagina guardata e le vicine: le altre sono
+          // segnaposto alti uguali, così lo scorrimento resta a pagine.
           return (
-            <div
-              key={i}
-              className={
-                "mv-cell" +
-                (inMonth ? "" : " out") +
-                (isSameDay(d, selectedDate) ? " selected" : "")
-              }
-              onClick={() => onSelectDay(d)}
-              // Doppio click sulla cella: nuovo evento in quel giorno, come il
-              // doppio click sulla colonna oraria nelle viste giorno/settimana.
-              onDoubleClick={() => onCreateAt(d)}
-            >
-              <div className="mv-daynum-row">
-                <span className={"mv-daynum" + (isSameDay(d, today) ? " today" : "")}>
-                  {d.getDate()}
-                </span>
-              </div>
-              <div className="mv-events">
-                {dayEvents.slice(0, 4).map((e) => {
-                  const color = eventColor(e);
-                  const start = e.startDate?.toDate?.();
-                  return (
-                    <button
-                      key={e.id}
-                      className="mv-event"
-                      onClick={(ev) => {
-                        ev.stopPropagation();
-                        onSelectEvent(e);
-                      }}
-                      onDoubleClick={(ev) => ev.stopPropagation()}
-                    >
-                      <span className="mv-dot" style={{ background: color }} />
-                      <span className="mv-title">{e.title}</span>
-                      {!e.isAllDay && start && (
-                        <span className="mv-time">{timeLabel(start, locale)}</span>
-                      )}
-                    </button>
-                  );
-                })}
-                {remindersOn(d).slice(0, 3).map((todo) => (
-                  <button
-                    key={todo.id}
-                    className={"mv-event mv-reminder" + (todo.isDone ? " done" : "")}
-                    onClick={(ev) => {
-                      ev.stopPropagation();
-                      onSelectReminder(todo);
-                    }}
-                    onDoubleClick={(ev) => ev.stopPropagation()}
-                  >
-                    <span className="mv-dot mv-dot-reminder" />
-                    <span className="mv-title">{todo.title}</span>
-                  </button>
-                ))}
-                {dayEvents.length > 4 && (
-                  <span className="mv-more">+{dayEvents.length - 4}</span>
-                )}
-              </div>
+            <div key={index} className="mv-page">
+              {Math.abs(index - visible) <= 1 && (
+                <MonthPage index={index} locale={locale} weekStart={weekStart} {...pageProps} />
+              )}
             </div>
           );
         })}
@@ -435,6 +519,13 @@ export default function Calendario() {
   const [editingEvent, setEditingEvent] = useState(null);
   const [editingReminder, setEditingReminder] = useState(null);
   const [calSearch, setCalSearch] = useState("");
+  // La ricerca si apre dalla lente in alto a destra, come in Calendario di
+  // Apple, invece di occupare sempre una riga sotto la barra.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const closeSearch = () => {
+    setCalSearch("");
+    setSearchOpen(false);
+  };
   // Da un link dell'assistente: `/calendario?apri=<id>` porta al giorno e apre l'evento.
   useOpenParam(
     (id) => events.find((e) => e.id === id),
@@ -569,6 +660,13 @@ export default function Calendario() {
     setSelectedDate(now);
   };
 
+  // Vista Mese a pagina ferma: oggi se è il mese corrente, altrimenti il primo.
+  const onSettleMonth = (index) => {
+    if (monthIndex(selectedDate) === index) return;
+    setSelectedDate(index === monthIndex(new Date()) ? new Date() : monthDate(index));
+  };
+  const awayFromToday = monthIndex(anchor) !== monthIndex(new Date());
+
   const openCreate = (date) => {
     setAddDate(date ?? selectedDate);
     setNewItemKind("event");
@@ -634,26 +732,57 @@ export default function Calendario() {
             </button>
           ))}
         </div>
-        <div className="cal-nav">
-          <button onClick={() => shift(-1)}>‹</button>
-          <button className="today-btn" onClick={goToday}>
-            {t.calendar.todayBtn}
-          </button>
-          <button onClick={() => shift(1)}>›</button>
-        </div>
+        {/* In vista Mese i mesi si scorrono: niente frecce, e «Oggi» sta
+            accanto al titolo. */}
+        {view !== "month" && (
+          <div className="cal-nav">
+            <button onClick={() => shift(-1)}>‹</button>
+            <button className="today-btn" onClick={goToday}>
+              {t.calendar.todayBtn}
+            </button>
+            <button onClick={() => shift(1)}>›</button>
+          </div>
+        )}
+        <button
+          className={"cal-add cal-search-btn" + (searchOpen ? " active" : "")}
+          onClick={() => (searchOpen ? closeSearch() : setSearchOpen(true))}
+          title={t.calendar.searchOpen}
+          aria-label={t.calendar.searchOpen}
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" strokeWidth="2.2" />
+            <line x1="15.5" y1="15.5" x2="20.5" y2="20.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+        </button>
       </div>
 
-      <input
-        className="kb-list-search"
-        placeholder={t.calendar.searchPlaceholder}
-        value={calSearch}
-        onChange={(e) => setCalSearch(e.target.value)}
-      />
+      {searchOpen && (
+        <div className="cal-search-row">
+          <input
+            className="kb-list-search"
+            placeholder={t.calendar.searchPlaceholder}
+            value={calSearch}
+            autoFocus
+            onChange={(e) => setCalSearch(e.target.value)}
+            onKeyDown={(e) => e.key === "Escape" && closeSearch()}
+          />
+          <button className="cal-search-cancel" onClick={closeSearch}>
+            {t.calendar.searchCancel}
+          </button>
+        </div>
+      )}
 
       <div className="cal-heading">
-        {heading()}
-        {view === "day" && (
-          <div className="cal-subheading">{weekdayName(anchor, locale)}</div>
+        <div>
+          {heading()}
+          {view === "day" && (
+            <div className="cal-subheading">{weekdayName(anchor, locale)}</div>
+          )}
+        </div>
+        {view === "month" && awayFromToday && !searchResults && (
+          <button className="cal-feeds-btn cal-heading-today" onClick={goToday}>
+            {t.calendar.todayBtn}
+          </button>
         )}
       </div>
 
@@ -719,6 +848,8 @@ export default function Calendario() {
       {view === "month" && (
         <MonthView
           anchor={anchor}
+          onVisibleMonthChange={setAnchor}
+          onSettleMonth={onSettleMonth}
           events={displayEvents}
           remindersOn={remindersOn}
           selectedDate={selectedDate}

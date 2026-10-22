@@ -1210,6 +1210,8 @@ export const translations = {
     },
     calendar: {
       searchPlaceholder: "Cerca eventi e promemoria",
+      searchOpen: "Cerca",
+      searchCancel: "Annulla",
       searchNoResults: "Nessun risultato.",
       feeds: {
         help: {
@@ -2905,6 +2907,8 @@ export const translations = {
     },
     calendar: {
       searchPlaceholder: "Search events and reminders",
+      searchOpen: "Search",
+      searchCancel: "Cancel",
       searchNoResults: "No results.",
       feeds: {
         help: {
@@ -4546,6 +4550,8 @@ export const translations = {
     },
     calendar: {
       searchPlaceholder: "Rechercher événements et rappels",
+      searchOpen: "Rechercher",
+      searchCancel: "Annuler",
       searchNoResults: "Aucun résultat.",
       feeds: {
         help: {
@@ -6186,6 +6192,8 @@ export const translations = {
     },
     calendar: {
       searchPlaceholder: "Buscar eventos y recordatorios",
+      searchOpen: "Buscar",
+      searchCancel: "Cancelar",
       searchNoResults: "Sin resultados.",
       feeds: {
         help: {

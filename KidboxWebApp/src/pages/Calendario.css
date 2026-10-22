@@ -694,3 +694,111 @@
   background: var(--accent);
   border-radius: 2px;
 }
+
+/* ── Vista Mese a pagine verticali e ricerca dalla lente ─────────────────
+   Come `MonthDetailView` su iOS: un mese per pagina, si scorre in su e in giù. */
+.cal-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Su schermo stretto il selettore va a capo: la lente resta a destra anche
+   in vista Mese, dove le frecce non ci sono. */
+@media (max-width: 760px) {
+  .cal-search-btn {
+    margin-left: auto;
+  }
+
+  .cal-nav + .cal-search-btn {
+    margin-left: 0;
+  }
+}
+
+.cal-search-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.cal-search-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 4px;
+}
+
+.cal-search-row .kb-list-search {
+  flex: 1;
+  margin: 0;
+}
+
+.cal-search-cancel {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 4px;
+}
+
+.cal-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cal-heading-today {
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.mv-scroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.mv-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.mv-page {
+  height: 100%;
+  display: grid;
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.mv-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  min-height: 0;
+}
+
+.mv-week.has-days {
+  border-top: 1px solid var(--border);
+}
+
+.mv-week .mv-cell {
+  border-right: none;
+  border-bottom: none;
+  border-left: 1px solid var(--border);
+}
+
+.mv-week .mv-cell:first-child,
+.mv-week .mv-cell.out + .mv-cell.out,
+.mv-week .mv-cell.out:first-child {
+  border-left-color: transparent;
+}
+
+.mv-week .mv-cell.out {
+  background: transparent;
+  cursor: default;
+}
