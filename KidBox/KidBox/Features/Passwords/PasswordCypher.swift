@@ -98,7 +98,9 @@ enum PasswordCypher {
     }
 
     private static func currentUid() throws -> String {
-        guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else {
+        // `KBUid`: in Release è l'utente di Firebase Auth; nella demo degli
+        // screenshot è l'utente della famiglia inventata.
+        guard let uid = KBUid.current, !uid.isEmpty else {
             throw PasswordCryptoError.missingCurrentUser
         }
         return uid

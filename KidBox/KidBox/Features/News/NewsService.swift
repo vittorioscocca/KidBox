@@ -80,6 +80,9 @@ final class NewsService {
     /// argomenti di chi legge. Prima si aspetta che l'ultima scelta della
     /// famiglia sia sul server: il server la legge e la preferisce.
     func fetchFeed(familyId: String, family: NewsFamilySettings, prefs: NewsPrefs) async throws -> NewsFeed {
+        #if DEBUG
+        if KBDemoSeed.isActive, let demo = KBDemoSeed.newsFeed() { return demo }
+        #endif
         try await ensurePaidPlan()
         await NewsFamilyStore.shared.settled()
         let payload: [String: Any] = [

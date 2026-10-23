@@ -137,6 +137,11 @@ final class ChatViewModel: NSObject, ObservableObject {
     func startListening() {
         guard !isObserving else { return }
         isObserving = true
+        #if DEBUG
+        // Famiglia inventata degli screenshot: i messaggi sono già sul telefono,
+        // e il server rifiuterebbe l'ascolto senza un utente.
+        if KBDemoSeed.isActive { reloadLocal(); return }
+        #endif
         KBLog.sync.kbInfo("ChatVM startListening familyId=\(familyId)")
         let uid  = Auth.auth().currentUser?.uid ?? ""
         let name = senderDisplayName()

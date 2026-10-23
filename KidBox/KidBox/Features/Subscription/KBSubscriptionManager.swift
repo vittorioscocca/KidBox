@@ -239,6 +239,10 @@ final class KBSubscriptionManager: ObservableObject {
     private init() {
         startTransactionListener()
         observeAIUsageChanges()
+        #if DEBUG
+        // Famiglia inventata degli screenshot: tutte le sezioni sbloccate.
+        if KBDemoSeed.isActive { currentPlan = .max }
+        #endif
     }
 
     deinit {
@@ -343,6 +347,9 @@ final class KBSubscriptionManager: ObservableObject {
     }
     
     func loadPlan() async {
+        #if DEBUG
+        if KBDemoSeed.isActive { currentPlan = .max; return }
+        #endif
         guard let uid = Auth.auth().currentUser?.uid else {
             isFamilyOwner = false
             return
@@ -756,6 +763,9 @@ final class KBSubscriptionManager: ObservableObject {
     /// FIX 2: currentPlan viene aggiornato SUBITO da StoreKit, prima dell'aggiornamento Firestore,
     ///         così la UI riflette lo stato reale senza attendere la Cloud Function.
     func refreshCurrentEntitlement() async {
+        #if DEBUG
+        if KBDemoSeed.isActive { currentPlan = .max; return }
+        #endif
         guard let uid = Auth.auth().currentUser?.uid else { return }
         KBLog.app.kbInfo("SubscriptionManager: refreshCurrentEntitlement")
         

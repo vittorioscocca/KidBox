@@ -240,7 +240,7 @@ enum KBDemoSeed {
             UserDefaults.standard.set(fid, forKey: "KidBox.activeFamilyId")
             return
         }
-        if args.contains("-KBDemoReset") { wipe(ctx, fid) }
+        if args.contains("-KBDemoReset") { wipe(ctx, fid); wipeSections(ctx) }
 
         let t = texts(lang)
         let now = Date()
@@ -313,6 +313,8 @@ enum KBDemoSeed {
         for g in t.groceries {
             ctx.insert(KBGroceryItem(familyId: fid, name: g.name, quantity: g.qty, updatedBy: me, createdBy: me))
         }
+
+        seedSections(ctx, day: day)
 
         try? ctx.save()
         UserDefaults.standard.set(fid, forKey: "KidBox.activeFamilyId")

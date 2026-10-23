@@ -108,6 +108,12 @@ final class FamilyLocationViewModel: ObservableObject {
     // MARK: - Firestore listen
 
     private func listen() {
+        #if DEBUG
+        if KBDemoSeed.isActive {
+            sharedUsers = KBDemoSeed.sharedLocations()
+            return
+        }
+        #endif
         listener = remote.listen(familyId: familyId) { [weak self] users in
             Task { @MainActor in
                 guard let self else { return }

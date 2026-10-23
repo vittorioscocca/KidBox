@@ -431,6 +431,9 @@ final class ChatRemoteStore {
     /// Campi: `isTyping: Bool`, `name: String`, `updatedAt: Timestamp`
     
     func setTyping(_ isTyping: Bool, familyId: String, uid: String, displayName: String) async {
+        // Senza uid il percorso sarebbe vuoto e Firestore interrompe l'app
+        // (succedeva aprendo la chat senza utente, per esempio nella demo).
+        guard !uid.isEmpty, !familyId.isEmpty else { return }
         let ref = db.collection("families")
             .document(familyId)
             .collection("typing")
