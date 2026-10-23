@@ -95,6 +95,14 @@
   .nav-lang a { text-decoration:none; }
   .theme-btn { cursor:pointer; background:transparent; border:1px solid var(--border); color:var(--muted); width:34px; height:34px; border-radius:50%; font-size:0.9rem; display:grid; place-items:center; transition:border-color .2s,color .2s; }
   .theme-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .like { position:relative; display:grid; place-items:center; }
+  .like-btn { cursor:pointer; background:transparent; border:1px solid var(--border); color:var(--muted); width:34px; height:34px; border-radius:50%; display:grid; place-items:center; transition:border-color .2s,color .2s; }
+  .like-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .like-btn[aria-pressed="true"] { color:#e5484d; border-color:#e5484d; cursor:default; }
+  .like-btn[aria-pressed="true"] svg { fill:currentColor; }
+  .like-btn.pop svg { animation:likepop .45s ease; }
+  @keyframes likepop { 40% { transform:scale(1.35); } }
+  .like-n { position:absolute; top:100%; left:50%; transform:translateX(-50%); margin-top:2px; font-size:0.66rem; font-weight:700; line-height:1; color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums; }
   .nav-cta { font-size:0.84rem; font-weight:700; color:#fff; background:var(--accent); text-decoration:none; padding:8px 16px; border-radius:50px; transition:transform .15s; }
   .nav-cta:hover { transform:translateY(-1px); }
   .nav-lnk { white-space:nowrap; }
@@ -296,6 +304,8 @@
   .lang-list a:hover { background:var(--border, var(--c-border)); }
   .lang-list a[aria-current] { color:var(--accent, var(--c-accent)); font-weight:700; }
   /* langmenu:css:end */
+  /* Telefoni: con il cuore la barra non ci sta più a 375 px. */
+  @media (max-width:480px){ .nav-r { gap:6px; } .theme-btn, .like-btn { width:30px; height:30px; } .nav-cta { padding:7px 11px; font-size:0.78rem; white-space:nowrap; } .lang-menu summary { padding:6px 8px; } }
   /* footer:css:start */
   footer { border-top:1px solid var(--border); margin-top:70px; padding:26px 0 30px; font-size:0.78rem; color:var(--muted); line-height:1.45; }
   .sf-notes { padding-bottom:16px; border-bottom:1px solid var(--border); }
@@ -347,6 +357,7 @@
     <a class="nav-lnk nav-hide" href="en/blog/">Blog</a>
     <details class="lang-menu"><summary aria-label="Language"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9M12 3C9.5 5.7 8.2 8.7 8.2 12s1.3 6.3 3.8 9"/></svg><span>EN</span></summary><div class="lang-list"><a href="index.html" hreflang="it" lang="it" data-lang="it">Italiano</a><a href="index-en.html" hreflang="en" lang="en" data-lang="en" aria-current="true">English</a><a href="index-es.html" hreflang="es" lang="es" data-lang="es">Español</a><a href="index-fr.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></div></details>
     <button class="theme-btn" id="tg" aria-label="Toggle theme">◐</button>
+    <div class="like" id="lk"><button class="like-btn" type="button" aria-pressed="false" aria-label="I like the idea" title="I like the idea"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 8 3.4 4.5 6.9 4.5c2.1 0 3.7 1.2 5.1 3 1.4-1.8 3-3 5.1-3 3.5 0 5.5 3.5 4.2 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg></button><span class="like-n" aria-live="polite"></span></div>
     <a class="nav-cta" href="#scarica">Download free</a>
   </div>
 </nav>
@@ -698,5 +709,6 @@
 <!-- Listino piani: le card sopra sono generate al deploy; questo script le
      riallinea a `config/plans`, che si modifica dalla console admin. -->
 <script defer src="/assets/plans.js?v=5"></script>
+<script defer src="/assets/like.js?v=1"></script>
 </body>
 </html>

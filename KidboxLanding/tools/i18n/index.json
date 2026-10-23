@@ -206,7 +206,8 @@
   "Your family deserves an app that measures up.",
   "Free to start. No card required.",
   "<span class=\"st-in\"><span class=\"st-sub\">Download on the</span><span class=\"st-main\">App Store</span></span></a>\n      <a class=\"store\" href=\"https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox\" target=\"_blank\" rel=\"noopener\">",
-  "<span class=\"st-in\"><span class=\"st-sub\">Get it on</span><span class=\"st-main\">Google Play</span></span></a>\n      <a class=\"store store-web\" href=\"https://app.kidboxapp.com\" target=\"_blank\" rel=\"noopener\">"
+  "<span class=\"st-in\"><span class=\"st-sub\">Get it on</span><span class=\"st-main\">Google Play</span></span></a>\n      <a class=\"store store-web\" href=\"https://app.kidboxapp.com\" target=\"_blank\" rel=\"noopener\">",
+  "I like the idea"
  ],
  "es": [
   "KidBox · Toda tu familia, organizada",
@@ -415,7 +416,8 @@
   "Tu familia merece una app a su altura.",
   "Gratis para empezar. Sin tarjeta.",
   "<span class=\"st-in\"><span class=\"st-sub\">Descárgalo en el</span><span class=\"st-main\">App Store</span></span></a>\n      <a class=\"store\" href=\"https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox\" target=\"_blank\" rel=\"noopener\">",
-  "<span class=\"st-in\"><span class=\"st-sub\">Disponible en</span><span class=\"st-main\">Google Play</span></span></a>\n      <a class=\"store store-web\" href=\"https://app.kidboxapp.com\" target=\"_blank\" rel=\"noopener\">"
+  "<span class=\"st-in\"><span class=\"st-sub\">Disponible en</span><span class=\"st-main\">Google Play</span></span></a>\n      <a class=\"store store-web\" href=\"https://app.kidboxapp.com\" target=\"_blank\" rel=\"noopener\">",
+  "Me gusta la idea"
  ],
  "fr": [
   "KidBox · Toute votre famille, organisée",
@@ -624,6 +626,7 @@
   "Votre famille mérite une app à la hauteur.",
   "Gratuit pour commencer. Sans carte.",
   "<span class=\"st-in\"><span class=\"st-sub\">Télécharger dans l'</span><span class=\"st-main\">App Store</span></span></a>\n      <a class=\"store\" href=\"https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox\" target=\"_blank\" rel=\"noopener\">",
-  "<span class=\"st-in\"><span class=\"st-sub\">Disponible sur</span><span class=\"st-main\">Google Play</span></span></a>\n      <a class=\"store store-web\" href=\"https://app.kidboxapp.com\" target=\"_blank\" rel=\"noopener\">"
+  "<span class=\"st-in\"><span class=\"st-sub\">Disponible sur</span><span class=\"st-main\">Google Play</span></span></a>\n      <a class=\"store store-web\" href=\"https://app.kidboxapp.com\" target=\"_blank\" rel=\"noopener\">",
+  "J'aime l'idée"
  ]
 }

@@ -1222,6 +1222,13 @@
         }
       },
       {
+        "source": "/api/like",
+        "function": {
+          "functionId": "landingLike",
+          "region": "europe-west1"
+        }
+      },
+      {
         "source": "/api/chat",
         "function": {
           "functionId": "landingChat",
