@@ -60,6 +60,7 @@ final class DailyBriefingService {
             return
         }
 
+        guard await ProactiveAIGate.allows() else { return }
         KBLog.ai.kbInfo("DailyBriefingService: generating briefing for \(today)")
         await generateAndSchedule(input: input, familyName: familyName, dateKey: today, familyId: familyId)
     }

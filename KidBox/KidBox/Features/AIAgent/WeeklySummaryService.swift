@@ -91,6 +91,7 @@ final class WeeklySummaryService {
             return
         }
         
+        guard await ProactiveAIGate.allows() else { return }
         KBLog.ai.kbInfo("WeeklySummaryService: generating summary for week \(currentWeek)")
         let enrichedInput = await enrichInputWithLifeAreaDocuments(
             forcedFamilyId: forcedFamilyId,

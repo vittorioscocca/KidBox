@@ -78,6 +78,8 @@ final class HealthPatternAnalyzerService {
             return
         }
 
+        guard await ProactiveAIGate.allows() else { return }
+
         KBLog.ai.kbInfo("HealthPatternAnalyzer: starting analysis for period \(period) family=\(familyName)")
 
         let healthData = fetchHealthData(
