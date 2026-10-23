@@ -246,6 +246,8 @@ SCRIPT = """
       var r=document.documentElement, c=r.getAttribute('data-theme');
       var dark=c?c==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
       r.setAttribute('data-theme',dark?'light':'dark');
+      // Gli screenshot seguono il tema scelto, non solo quello di sistema.
+      document.querySelectorAll('.screen picture source').forEach(function(s){s.media=dark?'not all':'all';});
     });
     var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:0.12});
     document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
