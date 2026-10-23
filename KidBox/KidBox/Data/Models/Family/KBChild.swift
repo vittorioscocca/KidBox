@@ -75,9 +75,9 @@ extension KBChild {
         let comps = Calendar.current.dateComponents([.year, .month], from: bd, to: Date())
         let years  = comps.year  ?? 0
         let months = comps.month ?? 0
-        if years > 0 { return "\(years) ann\(years == 1 ? "o" : "i")" }
-        if months > 0 { return "\(months) mes\(months == 1 ? "e" : "i")" }
-        return "Neonato"
+        if years > 0 { return years == 1 ? String(localized: "\(years) anno") : String(localized: "\(years) anni") }
+        if months > 0 { return months == 1 ? String(localized: "\(months) mese") : String(localized: "\(months) mesi") }
+        return String(localized: "Neonato")
     }
     
     /// Avatar emoji in base all'età.

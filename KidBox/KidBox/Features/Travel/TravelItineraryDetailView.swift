@@ -100,23 +100,25 @@ struct TravelItineraryDetailView: View {
         VStack(spacing: 10) {
             tappableBudgetRow(
                 emoji: "🛏️",
-                title: "Hotel",
+                // I titoli passano come `String`: senza `String(localized:)`
+                // restavano in italiano in ogni lingua.
+                title: String(localized: "Hotel"),
                 subtitle: hotelSubtitle,
-                action: hotelsCount > 0 ? "Vedi \(hotelsCount)" : nil,
+                action: hotelsCount > 0 ? String(localized: "Vedi \(hotelsCount)") : nil,
                 onTap: onHotelsTap
             )
-            budgetRow(emoji: "✈️", title: "Voli", subtitle: formatMoney(overview.budget.flights), action: nil, showsChevron: false)
+            budgetRow(emoji: "✈️", title: String(localized: "Voli"), subtitle: formatMoney(overview.budget.flights), action: nil, showsChevron: false)
             HStack(spacing: 10) {
                 tappableBudgetCompactCard(
                     emoji: "🍽️",
-                    title: "Ristoranti",
+                    title: String(localized: "Ristoranti"),
                     amount: overview.budget.restaurants,
                     count: restaurantsCount,
                     onTap: onRestaurantsTap
                 )
                 tappableBudgetCompactCard(
                     emoji: "🎯",
-                    title: "Attività",
+                    title: String(localized: "Attività"),
                     amount: overview.budget.activities,
                     count: activitiesCount,
                     onTap: onActivitiesTap
@@ -126,9 +128,9 @@ struct TravelItineraryDetailView: View {
             // ha un importo da mostrare — le compact card sono voci di budget.
             tappableBudgetRow(
                 emoji: "🏛️",
-                title: "Storia e territorio",
-                subtitle: "Foto e storia di \(overview.destinationTitle)",
-                action: "Scopri",
+                title: String(localized: "Storia e territorio"),
+                subtitle: String(localized: "Foto e storia di \(overview.destinationTitle)"),
+                action: String(localized: "Scopri"),
                 onTap: onPlaceInfoTap
             )
         }
@@ -174,7 +176,9 @@ struct TravelItineraryDetailView: View {
                     Text(formatMoney(amount))
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text("\(count) \(count == 1 ? "risultato" : "risultati")")
+                    Group {
+                        if count == 1 { Text("\(count) risultato") } else { Text("\(count) risultati") }
+                    }
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(itineraryAccent)
                 }
@@ -195,7 +199,10 @@ struct TravelItineraryDetailView: View {
 
     private var hotelSubtitle: String {
         let nights = max(overview.dayCount - 1, 1)
-        return "~\(formatMoney(overview.budget.hotels)) per \(nights) \(nights == 1 ? "notte" : "notti")"
+        let money = formatMoney(overview.budget.hotels)
+        return nights == 1
+            ? String(localized: "~\(money) per \(nights) notte")
+            : String(localized: "~\(money) per \(nights) notti")
     }
 
     private func budgetRow(

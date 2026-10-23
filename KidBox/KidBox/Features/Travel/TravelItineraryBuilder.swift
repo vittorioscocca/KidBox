@@ -34,7 +34,8 @@ enum TravelItineraryBuilder {
             children: children
         )
         let dayCount = trip.plannedDayCount
-        let subtitle = "Italia · \(dayCount) \(dayCount == 1 ? "giorno" : "giorni") · \(travelerLine)"
+        let dayLabel = dayCount == 1 ? String(localized: "\(dayCount) giorno") : String(localized: "\(dayCount) giorni")
+        let subtitle = "\(String(localized: "Italia")) · \(dayLabel) · \(travelerLine)"
 
         let alignedPlans = alignedDayPlans(for: trip, dayPlans: dayPlans, proposal: proposal)
         let proposalDays = proposal.map { TravelJSONCoercion.dayPlans(from: $0) }
@@ -348,7 +349,7 @@ enum TravelItineraryBuilder {
         guard let data = participantIdsJson.data(using: .utf8),
               let ids = try? JSONDecoder().decode([String].self, from: data),
               !ids.isEmpty else {
-            return "Famiglia"
+            return String(localized: "Famiglia")
         }
         let lines: [String] = ids.compactMap { id in
             if let child = children.first(where: { $0.id == id }) {
@@ -356,11 +357,11 @@ enum TravelItineraryBuilder {
                 return age.isEmpty ? child.name : "\(child.name) (\(age))"
             }
             if let member = members.first(where: { $0.userId == id }) {
-                return member.displayName ?? "Adulto"
+                return member.displayName ?? String(localized: "Adulto")
             }
             return nil
         }
-        return lines.isEmpty ? "Famiglia" : lines.joined(separator: ", ")
+        return lines.isEmpty ? String(localized: "Famiglia") : lines.joined(separator: ", ")
     }
 
     private static func parseProposalJson(_ json: String?) -> [String: Any]? {
