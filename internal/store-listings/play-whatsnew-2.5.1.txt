@@ -1,0 +1,28 @@
+<it-IT>
+• Avvisi proattivi (Pro e Max): KidBox ti avvisa se un to-do o un pagamento di casa resta senza nessuno, o se manca una dose.
+• Dalla notifica: Ci penso io, Chiedi agli altri, Presa, Rimanda.
+• «Chiedi agli altri al posto mio»: 12 ore prima KidBox chiede da solo.
+• Briefing, recap e pattern salute di nuovo attivi; salute ogni settimana o mese.
+• Calendario: mesi in verticale e ricerca con «Annulla».
+</it-IT>
+<en-US>
+• Proactive alerts (Pro and Max): KidBox tells you when a to-do or house bill has nobody on it, or a dose is missing.
+• From the notification: I'll do it, Ask the others, Taken, Snooze.
+• "Ask the others for me": 12 hours before, KidBox asks on its own.
+• Briefing, recap and health patterns are back; health weekly or monthly.
+• Calendar: months scroll vertically, search with "Cancel".
+</en-US>
+<fr-FR>
+• Alertes proactives (Pro et Max) : KidBox vous prévient si une tâche ou une facture n'a personne, ou si une dose manque.
+• Depuis la notification : Je m'en occupe, Demander aux autres, Prise, Plus tard.
+• « Demander aux autres à ma place » : 12 h avant, KidBox demande seul.
+• Briefing, récap et santé à nouveau actifs ; santé chaque semaine ou mois.
+• Calendrier : mois en vertical, recherche avec « Annuler ».
+</fr-FR>
+<es-ES>
+• Avisos proactivos (Pro y Max): KidBox te avisa si una tarea o un recibo de casa no tiene a nadie, o si falta una dosis.
+• Desde la notificación: Me encargo yo, Pregunta a los demás, Tomada, Más tarde.
+• «Pregunta a los demás por mí»: 12 horas antes, KidBox pregunta solo.
+• Briefing, resumen y salud activos de nuevo; salud cada semana o mes.
+• Calendario: meses en vertical y búsqueda con «Cancelar».
+</es-ES>
