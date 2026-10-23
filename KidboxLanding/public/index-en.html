@@ -199,6 +199,24 @@
   .mini-list li { display:flex; gap:11px; align-items:flex-start; font-size:0.94rem; color:var(--text); }
   .mini-list li b { font-weight:600; }
   .mini-list .ck { flex-shrink:0; width:20px; height:20px; border-radius:50%; display:grid; place-items:center; font-size:0.7rem; color:#fff; margin-top:2px; }
+
+  /* Novità · agente di famiglia (avvisi proattivi) */
+  .an { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center; padding:20px 0 10px; }
+  .an-eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:16px; color:var(--accent2); }
+  .an h3 { font-size:clamp(1.6rem,3vw,2.2rem); line-height:1.15; margin-bottom:14px; letter-spacing:-0.02em; }
+  .an-copy > p { color:var(--muted); font-size:1.02rem; line-height:1.6; margin-bottom:20px; }
+  .an-panel { background:var(--bg2); border:1px solid var(--border); border-radius:var(--r-lg); padding:22px; display:flex; flex-direction:column; gap:12px; box-shadow:var(--shadow); }
+  .an-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:13px 15px; }
+  .an-app { font-size:0.72rem; color:var(--faint); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px; }
+  .an-t { font-weight:600; font-size:0.95rem; }
+  .an-b { color:var(--muted); font-size:0.88rem; margin-top:2px; }
+  .an-acts { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+  .an-acts span { font-size:0.78rem; font-weight:600; padding:5px 11px; border-radius:999px; background:var(--accent-l); color:var(--accent2); }
+  .an-card.done { border-color:rgba(46,158,107,0.35); }
+  .an-card.done .an-t { color:var(--green); }
+  .an-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
+  .an-note b { color:var(--text); }
+  @media (max-width:860px){ .an { grid-template-columns:1fr; gap:28px; } }
   .band-visual { display:flex; justify-content:center; }
 
   /* AGENTS */
@@ -582,6 +600,29 @@
   </div>
 </section>
 
+<!-- NEW · FAMILY AGENT -->
+<section id="new" class="wrap" style="padding-top:0;">
+  <div class="an rv">
+    <div class="an-copy">
+      <div class="an-eyebrow">⚡ New · The family agent</div>
+      <h3>KidBox notices what's been left uncovered.</h3>
+      <p>A to-do nobody has taken, a dose that wasn't recorded, a bill coming due with no one on it: KidBox tells you at the right time, and you sort it out with one tap from the notification.</p>
+      <ul class="mini-list">
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>I'll do it</b> or <b>Ask the others</b>: the request goes to whoever can see it, and the first to answer takes it</span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Let KidBox handle it</b>: if you allow it, 12 hours before the deadline it asks the others for you and lets you know</span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>You decide</b> how they arrive: right away or in a 7 pm summary, with your own quiet hours</span></li>
+      </ul>
+    </div>
+    <div class="an-panel">
+      <div class="an-card"><div class="an-app">KidBox · now</div><div class="an-t">Nobody has taken this yet</div><div class="an-b">Pick up Marco · tomorrow, 4:30 pm</div><div class="an-acts"><span>I'll do it</span><span>Ask the others</span></div></div>
+      <div class="an-card"><div class="an-app">KidBox · 9:00 am</div><div class="an-t">Electricity bill is due Monday</div><div class="an-b">Who's taking care of it?</div><div class="an-acts"><span>I'll do it</span><span>Ask the others</span></div></div>
+      <div class="an-card"><div class="an-app">KidBox · 9:00 pm</div><div class="an-t">Dose to record</div><div class="an-b">Today's dose for Sofia hasn't been recorded</div><div class="an-acts"><span>Taken</span><span>Remind me in an hour</span></div></div>
+      <div class="an-card done"><div class="an-app">KidBox · 10 min ago</div><div class="an-t">Giulia will take care of it</div><div class="an-b">KidBox asked the others for you</div></div>
+    </div>
+  </div>
+  <p class="an-note rv">On the <b>Pro and Max</b> plans, with the latest update (iPhone 2.4.3, Android 2.5.1). Alerts are worked out on the phone, don't use AI messages and never show health details.</p>
+</section>
+
 <!-- AI -->
 <section id="ai" style="background:var(--bg2); border-block:1px solid var(--border);">
   <div class="wrap">
@@ -594,7 +635,7 @@
       <div class="agent" style="--ac:var(--accent)"><div class="a-ic">🧠</div><h4>The Family Assistant</h4><p>It remembers the whole app: calendar, everyone's health with their reports, documents, expenses, home and car. Open it from the circle in the middle of the bottom bar: in Health it's already focused on that person or that visit. Ask it to create an event, a reminder, or to find who can pick Marco up on Thursday: it actually does it.</p><div class="tags"><span class="tag">Calendar</span><span class="tag">Health</span><span class="tag">Documents</span><span class="tag">Actions</span></div></div>
       <div class="agent" style="--ac:var(--blue)"><div class="a-ic">📰</div><h4>Family News</h4><p>Every day it searches the web for what matters to your family: benefits and grants, school, health, household money — from your country down to your town — plus family events within 60 km. Every story comes with its source. When you ask, it compares your bills and shopping with today's offers.</p><div class="tags"><span class="tag">Benefits</span><span class="tag">School</span><span class="tag">Nearby events</span><span class="tag">Tailored offers</span></div></div>
       <div class="agent" style="--ac:var(--blue)"><div class="a-ic">✈️</div><h4>The Travel Planner</h4><p>Tell me where and with whom: it knows the kids' ages and health and generates a tailor-made itinerary, day by day.</p><div class="tags"><span class="tag">Itineraries</span><span class="tag">Family-friendly</span></div></div>
-      <div class="agent" style="--ac:var(--amber)"><div class="a-ic">⚡</div><h4>The Proactive Mind</h4><p>Works even when the app is closed: morning briefing, weekly recap and monthly analysis of the children's health.</p><div class="tags"><span class="tag">Briefing</span><span class="tag">Recap</span><span class="tag">Deadlines</span></div></div>
+      <div class="agent" style="--ac:var(--amber)"><div class="a-ic">⚡</div><h4>The Proactive Mind</h4><p>Works even when the app is closed: morning briefing, weekly recap, a weekly or monthly look at the children's health, and alerts when something is left uncovered — with “Ask the others” or, if you allow it, asking on your behalf.</p><div class="tags"><span class="tag">Briefing</span><span class="tag">Recap</span><span class="tag">Alerts</span><span class="tag">Delegation</span></div></div>
       <div class="agent" style="--ac:var(--violet)"><div class="a-ic">🔍</div><h4>Document Intelligence</h4><p>Import an invoice, a report, a fine: AI reads it and suggests actions. You confirm, KidBox does the rest.</p><div class="tags"><span class="tag">PDF &amp; photos</span><span class="tag">Expenses</span><span class="tag">Deadlines</span></div></div>
       <div class="agent" style="--ac:var(--green)"><div class="a-ic">🥗</div><h4>The Meal Planner</h4><p>Builds a weekly menu that fits: it starts from age, weight and goals, but also reads medical reports, ongoing treatments and allergies — and factors in how much you actually move.</p><div class="tags"><span class="tag">Weekly menu</span><span class="tag">Allergies</span><span class="tag">Clinical data</span><span class="tag">Apple Health</span></div></div>
       <div class="agent" style="--ac:var(--amber)"><div class="a-ic">🏃</div><h4>The Movement Planner</h4><p>Workouts scaled to the person: goals matter, but clinical conditions, ongoing treatments and the limits set by a doctor come first.</p><div class="tags"><span class="tag">Goals</span><span class="tag">Health status</span><span class="tag">Progression</span></div></div>

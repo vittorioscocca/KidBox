@@ -277,6 +277,24 @@
   .phrase { display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; color:var(--text);
     background:var(--surface); border:1px solid var(--border); border-radius:50px; padding:8px 15px 8px 11px; box-shadow:var(--shadow); }
   .phrase .pw { width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-size:0.62rem; color:#08121a; background:#4fd8ff; flex-shrink:0; }
+
+  /* Novità · agente di famiglia (avvisi proattivi) */
+  .an { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center; padding:20px 0 10px; }
+  .an-eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:16px; color:var(--accent2); }
+  .an h3 { font-size:clamp(1.6rem,3vw,2.2rem); line-height:1.15; margin-bottom:14px; letter-spacing:-0.02em; }
+  .an-copy > p { color:var(--muted); font-size:1.02rem; line-height:1.6; margin-bottom:20px; }
+  .an-panel { background:var(--bg2); border:1px solid var(--border); border-radius:var(--r-lg); padding:22px; display:flex; flex-direction:column; gap:12px; box-shadow:var(--shadow); }
+  .an-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:13px 15px; }
+  .an-app { font-size:0.72rem; color:var(--faint); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px; }
+  .an-t { font-weight:600; font-size:0.95rem; }
+  .an-b { color:var(--muted); font-size:0.88rem; margin-top:2px; }
+  .an-acts { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+  .an-acts span { font-size:0.78rem; font-weight:600; padding:5px 11px; border-radius:999px; background:var(--accent-l); color:var(--accent2); }
+  .an-card.done { border-color:rgba(46,158,107,0.35); }
+  .an-card.done .an-t { color:var(--green); }
+  .an-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
+  .an-note b { color:var(--text); }
+  @media (max-width:860px){ .an { grid-template-columns:1fr; gap:28px; } }
   .voice-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
   .voice-note b { color:var(--text); }
   @media (max-width:860px) { .voice { grid-template-columns:1fr; gap:34px; padding-bottom:0; } }
@@ -670,6 +688,29 @@
 </section>
 
 <!-- VOCE / ALEXA -->
+<!-- NOVITÀ · AGENTE DI FAMIGLIA -->
+<section id="novita" class="wrap" style="padding-top:0;">
+  <div class="an rv">
+    <div class="an-copy">
+      <div class="an-eyebrow">⚡ Novità · L'agente di famiglia</div>
+      <h3>KidBox si accorge di quello che resta scoperto.</h3>
+      <p>Un to-do che nessuno ha preso, una dose non registrata, una bolletta in scadenza senza nessuno che se ne occupi: KidBox te lo dice al momento giusto, e risolvi con un tocco dalla notifica.</p>
+      <ul class="mini-list">
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Ci penso io</b> o <b>Chiedi agli altri</b>: la richiesta arriva a chi può vederla, e il primo che risponde se la prende</span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Lascia fare a KidBox</b>: se lo permetti, 12 ore prima della scadenza chiede agli altri al posto tuo e ti avvisa</span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Decidi tu</b> come arrivano: subito o in un riepilogo alle 19, con i tuoi orari di silenzio</span></li>
+      </ul>
+    </div>
+    <div class="an-panel">
+      <div class="an-card"><div class="an-app">KidBox · adesso</div><div class="an-t">Nessuno se ne sta occupando</div><div class="an-b">Ritirare Marco · domani, 16:30</div><div class="an-acts"><span>Ci penso io</span><span>Chiedi agli altri</span></div></div>
+      <div class="an-card"><div class="an-app">KidBox · 9:00</div><div class="an-t">Bolletta luce scade lunedì</div><div class="an-b">Chi se ne occupa?</div><div class="an-acts"><span>Ci penso io</span><span>Chiedi agli altri</span></div></div>
+      <div class="an-card"><div class="an-app">KidBox · 21:00</div><div class="an-t">Dose da registrare</div><div class="an-b">La dose di oggi per Sofia non risulta registrata</div><div class="an-acts"><span>Presa</span><span>Rimanda di un'ora</span></div></div>
+      <div class="an-card done"><div class="an-app">KidBox · 10 min fa</div><div class="an-t">Ci pensa Giulia</div><div class="an-b">KidBox aveva chiesto agli altri al posto tuo</div></div>
+    </div>
+  </div>
+  <p class="an-note rv">Nei piani <b>Pro e Max</b>, con l'ultimo aggiornamento (iPhone 2.4.3, Android 2.5.1). Gli avvisi si calcolano sul telefono, non usano messaggi AI e non mostrano dettagli sanitari.</p>
+</section>
+
 <section id="voce" class="wrap" style="padding-top:0;">
   <div class="voice rv">
     <div class="voice-copy">
@@ -729,7 +770,7 @@
       <div class="agent" style="--ac:var(--accent)"><div class="a-ic">🧠</div><h4>L'Assistente di Famiglia</h4><p>Ha la memoria di tutta l'app: calendario, salute di ognuno con i referti, documenti, spese, casa e auto. Lo apri dal cerchio al centro della barra in basso: in Salute è già centrato su quella persona o quella visita. Chiedi di creare un evento, un promemoria o di trovare chi prende Marco giovedì: lo fa davvero.</p><div class="tags"><span class="tag">Calendario</span><span class="tag">Salute</span><span class="tag">Documenti</span><span class="tag">Azioni</span></div></div>
       <div class="agent" style="--ac:var(--blue)"><div class="a-ic">📰</div><h4>Le Notizie della Famiglia</h4><p>Ogni giorno cerca sul web quello che serve alla tua famiglia: bonus e agevolazioni, scuola, salute, economia di casa — dall'Italia fino al tuo comune — e gli eventi per famiglie entro 60 km. Ogni notizia con la sua fonte. Quando glielo chiedi, confronta bollette e spesa con le offerte del momento.</p><div class="tags"><span class="tag">Bonus</span><span class="tag">Scuola</span><span class="tag">Eventi vicini</span><span class="tag">Offerte su misura</span></div></div>
       <div class="agent" style="--ac:var(--blue)"><div class="a-ic">✈️</div><h4>Il Pianificatore di Viaggi</h4><p>Dimmi dove e con chi: conosce età e salute dei figli e genera un itinerario su misura, giorno per giorno.</p><div class="tags"><span class="tag">Itinerari</span><span class="tag">Family-friendly</span></div></div>
-      <div class="agent" style="--ac:var(--amber)"><div class="a-ic">⚡</div><h4>La Mente Proattiva</h4><p>Lavora anche ad app chiusa: briefing mattutino, recap settimanale e analisi mensile della salute dei bambini.</p><div class="tags"><span class="tag">Briefing</span><span class="tag">Recap</span><span class="tag">Scadenze</span></div></div>
+      <div class="agent" style="--ac:var(--amber)"><div class="a-ic">⚡</div><h4>La Mente Proattiva</h4><p>Lavora anche ad app chiusa: briefing mattutino, recap settimanale, analisi della salute dei bambini ogni settimana o ogni mese, e avvisi quando qualcosa resta scoperto — con «Chiedi agli altri» o, se glielo permetti, chiedendo al posto tuo.</p><div class="tags"><span class="tag">Briefing</span><span class="tag">Recap</span><span class="tag">Avvisi</span><span class="tag">Delega</span></div></div>
       <div class="agent" style="--ac:var(--violet)"><div class="a-ic">🔍</div><h4>Document Intelligence</h4><p>Importi una fattura, un referto, una multa: l'AI la legge e propone azioni. Tu confermi, KidBox fa il resto.</p><div class="tags"><span class="tag">PDF & foto</span><span class="tag">Spese</span><span class="tag">Scadenze</span></div></div>
       <div class="agent" style="--ac:var(--green)"><div class="a-ic">🥗</div><h4>Il Piano Alimentare</h4><p>Costruisce il menù settimanale su misura: parte da età, peso e obiettivi, ma legge anche referti, cure in corso e allergie — e tiene conto di quanto ci si muove davvero.</p><div class="tags"><span class="tag">Menù settimanale</span><span class="tag">Allergie</span><span class="tag">Dati clinici</span><span class="tag">Apple Health</span></div></div>
       <div class="agent" style="--ac:var(--amber)"><div class="a-ic">🏃</div><h4>Il Piano di Movimento</h4><p>Allenamenti proporzionati alla persona: gli obiettivi contano, ma vengono prima le condizioni cliniche, le cure in corso e i limiti indicati dal medico.</p><div class="tags"><span class="tag">Obiettivi</span><span class="tag">Stato di salute</span><span class="tag">Progressione</span></div></div>
