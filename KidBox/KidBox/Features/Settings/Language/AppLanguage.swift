@@ -96,6 +96,12 @@ final class LanguageManager: ObservableObject {
         }
         Bundle.kb_setLanguage(Self.resolvedLanguageCode(for: lang))
         current = lang
+        // I pulsanti delle azioni rapide prendono il testo alla registrazione,
+        // e gli avvisi proattivi in coda hanno date scritte nella lingua di prima.
+        Task { @MainActor in
+            KBNotificationCategoryRegistry.registerAll()
+            KBInsightRunner.shared.languageDidChange()
+        }
     }
 
     /// Per `.system`: replica la stessa euristica di `kbDeviceLocale()` per

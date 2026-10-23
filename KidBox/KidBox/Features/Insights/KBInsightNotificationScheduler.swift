@@ -66,6 +66,8 @@ enum KBInsightNotificationScheduler {
             }
         }
 
+        reportShown(rows, now: now, digestMode: prefs.delivery == .eveningDigest)
+
         let digestAt = prefs.delivery == .eveningDigest ? nextDigest(after: now, prefs: prefs) : nil
         var digestRows: [KBInsight] = []
         var wanted: [KBLocalNotificationPriority: [UNNotificationRequest]] = [:]
@@ -140,6 +142,18 @@ enum KBInsightNotificationScheduler {
         let added = wanted.values.reduce(0) { $0 + $1.count }
         if added > 0 || !stale.isEmpty {
             KBLog.ai.kbInfo("InsightScheduler: added=\(added) removed=\(stale.count) digest=\(digestRows.count)")
+        }
+    }
+
+    /// Un avviso aperto con la consegna già passata è arrivato: lo si conta una
+    /// volta. Il sistema non dice quando mostra una notifica locale ad app
+    /// chiusa, quindi questo è il momento più vicino che l'app può vedere.
+    private static func reportShown(_ rows: [KBInsight], now: Date, digestMode: Bool) {
+        for row in rows where row.shownReportedAt == nil {
+            guard let notified = row.notifiedAt, notified <= now, let type = row.type else { continue }
+            let channel = digestMode && goesInDigest(type) ? "digest" : "notification"
+            AppAnalytics.insightShown(type: type.rawValue, channel: channel)
+            row.shownReportedAt = notified
         }
     }
 

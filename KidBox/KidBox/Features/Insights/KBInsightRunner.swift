@@ -42,6 +42,13 @@ final class KBInsightRunner {
         requestRun(reason: "prefs", delay: .zero)
     }
 
+    /// Le notifiche in coda si riscrivono da capo: la data del to-do («domani,
+    /// 09:00») è testo formattato e la ritraduzione delle chiavi non la tocca.
+    func languageDidChange() {
+        needsDeliveryReset = true
+        requestRun(reason: "language", delay: .zero)
+    }
+
     // MARK: - Avvio
 
     func start(container: ModelContainer) {
@@ -111,6 +118,7 @@ final class KBInsightRunner {
             let candidates = KBInsightEngine.evaluate(snapshot, now: Date())
                 .filter { !prefs.isMuted($0.type) }
             let changes = try KBInsightStore.reconcile(candidates, familyId: familyId, uid: uid, context: context)
+            reportActed(resolved: changes.resolved, prefs: prefs, context: context)
             try await KBInsightNotificationScheduler.sync(
                 familyId: familyId, prefs: prefs, resetFuture: resetFuture, context: context
             )
@@ -121,6 +129,23 @@ final class KBInsightRunner {
             }
         } catch {
             KBLog.ai.kbError("InsightRunner[\(reason)]: \(error.localizedDescription)")
+        }
+    }
+
+    /// Avvisi già arrivati che si sono chiusi perché il problema non c'è più:
+    /// qualcuno ha agito dall'app (to-do preso, dose registrata).
+    private func reportActed(resolved: [String], prefs: KBInsightPreferences, context: ModelContext) {
+        guard !resolved.isEmpty else { return }
+        let ids = Set(resolved)
+        let rows = (try? context.fetch(FetchDescriptor<KBInsight>()))?.filter { ids.contains($0.id) } ?? []
+        let now = Date()
+        for row in rows {
+            guard row.shownReportedAt != nil, let type = row.type, !prefs.isMuted(type) else { continue }
+            AppAnalytics.insightActed(
+                type: type.rawValue,
+                via: "app",
+                minutes: KBInsightActionHandler.minutesSinceShown(row, now: now)
+            )
         }
     }
 

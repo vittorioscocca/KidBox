@@ -296,4 +296,35 @@ enum AppAnalytics {
         let daysSinceLastOpen = calendar.dateComponents([.day], from: lastOpenDate, to: now).day ?? 0
         appOpen(daysSinceInstall: daysSinceInstall, daysSinceLastOpen: daysSinceLastOpen)
     }
+
+    // MARK: - Avvisi proattivi
+    //
+    // Solo il tipo e l'esito, mai il contenuto: titoli dei to-do e dati delle
+    // cure non escono dal telefono. Servono a misurare se gli avvisi aiutano
+    // (azione) o disturbano (rifiuti, spegnimenti): vedi la scommessa nel
+    // registro di /auto-miglioramento.
+
+    /// L'avviso è arrivato (notifica o riepilogo serale).
+    static func insightShown(type: String, channel: String) {
+        Analytics.logEvent("insight_shown", parameters: ["type": type, "channel": channel])
+    }
+
+    /// Il problema si è risolto dopo l'avviso: dall'azione rapida o dall'app.
+    static func insightActed(type: String, via: String, minutes: Int) {
+        Analytics.logEvent("insight_acted", parameters: ["type": type, "via": via, "minutes": minutes])
+    }
+
+    static func insightDismissed(type: String) {
+        Analytics.logEvent("insight_dismissed", parameters: ["type": type])
+    }
+
+    static func insightSnoozed(type: String) {
+        Analytics.logEvent("insight_snoozed", parameters: ["type": type])
+    }
+
+    /// Cambio delle preferenze: `delivery` = immediate / eveningDigest / off.
+    static func insightPrefsChanged(delivery: String, mutedTypes: Int) {
+        Analytics.logEvent("insight_prefs_changed", parameters: ["delivery": delivery, "muted_types": mutedTypes])
+    }
 }
+

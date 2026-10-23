@@ -38,26 +38,27 @@ enum KBInsightNotificationCategory {
         }
     }
 
-    /// Registrate da `KBNotificationCategoryRegistry`.
+    /// Registrate da `KBNotificationCategoryRegistry`, di nuovo a ogni cambio
+    /// di lingua: il sistema mostra i pulsanti con il testo della registrazione.
     static var categories: [UNNotificationCategory] {
         let snooze = UNNotificationAction(
             identifier: actionSnooze,
-            title: String(localized: "Rimanda di un'ora"),
+            title: KBNotificationLocalization.text("Rimanda di un'ora"),
             options: []
         )
         let dismiss = UNNotificationAction(
             identifier: actionDismiss,
-            title: String(localized: "Non mi interessa"),
+            title: KBNotificationLocalization.text("Non mi interessa"),
             options: []
         )
         let take = UNNotificationAction(
             identifier: actionTake,
-            title: String(localized: "Ci penso io"),
+            title: KBNotificationLocalization.text("Ci penso io"),
             options: []
         )
         let doseOk = UNNotificationAction(
             identifier: actionDoseOk,
-            title: String(localized: "Presa"),
+            title: KBNotificationLocalization.text("Presa"),
             options: []
         )
         return [
@@ -90,25 +91,36 @@ enum KBInsightActionHandler {
         }
 
         let now = Date()
+        let typeRaw = row.type?.rawValue ?? row.typeRaw
+        // Toccare il pulsante vuol dire che la notifica è arrivata, anche se il
+        // motore non ha ancora fatto il giro che la conta.
+        if row.shownReportedAt == nil {
+            AppAnalytics.insightShown(type: typeRaw, channel: "notification")
+            row.shownReportedAt = row.notifiedAt ?? now
+        }
         switch action {
         case KBInsightNotificationCategory.actionTake:
             if let todoId = info["todoId"] as? String {
                 takeTodo(todoId: todoId, familyId: row.familyId, now: now, modelContext: modelContext)
             }
             row.mark(.done, now: now)
+            AppAnalytics.insightActed(type: typeRaw, via: "action", minutes: minutesSinceShown(row, now: now))
 
         case KBInsightNotificationCategory.actionDoseOk:
             if let treatmentId = info["treatmentId"] as? String {
                 recordFirstMissingDose(treatmentId: treatmentId, familyId: row.familyId, now: now, modelContext: modelContext)
             }
             row.mark(.done, now: now)
+            AppAnalytics.insightActed(type: typeRaw, via: "action", minutes: minutesSinceShown(row, now: now))
 
         case KBInsightNotificationCategory.actionSnooze:
             // Lo scheduler vede una consegna futura non in coda e la riprogramma.
             row.notifiedAt = now.addingTimeInterval(KBInsightNotificationCategory.snoozeInterval)
+            AppAnalytics.insightSnoozed(type: typeRaw)
 
         default:
             row.mark(.dismissed, now: now)
+            AppAnalytics.insightDismissed(type: typeRaw)
         }
 
         try? modelContext.save()
@@ -116,6 +128,11 @@ enum KBInsightActionHandler {
         // Un salvataggio dei soli insight non fa ripartire il motore da sé.
         KBInsightRunner.shared.requestRun(reason: "action", delay: .zero)
         return true
+    }
+
+    static func minutesSinceShown(_ row: KBInsight, now: Date) -> Int {
+        guard let shown = row.shownReportedAt else { return 0 }
+        return max(0, Int(now.timeIntervalSince(shown) / 60))
     }
 
     // MARK: - Ci penso io

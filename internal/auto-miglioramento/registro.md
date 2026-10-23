@@ -83,6 +83,21 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
 
 ---
 
+### 11. Avvisi proattivi: aiutano o disturbano?
+- **Cambio**: motore di regole sul telefono, solo Pro e Max (iOS, commit da `ccc364b8` a quello di questa riga, non ancora pubblicato). Avvisa quando un to-do che scade non l'ha preso nessuno e quando manca la registrazione di una dose, con azioni rapide e preferenze. Disegno nel documento «KidBox — Assistente AI Familiare Proattivo e Multicanale».
+- **Previsione** (soglie proposte il 23/10/2026, **da confermare dall'utente prima dell'uscita**):
+  - **(a)** `insight_acted` ÷ `insight_shown` **≥ 30%**: almeno un avviso su tre porta qualcuno a prendere il to-do o registrare la dose;
+  - **(b)** `insight_dismissed` ÷ `insight_shown` **≤ 20%**;
+  - **(c)** utenti unici con `insight_prefs_changed` e `delivery = off` ÷ utenti unici con `insight_shown` **≤ 10%**.
+- **Misura**: GA4, eventi `insight_*` (parametro `type`) nei 28 giorni dopo l'uscita. Prima della data vanno aggiunti a `ga4-daily-report.js`, che oggi non li legge.
+- **Data**: **uscita della versione iOS con gli avvisi + 28 giorni**. Il giorno della pubblicazione si scrive qui la data esatta; finché non c'è, la scommessa non conta come aperta.
+- **Non misurabile se**: meno di 100 `insight_shown` o meno di 20 utenti unici che ne hanno ricevuto uno.
+- **Decisione, scritta ora**:
+  - (a), (b) e (c) confermate → porting su Android (passo 9) e regole nuove (passo 10);
+  - (a) smentita con (b) e (c) confermate → gli avvisi non disturbano ma non servono: si rivedono regole e orari, non si porta su Android;
+  - (b) o (c) smentita → troppo invadenti: il default passa al riepilogo serale prima di qualunque altro lavoro.
+- **Se smentita**: un genitore che non ha preso un to-do lo sapeva già (le regole segnalano cose ovvie), oppure il momento dell'avviso è sbagliato.
+
 ## Chiuse
 - **DEVIAZIONE (20/10/2026): da «Azioni in-app» a «Volume di installazioni», senza costo target.** Dopo 5 giorni a zero impressioni e diagnostica pulita, l'utente ha cambiato l'obiettivo di offerta, con un giorno di anticipo sul piano. Stesso budget (10 €/giorno), Italia, italiano, fine 07/11.
 - **Conseguenza per la misura:** finché resta su «Volume di installazioni» la campagna ottimizza le installazioni, non le famiglie create: la previsione (a) sul costo per `family_created` si legge comunque dal conteggio di GA4 (`family_created` Android nelle stesse date), ma non è più ciò che la campagna cerca. Piano: dopo circa 7 giorni e qualche famiglia creata come storia, tornare a «Azioni in-app» e scrivere qui la data. I giorni in «installazioni» vanno dichiarati nel verdetto del 21/11.

@@ -95,6 +95,7 @@ final class KBInsightPreferencesStore: ObservableObject {
         change(&next)
         guard next != prefs else { return }
         apply(next)
+        AppAnalytics.insightPrefsChanged(delivery: next.delivery.rawValue, mutedTypes: next.mutedTypes.count)
         guard let uid = Auth.auth().currentUser?.uid else { return }
         let value = next.firestoreValue
         Task {
