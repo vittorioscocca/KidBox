@@ -130,6 +130,7 @@
   .device.tilt { transform:perspective(1500px) rotateY(-9deg) rotateX(2deg); }
   .band.rev .device.tilt { transform:perspective(1500px) rotateY(9deg) rotateX(2deg); }
   .screen { width:100%; height:100%; border-radius:32px; overflow:hidden; background:var(--bg); position:relative; display:flex; flex-direction:column; }
+  .screen img.shot { width:100%; height:100%; object-fit:cover; object-position:top; display:block; }
   .notch { position:absolute; top:9px; left:50%; transform:translateX(-50%); width:96px; height:22px; background:var(--bezel); border-radius:50px; z-index:5; }
 
   /* CSS mock bits */
@@ -359,19 +360,7 @@
     <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Open now</span><span class="st-main">Web App</span></span></a>
   </div>
   <div class="hero-stage rv">
-    <div class="device sm"><div class="screen"><div class="notch"></div>
-      <div class="scr-top" style="text-align:left"><div class="scr-time">9:41 · Good morning, Vitto</div><div class="scr-h">Your family</div></div>
-      <div class="scr-body">
-        <div class="dash">
-          <div class="tile" style="background:var(--accent-l)"><span class="ti">🩺</span><div><div class="tl">Health</div><div class="td">Visits &amp; vaccines</div></div></div>
-          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">📄</span><div><div class="tl">Documents</div><div class="td">Important papers</div></div></div>
-          <div class="tile" style="background:rgba(46,158,107,.12)"><span class="ti">💬</span><div><div class="tl">Chat</div><div class="td">Family</div></div></div>
-          <div class="tile" style="background:rgba(43,124,184,.12)"><span class="ti">📍</span><div><div class="tl">Location</div><div class="td">Where everyone is</div></div></div>
-          <div class="tile" style="background:rgba(212,134,10,.12)"><span class="ti">✈️</span><div><div class="tl">Travel</div><div class="td">AI itineraries</div></div></div>
-          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">🔐</span><div><div class="tl">Passwords</div><div class="td">Credentials</div></div></div>
-        </div>
-      </div>
-    </div></div>
+    <div class="device sm"><div class="screen"><img class="shot" src="/assets/app/en/home.webp" alt="The KidBox home for the Rossi family" width="600" height="1304" loading="eager" decoding="async"></div></div>
   </div>
 </div>
 
@@ -410,15 +399,7 @@
       </ul>
     </div>
     <div class="band-visual">
-      <div class="device tilt"><div class="screen"><div class="notch"></div>
-        <div class="scr-top"><div class="scr-time">Health · Sofia, age 8</div><div class="scr-h">Medical record</div><div class="scr-sub">Updated today</div></div>
-        <div class="scr-body">
-          <div class="row"><span class="ic" style="background:rgba(46,158,107,.14);color:var(--green)">💉</span><div class="tx"><div class="t1">Hexavalent vaccine</div><div class="t2">Done · booster in 6 months</div></div><span class="pill" style="background:rgba(46,158,107,.14);color:var(--green)">ok</span></div>
-          <div class="row"><span class="ic" style="background:var(--accent-l);color:var(--accent2)">🩺</span><div class="tx"><div class="t1">Pediatric visit</div><div class="t2">Today · 4:30 PM · Dr. Rossi</div></div><span class="rt" style="color:var(--accent)">today</span></div>
-          <div class="row"><span class="ic" style="background:rgba(43,124,184,.14);color:var(--blue)">🧪</span><div class="tx"><div class="t1">Blood tests</div><div class="t2">PDF report attached</div></div></div>
-          <div class="row"><span class="ic" style="background:rgba(212,134,10,.14);color:var(--amber)">💊</span><div class="tx"><div class="t1">Vitamin D</div><div class="t2">Every evening after dinner</div></div></div>
-        </div>
-      </div></div>
+      <div class="device tilt"><div class="screen"><img class="shot" src="/assets/app/en/health.webp" alt="Marco's health diary: treatments, vaccines and visits" width="600" height="1304" loading="lazy" decoding="async"></div></div>
     </div>
   </div>
 
@@ -435,15 +416,7 @@
       </ul>
     </div>
     <div class="band-visual">
-      <div class="device tilt"><div class="screen"><div class="notch"></div>
-        <div class="scr-top"><div class="scr-time">📰 News · today</div><div class="scr-h">News</div><div class="scr-sub">Italy · Campania · Benevento</div></div>
-        <div class="scr-body">
-          <div class="row"><span class="ic" style="background:rgba(212,134,10,.14);color:var(--amber)">🎁</span><div class="tx"><div class="t1">Book grant</div><div class="t2">Town council website</div></div><span class="pill" style="background:rgba(214,64,64,.14);color:#d64040">ends Oct 31</span></div>
-          <div class="row"><span class="ic" style="background:rgba(43,124,184,.14);color:var(--blue)">🏫</span><div class="tx"><div class="t1">School canteen starts Monday</div><div class="t2">School · sign up online</div></div></div>
-          <div class="row"><span class="ic" style="background:var(--accent-l);color:var(--accent2)">🎟️</span><div class="tx"><div class="t1">Autumn fair · 15 km</div><div class="t2">Saturday and Sunday · free</div></div><span class="pill" style="background:var(--accent-l);color:var(--accent2)">＋</span></div>
-          <div class="row"><span class="ic" style="background:rgba(46,158,107,.14);color:var(--green)">⚡</span><div class="tx"><div class="t1">Tailored electricity offer</div><div class="t2">From your bills in Home</div></div></div>
-        </div>
-      </div></div>
+      <div class="device tilt"><div class="screen"><img class="shot" src="/assets/app/en/news.webp" alt="Family news, from Milan to the whole country" width="600" height="1304" loading="lazy" decoding="async"></div></div>
     </div>
   </div>
 
@@ -460,15 +433,7 @@
       </ul>
     </div>
     <div class="band-visual">
-      <div class="device tilt"><div class="screen"><div class="notch"></div>
-        <div class="scr-top"><div class="scr-time">Documents · 4 folders</div><div class="scr-h">Documents</div><div class="scr-sub">End-to-end encrypted</div></div>
-        <div class="scr-body">
-          <div class="row"><span class="ic" style="background:var(--accent-l);color:var(--accent2)">📁</span><div class="tx"><div class="t1">ID documents</div><div class="t2">IDs, passports</div></div></div>
-          <div class="row"><span class="ic" style="background:rgba(46,158,107,.14);color:var(--green)">📁</span><div class="tx"><div class="t1">Expenses &amp; invoices</div><div class="t2">4 hours ago</div></div></div>
-          <div class="row"><span class="ic" style="background:rgba(124,92,191,.14);color:var(--violet)">🧾</span><div class="tx"><div class="t1">Dentist invoice</div><div class="t2">→ €80 expense logged</div></div><span class="pill" style="background:var(--accent-l);color:var(--accent2)">AI</span></div>
-          <div class="row"><span class="ic" style="background:rgba(43,124,184,.14);color:var(--blue)">🚗</span><div class="tx"><div class="t1">Car tax 2026</div><div class="t2">→ deadline added</div></div><span class="pill" style="background:var(--accent-l);color:var(--accent2)">AI</span></div>
-        </div>
-      </div></div>
+      <div class="device tilt"><div class="screen"><img class="shot" src="/assets/app/en/documents.webp" alt="Family documents in folders" width="600" height="1304" loading="lazy" decoding="async"></div></div>
     </div>
   </div>
 
@@ -485,16 +450,7 @@
       </ul>
     </div>
     <div class="band-visual">
-      <div class="device tilt"><div class="screen"><div class="notch"></div>
-        <div class="scr-top"><div class="scr-time">🔒 Family chat · online</div><div class="scr-h">Anto &amp; Vitto</div></div>
-        <div class="scr-body" style="gap:7px;">
-          <div class="bub them">Who's taking Sofia to the pediatrician today?</div>
-          <div class="bub me">I'll go at 4:30 👍</div>
-          <div class="chat-map"><div class="pin" style="background:var(--accent);top:24%;left:42%"><span>📍</span></div></div>
-          <div class="bub them">Perfect! I'll send you the prescription</div>
-          <div class="chat-inp"><span style="color:var(--accent);font-weight:800">＋</span> Message…</div>
-        </div>
-      </div></div>
+      <div class="device tilt"><div class="screen"><img class="shot" src="/assets/app/en/chat.webp" alt="The family chat with a shared location" width="600" height="1304" loading="lazy" decoding="async"></div></div>
     </div>
   </div>
 
@@ -511,15 +467,7 @@
       </ul>
     </div>
     <div class="band-visual">
-      <div class="device tilt"><div class="screen"><div class="notch"></div>
-        <div class="scr-top"><div class="scr-time">Trip · 4 days</div><div class="scr-h">Tuscany with family</div><div class="scr-sub">Generated by AI · Sofia 8, Luca 5</div></div>
-        <div class="scr-body">
-          <div class="row"><span class="ic" style="background:rgba(43,124,184,.14);color:var(--blue)">1️⃣</span><div class="tx"><div class="t1">Florence — kid-sized center</div><div class="t2">Carousel, gelato, quick Duomo</div></div></div>
-          <div class="row"><span class="ic" style="background:rgba(46,158,107,.14);color:var(--green)">2️⃣</span><div class="tx"><div class="t1">Educational farm</div><div class="t2">Animals and outdoor lunch</div></div></div>
-          <div class="row"><span class="ic" style="background:var(--accent-l);color:var(--accent2)">3️⃣</span><div class="tx"><div class="t1">Beach at Castiglione</div><div class="t2">Family-equipped beach</div></div></div>
-          <div class="row"><span class="ic" style="background:rgba(124,92,191,.14);color:var(--violet)">✨</span><div class="tx"><div class="t1">Regenerate day 4</div><div class="t2">New ideas in 3 seconds</div></div></div>
-        </div>
-      </div></div>
+      <div class="device tilt"><div class="screen"><img class="shot" src="/assets/app/en/travel.webp" alt="Trips, with the family trip to Tuscany" width="600" height="1304" loading="lazy" decoding="async"></div></div>
     </div>
   </div>
 
@@ -536,21 +484,7 @@
       </ul>
     </div>
     <div class="band-visual">
-      <div class="device tilt"><div class="screen"><div class="notch"></div>
-        <div class="scr-top"><div class="scr-time">📍 Location</div><div class="scr-h">Where we are</div></div>
-        <div class="scr-body">
-          <div class="map">
-            <div class="road r1"></div><div class="road r2"></div><div class="road r3"></div>
-            <div class="pin" style="background:var(--accent);top:26%;left:28%"><span>🧒</span></div>
-            <div class="pin" style="background:var(--blue);top:54%;left:62%"><span>👩</span></div>
-          </div>
-          <div class="sheet">
-            <div class="sh-h">The family</div>
-            <div class="row" style="padding:7px 10px"><span class="ic" style="background:var(--accent-l);color:var(--accent2)">🧒</span><div class="tx"><div class="t1">Sofia</div><div class="t2">Manzoni Middle School</div></div><span class="rt" style="color:var(--green)">now</span></div>
-            <div style="display:flex;align-items:center;gap:10px;font-size:0.72rem;font-weight:600;"><span style="flex:1">Share my location</span><span class="toggle"></span></div>
-          </div>
-        </div>
-      </div></div>
+      <div class="device tilt"><div class="screen"><img class="shot" src="/assets/app/en/location.webp" alt="The map with Luca's and Grandma's locations" width="600" height="1304" loading="lazy" decoding="async"></div></div>
     </div>
   </div>
 
@@ -567,18 +501,7 @@
       </ul>
     </div>
     <div class="band-visual">
-      <div class="device tilt"><div class="screen"><div class="notch"></div>
-        <div class="scr-top"><div class="scr-time">🔐 Passwords</div><div class="scr-h">Credentials</div></div>
-        <div class="scr-body">
-          <div class="tabs"><span class="tab on">All</span><span class="tab">Favorites</span><span class="tab">Shared</span><span class="tab">Only me</span></div>
-          <div class="grp-h">🏠 Family · 3</div>
-          <div class="row"><span class="logo-badge" style="background:#232f3e">a</span><div class="tx"><div class="t1">Amazon</div><div class="t2">family@gmail.com</div></div><span style="color:var(--muted)">›</span></div>
-          <div class="row"><span class="logo-badge" style="background:#e50914">N</span><div class="tx"><div class="t1">Netflix</div><div class="t2">family@gmail.com</div></div><span style="color:var(--muted)">›</span></div>
-          <div class="row"><span class="logo-badge" style="background:#0a84ff">☰</span><div class="tx"><div class="t1">School portal</div><div class="t2">Sofia's register</div></div><span style="color:var(--muted)">›</span></div>
-          <div class="grp-h">🔒 Only me · 1</div>
-          <div class="row"><span class="logo-badge" style="background:var(--green)">B</span><div class="tx"><div class="t1">Online banking</div><div class="t2">•••• protected</div></div><span style="color:var(--muted)">›</span></div>
-        </div>
-      </div></div>
+      <div class="device tilt"><div class="screen"><img class="shot" src="/assets/app/en/passwords.webp" alt="Family passwords" width="600" height="1304" loading="lazy" decoding="async"></div></div>
     </div>
   </div>
 </section>

@@ -117,6 +117,7 @@
   .device.tilt { transform:perspective(1500px) rotateY(-9deg) rotateX(2deg); }
   .band.rev .device.tilt { transform:perspective(1500px) rotateY(9deg) rotateX(2deg); }
   .screen { width:100%; height:100%; border-radius:32px; overflow:hidden; background:var(--bg); position:relative; display:flex; flex-direction:column; }
+  .screen img.shot { width:100%; height:100%; object-fit:cover; object-position:top; display:block; }
   .notch { position:absolute; top:9px; left:50%; transform:translateX(-50%); width:96px; height:22px; background:var(--bezel); border-radius:50px; z-index:5; }
 
   /* CSS mock bits */
@@ -401,19 +402,7 @@
 </div>
 
 <div class="t-hero rv">
-  <div class="device sm"><div class="screen"><div class="notch"></div>
-      <div class="scr-top" style="text-align:left"><div class="scr-time">9:41 · Good morning, Vitto</div><div class="scr-h">Your family</div></div>
-      <div class="scr-body">
-        <div class="dash">
-          <div class="tile" style="background:var(--accent-l)"><span class="ti">🩺</span><div><div class="tl">Health</div><div class="td">Visits &amp; vaccines</div></div></div>
-          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">📄</span><div><div class="tl">Documents</div><div class="td">Important papers</div></div></div>
-          <div class="tile" style="background:rgba(46,158,107,.12)"><span class="ti">💬</span><div><div class="tl">Chat</div><div class="td">Family</div></div></div>
-          <div class="tile" style="background:rgba(43,124,184,.12)"><span class="ti">📍</span><div><div class="tl">Location</div><div class="td">Where everyone is</div></div></div>
-          <div class="tile" style="background:rgba(212,134,10,.12)"><span class="ti">✈️</span><div><div class="tl">Travel</div><div class="td">AI itineraries</div></div></div>
-          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">🔐</span><div><div class="tl">Passwords</div><div class="td">Credentials</div></div></div>
-        </div>
-      </div>
-    </div></div>
+  <div class="device sm"><div class="screen"><img class="shot" src="/assets/app/en/home.webp" alt="The KidBox home for the Rossi family" width="600" height="1304" loading="eager" decoding="async"></div></div>
   <div class="t-hero-copy">
     <div class="eyebrow"><span class="dot"></span>Get the app</div>
     <h2>The whole family, <span class="g">in a single app.</span></h2>
