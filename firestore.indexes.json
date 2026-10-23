@@ -123,6 +123,28 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "todos",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "assignedTo",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isDone",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isDeleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dueAt",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [

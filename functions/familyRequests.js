@@ -462,6 +462,7 @@ function build(deps) {
   const {
     getTokensForUsers, buildDataOnlyMessage, sendMulticastAndPrune,
     resolveMemberName, isActiveMember, notFamilyMemberReason,
+    resolveFamilyPlanForQuotas,
   } = deps;
 
   /**
@@ -792,6 +793,116 @@ function build(deps) {
       },
   );
 
+  /**
+   * Livello 5 degli avvisi proattivi: la delega «se nessuno prende un mio
+   * to-do, chiedi tu agli altri». Ogni membro la accende per i to-do che crea
+   * (`users/{uid}.insightPrefs.delegateAsk`, dall'app). A 12 ore dalla
+   * scadenza, se il to-do è ancora senza nessuno, KidBox crea al posto suo la
+   * stessa richiesta che farebbe a mano, legata al to-do (`sourceTodoId`), e
+   * glielo dice. Una volta sola per to-do (`kidboxAsk` sul to-do).
+   *
+   * Gira qui e non sui telefoni: un solo attore per famiglia (due genitori con
+   * la delega non chiedono due volte) e funziona a telefoni spenti. I to-do
+   * sono in chiaro proprio perché il server li legge per le push. Solo Pro e
+   * Max, col piano risolto qui.
+   */
+  const delegateUnassignedTodos = onSchedule(
+      {schedule: "every 15 minutes", timeZone: TZ, region: REGION, timeoutSeconds: 120},
+      async () => {
+        const db = admin.firestore();
+        const {FieldValue, Timestamp} = admin.firestore;
+        const now = Date.now();
+        const snap = await db.collectionGroup("todos")
+            .where("assignedTo", "==", "")
+            .where("isDone", "==", false)
+            .where("isDeleted", "==", false)
+            .where("dueAt", ">", Timestamp.fromMillis(now + MIN_LEAD_MS))
+            .where("dueAt", "<=", Timestamp.fromMillis(now + DELEGATE_WINDOW_MS))
+            .limit(200)
+            .get();
+
+        const prefsByUid = new Map();
+        const planByFamily = new Map();
+        let asked = 0;
+        for (const doc of snap.docs) {
+          if (doc.ref.parent.parent?.parent?.id !== "families") continue;
+          const familyId = doc.ref.parent.parent.id;
+          const todo = doc.data();
+          if (!isDelegable(todo)) continue;
+
+          const creator = todo.createdBy;
+          if (!prefsByUid.has(creator)) {
+            const u = await db.collection("users").doc(creator).get();
+            prefsByUid.set(creator, u.exists ? (u.get("insightPrefs") || {}) : {});
+          }
+          if (prefsByUid.get(creator).delegateAsk !== true) continue;
+
+          if (!planByFamily.has(familyId)) {
+            planByFamily.set(familyId, await resolveFamilyPlanForQuotas(creator, familyId));
+          }
+          if (planByFamily.get(familyId) === "free") continue;
+
+          const famRef = db.collection("families").doc(familyId);
+          const members = await famRef.collection("members").get();
+          const active = members.docs
+              .filter((m) => isActiveMember(m.data()))
+              .map((m) => m.id);
+          if (!active.includes(creator)) continue;
+          const recipients = delegateRecipients(todo, active);
+
+          const requestRef = famRef.collection("requests").doc();
+          const expiresAt = delegatedExpiresAt(todo, now);
+          // Il to-do si segna in transazione: due giri sovrapposti dello
+          // scheduler non chiedono due volte.
+          const created = await db.runTransaction(async (tx) => {
+            const fresh = await tx.get(doc.ref);
+            const t = fresh.data();
+            if (!t || !isDelegable(t)) return false;
+            if (recipients.length === 0 || !expiresAt) {
+              tx.update(doc.ref, {kidboxAsk: {at: FieldValue.serverTimestamp(), outcome: "no_recipients"}});
+              return false;
+            }
+            tx.set(requestRef, {
+              kind: "todo",
+              title: String(t.title || "").slice(0, 200),
+              notes: typeof t.notes === "string" && t.notes.trim() ? t.notes.slice(0, NOTES_MAX) : null,
+              priority: t.priority === 1 ? 1 : 0,
+              dueAt: t.dueAt,
+              dueHasTime: t.dueHasTime !== false,
+              listId: t.listId,
+              childId: t.childId || "",
+              createdBy: creator,
+              createdVia: "kidbox",
+              recipients,
+              expiresAt: Timestamp.fromMillis(expiresAt),
+              status: "open",
+              external: null,
+              sourceTodoId: doc.id,
+              createdAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
+            });
+            tx.update(doc.ref, {
+              kidboxAsk: {at: FieldValue.serverTimestamp(), outcome: "asked", requestId: requestRef.id},
+            });
+            return true;
+          }).catch((e) => {
+            logger.warn("delegateUnassignedTodos: non creata", {path: doc.ref.path, error: e.message});
+            return false;
+          });
+          if (!created) continue;
+          asked++;
+
+          // A chi ha delegato: KidBox ha agito al posto suo. Il tocco apre la
+          // richiesta, come l'esito di una richiesta fatta a mano.
+          await pushTo([creator], (lang) => ({
+            title: tn(lang, "request.delegatedTitle"),
+            body: tn(lang, "request.delegatedBody", {title: todo.title}),
+          }), {type: "family_request_resolved", familyId, requestId: requestRef.id}, "delegateUnassignedTodos");
+        }
+        if (snap.size > 0) logger.info("delegateUnassignedTodos", {candidate: snap.size, asked});
+      },
+  );
+
   return {
     respondToRequest,
     requestPublic,
@@ -799,11 +910,71 @@ function build(deps) {
     onFamilyRequestUpdated,
     expireFamilyRequests,
     nudgeFamilyRequests,
+    delegateUnassignedTodos,
   };
+}
+
+/** Margine minimo: sotto i 5 minuti dalla scadenza chiedere non serve più. */
+const MIN_LEAD_MS = 5 * 60 * 1000;
+/** La delega scatta a 12 ore dalla scadenza (scelta dell'utente, 23/10/2026). */
+const DELEGATE_WINDOW_MS = 12 * 3600 * 1000;
+
+/**
+ * Un to-do che KidBox può chiedere al posto di chi l'ha creato: da fare,
+ * senza nessuno (né membro né persona fuori dall'app), con una lista, con un
+ * creatore noto, non privato, non ancora delegato.
+ * @param {object} t
+ * @return {boolean}
+ */
+function isDelegable(t) {
+  return t.isDone !== true && t.isDeleted !== true &&
+    (t.assignedTo || "") === "" && (t.assignedExternalName || "") === "" &&
+    typeof t.createdBy === "string" && t.createdBy !== "" &&
+    typeof t.listId === "string" && t.listId !== "" &&
+    t.visibilityScope !== "private" &&
+    !t.kidboxAsk;
+}
+
+/**
+ * Chi riceve la richiesta: i membri attivi che vedono il to-do, tranne chi
+ * l'ha creato. Stesso criterio dell'app (`KBInsightActionHandler.askRecipients`).
+ * @param {object} t
+ * @param {string[]} activeUids
+ * @return {string[]}
+ */
+function delegateRecipients(t, activeUids) {
+  let visible = activeUids;
+  if (t.visibilityScope === "members") {
+    const allowed = new Set(Array.isArray(t.visibilityMemberIds) ? t.visibilityMemberIds : []);
+    visible = activeUids.filter((uid) => allowed.has(uid));
+  } else if (t.visibilityScope === "private") {
+    visible = [];
+  }
+  return [...new Set(visible.filter((uid) => uid && uid !== t.createdBy))].sort().slice(0, 20);
+}
+
+/**
+ * Scadenza della richiesta, come nell'app (`FamilyRequestService.expiresAt`):
+ * la scadenza del to-do, o la fine di quel giorno se è senza orario; mai
+ * oltre i 7 giorni; `null` se mancano meno di 5 minuti.
+ * @param {object} t
+ * @param {number} now
+ * @return {?number}
+ */
+function delegatedExpiresAt(t, now) {
+  const due = msOf(t.dueAt);
+  if (due == null) return null;
+  let cutoff = due;
+  if (t.dueHasTime === false) {
+    // Fine di quel giorno a Roma, anche nei giorni del cambio d'ora.
+    cutoff = romeAt(due, 0, 0, 1) - 60 * 1000;
+  }
+  if (cutoff <= now + MIN_LEAD_MS) return null;
+  return Math.min(cutoff, now + 7 * 24 * 3600 * 1000 - 600 * 1000);
 }
 
 module.exports = {
   build,
   // Per i test: la logica pura senza Firestore.
-  _internals: {computeNudgeAt, romeAt, applyResponse, sha256hex, tokenMatches, firstName, cleanName, allRecipientsDeclined, formatWhen, publicView},
+  _internals: {isDelegable, delegateRecipients, delegatedExpiresAt, computeNudgeAt, romeAt, applyResponse, sha256hex, tokenMatches, firstName, cleanName, allRecipientsDeclined, formatWhen, publicView},
 };

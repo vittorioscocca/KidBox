@@ -89,6 +89,9 @@ const STRINGS = {
     "request.allDeclinedTitle": "Nessuno può",
     "request.nudgeTitle": "{name} aspetta ancora una risposta",
     "request.allDeclinedBody": "{title} — chiedi a qualcuno fuori dall'app?",
+    "request.delegatedTitle": "KidBox ha chiesto agli altri",
+    "request.delegatedBody":
+      "{title}: nessuno l'aveva ancora preso. Ti dico chi se ne occupa.",
 
     "wallet.ticketTitle": "🎟️ Nuovo biglietto nel Wallet",
     "wallet.ticketBody": "{who} · {kind}",
@@ -177,6 +180,9 @@ const STRINGS = {
     "request.allDeclinedTitle": "Nobody can make it",
     "request.nudgeTitle": "{name} is still waiting for an answer",
     "request.allDeclinedBody": "{title} — ask someone outside the app?",
+    "request.delegatedTitle": "KidBox asked the others",
+    "request.delegatedBody":
+      "{title}: nobody had taken it yet. I'll tell you who takes care of it.",
 
     "wallet.ticketTitle": "🎟️ New ticket in Wallet",
     "wallet.ticketBody": "{who} · {kind}",
@@ -265,6 +271,9 @@ const STRINGS = {
     "request.allDeclinedTitle": "Personne n'est disponible",
     "request.nudgeTitle": "{name} attend encore une réponse",
     "request.allDeclinedBody": "{title} — demander à quelqu'un hors de l'app ?",
+    "request.delegatedTitle": "KidBox a demandé aux autres",
+    "request.delegatedBody":
+      "{title} : personne ne l'avait encore pris. Je te dirai qui s'en occupe.",
 
     "wallet.ticketTitle": "🎟️ Nouveau billet dans le Wallet",
     "wallet.ticketBody": "{who} · {kind}",
@@ -356,6 +365,9 @@ const STRINGS = {
     "request.nudgeTitle": "{name} todavía espera una respuesta",
     "request.allDeclinedBody":
       "{title} — ¿pedírselo a alguien fuera de la app?",
+    "request.delegatedTitle": "KidBox se lo ha pedido a los demás",
+    "request.delegatedBody":
+      "{title}: nadie lo había cogido todavía. Te diré quién se encarga.",
 
     "wallet.ticketTitle": "🎟️ Nuevo billete en el Wallet",
     "wallet.ticketBody": "{who} · {kind}",

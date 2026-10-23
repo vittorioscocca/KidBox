@@ -8600,6 +8600,7 @@ const familyRequests = require("./familyRequests").build({
   resolveMemberName,
   isActiveMember,
   notFamilyMemberReason: NOT_FAMILY_MEMBER,
+  resolveFamilyPlanForQuotas,
 });
 exports.respondToRequest = familyRequests.respondToRequest;
 exports.requestPublic = familyRequests.requestPublic;
@@ -8607,6 +8608,7 @@ exports.onFamilyRequestCreated = familyRequests.onFamilyRequestCreated;
 exports.onFamilyRequestUpdated = familyRequests.onFamilyRequestUpdated;
 exports.expireFamilyRequests = familyRequests.expireFamilyRequests;
 exports.nudgeFamilyRequests = familyRequests.nudgeFamilyRequests;
+exports.delegateUnassignedTodos = familyRequests.delegateUnassignedTodos;
 
 // Notizie per la famiglia (Pro e Max): edizioni condivise per paese e città,
 // trovate da Claude con la ricerca web e pagate in messaggi AI. Disegno in
