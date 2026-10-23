@@ -113,3 +113,15 @@ L'anteprima di ASC ritaglia i lati e copre il fondo con la scheda dell'app, quin
 stanno in un gruppo più piccolo verso il centro. Si caricano in «Intestazione»; in «Risultati della
 ricerca» restano quelle di `header/` (a figura intera, che lì vanno bene).
 
+## Descrizioni App Store (iOS e Mac)
+
+Si generano da una sola struttura con `python3 internal/store-listings/genera-descrizioni.py`
+(scrive `appstore-ios-<lingua>.txt` e `appstore-mac-<lingua>.txt`, max 4000 caratteri) e si
+scrivono su App Store Connect con `node scripts/asc-descrizione.js --version X.Y.Z [--platform MAC_OS] --apply`
+(solo su versioni in preparazione o in attesa di verifica, **non in revisione**). Riscritte il
+22/10/2026: apertura sulla richiesta «Chi prende Marco giovedì?» e sull'agente di famiglia,
+Notizie, ricerca, piano annuale e prova Pro; tolta la frase sugli antibiotici. Sul Mac mancano la
+lente di ricerca e la scorciatoia fotocamera. **Non ancora applicate**: la 2.4.2 iOS era già
+IN_REVIEW e il Mac pure; vanno sulla prossima versione. Da verificare per il Mac: i calendari del
+telefono in sola lettura.
+

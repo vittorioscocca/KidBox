@@ -1,55 +1,41 @@
-KidBox est l'application tout-en-un pour les familles avec enfants.
+« Qui récupère Marco jeudi ? » Avec KidBox, la famille s'organise d'un appui : vous demandez, et celui qui peut répond « Je m'en occupe », même sans l'app.
 
-SANTÉ DES ENFANTS
-Suivez les visites médicales, les examens, les vaccins et les traitements. Recevez des rappels automatiques pour les prochaines échéances et gardez l'historique médical complet toujours à portée de main.
+KidBox est l'agent de votre famille : calendrier, tâches, courses, dépenses, documents et santé au même endroit, avec un assistant qui connaît tout ce que vous y mettez. Un seul abonnement pour toute la famille, sans limite de membres.
 
-AGENDA ET CALENDRIER
-Calendrier partagé avec votre partenaire, listes de tâches intelligentes et routines quotidiennes. L'IA vous aide à trouver des créneaux libres et à ne rien oublier.
+DEMANDEZ À LA FAMILLE
+Depuis l'éditeur de tâches, demandez à un ou plusieurs proches, ou à quelqu'un qui n'a pas KidBox (grands-parents, baby-sitter) avec un lien à ouvrir dans le navigateur. Le premier qui répond « Je m'en occupe » prend la tâche, et la tâche est créée à son nom.
 
 ASSISTANT IA
-Posez-lui toutes vos questions : « Quand est la prochaine visite de Marco ? », « Que manque-t-il sur la liste de courses ? », « Rappelle-moi d'appeler le pédiatre demain ». Il répond dans votre langue, connaît votre famille — et s'en souvient vraiment.
-Chaque matin à 8 h, un récapitulatif des engagements du jour et des doses à administrer. Chaque mois, l'IA analyse l'historique médical de vos enfants pour repérer ce qu'un parent aurait du mal à voir : récurrences saisonnières, examens oubliés, antibiotiques trop fréquents.
-Plus vous l'utilisez, mieux il vous connaît.
+Demandez : « quand est le prochain rendez-vous de Marco ? », « que manque-t-il sur la liste de courses ? », « rappelle-moi d'appeler le pédiatre demain ». Il connaît le calendrier, les tâches, les courses, les notes, les dépenses, les documents et la santé de chacun, et répond avec des liens qui ouvrent le bon élément. Il crée des événements, des tâches, des notes, des articles de courses et des rappels. Chaque matin à 8 h, un résumé des engagements du jour et des doses à donner.
 
-LISTE DE COURSES
-Liste partagée et mise à jour en temps réel. Lorsqu'une personne coche un élément, l'autre le voit immédiatement.
+CALENDRIER ET TÂCHES
+Calendrier partagé avec événements récurrents et rappels, et les calendriers du téléphone à côté de ceux de la famille (lecture seule). Des tâches à attribuer à chacun ; un rappel urgent sonne comme un réveil.
 
-DÉPENSES FAMILIALES
-Suivez les dépenses par catégorie, joignez des tickets de caisse et des photos. Vous savez toujours où va l'argent.
+RECHERCHER DANS KIDBOX
+Une loupe dans l'Accueil cherche dans toute l'app, directement sur le téléphone, sans IA et sans coût : dépenses, documents, notes, calendrier, tâches, santé et plus.
 
-DOCUMENTS ET PHOTOS
-Stockez les comptes-rendus, ordonnances, certificats et photos dans une archive sécurisée et toujours accessible.
+SANTÉ
+Rendez-vous, examens, vaccins et traitements des enfants et des adultes, avec des rappels d'échéances et tout l'historique de santé à portée de main.
 
-INTELLIGENCE DOCUMENTAIRE
-Importez une facture, une ordonnance, un compte-rendu ou tout autre document : KidBox le lit pour vous. L'IA propose les actions appropriées : ajouter la dépense, créer l'événement dans l'agenda, enregistrer la visite médicale, programmer le rappel de vaccin ou archiver l'échéance du véhicule. Vous choisissez ce que vous validez — en une seule touche.
+COURSES ET DÉPENSES
+Liste de courses partagée et mise à jour en temps réel : quand l'un la coche, l'autre le voit aussitôt. Dictez courses et tâches à Alexa : « Alexa, demande à mio box d'ajouter du lait ». Dépenses par catégorie, avec tickets et photos joints.
 
-MOTS DE PASSE FAMILIAUX
-Identifiants, codes d'accès et clés OTP dans un espace unique et chiffré, avec remplissage automatique dans Safari et les autres apps. Partagez vos mots de passe en toute sécurité avec votre partenaire sans quitter KidBox.
+DOCUMENTS
+Comptes rendus, ordonnances, certificats et photos dans une archive chiffrée avec une clé qui reste dans la famille. Importez une facture, une ordonnance ou un compte rendu : KidBox le lit et propose les bonnes actions (ajouter la dépense, créer l'événement, enregistrer la visite, programmer le rappel). Vous choisissez ce qu'il faut confirmer, d'un appui.
 
-LOCALISATION EN TEMPS RÉEL
-Sachez où se trouvent vos enfants et votre partenaire d'un simple coup d'œil.
+ACTUALITÉS (PRO ET MAX)
+Chaque jour, les actualités utiles à votre famille, de votre pays à votre ville, chacune avec sa source. Les événements proches s'ajoutent au calendrier d'un appui.
 
-ANIMAUX DE COMPAGNIE
-Fiche complète pour chaque animal incluant informations d'identité et suivi de santé : vaccins, visites vétérinaires, médicaments et toilettage. Gestion des échéances avec rappels automatiques.
-
-MAISON ET GARAGE
-Registre des appareils électroménagers, des installations et des contrats, avec suivi des garanties et de l'entretien. Fiches véhicules avec échéances clés (assurance, contrôle technique, taxe, révision) et historique des interventions. Indicateurs d'urgence et notifications préventives.
-
-VISIBILITÉ SÉLECTIVE
-Choisissez qui peut voir chaque élément : toute la famille, certains membres ou uniquement vous. Disponible pour les notes, les listes, le calendrier, les documents et le portefeuille (Wallet).
-
-RACCOURCI APPAREIL PHOTO
-Ouvrez l'appareil photo de KidBox directement depuis le Centre de contrôle ou via l'extension de contrôle, sans avoir à ouvrir l'application.
-
-VOYAGES EN FAMILLE
-Laissez l'IA suggérer la destination idéale ou planifiez vous-même avec l'assistant guidé : lieux, dates, transports, participants, budget. L'IA crée un itinéraire jour par jour — matin, après-midi, soir — avec hôtels, restaurants et étapes reliées à des photos, des avis et une carte. Photos, notes, tâches et dépenses du voyage à portée de geste.
+ET AUSSI
+Mots de passe de famille chiffrés, avec saisie automatique et codes OTP · Wallet pour billets, cartes et cartes de paiement · Position en temps réel · Animaux · Maison et garage avec échéances et historique des interventions · Voyages avec itinéraire IA · Visibilité sélective : toute la famille, certains membres ou vous seul · Plusieurs familles dans une seule app.
+Ouvrez l'appareil photo de KidBox depuis le Centre de contrôle sans ouvrir l'app.
 
 — — —
-FORFAITS
-- Free : toutes les fonctionnalités, 200 Mo, 5 messages IA d'essai
-- Pro (4,99 €/mois) : 5 Go, 30 messages IA par jour (100/mois), plans repas et fitness, voyages avec l'IA
-- Max (9,99 €/mois) : 20 Go, 100 messages IA par jour (200/mois)
-Un seul abonnement pour toute la famille, sans limite de membres. Renouvellement automatique ; gestion et résiliation depuis votre identifiant Apple.
+FORMULES
+- Free : calendrier, tâches, courses, dépenses, documents et santé, 200 Mo, 5 messages IA d'essai (une seule fois)
+- Pro (4,99 €/mois ou 39,99 €/an) : 5 Go, 30 messages IA par jour (100/mois), plans repas et fitness, voyages avec IA, Actualités
+- Max (9,99 €/mois ou 79,99 €/an) : 20 Go, 100 messages IA par jour (200/mois)
+Vous pouvez essayer le Pro pendant 14 jours depuis l'app. Un seul abonnement pour toute la famille, sans limite de membres. Renouvellement automatique ; gestion et résiliation depuis votre identifiant Apple.
 
 Confidentialité : https://kidboxapp.com/privacy.html
 Conditions : https://kidboxapp.com/terms.html
