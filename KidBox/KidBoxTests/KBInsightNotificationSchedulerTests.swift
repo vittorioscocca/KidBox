@@ -90,7 +90,16 @@ final class KBInsightNotificationSchedulerTests: XCTestCase {
         prefs.quietStartMinutes = 22 * 60
         prefs.quietEndMinutes = 7 * 60 + 30
         prefs.mutedTypes = [.treatmentDoseMissing]
+        prefs.delegateAsk = true
         XCTAssertEqual(KBInsightPreferences(firestore: prefs.firestoreValue), prefs)
+    }
+
+    func testLocalCopyWithoutDelegateKeepsOtherChoices() throws {
+        let old = #"{"delivery":"eveningDigest","quietStartMinutes":1320,"quietEndMinutes":420,"mutedTypes":[]}"#
+        let p = try JSONDecoder().decode(KBInsightPreferences.self, from: Data(old.utf8))
+        XCTAssertEqual(p.delivery, .eveningDigest)
+        XCTAssertEqual(p.quietStartMinutes, 1320)
+        XCTAssertFalse(p.delegateAsk)
     }
 
     func testPreferencesIgnoreBadRemoteValues() {

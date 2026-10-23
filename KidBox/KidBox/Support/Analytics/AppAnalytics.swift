@@ -323,8 +323,10 @@ enum AppAnalytics {
     }
 
     /// Cambio delle preferenze: `delivery` = immediate / eveningDigest / off.
-    static func insightPrefsChanged(delivery: String, mutedTypes: Int) {
-        Analytics.logEvent("insight_prefs_changed", parameters: ["delivery": delivery, "muted_types": mutedTypes])
+    static func insightPrefsChanged(delivery: String, mutedTypes: Int, delegateAsk: Bool) {
+        Analytics.logEvent("insight_prefs_changed", parameters: [
+            "delivery": delivery, "muted_types": mutedTypes, "delegate_ask": delegateAsk ? 1 : 0,
+        ])
     }
 }
 

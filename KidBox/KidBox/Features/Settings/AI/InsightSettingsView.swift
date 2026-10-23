@@ -65,6 +65,20 @@ struct InsightSettingsView: View {
                     Text("Quali avvisi")
                 }
             }
+
+            Section {
+                Toggle(isOn: Binding(
+                    get: { prefs.delegateAsk },
+                    set: { value in store.update { $0.delegateAsk = value } }
+                )) {
+                    Text("Chiedi agli altri al posto mio")
+                }
+                .listRowBackground(cardBackground)
+            } header: {
+                Text("Lascia fare a KidBox")
+            } footer: {
+                Text("Se 12 ore prima della scadenza nessuno ha preso un to-do che hai creato tu, KidBox manda la richiesta agli altri membri che lo vedono e ti avvisa. Puoi ritirarla quando vuoi.")
+            }
         }
         .scrollContentBackground(.hidden)
         .background(Color(.systemGroupedBackground))

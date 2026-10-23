@@ -14664,6 +14664,28 @@
         }
       }
     },
+    "Chiedi agli altri al posto mio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask the others for me"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pregunta a los demás por mí"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demander aux autres à ma place"
+          }
+        }
+      }
+    },
     "Chiedi a…" : {
       "localizations" : {
         "en" : {
@@ -38117,6 +38139,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Votre voix"
+          }
+        }
+      }
+    },
+    "Lascia fare a KidBox" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Let KidBox handle it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deja que KidBox se encargue"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laisse faire KidBox"
           }
         }
       }
@@ -62756,6 +62800,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sombre"
+          }
+        }
+      }
+    },
+    "Se 12 ore prima della scadenza nessuno ha preso un to-do che hai creato tu, KidBox manda la richiesta agli altri membri che lo vedono e ti avvisa. Puoi ritirarla quando vuoi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If nobody has taken a to-do you created 12 hours before it's due, KidBox sends the request to the other members who can see it and lets you know. You can withdraw it anytime."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si 12 horas antes del vencimiento nadie ha cogido una tarea que creaste tú, KidBox envía la solicitud a los demás miembros que la ven y te avisa. Puedes retirarla cuando quieras."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si personne n'a pris une tâche que tu as créée 12 heures avant l'échéance, KidBox envoie la demande aux autres membres qui la voient et te prévient. Tu peux la retirer quand tu veux."
           }
         }
       }

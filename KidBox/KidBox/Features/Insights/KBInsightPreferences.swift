@@ -30,6 +30,10 @@ struct KBInsightPreferences: Codable, Equatable, Sendable {
     var quietStartMinutes: Int = 21 * 60 + 30
     var quietEndMinutes: Int = 8 * 60
     var mutedTypes: Set<KBInsightType> = []
+    /// Delega (livello 5): se 12 ore prima della scadenza nessuno ha preso un
+    /// to-do creato da questo utente, KidBox chiede agli altri al posto suo.
+    /// La esegue il server (`delegateUnassignedTodos`), che legge questo campo.
+    var delegateAsk = false
 
     static let digestMinutes = 19 * 60
 
@@ -52,10 +56,25 @@ struct KBInsightPreferences: Codable, Equatable, Sendable {
             "quietStart": quietStartMinutes,
             "quietEnd": quietEndMinutes,
             "mutedTypes": mutedTypes.map(\.rawValue).sorted(),
+            "delegateAsk": delegateAsk,
         ]
     }
 
     init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case delivery, quietStartMinutes, quietEndMinutes, mutedTypes, delegateAsk
+    }
+
+    /// Una copia locale scritta prima di un campo nuovo non deve azzerare le altre scelte.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        delivery = try c.decodeIfPresent(Delivery.self, forKey: .delivery) ?? .immediate
+        quietStartMinutes = try c.decodeIfPresent(Int.self, forKey: .quietStartMinutes) ?? 21 * 60 + 30
+        quietEndMinutes = try c.decodeIfPresent(Int.self, forKey: .quietEndMinutes) ?? 8 * 60
+        mutedTypes = try c.decodeIfPresent(Set<KBInsightType>.self, forKey: .mutedTypes) ?? []
+        delegateAsk = try c.decodeIfPresent(Bool.self, forKey: .delegateAsk) ?? false
+    }
 
     init(firestore map: [String: Any]) {
         if let raw = map["delivery"] as? String, let d = Delivery(rawValue: raw) { delivery = d }
@@ -64,6 +83,7 @@ struct KBInsightPreferences: Codable, Equatable, Sendable {
         if let types = map["mutedTypes"] as? [String] {
             mutedTypes = Set(types.compactMap(KBInsightType.init(rawValue:)))
         }
+        if let v = map["delegateAsk"] as? Bool { delegateAsk = v }
     }
 }
 
@@ -95,7 +115,9 @@ final class KBInsightPreferencesStore: ObservableObject {
         change(&next)
         guard next != prefs else { return }
         apply(next)
-        AppAnalytics.insightPrefsChanged(delivery: next.delivery.rawValue, mutedTypes: next.mutedTypes.count)
+        AppAnalytics.insightPrefsChanged(
+            delivery: next.delivery.rawValue, mutedTypes: next.mutedTypes.count, delegateAsk: next.delegateAsk
+        )
         guard let uid = Auth.auth().currentUser?.uid else { return }
         let value = next.firestoreValue
         Task {
