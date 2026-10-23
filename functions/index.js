@@ -8583,6 +8583,10 @@ exports.unlinkAlexa = alexa.unlinkAlexa;
 // perché in `landingTraffic.js`.
 exports.landingPing = require("./landingTraffic").landingPing;
 
+// «Mi piace l'idea» della landing: un like per IP, IP mai salvato. Il perché in
+// `landingLikes.js`.
+exports.landingLike = require("./landingLikes").landingLike;
+
 // Calendari iscritti (feed ICS da URL): vedi calendarFeeds.js.
 const calendarFeeds = require("./calendarFeeds");
 exports.saveCalendarFeed = calendarFeeds.saveCalendarFeed;
