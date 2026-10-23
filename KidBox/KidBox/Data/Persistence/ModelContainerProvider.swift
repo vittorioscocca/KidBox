@@ -155,6 +155,7 @@ enum ModelContainerProvider {
             KBCustomDrug.self,
             KBMedicalExam.self,
             KBHealthInsight.self,
+            KBInsight.self,
             KBCalendarEvent.self,
             KBFamilyPhoto.self,
             KBPhotoAlbum.self,
