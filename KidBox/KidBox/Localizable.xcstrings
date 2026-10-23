@@ -600,6 +600,28 @@
         }
       }
     },
+    "%1$@ scade %2$@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ is due %2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ vence %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ arrive à échéance %2$@"
+          }
+        }
+      }
+    },
     "%@ - %@" : {
       "localizations" : {
         "it" : {
@@ -14395,6 +14417,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Qui peut voir cette tâche"
+          }
+        }
+      }
+    },
+    "Chi se ne occupa?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Who's taking care of it?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Quién se encarga?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui s'en occupe ?"
           }
         }
       }
@@ -50340,6 +50384,28 @@
         }
       }
     },
+    "Pagamenti di casa senza nessuno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "House payments nobody has taken"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagos de casa que nadie ha cogido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paiements de la maison que personne n'a pris"
+          }
+        }
+      }
+    },
     "Pagamento" : {
       "comment" : "Wallet tab: payment cards",
       "localizations" : {
@@ -50382,6 +50448,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Paiement le %@"
+          }
+        }
+      }
+    },
+    "Pagare: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pay: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagar: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payer : %@"
           }
         }
       }

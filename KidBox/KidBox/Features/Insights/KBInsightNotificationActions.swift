@@ -39,6 +39,8 @@ enum KBInsightNotificationCategory {
         switch type {
         case .todoUnassignedDueSoon: return todo
         case .treatmentDoseMissing:  return dose
+        // Stesse azioni del to-do: «chi paga» è il to-do «Pagare: …».
+        case .housePaymentDue:       return todo
         case .eventTomorrowNoReminder, .vaccineDue, .groceryStale: return nil
         }
     }
@@ -110,9 +112,17 @@ enum KBInsightActionHandler {
             AppAnalytics.insightShown(type: typeRaw, channel: "notification")
             row.shownReportedAt = row.notifiedAt ?? now
         }
+        // Pagamento di casa: «Ci penso io» e «Chiedi agli altri» lavorano sul
+        // to-do «Pagare: …» di quella scadenza, che nasce qui se non c'è ancora.
+        var targetTodoId = info["todoId"] as? String
+        if row.type == .housePaymentDue,
+           action == KBInsightNotificationCategory.actionTake || action == KBInsightNotificationCategory.actionAsk {
+            targetTodoId = ensurePaymentTodo(for: row, now: now, modelContext: modelContext)
+        }
+
         switch action {
         case KBInsightNotificationCategory.actionTake:
-            if let todoId = info["todoId"] as? String {
+            if let todoId = targetTodoId {
                 takeTodo(todoId: todoId, familyId: row.familyId, now: now, modelContext: modelContext)
             }
             row.mark(.done, now: now)
@@ -121,7 +131,7 @@ enum KBInsightActionHandler {
         case KBInsightNotificationCategory.actionAsk:
             // L'avviso resta aperto: si chiude da solo quando qualcuno prende
             // il to-do (dalla richiesta o dall'app).
-            if let todoId = info["todoId"] as? String,
+            if let todoId = targetTodoId,
                await askOthers(todoId: todoId, familyId: row.familyId, modelContext: modelContext) {
                 reportActed(row, typeRaw: typeRaw, via: "ask", now: now)
             }
@@ -159,6 +169,70 @@ enum KBInsightActionHandler {
     static func minutesSinceShown(_ row: KBInsight, now: Date) -> Int {
         guard let shown = row.shownReportedAt else { return 0 }
         return max(0, Int(now.timeIntervalSince(shown) / 60))
+    }
+
+    // MARK: - Pagamento di casa → to-do «Pagare: …»
+
+    /// Il to-do della scadenza indicata dall'insight (`<pagamento>@<giorno>`),
+    /// creato senza nessuno se non esiste. L'id è prevedibile
+    /// (`KBInsightEngine.paymentTodoId`): due genitori che toccano insieme
+    /// scrivono lo stesso to-do, e il motore smette di chiedere chi paga.
+    /// Va nella lista modificata più di recente; senza liste non si crea niente.
+    static func ensurePaymentTodo(for row: KBInsight, now: Date, modelContext: ModelContext) -> String? {
+        let parts = row.entityId.split(separator: "@", maxSplits: 1).map(String.init)
+        guard parts.count == 2, let uid = Auth.auth().currentUser?.uid else { return nil }
+        let paymentId = parts[0]
+        let fmt = DateFormatter()
+        fmt.calendar = Calendar.current
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.dateFormat = "yyyy-MM-dd"
+        guard let day = fmt.date(from: parts[1]),
+              let payment = try? modelContext.fetch(FetchDescriptor<KBHousePayment>(
+                  predicate: #Predicate { $0.id == paymentId }
+              )).first
+        else { return nil }
+
+        let todoId = KBInsightEngine.paymentTodoId(paymentId: paymentId, due: day)
+        if (try? modelContext.fetch(FetchDescriptor<KBTodoItem>(predicate: #Predicate { $0.id == todoId })).first) != nil {
+            return todoId
+        }
+        let fid = row.familyId
+        var listDescriptor = FetchDescriptor<KBTodoList>(
+            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false },
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+        )
+        listDescriptor.fetchLimit = 1
+        guard let list = try? modelContext.fetch(listDescriptor).first else {
+            KBLog.ai.kbInfo("InsightAction: nessuna lista per il to-do del pagamento")
+            return nil
+        }
+
+        // Senza orario: come i to-do «tutto il giorno», `dueAt` alle 9.
+        let dueAt = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: day) ?? day
+        let todo = KBTodoItem(
+            id: todoId,
+            familyId: fid,
+            childId: list.childId,
+            title: String(format: NSLocalizedString("Pagare: %@", comment: "To-do nato da un pagamento di casa"), payment.name),
+            listId: list.id,
+            dueAt: dueAt,
+            dueHasTime: false,
+            updatedBy: uid,
+            createdAt: now,
+            updatedAt: now
+        )
+        todo.createdBy = uid
+        todo.priorityRaw = 0
+        todo.syncState = .pendingUpsert
+        modelContext.insert(todo)
+        do {
+            try modelContext.save()
+            SyncCenter.shared.enqueueTodoUpsert(todoId: todoId, familyId: fid, modelContext: modelContext)
+            return todoId
+        } catch {
+            KBLog.ai.kbError("InsightAction: to-do del pagamento non salvato \(error.localizedDescription)")
+            return nil
+        }
     }
 
     // MARK: - Ci penso io

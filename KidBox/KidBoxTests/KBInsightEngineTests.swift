@@ -240,4 +240,45 @@ final class KBInsightEngineTests: XCTestCase {
         XCTAssertEqual(KBInsightActionHandler.askRecipients(for: members, uid: "me", modelContext: context), ["dad"])
         XCTAssertEqual(KBInsightActionHandler.askRecipients(for: mine, uid: "me", modelContext: context), [])
     }
+
+    // MARK: - Pagamenti di casa
+
+    private func payment(_ id: String = "p1", day: Int? = nil, date: Date? = nil) -> KBInsightSnapshot.HousePayment {
+        .init(id: id, isDeleted: false, dueDate: date, monthlyDay: day)
+    }
+
+    func testMonthlyPaymentDueSoonAsksThreeDaysBeforeAtNine() {
+        // Venerdì 23: il 26 è fra 3 giorni.
+        let c = evaluate(KBInsightSnapshot(housePayments: [payment(day: 26)]))
+        XCTAssertEqual(c, [KBInsightCandidate(type: .housePaymentDue, entityId: "p1@2026-10-26",
+                                              priority: .normal, fireAt: at(2026, 10, 23, 9, 0))])
+    }
+
+    func testPaymentDueTomorrowIsHigh() {
+        XCTAssertEqual(evaluate(KBInsightSnapshot(housePayments: [payment(day: 24)])).first?.priority, .high)
+    }
+
+    func testDay31BecomesLastDayOfShortMonth() {
+        let today = cal.startOfDay(for: at(2026, 11, 25, 12, 0))
+        let due = KBInsightEngine.nextDue(of: payment(day: 31), today: today, calendar: cal)
+        XCTAssertEqual(due, cal.startOfDay(for: at(2026, 11, 30, 12, 0)))
+    }
+
+    func testPastMonthlyDayRollsToNextMonth() {
+        // Il 10 è passato: prossima scadenza il 10 novembre, fuori dalla settimana.
+        XCTAssertEqual(evaluate(KBInsightSnapshot(housePayments: [payment(day: 10)])), [])
+    }
+
+    func testOneOffDateWinsAndPastOneOffIsIgnored() {
+        let c = evaluate(KBInsightSnapshot(housePayments: [payment(day: 1, date: at(2026, 10, 28, 0, 0))]))
+        XCTAssertEqual(c.first?.entityId, "p1@2026-10-28")
+        XCTAssertEqual(evaluate(KBInsightSnapshot(housePayments: [payment(date: at(2026, 10, 20, 0, 0))])), [])
+    }
+
+    func testPaymentWithItsTodoIsNotAsked() {
+        let due = cal.startOfDay(for: at(2026, 10, 26, 12, 0))
+        let todoId = KBInsightEngine.paymentTodoId(paymentId: "p1", due: due, calendar: cal)
+        XCTAssertEqual(todoId, "hp-p1-2026-10-26")
+        XCTAssertEqual(evaluate(KBInsightSnapshot(housePayments: [payment(day: 26)], todoIds: [todoId])), [])
+    }
 }

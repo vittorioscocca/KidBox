@@ -33,6 +33,13 @@ extension KBInsightSnapshot {
             predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false && $0.taken == true }
         )).filter { treatmentIds.contains($0.treatmentId) }
 
+        let payments = try context.fetch(FetchDescriptor<KBHousePayment>(
+            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+        ))
+        let allTodoIds = try context.fetch(FetchDescriptor<KBTodoItem>(
+            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+        )).map(\.id)
+
         return KBInsightSnapshot(
             todos: todos.map {
                 Todo(
@@ -66,7 +73,16 @@ extension KBInsightSnapshot {
                     taken: $0.taken,
                     isDeleted: $0.isDeleted
                 )
-            }
+            },
+            housePayments: payments.map {
+                HousePayment(
+                    id: $0.id,
+                    isDeleted: $0.isDeleted,
+                    dueDate: $0.dataScadenza,
+                    monthlyDay: $0.giornoDiScadenzaMensile
+                )
+            },
+            todoIds: Set(allTodoIds)
         )
     }
 }

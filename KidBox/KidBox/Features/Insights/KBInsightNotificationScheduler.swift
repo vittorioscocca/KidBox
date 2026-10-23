@@ -289,6 +289,33 @@ enum KBInsightNotificationScheduler {
                 )
             }
 
+        case .housePaymentDue:
+            let parts = row.entityId.split(separator: "@", maxSplits: 1).map(String.init)
+            guard parts.count == 2 else { return nil }
+            let paymentId = parts[0]
+            guard let payment = try? context.fetch(FetchDescriptor<KBHousePayment>(
+                predicate: #Predicate { $0.id == paymentId }
+            )).first else { return nil }
+            let fmt = DateFormatter()
+            fmt.locale = Locale(identifier: "en_US_POSIX")
+            fmt.dateFormat = "yyyy-MM-dd"
+            guard let day = fmt.date(from: parts[1]) else { return nil }
+            info["paymentId"] = paymentId
+            content.userInfo = info
+            // «Chiedi agli altri» solo se in famiglia c'è qualcun altro.
+            let fid = row.familyId
+            let uid = Auth.auth().currentUser?.uid ?? ""
+            let others = ((try? context.fetch(FetchDescriptor<KBFamilyMember>(
+                predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+            ))) ?? []).filter { !$0.userId.isEmpty && $0.userId != uid }
+            if !others.isEmpty { content.categoryIdentifier = KBInsightNotificationCategory.todoAsk }
+            KBNotificationLocalization.setText(
+                on: content,
+                titleKey: "%1$@ scade %2$@",
+                titleArgs: [.text(payment.name), .text(relativeDue(day, hasTime: false))],
+                bodyKey: "Chi se ne occupa?"
+            )
+
         case .eventTomorrowNoReminder, .vaccineDue, .groceryStale:
             // Regole non ancora scritte: il motore non propone questi tipi.
             return nil

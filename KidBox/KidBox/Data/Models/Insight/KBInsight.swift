@@ -31,6 +31,8 @@ enum KBInsightType: String, Codable, CaseIterable, Sendable {
     case vaccineDue = "vaccine_due"
     /// Lista della spesa ferma da giorni.
     case groceryStale = "grocery_stale"
+    /// Pagamento di casa in scadenza per cui nessuno ha preso il to-do «Pagare: …».
+    case housePaymentDue = "house_payment_due"
 }
 
 /// Quanto conta: decide il canale, non l'ordine delle notifiche di sistema.

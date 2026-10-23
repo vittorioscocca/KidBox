@@ -61,6 +61,9 @@ struct InsightSettingsView: View {
                     typeToggle(.treatmentDoseMissing) {
                         Text("Dosi da registrare")
                     }
+                    typeToggle(.housePaymentDue) {
+                        Text("Pagamenti di casa senza nessuno")
+                    }
                 } header: {
                     Text("Quali avvisi")
                 }

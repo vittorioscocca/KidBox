@@ -347,7 +347,7 @@ final class NotificationManager: NSObject, ObservableObject {
             pendingDeepLink = .vehicle(familyId: familyId, vehicleId: vehicleId)
             KBLog.auth.kbInfo("DeepLink set for vehicle vehicleId=\(vehicleId)")
 
-        } else if type == "house_payment_reminder" {
+        } else if type == "house_payment_reminder" || type == "insight_house_payment_due" {
             guard
                 let familyId  = userInfo["familyId"]  as? String,
                 let paymentId = userInfo["paymentId"] as? String
