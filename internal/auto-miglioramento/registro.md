@@ -90,7 +90,7 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
   - **(b)** `insight_dismissed` ÷ `insight_shown` **≤ 20%**;
   - **(c)** utenti unici con `insight_prefs_changed` e `delivery = off` ÷ utenti unici con `insight_shown` **≤ 10%**.
 - **Misura**: `node scripts/ga4-daily-report.js --insights-from <data uscita>`, sezione «Avvisi proattivi — scommessa 11»: stampa i tre rapporti con le soglie e il controllo «non misurabile».
-- **Prerequisito, prima dell'uscita**: registrare in GA4 (Amministrazione → Definizioni personalizzate, ambito evento) i parametri `delivery`, `type` e `via` come dimensioni personalizzate. GA4 le applica solo ai dati raccolti dopo: senza `delivery` il rapporto (c) resta non calcolabile per tutta la finestra. Il service account del report è solo Visualizzatore e non può farlo.
+- **Prerequisito, fatto il 23/10/2026** (verificato: il report le legge senza note): registrare in GA4 (Amministrazione → Definizioni personalizzate, ambito evento) i parametri `delivery`, `type` e `via` come dimensioni personalizzate. GA4 le applica solo ai dati raccolti dopo: senza `delivery` il rapporto (c) resta non calcolabile per tutta la finestra. Il service account del report è solo Visualizzatore e non può farlo.
 - **Data**: **uscita della versione iOS con gli avvisi + 28 giorni**. Il giorno della pubblicazione si scrive qui la data esatta; finché non c'è, la scommessa non conta come aperta.
 - **Non misurabile se**: meno di 100 `insight_shown` o meno di 20 utenti unici che ne hanno ricevuto uno.
 - **Decisione, scritta ora**:
