@@ -1,12 +1,15 @@
 «Chi prende Marco giovedì?» Con KidBox la famiglia si organizza in un tocco: chiedi, e chi può risponde «Ci penso io», anche se non ha l'app.
 
-KidBox è l'agente della tua famiglia: calendario, to-do, spesa, spese, documenti e salute in un posto solo, con un assistente che conosce tutto quello che ci metti. Un solo abbonamento per tutta la famiglia, senza limite di membri.
+Altre app ricordano te. KidBox ricorda la famiglia: calendario, to-do, spesa, spese, documenti e salute in un posto solo, con un assistente che conosce tutto quello che ci metti e si accorge di quello che resta scoperto. Un solo abbonamento per tutta la famiglia, senza limite di membri.
 
 CHIEDI ALLA FAMIGLIA
 Dall'editor del to-do chiedi a uno o più familiari, oppure a chi non ha KidBox (nonni, babysitter) con un link da aprire nel browser. Il primo che risponde «Ci penso io» si prende il compito e nasce il to-do, con il suo nome.
 
+SI ACCORGE PRIMA DI TE (PRO E MAX)
+Se un to-do sta per scadere e nessuno l'ha preso, o una dose di oggi non risulta registrata, KidBox ti avvisa. Dalla notifica, senza aprire l'app: «Ci penso io» o «Chiedi agli altri» per il to-do, «Presa» per la dose. Accendi «Chiedi agli altri al posto mio»: se 12 ore prima nessuno ha preso un tuo to-do, KidBox manda la richiesta da solo e ti dice chi se ne occupa. Riepilogo serale e orari di silenzio a scelta; gli avvisi non usano messaggi AI.
+
 ASSISTENTE AI
-Chiedi: «quando è la prossima visita di Marco?», «cosa manca nella lista della spesa?», «ricordami di chiamare il pediatra domani». Conosce il calendario, i to-do, la spesa, le note, le spese, i documenti e la salute di tutti, e risponde con link che aprono la voce giusta. Crea eventi, to-do, note, voci della spesa e promemoria. Ogni mattina alle 8:00 un riepilogo degli impegni del giorno e delle dosi da somministrare.
+Chiedi: «quando è la prossima visita di Marco?», «cosa manca nella lista della spesa?». Conosce il calendario, i to-do, la spesa, le note, le spese, i documenti e la salute di tutti, e risponde con link che aprono la voce giusta. Crea eventi, to-do, note, voci della spesa e promemoria. Ogni mattina alle 8:00 un riepilogo degli impegni del giorno e delle dosi da somministrare.
 
 CALENDARIO E TO-DO
 Calendario condiviso con ricorrenze e promemoria, e i calendari del telefono accanto a quelli della famiglia (in sola lettura). To-do assegnabili a ciascuno; un promemoria urgente suona come una sveglia.
@@ -21,7 +24,7 @@ SPESA E SPESE
 Lista della spesa condivisa e aggiornata in tempo reale: quando uno la spunta, l'altro lo vede subito. Detti spesa e to-do ad Alexa: «Alexa, chiedi a mio box di aggiungere il latte». Spese per categoria, con scontrini e foto allegati.
 
 DOCUMENTI
-Referti, ricette, certificati e foto in un archivio cifrato con una chiave che resta alla famiglia. Importa una fattura, una ricetta o un referto: KidBox lo legge e propone le azioni giuste (aggiungere la spesa, creare l'evento, registrare la visita, impostare il promemoria). Tu scegli cosa confermare, con un tocco.
+Referti, ricette, certificati e foto in un archivio cifrato con una chiave che resta alla famiglia. Importa una fattura, una ricetta o un referto: KidBox lo legge e propone le azioni giuste: spesa, evento, visita, promemoria. Tu scegli cosa confermare, con un tocco.
 
 NOTIZIE (PRO E MAX)
 Ogni giorno le notizie utili alla tua famiglia, dal paese alla tua città, ciascuna con la sua fonte. Gli eventi vicini si aggiungono al calendario con un tocco.
@@ -33,7 +36,7 @@ Apri la fotocamera di KidBox dal Centro di Controllo senza aprire l'app.
 — — —
 PIANI
 - Free: calendario, to-do, spesa, spese, documenti e salute, 200 MB, 5 messaggi AI di prova (una tantum)
-- Pro (€4,99/mese o €39,99/anno): 5 GB, 30 messaggi AI al giorno (100/mese), piani pasti e fitness, viaggi con AI, Notizie
+- Pro (€4,99/mese o €39,99/anno): 5 GB, 30 messaggi AI al giorno (100/mese), piani pasti e fitness, viaggi con AI, Notizie, avvisi proattivi
 - Max (€9,99/mese o €79,99/anno): 20 GB, 100 messaggi AI al giorno (200/mese)
 Puoi provare il Pro per 14 giorni dall'app. Un solo abbonamento per tutta la famiglia, senza limite di membri. Si rinnova automaticamente; si gestisce e annulla dall'ID Apple.
 

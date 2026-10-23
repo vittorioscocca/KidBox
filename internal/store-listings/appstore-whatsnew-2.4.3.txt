@@ -1,0 +1,35 @@
+# Novità iOS 2.4.3 — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 23/10/2026. In prima riga gli avvisi proattivi, che sono la scommessa 11 del registro di `/auto-miglioramento`: avvisi su to-do senza nessuno e dosi non registrate, azioni rapide, «Chiedi agli altri», delega «Chiedi agli altri al posto mio», preferenze; più la frequenza settimanale o mensile dei pattern salute. Etichette tra virgolette = quelle del catalogo stringhe; percorso dalla riga «Assistente AI» delle Impostazioni. Solo iOS: sul Mac gli avvisi non sono stati provati. La 2.4.2 era già approvata (READY_FOR_DISTRIBUTION) e non contiene queste funzioni.
+
+## it
+
+• Avvisi proattivi (Pro e Max): KidBox ti avvisa quando un to-do sta per scadere e nessuno l'ha preso, o quando una dose di oggi non risulta registrata. Rispondi dalla notifica, senza aprire l'app: «Ci penso io», «Chiedi agli altri», «Presa» o «Rimanda di un'ora».
+• Chiedi agli altri: dall'avviso mandi una richiesta a chi vede il to-do, e il primo che risponde «Ci penso io» se lo prende.
+• Lascia fare a KidBox: accendi «Chiedi agli altri al posto mio» e, se 12 ore prima della scadenza nessuno ha preso un to-do che hai creato tu, KidBox manda la richiesta da solo e ti avvisa. La puoi ritirare quando vuoi.
+• Scegli tu come arrivano, in Impostazioni → Assistente AI → Avvisi proattivi: «Subito», «Riepilogo serale alle 19» o «Spenti», con orari di silenzio e i tipi di avviso che vuoi. Gli avvisi non usano messaggi AI.
+• Pattern salute AI: ora scegli se l'analisi gira ogni settimana o ogni mese.
+
+## en-GB
+
+• Proactive alerts (Pro and Max): KidBox lets you know when a to-do is about to fall due and nobody has taken it, or when today's dose hasn't been recorded. Reply from the notification, without opening the app: "I'll do it", "Ask the others", "Taken" or "Remind me in an hour".
+• Ask the others: from the alert you send a request to everyone who can see the to-do, and the first to reply "I'll do it" takes it.
+• Let KidBox handle it: turn on "Ask the others for me" and, if nobody has taken a to-do you created 12 hours before it's due, KidBox sends the request itself and lets you know. You can withdraw it anytime.
+• Choose how they arrive in Settings → AI Assistant → Proactive alerts: "Right away", "Evening summary at 7 pm" or "Off", with quiet hours and the alert types you want. Alerts don't use AI messages.
+• AI health patterns: you can now choose whether the analysis runs every week or every month.
+
+## es-ES
+
+• Avisos proactivos (Pro y Max): KidBox te avisa cuando una tarea está a punto de vencer y nadie la ha cogido, o cuando la dosis de hoy no está registrada. Responde desde la notificación, sin abrir la app: «Me encargo yo», «Pregunta a los demás», «Tomada» o «Recuérdamelo en una hora».
+• Pregunta a los demás: desde el aviso envías una solicitud a quien ve la tarea, y el primero que responde «Me encargo yo» se la queda.
+• Deja que KidBox se encargue: activa «Pregunta a los demás por mí» y, si 12 horas antes del vencimiento nadie ha cogido una tarea que creaste tú, KidBox envía la solicitud solo y te avisa. Puedes retirarla cuando quieras.
+• Elige cómo llegan en Ajustes → Asistente IA → Avisos proactivos: «Al momento», «Resumen de la tarde a las 19» o «Desactivados», con horas de silencio y los tipos de aviso que quieras. Los avisos no usan mensajes de IA.
+• Patrones de salud con IA: ahora eliges si el análisis se hace cada semana o cada mes.
+
+## fr-FR
+
+• Alertes proactives (Pro et Max) : KidBox vous prévient quand une tâche arrive à échéance sans que personne ne l'ait prise, ou quand la dose du jour n'est pas enregistrée. Répondez depuis la notification, sans ouvrir l'app : « Je m'en occupe », « Demander aux autres », « Prise » ou « Me le rappeler dans une heure ».
+• Demander aux autres : depuis l'alerte, vous envoyez une demande à ceux qui voient la tâche, et le premier qui répond « Je m'en occupe » la prend.
+• Laisse faire KidBox : activez « Demander aux autres à ma place » et, si personne n'a pris une tâche que vous avez créée 12 heures avant l'échéance, KidBox envoie la demande lui-même et vous prévient. Vous pouvez la retirer quand vous voulez.
+• Choisissez comment elles arrivent dans Réglages → Assistant IA → Alertes proactives : « Tout de suite », « Récap du soir à 19 h » ou « Désactivées », avec heures de silence et types d'alertes au choix. Les alertes n'utilisent pas de messages IA.
+• Tendances santé IA : vous choisissez maintenant si l'analyse se fait chaque semaine ou chaque mois.

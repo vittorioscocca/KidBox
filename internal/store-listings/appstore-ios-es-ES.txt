@@ -1,12 +1,15 @@
 «¿Quién recoge a Marco el jueves?» Con KidBox la familia se organiza con un toque: pregunta, y quien pueda responde «Me encargo yo», aunque no tenga la app.
 
-KidBox es el agente de tu familia: calendario, tareas, compra, gastos, documentos y salud en un solo lugar, con un asistente que conoce todo lo que guardas. Una sola suscripción para toda la familia, sin límite de miembros.
+Otras apps te recuerdan a ti. KidBox recuerda a la familia: calendario, tareas, compra, gastos, documentos y salud en un solo lugar, con un asistente que conoce todo lo que guardas y se da cuenta de lo que queda sin cubrir. Una sola suscripción para toda la familia, sin límite de miembros.
 
 PREGUNTA A LA FAMILIA
 Desde el editor de tareas pregunta a uno o varios familiares, o a quien no tiene KidBox (abuelos, canguro) con un enlace que se abre en el navegador. El primero que responde «Me encargo yo» se queda con la tarea y nace la tarea con su nombre.
 
+SE DA CUENTA ANTES QUE TÚ (PRO Y MAX)
+Si una tarea está a punto de vencer y nadie la ha cogido, o la dosis de hoy no está registrada, KidBox te avisa. Desde la notificación, sin abrir la app: «Me encargo yo» o «Pregunta a los demás» para la tarea, «Tomada» para la dosis. Activa «Pregunta a los demás por mí»: si 12 horas antes nadie ha cogido una de tus tareas, KidBox envía la solicitud solo y te dice quién se encarga. Resumen de la tarde y horas de silencio a tu gusto; los avisos no usan mensajes de IA.
+
 ASISTENTE DE IA
-Pregunta: «¿cuándo es la próxima visita de Marco?», «¿qué falta en la lista de la compra?», «recuérdame llamar al pediatra mañana». Conoce el calendario, las tareas, la compra, las notas, los gastos, los documentos y la salud de todos, y responde con enlaces que abren el elemento correcto. Crea eventos, tareas, notas, artículos de la compra y recordatorios. Cada mañana a las 8:00, un resumen de los compromisos del día y de las dosis de medicación.
+Pregunta: «¿cuándo es la próxima visita de Marco?», «¿qué falta en la lista de la compra?». Conoce el calendario, las tareas, la compra, las notas, los gastos, los documentos y la salud de todos, y responde con enlaces que abren el elemento correcto. Crea eventos, tareas, notas, artículos de la compra y recordatorios. Cada mañana a las 8:00, un resumen de los compromisos del día y de las dosis de medicación.
 
 CALENDARIO Y TAREAS
 Calendario compartido con eventos recurrentes y recordatorios, y los calendarios del teléfono junto a los de la familia (solo lectura). Tareas que se asignan a cada uno; un recordatorio urgente suena como una alarma.
@@ -21,7 +24,7 @@ COMPRA Y GASTOS
 Lista de la compra compartida y actualizada en tiempo real: cuando uno la tacha, el otro lo ve al instante. Dicta compra y tareas a Alexa: «Alexa, pídele a mio box que añada leche». Gastos por categoría, con tickets y fotos adjuntos.
 
 DOCUMENTOS
-Informes médicos, recetas, certificados y fotos en un archivo cifrado con una clave que se queda en la familia. Importa una factura, una receta o un informe: KidBox lo lee y propone las acciones adecuadas (añadir el gasto, crear el evento, registrar la visita, programar el recordatorio). Tú eliges qué confirmar, con un toque.
+Informes médicos, recetas, certificados y fotos en un archivo cifrado con una clave que se queda en la familia. Importa una factura, una receta o un informe: KidBox lo lee y propone las acciones adecuadas: gasto, evento, visita, recordatorio. Tú eliges qué confirmar, con un toque.
 
 NOTICIAS (PRO Y MAX)
 Cada día, las noticias útiles para tu familia, de tu país a tu ciudad, cada una con su fuente. Los eventos cercanos se añaden al calendario con un toque.
@@ -33,7 +36,7 @@ Abre la cámara de KidBox desde el Centro de control sin abrir la app.
 — — —
 PLANES
 - Free: calendario, tareas, compra, gastos, documentos y salud, 200 MB, 5 mensajes de IA de prueba (una sola vez)
-- Pro (4,99 €/mes o 39,99 €/año): 5 GB, 30 mensajes de IA al día (100/mes), planes de comidas y fitness, viajes con IA, Noticias
+- Pro (4,99 €/mes o 39,99 €/año): 5 GB, 30 mensajes de IA al día (100/mes), planes de comidas y fitness, viajes con IA, Noticias, avisos proactivos
 - Max (9,99 €/mes o 79,99 €/año): 20 GB, 100 mensajes de IA al día (200/mes)
 Puedes probar el Pro durante 14 días desde la app. Una sola suscripción para toda la familia, sin límite de miembros. Se renueva automáticamente; se gestiona y cancela desde tu ID de Apple.
 

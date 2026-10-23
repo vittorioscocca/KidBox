@@ -125,3 +125,10 @@ lente di ricerca e la scorciatoia fotocamera. **Non ancora applicate**: la 2.4.2
 IN_REVIEW e il Mac pure; vanno sulla prossima versione. Da verificare per il Mac: i calendari del
 telefono in sola lettura.
 
+Il 23/10/2026 le descrizioni **iOS** hanno l'apertura «Altre app ricordano te. KidBox ricorda la
+famiglia» e il blocco «Si accorge prima di te (Pro e Max)» sugli avvisi proattivi, più «avvisi
+proattivi» nella riga del Pro. Il generatore ha ora le frasi `{{iOS||Mac}}`: sul Mac gli avvisi non
+sono stati provati, quindi le descrizioni Mac restano identiche. Da applicare sulla **2.4.3**
+(`PREPARE_FOR_SUBMISSION`): la 2.4.2 è già `READY_FOR_DISTRIBUTION` e non contiene gli avvisi.
+Novità della 2.4.3 in `appstore-whatsnew-2.4.3.txt`.
+
