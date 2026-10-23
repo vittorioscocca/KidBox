@@ -85,7 +85,7 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
 
 ### 11. Avvisi proattivi: aiutano o disturbano?
 - **Cambio**: motore di regole sul telefono, solo Pro e Max (iOS, commit da `ccc364b8` a quello di questa riga, non ancora pubblicato). Avvisa quando un to-do che scade non l'ha preso nessuno e quando manca la registrazione di una dose, con azioni rapide e preferenze. Disegno nel documento «KidBox — Assistente AI Familiare Proattivo e Multicanale».
-- **Previsione** (soglie proposte il 23/10/2026, **da confermare dall'utente prima dell'uscita**):
+- **Previsione** (soglie proposte e confermate dall'utente il 23/10/2026, prima dell'uscita):
   - **(a)** `insight_acted` ÷ `insight_shown` **≥ 30%**: almeno un avviso su tre porta qualcuno a prendere il to-do o registrare la dose;
   - **(b)** `insight_dismissed` ÷ `insight_shown` **≤ 20%**;
   - **(c)** utenti unici con `insight_prefs_changed` e `delivery = off` ÷ utenti unici con `insight_shown` **≤ 10%**.
