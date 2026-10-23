@@ -16,8 +16,9 @@ aria-label, placeholder e il content delle meta description/og.
 
 La build fallisce se manca una traduzione: quando l'inglese cambia, `extract`
 mostra i testi nuovi. I link verso le pagine inglesi diventano quelli della
-lingua (guide-en.html → guide-es.html, en/tools/ → es/tools/, …); poi
-build_footer.py sistema footer, menu delle lingue e hreflang.
+lingua (guide-en.html → guide-es.html, en/tools/ → es/tools/, …); poi va
+lanciato build_footer.py, che sistema footer, menu delle lingue e hreflang:
+senza, le pagine ES/FR escono con footer e menu in inglese.
 """
 import json
 import re
