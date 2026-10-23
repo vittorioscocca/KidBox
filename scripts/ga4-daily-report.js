@@ -5,6 +5,7 @@
  *   node scripts/ga4-daily-report.js            # report testuale
  *   node scripts/ga4-daily-report.js --json     # stesso contenuto, in JSON
  *   node scripts/ga4-daily-report.js --day 2026-09-13   # «ieri» esplicito
+ *   node scripts/ga4-daily-report.js --insights-from 2026-11-02   # avvisi proattivi dall'uscita
  *
  * Una sola property (523225071) raccoglie i quattro stream: app iOS, app
  * Android, web app e landing (che condivide il measurement ID della web app,
@@ -120,7 +121,27 @@ const BREAKDOWNS = [
   ["onboarding_step_completed", "step_name"],
   ["onboarding_abandoned", "last_step_seen"],
   ["pre_signup_screen_shown", "screen_name"],
+  ["insight_shown", "type"],
+  ["insight_acted", "via"],
+  ["insight_dismissed", "type"],
 ];
+
+// Avvisi proattivi (scommessa 11 del registro di /auto-miglioramento).
+// Soglie confermate dall'utente il 23/10/2026; «non misurabile» sotto i minimi.
+const INSIGHT_EVENTS = [
+  "insight_shown",
+  "insight_acted",
+  "insight_dismissed",
+  "insight_snoozed",
+  "insight_prefs_changed",
+];
+const INSIGHT_BET = {
+  actedMin: 0.3, // insight_acted ÷ insight_shown
+  dismissedMax: 0.2, // insight_dismissed ÷ insight_shown
+  offMax: 0.1, // utenti che li spengono ÷ utenti che li ricevono
+  minShown: 100,
+  minUsers: 20,
+};
 
 // Il funnel si legge per UTENTI, non per eventi: `onboarding_abandoned`
 // scattava a ogni background (8 per utente iOS) e `pre_signup_screen_shown`
@@ -371,6 +392,43 @@ async function main() {
     })
   );
 
+  // 4-bis. Avvisi proattivi: i tre rapporti della scommessa 11. Finestra
+  // dall'uscita (--insights-from) fino a ieri; senza data, gli ultimi 28 giorni.
+  const insArg = args.includes("--insights-from") ? args[args.indexOf("--insights-from") + 1] : null;
+  const insStart = insArg || shiftDay(yesterday, -27);
+  out.insights = { start: insStart, end: yesterday, fromRelease: Boolean(insArg), events: [], offUsers: null };
+  out.insights.events = rows(
+    await runReport(tok, {
+      dateRanges: [{ startDate: insStart, endDate: yesterday }],
+      dimensions: [{ name: "eventName" }],
+      metrics: [{ name: "eventCount" }, { name: "totalUsers" }],
+      dimensionFilter: eventFilter(INSIGHT_EVENTS),
+    })
+  );
+  try {
+    const off = rows(
+      await runReport(tok, {
+        dateRanges: [{ startDate: insStart, endDate: yesterday }],
+        metrics: [{ name: "totalUsers" }],
+        dimensionFilter: {
+          andGroup: {
+            expressions: [
+              eventFilter(["insight_prefs_changed"]),
+              { filter: { fieldName: "customEvent:delivery", stringFilter: { value: "off" } } },
+            ],
+          },
+        },
+      })
+    );
+    out.insights.offUsers = off.length ? off[0].totalUsers : 0;
+  } catch (e) {
+    if (e.status === 400) {
+      out.notes.push(
+        "Parametro «delivery» di insight_prefs_changed non registrato come dimensione personalizzata in GA4: rapporto (c) della scommessa 11 non calcolabile."
+      );
+    } else throw e;
+  }
+
   // 5. Google Ads (collegato a GA4 dal 15/10/2026): costo, clic e impression
   // per giorno e campagna, ultimi 14 giorni. Isolato: se la combinazione di
   // metriche non è accettata o non ci sono dati, il resto del report non cade.
@@ -528,6 +586,37 @@ function print(o) {
   L.push("");
   L.push("## Paesi ieri (utenti attivi, tutte le piattaforme)");
   L.push(o.web.countries.map((r) => `${r.country}=${r.activeUsers}`).join(", ") || "(nessuno)");
+  L.push("");
+
+  // Avvisi proattivi
+  const ins = o.insights;
+  const ie = (ev) => ins.events.find((r) => r.eventName === ev) || { eventCount: 0, totalUsers: 0 };
+  const shown = ie("insight_shown");
+  L.push(
+    `## Avvisi proattivi — scommessa 11 (${ins.start} → ${ins.end}${ins.fromRelease ? ", dall'uscita" : ", ultimi 28 gg: per il verdetto usare --insights-from <data uscita>"})`
+  );
+  for (const ev of INSIGHT_EVENTS) {
+    const r = ie(ev);
+    L.push(pad(ev, 26) + pad(r.eventCount, 8) + `(${r.totalUsers} utenti)`);
+  }
+  const pct = (x) => `${Math.round(x * 100)}%`;
+  const verdict = (ok) => (ok ? "soglia rispettata ✓" : "soglia mancata ✗");
+  if (shown.eventCount < INSIGHT_BET.minShown || shown.totalUsers < INSIGHT_BET.minUsers) {
+    L.push(
+      `Non misurabile: ${shown.eventCount} insight_shown e ${shown.totalUsers} utenti (servono almeno ${INSIGHT_BET.minShown} e ${INSIGHT_BET.minUsers}).`
+    );
+  }
+  if (shown.eventCount) {
+    const a = ie("insight_acted").eventCount / shown.eventCount;
+    const b = ie("insight_dismissed").eventCount / shown.eventCount;
+    L.push(`(a) azione   insight_acted ÷ insight_shown = ${pct(a)} (soglia ≥ ${pct(INSIGHT_BET.actedMin)}) — ${verdict(a >= INSIGHT_BET.actedMin)}`);
+    L.push(`(b) rifiuti  insight_dismissed ÷ insight_shown = ${pct(b)} (soglia ≤ ${pct(INSIGHT_BET.dismissedMax)}) — ${verdict(b <= INSIGHT_BET.dismissedMax)}`);
+  }
+  if (shown.totalUsers && ins.offUsers !== null) {
+    const c = ins.offUsers / shown.totalUsers;
+    L.push(`(c) spenti   utenti con delivery=off ÷ utenti con insight_shown = ${ins.offUsers}/${shown.totalUsers} = ${pct(c)} (soglia ≤ ${pct(INSIGHT_BET.offMax)}) — ${verdict(c <= INSIGHT_BET.offMax)}`);
+  }
+  L.push("Eventi solo da iOS finché il motore non è su Android. Il verdetto si scrive nel registro, non qui.");
   L.push("");
 
   // Google Ads
