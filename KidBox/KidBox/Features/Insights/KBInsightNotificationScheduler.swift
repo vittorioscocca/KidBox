@@ -18,6 +18,7 @@
 //  farmaco. Tutto passa da `KBLocalNotificationBudget`.
 //
 
+import FirebaseAuth
 import Foundation
 import SwiftData
 import UserNotifications
@@ -251,6 +252,11 @@ enum KBInsightNotificationScheduler {
             info["todoId"] = todo.id
             info["childId"] = todo.childId
             info["listId"] = todo.listId ?? ""
+            // «Chiedi agli altri» solo se c'è qualcuno a cui chiedere.
+            if let uid = Auth.auth().currentUser?.uid,
+               !KBInsightActionHandler.askRecipients(for: todo, uid: uid, modelContext: context).isEmpty {
+                content.categoryIdentifier = KBInsightNotificationCategory.todoAsk
+            }
             content.userInfo = info
             KBNotificationLocalization.setText(
                 on: content,

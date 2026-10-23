@@ -14642,6 +14642,28 @@
         }
       }
     },
+    "Chiedi agli altri" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask the others"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pregunta a los demás"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demander aux autres"
+          }
+        }
+      }
+    },
     "Chiedi a…" : {
       "localizations" : {
         "en" : {

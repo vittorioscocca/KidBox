@@ -3,7 +3,9 @@
 //  KidBox
 //
 //  Azioni rapide sulle notifiche degli insight, senza aprire l'app:
-//  - to-do senza nessuno: «Ci penso io» lo assegna a chi tocca;
+//  - to-do senza nessuno: «Ci penso io» lo assegna a chi tocca; «Chiedi agli
+//    altri» manda una richiesta di famiglia per quel to-do a chi lo vede, e il
+//    primo che risponde sì se lo prende (solo se in famiglia c'è qualcun altro);
 //  - dose mancante: «Presa» registra la prima dose di oggi ancora scoperta;
 //  - «Rimanda di un'ora» e «Non mi interessa» su entrambi.
 //
@@ -21,9 +23,12 @@ import UserNotifications
 
 enum KBInsightNotificationCategory {
     static let todo = "KB_INSIGHT_TODO"
+    /// Come `todo`, con «Chiedi agli altri»: c'è qualcun altro a cui chiedere.
+    static let todoAsk = "KB_INSIGHT_TODO_ASK"
     static let dose = "KB_INSIGHT_DOSE"
 
     static let actionTake    = "KB_INSIGHT_TAKE"
+    static let actionAsk     = "KB_INSIGHT_ASK"
     static let actionDoseOk  = "KB_INSIGHT_DOSE_TAKEN"
     static let actionSnooze  = "KB_INSIGHT_SNOOZE"
     static let actionDismiss = "KB_INSIGHT_DISMISS"
@@ -56,6 +61,11 @@ enum KBInsightNotificationCategory {
             title: KBNotificationLocalization.text("Ci penso io"),
             options: []
         )
+        let ask = UNNotificationAction(
+            identifier: actionAsk,
+            title: KBNotificationLocalization.text("Chiedi agli altri"),
+            options: []
+        )
         let doseOk = UNNotificationAction(
             identifier: actionDoseOk,
             title: KBNotificationLocalization.text("Presa"),
@@ -63,6 +73,7 @@ enum KBInsightNotificationCategory {
         )
         return [
             UNNotificationCategory(identifier: todo, actions: [take, snooze, dismiss], intentIdentifiers: []),
+            UNNotificationCategory(identifier: todoAsk, actions: [take, ask, snooze, dismiss], intentIdentifiers: []),
             UNNotificationCategory(identifier: dose, actions: [doseOk, snooze, dismiss], intentIdentifiers: []),
         ]
     }
@@ -73,9 +84,10 @@ enum KBInsightActionHandler {
 
     /// - Returns: `true` se era un'azione rapida di un insight (niente deep link).
     @discardableResult
-    static func handle(response: UNNotificationResponse, modelContext: ModelContext) -> Bool {
+    static func handle(response: UNNotificationResponse, modelContext: ModelContext) async -> Bool {
         let action = response.actionIdentifier
         guard [KBInsightNotificationCategory.actionTake,
+               KBInsightNotificationCategory.actionAsk,
                KBInsightNotificationCategory.actionDoseOk,
                KBInsightNotificationCategory.actionSnooze,
                KBInsightNotificationCategory.actionDismiss].contains(action) else { return false }
@@ -104,14 +116,22 @@ enum KBInsightActionHandler {
                 takeTodo(todoId: todoId, familyId: row.familyId, now: now, modelContext: modelContext)
             }
             row.mark(.done, now: now)
-            AppAnalytics.insightActed(type: typeRaw, via: "action", minutes: minutesSinceShown(row, now: now))
+            reportActed(row, typeRaw: typeRaw, via: "action", now: now)
+
+        case KBInsightNotificationCategory.actionAsk:
+            // L'avviso resta aperto: si chiude da solo quando qualcuno prende
+            // il to-do (dalla richiesta o dall'app).
+            if let todoId = info["todoId"] as? String,
+               await askOthers(todoId: todoId, familyId: row.familyId, modelContext: modelContext) {
+                reportActed(row, typeRaw: typeRaw, via: "ask", now: now)
+            }
 
         case KBInsightNotificationCategory.actionDoseOk:
             if let treatmentId = info["treatmentId"] as? String {
                 recordFirstMissingDose(treatmentId: treatmentId, familyId: row.familyId, now: now, modelContext: modelContext)
             }
             row.mark(.done, now: now)
-            AppAnalytics.insightActed(type: typeRaw, via: "action", minutes: minutesSinceShown(row, now: now))
+            reportActed(row, typeRaw: typeRaw, via: "action", now: now)
 
         case KBInsightNotificationCategory.actionSnooze:
             // Lo scheduler vede una consegna futura non in coda e la riprogramma.
@@ -128,6 +148,12 @@ enum KBInsightActionHandler {
         // Un salvataggio dei soli insight non fa ripartire il motore da sé.
         KBInsightRunner.shared.requestRun(reason: "action", delay: .zero)
         return true
+    }
+
+    private static func reportActed(_ row: KBInsight, typeRaw: String, via: String, now: Date) {
+        guard row.actedReportedAt == nil else { return }
+        AppAnalytics.insightActed(type: typeRaw, via: via, minutes: minutesSinceShown(row, now: now))
+        row.actedReportedAt = now
     }
 
     static func minutesSinceShown(_ row: KBInsight, now: Date) -> Int {
@@ -156,6 +182,60 @@ enum KBInsightActionHandler {
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
         } catch {
             KBLog.ai.kbError("InsightAction: take todo failed \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Chiedi agli altri
+
+    /// Chi riceve la richiesta: i membri che vedono il to-do, tranne chi chiede.
+    static func askRecipients(for todo: KBTodoItem, uid: String, modelContext: ModelContext) -> [String] {
+        let fid = todo.familyId
+        let members = ((try? modelContext.fetch(FetchDescriptor<KBFamilyMember>(
+            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+        ))) ?? []).map(\.userId)
+        let visible: [String]
+        switch KBVisibilityScope.normalized(todo.visibilityScope) {
+        case KBVisibilityScope.members:
+            let allowed = Set(todo.visibilityMemberIds ?? [])
+            visible = members.filter { allowed.contains($0) }
+        case KBVisibilityScope.onlyCreator:
+            visible = []
+        default:
+            visible = members
+        }
+        return Array(Set(visible.filter { !$0.isEmpty && $0 != uid })).sorted()
+    }
+
+    /// - Returns: `true` se la richiesta è partita.
+    private static func askOthers(todoId: String, familyId: String, modelContext: ModelContext) async -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid,
+              let todo = try? modelContext.fetch(FetchDescriptor<KBTodoItem>(
+                  predicate: #Predicate { $0.id == todoId }
+              )).first,
+              (todo.assignedTo ?? "").isEmpty, (todo.assignedExternalName ?? "").isEmpty,
+              let listId = todo.listId, !listId.isEmpty
+        else { return false }
+        let recipients = askRecipients(for: todo, uid: uid, modelContext: modelContext)
+        guard !recipients.isEmpty else { return false }
+        do {
+            _ = try await FamilyRequestService.create(
+                familyId: familyId,
+                childId: todo.childId,
+                listId: listId,
+                title: todo.title,
+                notes: todo.notes,
+                isUrgent: todo.isUrgent,
+                dueAt: todo.dueAt,
+                dueHasTime: todo.hasDueTime,
+                draft: FamilyRequestService.Draft(recipients: recipients),
+                familyName: "",
+                inviterName: "",
+                sourceTodoId: todo.id
+            )
+            return true
+        } catch {
+            KBLog.ai.kbError("InsightAction: ask others failed \(error.localizedDescription)")
+            return false
         }
     }
 

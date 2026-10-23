@@ -78,6 +78,9 @@ final class KBInsight {
     var notifiedAt: Date?
     /// Quando `insight_shown` è stato registrato: una volta sola per avviso.
     var shownReportedAt: Date?
+    /// Quando `insight_acted` è stato registrato: chiedere agli altri conta
+    /// già come azione, e la chiusura che arriva dopo non si conta due volte.
+    var actedReportedAt: Date?
 
     /// `nil` per un tipo scritto da una build più recente: il motore lo salta.
     var type: KBInsightType? {
@@ -120,6 +123,7 @@ final class KBInsight {
         self.stateChangedAt = nil
         self.notifiedAt = nil
         self.shownReportedAt = nil
+        self.actedReportedAt = nil
     }
 
     /// Nuova valutazione della stessa regola. Lo stato resta quello che l'utente

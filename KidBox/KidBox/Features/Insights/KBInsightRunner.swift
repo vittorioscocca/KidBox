@@ -140,7 +140,9 @@ final class KBInsightRunner {
         let rows = (try? context.fetch(FetchDescriptor<KBInsight>()))?.filter { ids.contains($0.id) } ?? []
         let now = Date()
         for row in rows {
-            guard row.shownReportedAt != nil, let type = row.type, !prefs.isMuted(type) else { continue }
+            guard row.shownReportedAt != nil, row.actedReportedAt == nil,
+                  let type = row.type, !prefs.isMuted(type) else { continue }
+            row.actedReportedAt = now
             AppAnalytics.insightActed(
                 type: type.rawValue,
                 via: "app",

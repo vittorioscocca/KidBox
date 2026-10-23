@@ -217,4 +217,27 @@ final class KBInsightEngineTests: XCTestCase {
         let c = KBInsightEngine.evaluate(snapshot, now: now, calendar: cal)
         XCTAssertEqual(c.map(\.entityId), [free.id])
     }
+
+    // MARK: - Chiedi agli altri
+
+    @MainActor
+    func testAskRecipientsFollowTodoVisibility() throws {
+        let context = ModelContext(ModelContainerProvider.makeContainer(inMemory: true))
+        for (uid, deleted) in [("me", false), ("dad", false), ("nonna", false), ("gone", true)] {
+            context.insert(KBFamilyMember(familyId: "f", userId: uid, updatedBy: "me", isDeleted: deleted))
+        }
+        context.insert(KBFamilyMember(familyId: "other", userId: "stranger", updatedBy: "me"))
+        let family = KBTodoItem(familyId: "f", childId: "", title: "A", listId: "L", updatedBy: "me")
+        let members = KBTodoItem(familyId: "f", childId: "", title: "B", listId: "L",
+                                 visibilityScope: KBVisibilityScope.members, visibilityMemberIds: ["me", "dad"],
+                                 updatedBy: "me")
+        let mine = KBTodoItem(familyId: "f", childId: "", title: "C", listId: "L",
+                              visibilityScope: KBVisibilityScope.onlyCreator, updatedBy: "me")
+        [family, members, mine].forEach(context.insert)
+        try context.save()
+
+        XCTAssertEqual(KBInsightActionHandler.askRecipients(for: family, uid: "me", modelContext: context), ["dad", "nonna"])
+        XCTAssertEqual(KBInsightActionHandler.askRecipients(for: members, uid: "me", modelContext: context), ["dad"])
+        XCTAssertEqual(KBInsightActionHandler.askRecipients(for: mine, uid: "me", modelContext: context), [])
+    }
 }

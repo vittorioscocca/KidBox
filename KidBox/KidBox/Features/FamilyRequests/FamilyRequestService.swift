@@ -212,7 +212,8 @@ enum FamilyRequestService {
         dueHasTime: Bool,
         draft: Draft,
         familyName: String,
-        inviterName: String
+        inviterName: String,
+        sourceTodoId: String? = nil
     ) async throws -> Created {
         guard let uid = KBUid.current else { throw Failure.notAuthenticated }
         guard let expires = expiresAt(dueAt: dueAt, hasTime: dueHasTime) else { throw Failure.dueInPast }
@@ -244,7 +245,7 @@ enum FamilyRequestService {
             shareLink = "\(linkBaseURL)?f=\(familyId)&r=\(requestId)#\(fragment)"
         }
 
-        let data: [String: Any] = [
+        var data: [String: Any] = [
             "kind": "todo",
             "title": cleanTitle,
             "notes": notes ?? NSNull(),
@@ -262,6 +263,9 @@ enum FamilyRequestService {
             "createdAt": FieldValue.serverTimestamp(),
             "updatedAt": FieldValue.serverTimestamp(),
         ]
+        // Richiesta per un to-do che esiste già (avviso proattivo): il sì lo
+        // assegna invece di crearne un altro (`applyResponse` sul server).
+        if let sourceTodoId { data["sourceTodoId"] = sourceTodoId }
         try await collection(familyId).document(requestId).setData(data)
         KBLog.todo.kbInfo("FamilyRequest created requestId=\(requestId) recipients=\(recipients.count) outside=\(draft.askOutside)")
 
