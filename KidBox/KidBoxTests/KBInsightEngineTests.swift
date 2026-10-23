@@ -60,9 +60,10 @@ final class KBInsightEngineTests: XCTestCase {
                                               priority: .normal, fireAt: at(2026, 10, 24, 9, 0))])
     }
 
-    func testUnassignedTodoWithinTwentyFourHoursFiresNow() {
+    func testUnassignedTodoWithinTwentyFourHoursKeepsIdealTime() {
+        // Il giorno prima alla stessa ora è già passato: lo scheduler consegna subito.
         let c = evaluate(KBInsightSnapshot(todos: [todo(dueAt: at(2026, 10, 23, 20, 0))]))
-        XCTAssertEqual(c.first?.fireAt, now)
+        XCTAssertEqual(c.first?.fireAt, at(2026, 10, 22, 20, 0))
         XCTAssertEqual(c.first?.priority, .normal)
     }
 
@@ -74,7 +75,7 @@ final class KBInsightEngineTests: XCTestCase {
     func testTodoWithoutTimeDueAtEndOfDay() {
         // Scade oggi senza orario: fine giornata, fra 12 ore.
         let c = evaluate(KBInsightSnapshot(todos: [todo(dueAt: at(2026, 10, 23, 0, 0), hasDueTime: false)]))
-        XCTAssertEqual(c.first?.fireAt, now)
+        XCTAssertEqual(c.first?.fireAt, at(2026, 10, 23, 0, 0))
         XCTAssertEqual(c.first?.priority, .normal)
     }
 
@@ -95,7 +96,7 @@ final class KBInsightEngineTests: XCTestCase {
     func testMissingMorningDoseFiresAfterGrace() {
         let c = evaluate(KBInsightSnapshot(treatments: [treatment()]))
         XCTAssertEqual(c, [KBInsightCandidate(type: .treatmentDoseMissing, entityId: "c1@2026-10-23",
-                                              priority: .high, fireAt: now)])
+                                              priority: .high, fireAt: at(2026, 10, 23, 9, 0))])
     }
 
     func testTakenMorningDoseSchedulesEveningCheck() {

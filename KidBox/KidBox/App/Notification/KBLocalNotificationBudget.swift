@@ -37,6 +37,11 @@ enum KBLocalNotificationPriority: Int, Comparable, Sendable {
     /// I tipi sconosciuti finiscono in `.deadline`: è la classe più affollata, quindi
     /// sbagliare per eccesso di prudenza lì costa meno che declassare per errore.
     static func forPending(_ request: UNNotificationRequest) -> KBLocalNotificationPriority {
+        // Gli insight dicono la loro classe: dipende dalla priorità, non dal tipo.
+        if let raw = request.content.userInfo["kb.insight.class"] as? Int,
+           let insightClass = KBLocalNotificationPriority(rawValue: raw) {
+            return insightClass
+        }
         switch request.content.userInfo["type"] as? String {
         case "treatment_reminder", "treatment_reschedule_sentinel":
             return .critical

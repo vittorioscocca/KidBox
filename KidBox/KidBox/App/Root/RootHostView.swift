@@ -279,6 +279,7 @@ struct RootHostView: View {
         }
         .task(id: resolvedActiveFamilyId) {
             guard let fid = resolvedActiveFamilyId else { return }
+            KBInsightRunner.shared.requestRun(reason: "family")
             let famName = families.first(where: { $0.id == fid })?.name ?? "Famiglia"
             let planningInput = PlanningContextInput(familyName: famName)
             await withTaskGroup(of: Void.self) { group in

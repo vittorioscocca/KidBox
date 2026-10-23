@@ -1200,6 +1200,28 @@
         }
       }
     },
+    "%1$@ · scade %2$@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · due %2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · vence %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · échéance %2$@"
+          }
+        }
+      }
+    },
     "%1$d messaggi AI · %2$d/%3$d del bonus gratuito" : {
       "comment" : "Clinical record AI usage summary on the Free lifetime bonus",
       "localizations" : {
@@ -11175,6 +11197,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Alertes"
+          }
+        }
+      }
+    },
+    "Avvisi proattivi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proactive alerts"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisos proactivos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alertes proactives"
           }
         }
       }
@@ -22855,6 +22899,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dose %lld/%lld"
+          }
+        }
+      }
+    },
+    "Dose da registrare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dose to record"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dosis por registrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dose à enregistrer"
           }
         }
       }
@@ -37030,6 +37096,28 @@
         }
       }
     },
+    "La dose di oggi per %@ non risulta registrata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's dose for %@ hasn't been recorded"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La dosis de hoy de %@ no está registrada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La dose d'aujourd'hui pour %@ n'est pas enregistrée"
+          }
+        }
+      }
+    },
     "La famiglia ha finito i messaggi AI di oggi. Riprova domani." : {
       "comment" : "News: daily AI quota reached",
       "localizations" : {
@@ -44291,6 +44379,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun"
+          }
+        }
+      }
+    },
+    "Nessuno se ne sta occupando" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nobody has taken this yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nadie se está encargando"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personne ne s'en occupe"
           }
         }
       }
@@ -67028,6 +67138,28 @@
         }
       }
     },
+    "Ti avvisa quando un to-do non l'ha preso nessuno o manca una dose. Non usa messaggi AI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lets you know when nobody has taken a to-do or a dose is missing. Doesn't use AI messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te avisa cuando nadie ha cogido una tarea o falta una dosis. No usa mensajes de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te prévient quand personne n'a pris une tâche ou qu'une dose manque. N'utilise pas de messages IA."
+          }
+        }
+      }
+    },
     "Ti avvisiamo quando un membro carica un documento, aggiunge una spesa, scrive in chat o si avvicina una scadenza. Puoi scegliere quali notifiche ricevere in qualsiasi momento dalle Impostazioni." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -69679,6 +69811,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "il y a une heure"
+          }
+        }
+      }
+    },
+    "Una dose di oggi non risulta registrata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A dose for today hasn't been recorded"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una dosis de hoy no está registrada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une dose d'aujourd'hui n'est pas enregistrée"
           }
         }
       }

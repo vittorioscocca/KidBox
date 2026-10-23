@@ -73,6 +73,9 @@ final class KBInsight {
     var createdAt: Date
     var updatedAt: Date
     var stateChangedAt: Date?
+    /// Quando la notifica locale è stata (o sarà) consegnata. Se `fireAt` passa
+    /// oltre, è un avviso nuovo (la dose della sera dopo quella del mattino).
+    var notifiedAt: Date?
 
     /// `nil` per un tipo scritto da una build più recente: il motore lo salta.
     var type: KBInsightType? {
@@ -113,6 +116,7 @@ final class KBInsight {
         self.createdAt = now
         self.updatedAt = now
         self.stateChangedAt = nil
+        self.notifiedAt = nil
     }
 
     /// Nuova valutazione della stessa regola. Lo stato resta quello che l'utente

@@ -142,6 +142,7 @@ final class AppDelegate: NSObject,
         KBLog.app.kbDebug("Cache configured")
         registerBackgroundTasks()
         schedulePasswordSecurityRefresh()
+        KBInsightRunner.shared.registerBackgroundTask()
         
         // 📍 Condivisione posizione: se questo dispositivo stava condividendo,
         // riprende. A ogni avvio, non solo quando iOS rilancia l'app per un

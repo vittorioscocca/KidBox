@@ -42,6 +42,8 @@ struct KidBoxApp: App {
         KBDemoSeed.runIfRequested(container: container)
         #endif
         _appDelegate.wrappedValue.modelContainer = container
+        // Motore proattivo: gira a ogni salvataggio dei dati locali.
+        KBInsightRunner.shared.start(container: container)
         if ModelContainerProvider.didQuarantineCorruptedStoreThisLaunch {
             KBLog.sync.kbInfo("SwiftData store was quarantined — scheduling bootstrap + flushGlobal")
             Task { @MainActor in
@@ -582,6 +584,8 @@ struct KidBoxApp: App {
                 AppAnalytics.trackAppOpen()
                 ReviewPrompter.registerAppOpen()
                 Task { await KBSubscriptionManager.shared.refreshCurrentEntitlement() }
+                KBInsightRunner.shared.requestRun(reason: "foreground")
+                KBInsightRunner.shared.scheduleBackgroundRefresh()
                 // Throttlato internamente a una chiamata ogni 6 ore.
                 Task { await AppUpdateChecker.shared.checkForUpdate() }
 

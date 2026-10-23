@@ -274,6 +274,33 @@ final class NotificationManager: NSObject, ObservableObject {
             pendingDeepLink = .pediatricVisit(familyId: familyId, childId: childId, visitId: visitId)
             KBLog.auth.kbInfo("DeepLink set for pediatricVisit visitId=\(visitId)")
             
+        } else if type == "insight_todo_unassigned_due_soon" {
+            // Insight del motore proattivo: apre il to-do che nessuno ha preso.
+            guard
+                let familyId = userInfo["familyId"] as? String,
+                let childId  = userInfo["childId"]  as? String,
+                let listId   = userInfo["listId"]   as? String,
+                let todoId   = userInfo["todoId"]   as? String
+            else {
+                KBLog.auth.kbError("Invalid insight todo payload")
+                return
+            }
+            pendingDeepLink = .todo(familyId: familyId, childId: childId, listId: listId, todoId: todoId)
+            KBLog.auth.kbInfo("DeepLink set for insight todo todoId=\(todoId)")
+
+        } else if type == "insight_treatment_dose_missing" {
+            // Insight del motore proattivo: apre la cura con la dose da registrare.
+            guard
+                let familyId    = userInfo["familyId"]    as? String,
+                let childId     = userInfo["childId"]     as? String,
+                let treatmentId = userInfo["treatmentId"] as? String
+            else {
+                KBLog.auth.kbError("Invalid insight treatment payload")
+                return
+            }
+            pendingDeepLink = .treatmentReminder(familyId: familyId, childId: childId, treatmentId: treatmentId)
+            KBLog.auth.kbInfo("DeepLink set for insight treatment treatmentId=\(treatmentId)")
+
         } else if type == "treatment_reminder" {
             guard
                 let familyId    = userInfo["familyId"]    as? String,

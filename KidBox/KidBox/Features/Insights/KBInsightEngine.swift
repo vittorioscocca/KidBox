@@ -7,9 +7,12 @@
 //  fotografia dei dati (`KBInsightSnapshot`), così le regole si provano con
 //  dati finti; la fotografia la scatta `KBInsightSnapshot.load`.
 //
-//  Ogni candidato ha già il suo orario di consegna, anche futuro: la
+//  Ogni candidato ha il suo orario ideale di consegna, anche futuro (la
 //  valutazione gira quando cambiano i dati, non a orario, e la notifica deve
-//  partire anche se l'app nel frattempo non si riapre.
+//  partire anche se l'app non si riapre) o già passato. Non dipende da «adesso»:
+//  due valutazioni sugli stessi dati danno lo stesso risultato, così la
+//  riconciliazione non riscrive niente. Quando consegnare davvero lo decide
+//  `KBInsightNotificationScheduler`.
 //
 
 import Foundation
@@ -82,8 +85,8 @@ enum KBInsightEngine {
     // MARK: - To-do senza nessuno
 
     /// To-do da fare, visibile a questo utente, che nessuno ha preso e scade
-    /// nella prossima settimana: avviso il giorno prima alla stessa ora (subito
-    /// se la scadenza è più vicina), urgente sotto le 6 ore.
+    /// nella prossima settimana: avviso il giorno prima alla stessa ora (se è già
+    /// passato, appena possibile), urgente sotto le 6 ore.
     static func unassignedTodos(
         _ todos: [KBInsightSnapshot.Todo],
         now: Date,
@@ -103,7 +106,7 @@ enum KBInsightEngine {
                 entityId: todo.id,
                 priority: left <= 6 * 3600 ? .high : .normal,
                 // Il giorno prima alla stessa ora, anche a cavallo del cambio d'ora.
-                fireAt: max(now, calendar.date(byAdding: .day, value: -1, to: deadline) ?? deadline)
+                fireAt: calendar.date(byAdding: .day, value: -1, to: deadline) ?? deadline
             )
         }
     }
@@ -147,7 +150,7 @@ enum KBInsightEngine {
                 type: .treatmentDoseMissing,
                 entityId: "\(t.id)@\(today.kbDayKey(calendar: calendar))",
                 priority: .high,
-                fireAt: max(now, firstMissing.addingTimeInterval(doseGrace))
+                fireAt: firstMissing.addingTimeInterval(doseGrace)
             )
         }
     }
