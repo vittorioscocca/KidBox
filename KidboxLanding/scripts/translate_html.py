@@ -116,6 +116,8 @@ LINK_MAP = [
     (r"support-en\.html", "support-{l}.html"), (r"privacy-en\.html", "privacy-{l}.html"),
     (r"terms-en\.html", "terms-{l}.html"), (r"data-deletion-en\.html", "data-deletion-{l}.html"),
     (r"/privacy-en\b", "/privacy-{l}"), (r"(?<![a-z])en/tools/", "{l}/tools/"), (r"(?<![a-z])en/blog/", "{l}/blog/"),
+    # Solo la Home ha lo screenshot in ogni lingua; le altre restano in inglese.
+    (r"/assets/app/en/home\.webp", "/assets/app/{l}/home.webp"),
 ]
 
 
