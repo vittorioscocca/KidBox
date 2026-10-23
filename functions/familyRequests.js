@@ -843,6 +843,16 @@ function build(deps) {
           if (planByFamily.get(familyId) === "free") continue;
 
           const famRef = db.collection("families").doc(familyId);
+          // Qualcuno ha già chiesto a mano (avviso → «Chiedi agli altri»):
+          // una seconda richiesta per lo stesso to-do sarebbe solo rumore.
+          const already = await famRef.collection("requests")
+              .where("sourceTodoId", "==", doc.id).get();
+          if (already.docs.some((r) => r.get("status") === "open")) {
+            await doc.ref.update({
+              kidboxAsk: {at: FieldValue.serverTimestamp(), outcome: "already_asked"},
+            }).catch(() => {});
+            continue;
+          }
           const members = await famRef.collection("members").get();
           const active = members.docs
               .filter((m) => isActiveMember(m.data()))
