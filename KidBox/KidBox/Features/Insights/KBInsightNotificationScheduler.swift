@@ -155,6 +155,9 @@ enum KBInsightNotificationScheduler {
     private static func content(for row: KBInsight, type: KBInsightType, context: ModelContext) -> UNMutableNotificationContent? {
         let content = UNMutableNotificationContent()
         content.sound = .default
+        if let category = KBInsightNotificationCategory.identifier(for: type) {
+            content.categoryIdentifier = category
+        }
         var info: [AnyHashable: Any] = [
             "type": typePrefix + type.rawValue,
             "familyId": row.familyId,

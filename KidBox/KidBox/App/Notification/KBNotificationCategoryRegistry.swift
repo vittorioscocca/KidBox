@@ -15,11 +15,11 @@ enum KBNotificationCategoryRegistry {
 
     @MainActor
     static func registerAll() {
-        UNUserNotificationCenter.current().setNotificationCategories([
+        UNUserNotificationCenter.current().setNotificationCategories(Set([
             TreatmentNotificationCategory.category,
             FitnessPlanNotificationCategory.category,
             FamilyRequestNotificationCategory.category,
-        ])
-        KBLog.app.kbDebug("Notification categories registered: terapie, piano fitness, richieste")
+        ] + KBInsightNotificationCategory.categories))
+        KBLog.app.kbDebug("Notification categories registered: terapie, piano fitness, richieste, insight")
     }
 }

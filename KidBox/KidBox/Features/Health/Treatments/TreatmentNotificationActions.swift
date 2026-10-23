@@ -173,7 +173,8 @@ enum TreatmentDoseActionHandler {
     
     // MARK: - Persistence
     
-    private static func recordDose(
+    /// Usata anche dall'azione «Presa» degli insight (`KBInsightActionHandler`).
+    static func recordDose(
         treatmentId:  String,
         familyId:     String,
         dayOffset:    Int,

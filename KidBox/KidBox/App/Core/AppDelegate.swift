@@ -291,6 +291,18 @@ final class AppDelegate: NSObject,
         }
         // ──────────────────────────────────────────────────────────────────
         
+        // ── Quick action insight: Ci penso io / Presa / Rimanda / Non mi interessa
+        if let container = modelContainer {
+            let handled = await MainActor.run {
+                KBInsightActionHandler.handle(response: response, modelContext: container.mainContext)
+            }
+            if handled {
+                KBLog.auth.kbInfo("Insight quick action handled — skipping deep link")
+                return
+            }
+        }
+        // ──────────────────────────────────────────────────────────────────
+
         // ── Quick action piano fitness: Fatto / Sposta ─────────────────────
         // Non serve il ModelContainer: il piano fitness vive in UserDefaults
         // (`FitnessPlanStore`) e su Firestore, non in SwiftData.

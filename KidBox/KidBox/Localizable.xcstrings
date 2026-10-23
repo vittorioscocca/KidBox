@@ -45757,6 +45757,28 @@
         }
       }
     },
+    "Non mi interessa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not interested"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No me interesa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas intéressé"
+          }
+        }
+      }
+    },
     "Non mostrare più" : {
       "localizations" : {
         "en" : {
@@ -53560,6 +53582,28 @@
         }
       }
     },
+    "Presa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taken"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prise"
+          }
+        }
+      }
+    },
     "Presa: %@" : {
       "localizations" : {
         "en" : {
@@ -58976,6 +59020,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Détection..."
+          }
+        }
+      }
+    },
+    "Rimanda di un'ora" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remind me in an hour"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recuérdamelo en una hora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me le rappeler dans une heure"
           }
         }
       }
