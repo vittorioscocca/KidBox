@@ -20,9 +20,7 @@ struct AISettingsView: View {
     /// Solo lettura: si scrive passando dal servizio, che riprogramma la notifica.
     @AppStorage(HealthPatternAnalyzerService.frequencyKey)
     private var healthPatternFrequency: HealthPatternFrequency = .monthly
-    /// Solo lettura: si scrive passando dal runner, che rifà subito il giro.
-    @AppStorage(KBInsightRunner.enabledKey)
-    private var insightsEnabled = true
+    @ObservedObject private var insightPrefs = KBInsightPreferencesStore.shared
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
 
@@ -309,15 +307,20 @@ struct AISettingsView: View {
                     }
                     .listRowBackground(cardBackground)
 
-                    Toggle(isOn: Binding(
-                        get: { insightsEnabled },
-                        set: { KBInsightRunner.shared.isEnabled = $0 }
-                    )) {
+                    NavigationLink {
+                        InsightSettingsView()
+                    } label: {
                         VStack(alignment: .leading, spacing: 2) {
                             Label("Avvisi proattivi", systemImage: "bell.badge")
-                            Text("Ti avvisa quando un to-do non l'ha preso nessuno o manca una dose. Non usa messaggi AI.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            Group {
+                                switch insightPrefs.prefs.delivery {
+                                case .immediate: Text("Subito")
+                                case .eveningDigest: Text("Riepilogo serale alle 19")
+                                case .off: Text("Spenti")
+                                }
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                         }
                     }
                     .listRowBackground(cardBackground)

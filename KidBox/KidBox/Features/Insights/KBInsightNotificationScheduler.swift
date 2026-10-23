@@ -8,8 +8,9 @@
 //
 //  Quando consegnare:
 //  - all'orario ideale del motore, o fra pochi secondi se è già passato;
-//  - fuori dagli orari di silenzio (21:30–8:00), tranne le dosi, che sono
-//    promemoria sanitari come quelli delle cure;
+//  - fuori dagli orari di silenzio dell'utente (di default 21:30–8:00), tranne
+//    le dosi, che sono promemoria sanitari come quelli delle cure;
+//  - con il riepilogo serale, i to-do in una sola notifica alle 19:00;
 //  - una volta sola per orario: `notifiedAt` ricorda la consegna decisa, e un
 //    avviso già mostrato non si ripete finché il motore non sposta `fireAt`.
 //
@@ -32,14 +33,24 @@ enum KBInsightNotificationScheduler {
 
     /// Margine minimo prima di una consegna «subito».
     private static let soonDelay: TimeInterval = 5
-    private static let quietStart = (hour: 21, minute: 30)
-    private static let quietEndHour = 8
 
     static func identifier(for insightId: String) -> String { identifierPrefix + insightId }
+    static func digestIdentifier(familyId: String) -> String { identifierPrefix + "digest-" + familyId }
+
+    /// Nel riepilogo serale vanno i to-do; le dosi restano puntuali.
+    static func goesInDigest(_ type: KBInsightType) -> Bool { type != .treatmentDoseMissing }
 
     // MARK: - Allineamento
 
-    static func sync(familyId: String, now: Date = Date(), context: ModelContext) async throws {
+    /// - Parameter resetFuture: le preferenze sono cambiate, quindi le consegne
+    ///   già decise ma non ancora avvenute si ricalcolano con le regole nuove.
+    static func sync(
+        familyId: String,
+        prefs: KBInsightPreferences,
+        resetFuture: Bool = false,
+        now: Date = Date(),
+        context: ModelContext
+    ) async throws {
         let fid = familyId
         let rows = try context.fetch(FetchDescriptor<KBInsight>(predicate: #Predicate { $0.familyId == fid }))
         let center = UNUserNotificationCenter.current()
@@ -49,6 +60,14 @@ enum KBInsightNotificationScheduler {
                 .filter { $0.hasPrefix(identifierPrefix) }
         )
 
+        if resetFuture {
+            for row in rows where row.state.isOpen {
+                if let notified = row.notifiedAt, notified > now { row.notifiedAt = nil }
+            }
+        }
+
+        let digestAt = prefs.delivery == .eveningDigest ? nextDigest(after: now, prefs: prefs) : nil
+        var digestRows: [KBInsight] = []
         var wanted: [KBLocalNotificationPriority: [UNNotificationRequest]] = [:]
         var wantedIds = Set<String>()
         var finishedIds: [String] = []
@@ -60,6 +79,14 @@ enum KBInsightNotificationScheduler {
                 continue
             }
 
+            if let digestAt, goesInDigest(type) {
+                let undelivered = row.notifiedAt.map { $0 < row.fireAt || $0 > now } ?? true
+                if undelivered, row.fireAt <= digestAt {
+                    digestRows.append(row)
+                }
+                continue
+            }
+
             let deliverAt: Date
             if let notified = row.notifiedAt, notified >= row.fireAt {
                 // Consegna già decisa per questo orario: mostrata o ancora in coda.
@@ -68,7 +95,7 @@ enum KBInsightNotificationScheduler {
                 wantedIds.insert(id)
                 if pendingIds.contains(id) { continue }
             } else {
-                deliverAt = deliveryDate(for: row.fireAt, type: type, now: now)
+                deliverAt = deliveryDate(for: row.fireAt, type: type, now: now, prefs: prefs)
                 wantedIds.insert(id)
             }
 
@@ -77,18 +104,24 @@ enum KBInsightNotificationScheduler {
                 continue
             }
             let budgetClass: KBLocalNotificationPriority = row.priority == .high ? .deadline : .background
-            var info = content.userInfo
-            info[budgetClassField] = budgetClass.rawValue
-            content.userInfo = info
-
-            let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: deliverAt)
-            let request = UNNotificationRequest(
-                identifier: id,
-                content: content,
-                trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
-            )
-            wanted[budgetClass, default: []].append(request)
+            wanted[budgetClass, default: []].append(request(id: id, content: content, at: deliverAt, budgetClass: budgetClass))
             row.notifiedAt = deliverAt
+        }
+
+        if let digestAt, !digestRows.isEmpty {
+            let id = digestIdentifier(familyId: familyId)
+            wantedIds.insert(id)
+            let content = UNMutableNotificationContent()
+            content.sound = .default
+            content.userInfo = ["type": typePrefix + "digest", "familyId": familyId]
+            KBNotificationLocalization.setText(
+                on: content,
+                titleKey: "Riepilogo della sera",
+                bodyKey: "To-do che nessuno ha preso: %@",
+                bodyArgs: [.text(String(digestRows.count))]
+            )
+            wanted[.background, default: []].append(request(id: id, content: content, at: digestAt, budgetClass: .background))
+            for row in digestRows { row.notifiedAt = digestAt }
         }
 
         let stale = pendingIds.subtracting(wantedIds)
@@ -106,8 +139,25 @@ enum KBInsightNotificationScheduler {
 
         let added = wanted.values.reduce(0) { $0 + $1.count }
         if added > 0 || !stale.isEmpty {
-            KBLog.ai.kbInfo("InsightScheduler: added=\(added) removed=\(stale.count)")
+            KBLog.ai.kbInfo("InsightScheduler: added=\(added) removed=\(stale.count) digest=\(digestRows.count)")
         }
+    }
+
+    private static func request(
+        id: String,
+        content: UNMutableNotificationContent,
+        at date: Date,
+        budgetClass: KBLocalNotificationPriority
+    ) -> UNNotificationRequest {
+        var info = content.userInfo
+        info[budgetClassField] = budgetClass.rawValue
+        content.userInfo = info
+        let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
+        return UNNotificationRequest(
+            identifier: id,
+            content: content,
+            trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+        )
     }
 
     /// Toglie tutto: insight spenti, piano Free, logout.
@@ -127,27 +177,41 @@ enum KBInsightNotificationScheduler {
         for fireAt: Date,
         type: KBInsightType,
         now: Date,
+        prefs: KBInsightPreferences = KBInsightPreferences(),
         calendar: Calendar = .current
     ) -> Date {
         let earliest = max(fireAt, now.addingTimeInterval(soonDelay))
         guard type != .treatmentDoseMissing else { return earliest }
-        return outsideQuietHours(earliest, calendar: calendar)
+        return outsideQuietHours(earliest, prefs: prefs, calendar: calendar)
     }
 
-    static func outsideQuietHours(_ date: Date, calendar: Calendar = .current) -> Date {
+    /// Se `date` cade negli orari di silenzio, la prima fine del silenzio dopo di lei.
+    static func outsideQuietHours(
+        _ date: Date,
+        prefs: KBInsightPreferences = KBInsightPreferences(),
+        calendar: Calendar = .current
+    ) -> Date {
         let c = calendar.dateComponents([.hour, .minute], from: date)
-        let minutes = (c.hour ?? 0) * 60 + (c.minute ?? 0)
-        let start = quietStart.hour * 60 + quietStart.minute
-        let end = quietEndHour * 60
-        let morning: (Date) -> Date = {
-            calendar.date(bySettingHour: quietEndHour, minute: 0, second: 0, of: $0) ?? $0
+        guard prefs.isQuiet(minutes: (c.hour ?? 0) * 60 + (c.minute ?? 0)) else { return date }
+        let end = at(minutes: prefs.quietEndMinutes, on: date, calendar: calendar)
+        return end > date ? end : calendar.date(byAdding: .day, value: 1, to: end) ?? end
+    }
+
+    /// Il prossimo riepilogo serale (19:00), spostato fuori dal silenzio se serve.
+    static func nextDigest(
+        after now: Date,
+        prefs: KBInsightPreferences,
+        calendar: Calendar = .current
+    ) -> Date {
+        var digest = at(minutes: KBInsightPreferences.digestMinutes, on: now, calendar: calendar)
+        if digest <= now {
+            digest = calendar.date(byAdding: .day, value: 1, to: digest) ?? digest
         }
-        if minutes >= start {
-            let tomorrow = calendar.date(byAdding: .day, value: 1, to: date) ?? date
-            return morning(tomorrow)
-        }
-        if minutes < end { return morning(date) }
-        return date
+        return outsideQuietHours(digest, prefs: prefs, calendar: calendar)
+    }
+
+    private static func at(minutes: Int, on day: Date, calendar: Calendar) -> Date {
+        calendar.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: day) ?? day
     }
 
     // MARK: - Testo

@@ -25,22 +25,21 @@ import SwiftData
 final class KBInsightRunner {
 
     static let shared = KBInsightRunner()
-    static let enabledKey = "kb_insightsEnabled"
     static let backgroundTaskId = "it.vittorioscocca.kidbox.insights-refresh"
 
     private var container: ModelContainer?
     private var saveObserver: NSObjectProtocol?
     private var planObserver: AnyCancellable?
     private var scheduled: Task<Void, Never>?
+    /// Le preferenze sono cambiate: al prossimo giro le consegne future si
+    /// ricalcolano. Resta acceso anche se quel giro viene sostituito da un altro.
+    private var needsDeliveryReset = false
 
     private init() {}
 
-    var isEnabled: Bool {
-        get { UserDefaults.standard.object(forKey: Self.enabledKey) as? Bool ?? true }
-        set {
-            UserDefaults.standard.set(newValue, forKey: Self.enabledKey)
-            requestRun(reason: "toggle", delay: .zero)
-        }
+    func preferencesDidChange() {
+        needsDeliveryReset = true
+        requestRun(reason: "prefs", delay: .zero)
     }
 
     // MARK: - Avvio
@@ -92,18 +91,29 @@ final class KBInsightRunner {
             .string(forKey: "activeFamilyId") ?? ""
         guard !familyId.isEmpty, let uid = Auth.auth().currentUser?.uid else { return }
         observePlanIfNeeded()
+        // Un altro dispositivo può aver cambiato le preferenze: se sì, il giro
+        // riparte da solo con quelle nuove.
+        Task { await KBInsightPreferencesStore.shared.refreshFromRemoteIfNeeded() }
 
-        guard isEnabled, KBSubscriptionManager.shared.currentPlan != .free else {
+        let prefs = KBInsightPreferencesStore.shared.prefs
+        guard prefs.delivery != .off, KBSubscriptionManager.shared.currentPlan != .free else {
             await KBInsightNotificationScheduler.removeAll()
             return
         }
 
         let context = container.mainContext
+        let resetFuture = needsDeliveryReset
+        needsDeliveryReset = false
         do {
             let snapshot = try KBInsightSnapshot.load(familyId: familyId, uid: uid, context: context)
+            // Un tipo spento non propone niente: le sue righe aperte si chiudono,
+            // e si riaprono da sole se l'utente lo riaccende.
             let candidates = KBInsightEngine.evaluate(snapshot, now: Date())
+                .filter { !prefs.isMuted($0.type) }
             let changes = try KBInsightStore.reconcile(candidates, familyId: familyId, uid: uid, context: context)
-            try await KBInsightNotificationScheduler.sync(familyId: familyId, context: context)
+            try await KBInsightNotificationScheduler.sync(
+                familyId: familyId, prefs: prefs, resetFuture: resetFuture, context: context
+            )
             if !changes.isEmpty {
                 KBLog.ai.kbInfo(
                     "InsightRunner[\(reason)]: opened=\(changes.opened.count) rescheduled=\(changes.rescheduled.count) resolved=\(changes.resolved.count)"

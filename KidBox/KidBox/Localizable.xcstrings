@@ -16381,6 +16381,28 @@
         }
       }
     },
+    "Come arrivano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How they arrive"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cómo llegan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment elles arrivent"
+          }
+        }
+      }
+    },
     "Come ci arriverete?" : {
       "localizations" : {
         "en" : {
@@ -16846,6 +16868,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Résumé compact"
+          }
+        }
+      }
+    },
+    "Con il riepilogo serale i to-do arrivano tutti insieme; le dosi restano puntuali. Gli avvisi non usano messaggi AI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With the evening summary, to-dos arrive all together; doses stay on time. Alerts don't use AI messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con el resumen de la tarde, las tareas llegan todas juntas; las dosis siguen siendo puntuales. Los avisos no usan mensajes de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec le récap du soir, les tâches arrivent toutes ensemble ; les doses restent ponctuelles. Les alertes n'utilisent pas de messages IA."
           }
         }
       }
@@ -22965,6 +23009,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Doses %@ — %@"
+          }
+        }
+      }
+    },
+    "Dosi da registrare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doses to record"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dosis por registrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doses à enregistrer"
           }
         }
       }
@@ -34259,6 +34325,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dans cette section, l’assistant IA crée un plan alimentaire personnalisé à partir des informations déjà présentes dans Santé : consultations médicales, traitements en cours, analyses et examens, poids, taille, âge et entraînements enregistrés dans l’app Santé."
+          }
+        }
+      }
+    },
+    "In questi orari gli avvisi aspettano la fine del silenzio. Le dosi da registrare arrivano comunque." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "During these hours alerts wait until quiet time ends. Doses to record still arrive."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En estas horas los avisos esperan a que termine el silencio. Las dosis por registrar llegan igualmente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pendant ces heures, les alertes attendent la fin du silence. Les doses à enregistrer arrivent quand même."
           }
         }
       }
@@ -49610,6 +49698,28 @@
         }
       }
     },
+    "Orari di silenzio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quiet hours"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Horas de silencio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heures de silence"
+          }
+        }
+      }
+    },
     "Orari di studio" : {
       "localizations" : {
         "en" : {
@@ -55712,6 +55822,28 @@
         }
       }
     },
+    "Quali avvisi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which alerts"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qué avisos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelles alertes"
+          }
+        }
+      }
+    },
     "Quali esami sono ancora da fare?" : {
       "comment" : "Assistant suggestion",
       "localizations" : {
@@ -58715,6 +58847,28 @@
         }
       }
     },
+    "Riepilogo della sera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Evening summary"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumen de la tarde"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Récap du soir"
+          }
+        }
+      }
+    },
     "Riepilogo ed esporta PDF" : {
       "localizations" : {
         "en" : {
@@ -58733,6 +58887,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Résumé et export PDF"
+          }
+        }
+      }
+    },
+    "Riepilogo serale alle 19" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Evening summary at 7 pm"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumen de la tarde a las 19"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Récap du soir à 19 h"
           }
         }
       }
@@ -65209,6 +65385,28 @@
         }
       }
     },
+    "Spenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactivées"
+          }
+        }
+      }
+    },
     "Spesa" : {
       "localizations" : {
         "en" : {
@@ -66335,6 +66533,28 @@
         }
       }
     },
+    "Subito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right away"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al momento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout de suite"
+          }
+        }
+      }
+    },
     "Suggerimenti" : {
       "localizations" : {
         "en" : {
@@ -67204,28 +67424,6 @@
         }
       }
     },
-    "Ti avvisa quando un to-do non l'ha preso nessuno o manca una dose. Non usa messaggi AI." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lets you know when nobody has taken a to-do or a dose is missing. Doesn't use AI messages."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Te avisa cuando nadie ha cogido una tarea o falta una dosis. No usa mensajes de IA."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Te prévient quand personne n'a pris une tâche ou qu'une dose manque. N'utilise pas de messages IA."
-          }
-        }
-      }
-    },
     "Ti avvisiamo quando un membro carica un documento, aggiunge una spesa, scrive in chat o si avvicina una scadenza. Puoi scegliere quali notifiche ricevere in qualsiasi momento dalle Impostazioni." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -67710,6 +67908,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tâches"
+          }
+        }
+      }
+    },
+    "To-do che nessuno ha preso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-dos nobody has taken"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tareas que nadie ha cogido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tâches que personne n'a prises"
+          }
+        }
+      }
+    },
+    "To-do che nessuno ha preso: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-dos nobody has taken: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tareas que nadie ha cogido: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tâches que personne n'a prises : %@"
           }
         }
       }

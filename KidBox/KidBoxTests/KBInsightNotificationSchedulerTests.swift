@@ -48,4 +48,57 @@ final class KBInsightNotificationSchedulerTests: XCTestCase {
             for: at(23, 22, 15), type: .treatmentDoseMissing, now: at(23, 12, 0), calendar: cal)
         XCTAssertEqual(d, at(23, 22, 15))
     }
+
+    // MARK: - Preferenze
+
+    func testCustomQuietWindowWithinTheDay() {
+        var prefs = KBInsightPreferences()
+        prefs.quietStartMinutes = 13 * 60
+        prefs.quietEndMinutes = 15 * 60
+        let d = KBInsightNotificationScheduler.deliveryDate(
+            for: at(24, 14, 0), type: .todoUnassignedDueSoon, now: at(23, 12, 0), prefs: prefs, calendar: cal)
+        XCTAssertEqual(d, at(24, 15, 0))
+        XCTAssertEqual(
+            KBInsightNotificationScheduler.outsideQuietHours(at(24, 22, 0), prefs: prefs, calendar: cal),
+            at(24, 22, 0)
+        )
+    }
+
+    func testNoQuietWhenStartEqualsEnd() {
+        var prefs = KBInsightPreferences()
+        prefs.quietStartMinutes = 0
+        prefs.quietEndMinutes = 0
+        XCTAssertFalse(prefs.isQuiet(minutes: 23 * 60))
+    }
+
+    func testDigestIsTodayAtSevenOrTomorrow() {
+        let prefs = KBInsightPreferences()
+        XCTAssertEqual(KBInsightNotificationScheduler.nextDigest(after: at(23, 12, 0), prefs: prefs, calendar: cal), at(23, 19, 0))
+        XCTAssertEqual(KBInsightNotificationScheduler.nextDigest(after: at(23, 20, 0), prefs: prefs, calendar: cal), at(24, 19, 0))
+    }
+
+    func testDigestMovesOutOfCustomQuietHours() {
+        var prefs = KBInsightPreferences()
+        prefs.quietStartMinutes = 18 * 60
+        prefs.quietEndMinutes = 7 * 60
+        XCTAssertEqual(KBInsightNotificationScheduler.nextDigest(after: at(23, 12, 0), prefs: prefs, calendar: cal), at(24, 7, 0))
+    }
+
+    func testPreferencesFirestoreRoundTrip() {
+        var prefs = KBInsightPreferences()
+        prefs.delivery = .eveningDigest
+        prefs.quietStartMinutes = 22 * 60
+        prefs.quietEndMinutes = 7 * 60 + 30
+        prefs.mutedTypes = [.treatmentDoseMissing]
+        XCTAssertEqual(KBInsightPreferences(firestore: prefs.firestoreValue), prefs)
+    }
+
+    func testPreferencesIgnoreBadRemoteValues() {
+        let p = KBInsightPreferences(firestore: [
+            "delivery": "sometimes", "quietStart": 5000, "mutedTypes": ["future_type", "grocery_stale"],
+        ])
+        XCTAssertEqual(p.delivery, .immediate)
+        XCTAssertEqual(p.quietStartMinutes, 21 * 60 + 30)
+        XCTAssertEqual(p.mutedTypes, [.groceryStale])
+    }
 }
