@@ -10,6 +10,7 @@
 //
 //  `-KBDemoLang it|en|es|fr` sceglie la lingua dei contenuti inventati.
 //  `-KBDemoHero <file>` usa quell'immagine come foto della famiglia.
+//  `-KBDemoAvatar <file>` usa quell'immagine come foto profilo.
 //  `-KBDemoReset` cancella prima i dati locali della demo e li rifà.
 //  `-KBDemoSection <sezione>` parte su quella voce della barra laterale
 //  (`SidebarSection.rawValue`: calendar, todo, expenses, assistant…).
@@ -234,6 +235,18 @@ enum KBDemoSeed {
         } ?? "it"
         let ctx = container.mainContext
         let fid = familyId
+
+        // `-KBDemoAvatar <percorso>`: foto profilo di chi usa la demo, in alto a sinistra in Home.
+        if let i = args.firstIndex(of: "-KBDemoAvatar"), args.indices.contains(i + 1),
+           let data = try? Data(contentsOf: URL(fileURLWithPath: args[i + 1])) {
+            let uid = me
+            let profile = (try? ctx.fetch(FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })))?.first
+                ?? KBUserProfile(uid: uid, displayName: "Anna")
+            if profile.modelContext == nil { ctx.insert(profile) }
+            profile.avatarData = data
+            profile.updatedAt = Date()
+            try? ctx.save()
+        }
 
         let existing = (try? ctx.fetch(FetchDescriptor<KBFamily>(predicate: #Predicate { $0.id == fid }))) ?? []
         if !existing.isEmpty, !args.contains("-KBDemoReset") {
