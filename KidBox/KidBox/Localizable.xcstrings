@@ -8565,6 +8565,28 @@
         }
       }
     },
+    "Analisi settimanale della storia sanitaria dei figli" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weekly analysis of the children's health history"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Análisis semanal del historial de salud de los hijos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Analyse hebdomadaire de l'historique de santé des enfants"
+          }
+        }
+      }
+    },
     "Analisi testo in attesa" : {
       "localizations" : {
         "en" : {
@@ -48895,6 +48917,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tous les 7 jours"
+          }
+        }
+      }
+    },
+    "Ogni analisi consuma messaggi AI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each analysis uses AI messages"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada análisis consume mensajes de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque analyse consomme des messages IA"
           }
         }
       }

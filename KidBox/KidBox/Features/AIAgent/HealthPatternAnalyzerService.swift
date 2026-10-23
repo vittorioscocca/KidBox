@@ -2,23 +2,46 @@
 //  HealthPatternAnalyzerService.swift
 //  KidBox
 //
-//  Analisi mensile silenziosa della storia sanitaria dei figli → insight AI
-//  e notifica locale proattiva (pattern speculare a WeeklySummaryService).
+//  Analisi silenziosa della storia sanitaria dei figli, mensile o settimanale
+//  a scelta dell'utente → insight AI e notifica locale proattiva (pattern
+//  speculare a WeeklySummaryService).
 //
 
 import Foundation
 import UserNotifications
 import SwiftData
 
+/// Ogni quanto gira l'analisi. Preferenza del dispositivo, come l'interruttore.
+enum HealthPatternFrequency: String, CaseIterable, Sendable {
+    case weekly
+    case monthly
+
+    /// Chiave del periodo che contiene `date`: «2026-10» o «2026-W43» (settimana ISO).
+    func periodKey(for date: Date, calendar: Calendar = Calendar(identifier: .iso8601)) -> String {
+        switch self {
+        case .monthly:
+            let c = calendar.dateComponents([.year, .month], from: date)
+            return String(format: "%04d-%02d", c.year ?? 0, c.month ?? 0)
+        case .weekly:
+            let c = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
+            return String(format: "%04d-W%02d", c.yearForWeekOfYear ?? 0, c.weekOfYear ?? 0)
+        }
+    }
+}
+
 @MainActor
 final class HealthPatternAnalyzerService {
 
     static let shared = HealthPatternAnalyzerService()
 
-    static let lastMonthKey = "kb_healthPattern_lastMonth"
-    static let lastText     = "kb_healthPattern_lastText"
-    static let enabled      = "kb_healthPatternEnabled"
-    static let notifId      = "kb_healthPattern_notifId"
+    /// Chiave dell'ultimo periodo analizzato. Il nome resta quello delle build
+    /// in cui l'analisi era solo mensile.
+    static let lastMonthKey   = "kb_healthPattern_lastMonth"
+    static let lastAnalyzedAt = "kb_healthPattern_lastAnalyzedAt"
+    static let lastText       = "kb_healthPattern_lastText"
+    static let enabled        = "kb_healthPatternEnabled"
+    static let frequencyKey   = "kb_healthPatternFrequency"
+    static let notifId        = "kb_healthPattern_notifId"
 
     private init() {}
 
@@ -39,13 +62,12 @@ final class HealthPatternAnalyzerService {
             return
         }
 
-        let month = currentMonthKey()
-        let lastMonth = UserDefaults.standard.string(forKey: Self.lastMonthKey) ?? ""
+        let period = frequency.periodKey(for: Date())
 
-        guard month != lastMonth else {
-            KBLog.ai.kbDebug("HealthPatternAnalyzer: already analyzed for month \(month)")
+        guard !alreadyAnalyzed(in: period) else {
+            KBLog.ai.kbDebug("HealthPatternAnalyzer: already analyzed for period \(period)")
             if let text = lastInsightText {
-                await scheduleLocalNotification(insightText: text, familyName: familyName, monthKey: month, familyId: familyId)
+                await scheduleLocalNotification(insightText: text, familyName: familyName, monthKey: period, familyId: familyId)
             }
             return
         }
@@ -56,7 +78,7 @@ final class HealthPatternAnalyzerService {
             return
         }
 
-        KBLog.ai.kbInfo("HealthPatternAnalyzer: starting analysis for month \(month) family=\(familyName)")
+        KBLog.ai.kbInfo("HealthPatternAnalyzer: starting analysis for period \(period) family=\(familyName)")
 
         let healthData = fetchHealthData(
             familyId: familyId,
@@ -82,8 +104,8 @@ final class HealthPatternAnalyzerService {
 
             let normalized = text.uppercased()
             if normalized == "NESSUN_PATTERN" || normalized.hasPrefix("NESSUN_PATTERN\n") {
-                KBLog.ai.kbInfo("HealthPatternAnalyzer: NESSUN_PATTERN for month \(month)")
-                UserDefaults.standard.set(month, forKey: Self.lastMonthKey)
+                KBLog.ai.kbInfo("HealthPatternAnalyzer: NESSUN_PATTERN for period \(period)")
+                markAnalyzed(period: period)
                 UserDefaults.standard.removeObject(forKey: Self.lastText)
                 return
             }
@@ -93,17 +115,17 @@ final class HealthPatternAnalyzerService {
             persistInsight(
                 familyId: familyId,
                 fullText: text,
-                monthKey: month,
+                monthKey: period,
                 modelContext: modelContext
             )
 
-            UserDefaults.standard.set(month, forKey: Self.lastMonthKey)
+            markAnalyzed(period: period)
             UserDefaults.standard.set(text, forKey: Self.lastText)
 
             await scheduleLocalNotification(
                 insightText: text,
                 familyName: familyName,
-                monthKey: month,
+                monthKey: period,
                 familyId: familyId
             )
         } catch {
@@ -128,6 +150,24 @@ final class HealthPatternAnalyzerService {
                 }
                 KBLog.ai.kbInfo("HealthPatternAnalyzer: disabled, notifications removed")
             }
+        }
+    }
+
+    var frequency: HealthPatternFrequency {
+        get {
+            UserDefaults.standard.string(forKey: Self.frequencyKey)
+                .flatMap(HealthPatternFrequency.init(rawValue:)) ?? .monthly
+        }
+        set {
+            guard newValue != frequency else { return }
+            UserDefaults.standard.set(newValue.rawValue, forKey: Self.frequencyKey)
+            // La notifica pendente è programmata sul ritmo vecchio: la prossima
+            // `analyzeIfNeeded` la riprogramma su quello nuovo.
+            if let oldId = UserDefaults.standard.string(forKey: Self.notifId) {
+                UNUserNotificationCenter.current()
+                    .removePendingNotificationRequests(withIdentifiers: [oldId])
+            }
+            KBLog.ai.kbInfo("HealthPatternAnalyzer: frequency=\(newValue.rawValue)")
         }
     }
 
@@ -518,14 +558,19 @@ final class HealthPatternAnalyzerService {
         )
 
         var dc = DateComponents()
-        dc.day = 1
+        switch frequency {
+        case .monthly:
+            dc.day = 1
+        case .weekly:
+            dc.weekday = 2 // lunedì (domenica = 1), un'ora dopo la sintesi settimanale
+        }
         dc.hour = 9
         dc.minute = 0
         dc.second = 0
         // `repeats: false`: l'insight scatta una sola volta. Con `repeats: true`
-        // si ripeteva ogni mese (giorno 1) riproponendo il `fullText` del mese in cui
+        // si ripeteva a ogni periodo riproponendo il `fullText` del periodo in cui
         // era stato generato → al tap la chat apriva un insight datato. Viene
-        // rigenerato ogni mese (vedi `analyzeIfNeeded`), che rimuove la richiesta
+        // rigenerato a ogni periodo (vedi `analyzeIfNeeded`), che rimuove la richiesta
         // pendente precedente e ne schedula una fresca.
         let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: false)
 
@@ -544,10 +589,18 @@ final class HealthPatternAnalyzerService {
 
     // MARK: - Helpers
 
-    private func currentMonthKey() -> String {
-        let fmt = DateFormatter()
-        fmt.locale = Locale(identifier: "en_US_POSIX")
-        fmt.dateFormat = "yyyy-MM"
-        return fmt.string(from: Date())
+    /// Si confronta la data dell'ultima analisi, non la chiave salvata: cambiando
+    /// frequenza un'analisi fatta in questo periodo resta valida e non si ripaga.
+    private func alreadyAnalyzed(in period: String) -> Bool {
+        if let last = UserDefaults.standard.object(forKey: Self.lastAnalyzedAt) as? Date {
+            return frequency.periodKey(for: last) == period
+        }
+        // Build precedenti: salvavano solo la chiave del mese.
+        return UserDefaults.standard.string(forKey: Self.lastMonthKey) == period
+    }
+
+    private func markAnalyzed(period: String) {
+        UserDefaults.standard.set(period, forKey: Self.lastMonthKey)
+        UserDefaults.standard.set(Date(), forKey: Self.lastAnalyzedAt)
     }
 }

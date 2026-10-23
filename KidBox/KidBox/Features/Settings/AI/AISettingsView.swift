@@ -17,9 +17,12 @@ struct AISettingsView: View {
     @State private var showOwnerOnly = false
     @State private var showManageSubscriptions = false
     @State private var showOfferCodeRedemption = false
+    /// Solo lettura: si scrive passando dal servizio, che riprogramma la notifica.
+    @AppStorage(HealthPatternAnalyzerService.frequencyKey)
+    private var healthPatternFrequency: HealthPatternFrequency = .monthly
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
-    
+
     // MARK: - Dynamic theme
     
     private var backgroundColor: Color {
@@ -274,7 +277,29 @@ struct AISettingsView: View {
                     )) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Pattern salute AI")
-                            Text("Analisi mensile della storia sanitaria dei figli")
+                            Group {
+                                if healthPatternFrequency == .weekly {
+                                    Text("Analisi settimanale della storia sanitaria dei figli")
+                                } else {
+                                    Text("Analisi mensile della storia sanitaria dei figli")
+                                }
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        }
+                    }
+                    .listRowBackground(cardBackground)
+
+                    Picker(selection: Binding(
+                        get: { healthPatternFrequency },
+                        set: { HealthPatternAnalyzerService.shared.frequency = $0 }
+                    )) {
+                        Text("Ogni mese").tag(HealthPatternFrequency.monthly)
+                        Text("Ogni settimana").tag(HealthPatternFrequency.weekly)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Frequenza")
+                            Text("Ogni analisi consuma messaggi AI")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
