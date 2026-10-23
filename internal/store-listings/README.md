@@ -131,4 +131,5 @@ proattivi» nella riga del Pro. Il generatore ha ora le frasi `{{iOS||Mac}}`: su
 sono stati provati, quindi le descrizioni Mac restano identiche. Da applicare sulla **2.4.3**
 (`PREPARE_FOR_SUBMISSION`): la 2.4.2 è già `READY_FOR_DISTRIBUTION` e non contiene gli avvisi.
 Novità della 2.4.3 in `appstore-whatsnew-2.4.3.txt`.
+Applicate il 23/10/2026 sulla iOS 2.4.3 (`PREPARE_FOR_SUBMISSION`): descrizione e Novità in quattro lingue, rilette dopo la scrittura. Mac non toccato.
 
