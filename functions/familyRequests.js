@@ -334,6 +334,12 @@ async function applyResponse({familyId, requestId, answer, responder}) {
 
     // In una transazione tutte le letture vanno prima delle scritture.
     const list = answer === "yes" ? await resolveListId(tx, famRef, data.listId) : null;
+    // Richiesta nata da un to-do che esiste già (l'avviso «nessuno se ne sta
+    // occupando» → «Chiedi agli altri»): il sì assegna quel to-do invece di
+    // crearne un doppione.
+    const source = answer === "yes" && typeof data.sourceTodoId === "string" && data.sourceTodoId ?
+      await tx.get(famRef.collection("todos").doc(data.sourceTodoId)) :
+      null;
 
     const response = {answer, type: responder.type, name: responder.name, at: Timestamp.now()};
     const pairs = [
@@ -357,9 +363,43 @@ async function applyResponse({familyId, requestId, answer, responder}) {
     const claimedBy = responder.type === "member" ?
       {type: "member", uid: responder.uid, name: responder.name} :
       {type: "external", name: responder.name, key: responder.key};
+    const author = responder.uid || data.createdBy;
+
+    if (source && source.exists) {
+      const todo = source.data();
+      if (todo.isDeleted === true || todo.isDone === true ||
+          (todo.assignedTo || "") !== "" || (todo.assignedExternalName || "") !== "") {
+        // Nel frattempo qualcuno l'ha preso, fatto o cancellato: la richiesta
+        // non serve più. Chi risponde vede «chiusa», non un to-do in più.
+        pairs.push(
+            "status", "cancelled",
+            "cancelledAt", FieldValue.serverTimestamp(),
+            "resolvedAt", FieldValue.serverTimestamp(),
+            "closedReason", "source_taken",
+        );
+        tx.update(reqRef, ...pairs);
+        return {outcome: "cancelled", data: {...after, status: "cancelled"}};
+      }
+      tx.update(source.ref, {
+        assignedTo: responder.type === "member" ? responder.uid : "",
+        assignedExternalName: responder.type === "external" ? responder.name : null,
+        updatedBy: author,
+        updatedAt: FieldValue.serverTimestamp(),
+        requestId,
+      });
+      pairs.push(
+          "status", "claimed",
+          "claimedBy", claimedBy,
+          "claimedAt", FieldValue.serverTimestamp(),
+          "resolvedAt", FieldValue.serverTimestamp(),
+          "todoId", source.id,
+      );
+      tx.update(reqRef, ...pairs);
+      return {outcome: "claimed", data: {...after, status: "claimed", claimedBy, todoId: source.id}};
+    }
+
     const todoId = crypto.randomUUID();
     const todosRef = famRef.collection("todos").doc(todoId);
-    const author = responder.uid || data.createdBy;
 
     if (list.create) {
       tx.set(famRef.collection("todoLists").doc(list.listId), {

@@ -1915,6 +1915,46 @@ exports.cascadeDeleteTodosOfList = onDocumentWritten(
     },
 );
 
+/**
+ * Un to-do nato senza nessuno può avere una richiesta aperta che lo chiede
+ * agli altri (avviso proattivo → «Chiedi agli altri», `sourceTodoId`). Se
+ * intanto qualcuno lo prende dall'app, lo fa o lo cancella, la richiesta non
+ * serve più: si chiude, così niente sollecito per una cosa già sistemata.
+ * Gira dentro `notifyTodoAssigned` per non aggiungere un trigger su ogni
+ * scrittura di un to-do.
+ * @param {string} familyId
+ * @param {string} todoId
+ * @param {object|null} before
+ * @param {object} after
+ * @return {Promise<void>}
+ */
+async function closeRequestsForSettledTodo(familyId, todoId, before, after) {
+  const taken = (t) => (t.assignedTo || "") !== "" || (t.assignedExternalName || "") !== "";
+  const settled = (t) => t.isDeleted === true || t.isDone === true || taken(t);
+  if (!before || settled(before) || !settled(after)) return;
+  // Preso tramite la richiesta stessa: la transazione l'ha già chiusa.
+  if (after.requestId && after.requestId !== before.requestId) return;
+
+  const open = await admin.firestore()
+      .collection("families").doc(familyId).collection("requests")
+      .where("sourceTodoId", "==", todoId)
+      .get();
+  const stillOpen = open.docs.filter((d) => d.get("status") === "open");
+  if (!stillOpen.length) return;
+  const batch = admin.firestore().batch();
+  for (const d of stillOpen) {
+    batch.update(d.ref, {
+      status: "cancelled",
+      cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+      resolvedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      closedReason: "source_taken",
+    });
+  }
+  await batch.commit();
+  logger.info("closeRequestsForSettledTodo", {familyId, todoId, closed: stillOpen.length});
+}
+
 exports.notifyTodoAssigned = onDocumentWritten(
     {
       document: "families/{familyId}/todos/{todoId}",
@@ -1929,6 +1969,11 @@ exports.notifyTodoAssigned = onDocumentWritten(
       const after = event.data?.after?.exists ? event.data.after.data() : null;
 
       if (!after) return;
+      try {
+        await closeRequestsForSettledTodo(familyId, todoId, before, after);
+      } catch (e) {
+        logger.warn("closeRequestsForSettledTodo failed", {familyId, todoId, error: e.message});
+      }
       if (after.isDeleted === true) return;
 
       const newAssignee = after.assignedTo || null;
