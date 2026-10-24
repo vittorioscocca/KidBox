@@ -6,10 +6,8 @@
 //  foglio che si apre dal consiglio in Home e il consiglio stesso.
 //
 //  Il consiglio compare sotto la foto di famiglia finché nessun widget è
-//  acceso. La prima volta subito; poi a un avvio a freddo solo se dall'ultima
-//  volta sono passati tre giorni, a meno che l'utente non abbia scelto «Non
-//  visualizzare più». La decisione si prende una volta per processo: tornare
-//  in Home o rientrare dal background non lo fa ricomparire.
+//  acceso, a ogni apertura della Home, a meno che l'utente non abbia scelto
+//  «Non visualizzare più».
 //
 
 import SwiftUI
@@ -19,39 +17,13 @@ import SwiftUI
 @MainActor
 enum KBHomeWidgetHint {
     static let neverKey = "kb_widgetHint_never"
-    static let lastShownKey = "kb_widgetHint_lastShown"
-    private static let interval: TimeInterval = 3 * 24 * 3600
-
-    /// Decisa alla prima richiesta di questo processo, poi fissa.
-    private static var allowedThisLaunch: Bool?
-    private static var recordedThisLaunch = false
 
     static var isAllowed: Bool {
-        if let allowedThisLaunch { return allowedThisLaunch }
-        let d = UserDefaults.standard
-        let allowed: Bool
-        if d.bool(forKey: neverKey) {
-            allowed = false
-        } else if let last = d.object(forKey: lastShownKey) as? Date {
-            allowed = Date().timeIntervalSince(last) >= interval
-        } else {
-            allowed = true
-        }
-        allowedThisLaunch = allowed
-        return allowed
-    }
-
-    /// Da chiamare quando il consiglio arriva davvero a schermo: è da lì che
-    /// partono i tre giorni, non dall'avvio in cui era nascosto dalla checklist.
-    static func markShown() {
-        guard !recordedThisLaunch else { return }
-        recordedThisLaunch = true
-        UserDefaults.standard.set(Date(), forKey: lastShownKey)
+        !UserDefaults.standard.bool(forKey: neverKey)
     }
 
     static func neverAgain() {
         UserDefaults.standard.set(true, forKey: neverKey)
-        allowedThisLaunch = false
     }
 }
 
@@ -229,7 +201,6 @@ struct HomeWidgetHintBanner: View {
         }
         .buttonStyle(.plain)
         .onAppear {
-            KBHomeWidgetHint.markShown()
             guard !reduceMotion else { return }
             withAnimation(.linear(duration: 1.2).repeatForever(autoreverses: false)) {
                 dashPhase = -28

@@ -156,9 +156,6 @@ final class HomeWeatherModel: ObservableObject {
         do {
             let city = await Self.cityName(for: loc)
             let result = try await Self.fetch(latitude: loc.coordinate.latitude, longitude: loc.coordinate.longitude, city: city)
-            if attribution == nil {
-                attribution = try? await WeatherService.shared.attribution
-            }
             forecast = result
             status = .ready
             lastLoad = Date()
@@ -169,6 +166,25 @@ final class HomeWeatherModel: ObservableObject {
             if forecast == nil { status = .failed(error.localizedDescription) }
         }
     }
+
+    /// Il marchio  Meteo è obbligatorio: se la prima lettura fallisce (capita
+    /// subito dopo l'accensione) si riprova invece di restare senza fino al
+    /// prossimo avvio.
+    func loadAttribution() async {
+        guard attribution == nil else { return }
+        if let cached = Self.cachedAttribution { attribution = cached; return }
+        for attempt in 0..<3 {
+            if let a = try? await WeatherService.shared.attribution {
+                Self.cachedAttribution = a
+                attribution = a
+                return
+            }
+            try? await Task.sleep(nanoseconds: UInt64(attempt + 1) * 2_000_000_000)
+        }
+        KBLog.navigation.kbError("Home weather: attribuzione WeatherKit non disponibile")
+    }
+
+    private static var cachedAttribution: WeatherAttribution?
 
     private static let cityKey = "kb_weather_city"
 
@@ -201,7 +217,7 @@ final class HomeWeatherModel: ObservableObject {
                               temperature: Int($0.temperature.converted(to: .celsius).value.rounded()),
                               symbol: $0.symbolName.kbFilled)
             }
-        let today = daily.forecast.first
+        let today = daily.forecast.first { Calendar.current.isDateInToday($0.date) } ?? daily.forecast.first
         return KBWeatherForecast(
             temperature: Int(current.temperature.converted(to: .celsius).value.rounded()),
             symbol: current.symbolName.kbFilled,
@@ -271,6 +287,19 @@ struct HomeWeatherStrip: View {
                     .accessibilityAddTraits(.isButton)
                     if let a = model.attribution {
                         attributionRow(a)
+                    } else {
+                        // Finché il marchio non arriva, almeno il testo e il link.
+                        HStack(spacing: 8) {
+                            Text(" Meteo")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            if let legal = URL(string: "https://weatherkit.apple.com/legal-attribution.html") {
+                                Link("Fonti dei dati", destination: legal)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
                     }
                 }
                 .padding(14)
@@ -286,6 +315,7 @@ struct HomeWeatherStrip: View {
             }
         }
         .task { await model.load() }
+        .task { await model.loadAttribution() }
     }
 
     private var cardFill: Color {
