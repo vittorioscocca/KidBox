@@ -122,22 +122,34 @@ private final class WeatherLocationProvider: NSObject, CLLocationManagerDelegate
 
 @MainActor
 final class HomeWeatherModel: ObservableObject {
+    /// Chi ha acceso la barra deve vedere perché è vuota: sparire in silenzio
+    /// rendeva indistinguibili posizione negata, WeatherKit non attivo e rete giù.
+    enum Status: Equatable {
+        case loading
+        case ready
+        case noLocation
+        case failed(String)
+    }
+
     @Published private(set) var forecast: KBWeatherForecast?
     @Published private(set) var attribution: WeatherAttribution?
+    @Published private(set) var status: Status = .loading
 
     private let location = WeatherLocationProvider()
     private var lastLoad: Date?
     private static let ttl: TimeInterval = 30 * 60
 
-    func load() async {
-        if let lastLoad, Date().timeIntervalSince(lastLoad) < Self.ttl, forecast != nil { return }
+    func load(force: Bool = false) async {
+        if !force, let lastLoad, Date().timeIntervalSince(lastLoad) < Self.ttl, forecast != nil { return }
+        if forecast == nil { status = .loading }
         let loc: CLLocation
         if let fresh = await location.current() {
             loc = fresh
         } else if let cached = WeatherLocationProvider.cached {
             loc = cached
         } else {
-            forecast = nil
+            KBLog.navigation.kbError("Home weather: nessuna posizione (permesso negato o lettura fallita)")
+            if forecast == nil { status = .noLocation }
             return
         }
         do {
@@ -146,9 +158,13 @@ final class HomeWeatherModel: ObservableObject {
                 attribution = try? await WeatherService.shared.attribution
             }
             forecast = result
+            status = .ready
             lastLoad = Date()
         } catch {
-            KBLog.navigation.kbDebug("Home weather: fetch fallito \(error.localizedDescription)")
+            // WeatherKit non attivo sull'App ID, profilo senza entitlement o
+            // rete giù: finisce tutto qui, e il dettaglio serve a capire quale.
+            KBLog.navigation.kbError("Home weather: WeatherKit fallito \(String(describing: error))")
+            if forecast == nil { status = .failed(error.localizedDescription) }
         }
     }
 
@@ -233,9 +249,65 @@ struct HomeWeatherStrip: View {
                 )
                 .accessibilityElement(children: .combine)
                 .transition(.opacity)
+            } else {
+                placeholder
             }
         }
         .task { await model.load() }
+    }
+
+    private var cardFill: Color {
+        colorScheme == .dark ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(.systemBackground)
+    }
+
+    /// Barra vuota ma presente: dice perché e offre l'unica azione utile.
+    @ViewBuilder
+    private var placeholder: some View {
+        HStack(spacing: 12) {
+            switch model.status {
+            case .loading, .ready:
+                ProgressView()
+                Text("Meteo")
+                    .foregroundStyle(.secondary)
+                Spacer()
+            case .noLocation:
+                Image(systemName: "location.slash")
+                    .foregroundStyle(.secondary)
+                Text("Consenti la posizione per vedere il meteo")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Apri Impostazioni") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .font(.subheadline.weight(.semibold))
+            case .failed(let message):
+                Image(systemName: "cloud.slash")
+                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Meteo non disponibile")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    #if DEBUG
+                    Text(message)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(3)
+                    #endif
+                }
+                Spacer()
+                Button("Riprova") {
+                    Task { await model.load(force: true) }
+                }
+                .font(.subheadline.weight(.semibold))
+            }
+        }
+        .tint(KBTheme.bubbleTint)
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(cardFill))
     }
 
     /// Marchio  Meteo + link alle fonti: obbligatori per i dati WeatherKit.

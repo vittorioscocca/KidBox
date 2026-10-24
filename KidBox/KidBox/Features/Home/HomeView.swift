@@ -437,7 +437,9 @@ struct HomeView: View {
                             .transition(.opacity.combined(with: .move(edge: .top)))
                     }
 
-                    if showHomeWeather, hasFamily, !onboarding.isVisible {
+                    // Niente esclusione per la checklist, a differenza della
+                    // Dashboard: il meteo non ha tessere vuote, e l'ha acceso l'utente.
+                    if showHomeWeather, hasFamily {
                         HomeWeatherStrip()
                     }
 
