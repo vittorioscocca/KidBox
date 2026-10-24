@@ -2003,7 +2003,10 @@ private struct ChatConversationView: View {
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
         .padding(.horizontal, 12)
         .padding(.top, 4)
-        .padding(.bottom, 10)
+        // Tastiera chiusa: la barra scende verso il bordo (il negativo mangia
+        // parte dello spazio della safe area); tastiera aperta: più vicina ai tasti.
+        .padding(.bottom, isInputFocused ? 5 : -4)
+        .animation(.easeOut(duration: 0.2), value: isInputFocused)
     }
 
     // MARK: - Input bar
