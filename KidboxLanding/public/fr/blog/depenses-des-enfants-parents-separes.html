@@ -82,6 +82,14 @@
   .nav-lang a { text-decoration:none; }
   .theme-btn { cursor:pointer; background:transparent; border:1px solid var(--border); color:var(--muted); width:34px; height:34px; border-radius:50%; font-size:0.9rem; display:grid; place-items:center; transition:border-color .2s,color .2s; }
   .theme-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .like { position:relative; display:grid; place-items:center; }
+  .like-btn { cursor:pointer; background:transparent; border:1px solid var(--border); color:var(--muted); width:34px; height:34px; border-radius:50%; display:grid; place-items:center; transition:border-color .2s,color .2s; }
+  .like-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .like-btn[aria-pressed="true"] { color:#e5484d; border-color:#e5484d; cursor:default; }
+  .like-btn[aria-pressed="true"] svg { fill:currentColor; }
+  .like-btn.pop svg { animation:likepop .45s ease; }
+  @keyframes likepop { 40% { transform:scale(1.35); } }
+  .like-n { position:absolute; top:100%; left:50%; transform:translateX(-50%); margin-top:2px; font-size:0.66rem; font-weight:700; line-height:1; color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums; }
   .nav-cta { font-size:0.84rem; font-weight:700; color:#fff; background:var(--accent); text-decoration:none; padding:8px 16px; border-radius:50px; transition:transform .15s; }
   .nav-cta:hover { transform:translateY(-1px); }
   .nav-lnk { white-space:nowrap; }
@@ -94,7 +102,7 @@
   .eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:0.76rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent2); background:var(--accent-l); border:1px solid rgba(232,131,58,0.22); padding:6px 15px; border-radius:50px; margin-bottom:26px; }
   .dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-  .hero h1 { font-size:clamp(2.6rem,6.5vw,5rem); font-weight:800; line-height:1.02; letter-spacing:-0.04em; text-wrap:balance; margin:0 auto 22px; max-width:15ch; }
+  .hero h1 { font-size:clamp(2.6rem,6.5vw,5rem); font-weight:800; line-height:1.02; letter-spacing:-0.04em; text-wrap:balance; margin:0 auto 22px; max-width:18ch; }
   .hero h1 .g { background:linear-gradient(120deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .hero > p { font-size:clamp(1.05rem,2vw,1.28rem); color:var(--muted); max-width:54ch; margin:0 auto 34px; }
   .hero-cta { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
@@ -283,6 +291,8 @@
   .lang-list a:hover { background:var(--border, var(--c-border)); }
   .lang-list a[aria-current] { color:var(--accent, var(--c-accent)); font-weight:700; }
   /* langmenu:css:end */
+  /* Telefoni: con il cuore la barra non ci sta più a 375 px. */
+  @media (max-width:480px){ .nav-r { gap:6px; } .theme-btn, .like-btn { width:30px; height:30px; } .nav-cta { padding:7px 11px; font-size:0.78rem; white-space:nowrap; } .lang-menu summary { padding:6px 8px; } }
   /* footer:css:start */
   footer { border-top:1px solid var(--border); margin-top:70px; padding:26px 0 30px; font-size:0.78rem; color:var(--muted); line-height:1.45; }
   .sf-notes { padding-bottom:16px; border-bottom:1px solid var(--border); }
@@ -309,6 +319,17 @@
   .rv { opacity:0; transform:translateY(26px); transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1); }
   .rv.in { opacity:1; transform:none; }
   @media (prefers-reduced-motion:reduce){ .rv{opacity:1;transform:none;transition:none} .dot{animation:none} }
+  /* Telefoni: arrivano dal loro lato poco dopo il testo, lo schermo si assesta. */
+  .band .device { opacity:0; translate:70px 24px; scale:.94; transition:opacity .8s ease .15s, translate 1.1s cubic-bezier(.2,.7,.2,1) .15s, scale 1.1s cubic-bezier(.2,.7,.2,1) .15s; }
+  .band.rev .device { translate:-70px 24px; }
+  .band.in .device, .band.rev.in .device { opacity:1; translate:0 0; scale:1; }
+  .band .screen img.shot { scale:1.1; transition:scale 1.6s cubic-bezier(.2,.7,.2,1) .25s; }
+  .band.in .screen img.shot { scale:1; }
+  .hero-stage .device { translate:0 48px; scale:.96; transition:translate 1.2s cubic-bezier(.2,.7,.2,1) .1s, scale 1.2s cubic-bezier(.2,.7,.2,1) .1s; }
+  .hero-stage.in .device { translate:0 0; scale:1; }
+  /* Una colonna: solo dal basso, niente scroll orizzontale. */
+  @media (max-width:860px){ .band .device, .band.rev .device { translate:0 40px; } }
+  @media (prefers-reduced-motion:reduce){ .band .device, .hero-stage .device, .band .screen img.shot { opacity:1; translate:none; scale:none; transition:none; } }
 
   @media (max-width:860px) {
     .band { grid-template-columns:1fr; gap:34px; padding:44px 0; }
@@ -391,6 +412,7 @@
     <a class="nav-lnk nav-hide" href="../../fr/blog/">Blog</a>
     <details class="lang-menu"><summary aria-label="Langue"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9M12 3C9.5 5.7 8.2 8.7 8.2 12s1.3 6.3 3.8 9"/></svg><span>FR</span></summary><div class="lang-list"><a href="../../blog/spese-dei-figli-genitori-separati" hreflang="it" lang="it" data-lang="it">Italiano</a><a href="../../en/blog/kids-expenses-separated-parents" hreflang="en" lang="en" data-lang="en">English</a><a href="../../es/blog/gastos-de-los-hijos-padres-separados" hreflang="es" lang="es" data-lang="es">Español</a><a href="../../fr/blog/depenses-des-enfants-parents-separes" hreflang="fr" lang="fr" data-lang="fr" aria-current="true">Français</a></div></details>
     <button class="theme-btn" id="tg" aria-label="Changer de thème">◐</button>
+    <div class="like" id="lk"><button class="like-btn" type="button" aria-pressed="false" aria-label="J'aime l'idée" title="J'aime l'idée"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 8 3.4 4.5 6.9 4.5c2.1 0 3.7 1.2 5.1 3 1.4-1.8 3-3 5.1-3 3.5 0 5.5 3.5 4.2 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg></button><span class="like-n" aria-live="polite"></span></div>
     <a class="nav-cta" href="../../index-fr.html#scarica">Télécharger</a>
   </div>
 </nav>
@@ -407,8 +429,8 @@
   <div class="device sm"><div class="screen"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/fr/home-dark.webp"><img class="shot" src="/assets/app/fr/home.webp?v=2" alt="L'accueil de KidBox pour la famille Rossi" width="600" height="1304" loading="eager" decoding="async"></picture></div></div>
   <div class="t-hero-copy">
     <div class="eyebrow"><span class="dot"></span>Télécharger l'app</div>
-    <h2>Toute la famille, <span class="g">dans une seule app.</span></h2>
-    <p>L'organiseur familial pour iPhone, Android et navigateur, chiffré de bout en bout. Gratuit pour toute la famille, sans limite de membres.</p>
+    <h2>L'agent de la famille <span class="g">qui y pense avant&nbsp;vous.</span></h2>
+    <p>Il repère ce qui reste en suspens et demande qui s'en occupe. Pour iPhone, Android et navigateur, chiffré de bout en bout. Gratuit pour toute la famille, sans limite de membres.</p>
     <div class="hero-cta">
     <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Télécharger dans l'</span><span class="st-main">App Store</span></span></a>
     <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Disponible sur</span><span class="st-main">Google Play</span></span></a>
@@ -504,6 +526,8 @@
     document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
   })();
 </script>
+<!-- Il cuore della barra, copiata dalla home: stesso contatore di tutto il sito. -->
+<script defer src="/assets/like.js?v=1"></script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Les dépenses des enfants entre parents séparés : les partager sans conflit", "description": "Dentiste, sport, livres, sorties scolaires : comment enregistrer les frais exceptionnels des enfants, justificatifs compris, pour qu'aucun des deux n'ait à tenir les comptes.", "datePublished": "2026-09-07", "dateModified": "2026-09-07", "inLanguage": "fr", "author": {"@type": "Organization", "name": "KidBox"}, "publisher": {"@type": "Organization", "name": "KidBox", "logo": {"@type": "ImageObject", "url": "https://kidboxapp.com/icon.png"}}, "mainEntityOfPage": "https://kidboxapp.com/fr/blog/depenses-des-enfants-parents-separes"}</script>
 </body>
 </html>

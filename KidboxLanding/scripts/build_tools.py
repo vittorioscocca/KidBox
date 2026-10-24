@@ -37,8 +37,8 @@ LANGS = {
         "index_desc": "Calendario, liste, spese, documenti, salute, chat, posizione, viaggi e AI: ogni strumento di KidBox spiegato, con schermate e domande frequenti.",
         "index_h1": "Gli strumenti di KidBox",
         "index_p": "Tutto quello che l'app fa per una famiglia, scheda per scheda: cosa risolve, come funziona e le domande che ci fanno più spesso. Gratis per tutta la famiglia, senza limite di membri.",
-        "hero_eyebrow": "Scarica l'app", "hero_h": "Tutta la famiglia, <span class=\"g\">in un'unica app.</span>",
-        "hero_p": "L'organizer di famiglia per iPhone, Android e browser, cifrato end-to-end. Gratis per iniziare, nessuna carta richiesta.",
+        "hero_eyebrow": "Scarica l'app", "hero_h": "L'agente di famiglia <span class=\"g\">che ci pensa prima di&nbsp;te.</span>",
+        "hero_p": "Si accorge di cosa resta scoperto e chiede chi se ne occupa. Per iPhone, Android e browser, cifrato end-to-end. Gratis per iniziare, nessuna carta richiesta.",
         "how": "Come funziona", "faq": "Domande frequenti", "related": "Strumenti collegati", "all_tools": "Tutti gli strumenti",
         "free": "Incluso nel Free", "pro": "Piano Pro", "open": "Apri nella web app", "shots": "Nell'app",
         "final_kicker": "Inizia oggi", "final_h": "La famiglia merita un'app all'altezza.", "final_p": "Gratuita per iniziare. Nessuna carta richiesta.",
@@ -51,8 +51,8 @@ LANGS = {
         "index_desc": "Calendar, lists, expenses, documents, health, chat, location, trips and AI: every KidBox tool explained, with screenshots and FAQs.",
         "index_h1": "The KidBox tools",
         "index_p": "Everything the app does for a family, section by section: what it solves, how it works and the questions we get asked most. Free for the whole family, with no member limit.",
-        "hero_eyebrow": "Get the app", "hero_h": "The whole family, <span class=\"g\">in a single app.</span>",
-        "hero_p": "The family organiser for iPhone, Android and the browser, end-to-end encrypted. Free to start, no card required.",
+        "hero_eyebrow": "Get the app", "hero_h": "The family agent <span class=\"g\">that thinks ahead for&nbsp;you.</span>",
+        "hero_p": "It spots what's left uncovered and asks who will handle it. For iPhone, Android and the browser, end-to-end encrypted. Free to start, no card required.",
         "how": "How it works", "faq": "Frequently asked questions", "related": "Related tools", "all_tools": "All tools",
         "free": "Included in Free", "pro": "Pro plan", "open": "Open in the web app", "shots": "In the app",
         "final_kicker": "Start today", "final_h": "Your family deserves an app that keeps up.", "final_p": "Free to start. No card required.",
@@ -65,8 +65,8 @@ LANGS = {
         "index_desc": "Calendario, listas, gastos, documentos, salud, chat, ubicación, viajes e IA: cada herramienta de KidBox explicada, con capturas y preguntas frecuentes.",
         "index_h1": "Las herramientas de KidBox",
         "index_p": "Todo lo que la app hace por una familia, sección por sección: qué resuelve, cómo funciona y las preguntas que más nos hacen. Gratis para toda la familia, sin límite de miembros.",
-        "hero_eyebrow": "Descarga la app", "hero_h": "Toda la familia, <span class=\"g\">en una sola app.</span>",
-        "hero_p": "El organizador familiar para iPhone, Android y navegador, cifrado de extremo a extremo. Gratis para empezar, sin tarjeta.",
+        "hero_eyebrow": "Descarga la app", "hero_h": "El agente de la familia <span class=\"g\">que se adelanta por&nbsp;ti.</span>",
+        "hero_p": "Detecta lo que queda pendiente y pregunta quién se encarga. Para iPhone, Android y navegador, cifrado de extremo a extremo. Gratis para empezar, sin tarjeta.",
         "how": "Cómo funciona", "faq": "Preguntas frecuentes", "related": "Herramientas relacionadas", "all_tools": "Todas las herramientas",
         "free": "Incluido en Free", "pro": "Plan Pro", "open": "Abrir en la web app", "shots": "En la app",
         "final_kicker": "Empieza hoy", "final_h": "Tu familia merece una app a su altura.", "final_p": "Gratis para empezar. Sin tarjeta.",
@@ -79,8 +79,8 @@ LANGS = {
         "index_desc": "Calendrier, listes, dépenses, documents, santé, chat, localisation, voyages et IA : chaque outil KidBox expliqué, avec captures d'écran et questions fréquentes.",
         "index_h1": "Les outils de KidBox",
         "index_p": "Tout ce que l'app fait pour une famille, rubrique par rubrique : ce qu'elle résout, comment elle fonctionne et les questions qu'on nous pose le plus. Gratuit pour toute la famille, sans limite de membres.",
-        "hero_eyebrow": "Télécharger l'app", "hero_h": "Toute la famille, <span class=\"g\">dans une seule app.</span>",
-        "hero_p": "L'organiseur familial pour iPhone, Android et navigateur, chiffré de bout en bout. Gratuit pour commencer, sans carte.",
+        "hero_eyebrow": "Télécharger l'app", "hero_h": "L'agent de la famille <span class=\"g\">qui y pense avant&nbsp;vous.</span>",
+        "hero_p": "Il repère ce qui reste en suspens et demande qui s'en occupe. Pour iPhone, Android et navigateur, chiffré de bout en bout. Gratuit pour commencer, sans carte.",
         "how": "Comment ça marche", "faq": "Questions fréquentes", "related": "Outils associés", "all_tools": "Tous les outils",
         "free": "Inclus dans Free", "pro": "Offre Pro", "open": "Ouvrir dans l'app web", "shots": "Dans l'app",
         "final_kicker": "Commencez aujourd'hui", "final_h": "Votre famille mérite une app à la hauteur.", "final_p": "Gratuit pour commencer. Sans carte.",
@@ -252,7 +252,9 @@ SCRIPT = """
     var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:0.12});
     document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
   })();
-</script>"""
+</script>
+<!-- Il cuore della barra, copiata dalla home: stesso contatore di tutto il sito. -->
+<script defer src="/assets/like.js?v=1"></script>"""
 
 
 def page(lang, title, desc, canonical, body, depth):
