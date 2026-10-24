@@ -328,7 +328,7 @@ struct HomeWeatherStrip: View {
     /// Contorno sottile in chiaro: la scheda è dello stesso colore dello sfondo.
     private var cardBorder: some View {
         RoundedRectangle(cornerRadius: 18, style: .continuous)
-            .strokeBorder(colorScheme == .dark ? Color.clear : Color(red: 0.847, green: 0.839, blue: 0.816), lineWidth: 0.5)
+            .strokeBorder(colorScheme == .dark ? Color.clear : Color(red: 0.847, green: 0.839, blue: 0.816), lineWidth: 0.8)
     }
 
     /// Barra vuota ma presente: dice perché e offre l'unica azione utile.
