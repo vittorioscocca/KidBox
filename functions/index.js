@@ -505,6 +505,32 @@ function webpushOptions(data) {
   };
 }
 
+let chatDataOnlyUidsCache = {at: 0, uids: new Set()};
+
+/**
+ * Account di test per cui la chat prova il push SOLO `data` su Android
+ * (`config/internalUsers.uids`): così l'anteprima si decifra sul telefono, ma
+ * una ROM che non risveglia l'app (Xiaomi) toglie la notifica solo a loro.
+ * Letto al massimo ogni 5 minuti per istanza. Documento illeggibile = nessuno.
+ * @return {Promise<Set<string>>}
+ */
+async function chatDataOnlyUids() {
+  if (Date.now() - chatDataOnlyUidsCache.at < 5 * 60 * 1000) {
+    return chatDataOnlyUidsCache.uids;
+  }
+  let uids = new Set();
+  try {
+    const snap = await admin.firestore()
+        .collection("config").doc("internalUsers").get();
+    const list = (snap.exists && snap.data().uids) || [];
+    uids = new Set(Array.isArray(list) ? list.filter((u) => typeof u === "string") : []);
+  } catch (e) {
+    logger.warn("chatDataOnlyUids: config/internalUsers non leggibile", {error: e.message});
+  }
+  chatDataOnlyUidsCache = {at: Date.now(), uids};
+  return uids;
+}
+
 /**
  * Costruisce un messaggio FCM con `notification` + `data` insieme.
  *
@@ -918,6 +944,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
           (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
       const badgeByUid = await incrementCountersAndGetBadges(
           {familyId, uids: recipients, field: "chat"});
+      const dataOnlyUids = await chatDataOnlyUids();
 
       for (const uid of recipients) {
         const {tokens, lang, refsByToken} = tokensByUid.get(uid);
@@ -948,6 +975,28 @@ exports.notifyNewChatMessage = onDocumentCreated(
         }
 
         notifyTargets.push({uid, tokens, refsByToken});
+        if (dataOnlyUids.has(uid)) {
+          // PROVA (solo account di test): su Android niente `notification`, così
+          // gira `onMessageReceived` e il client decifra `textEnc` per l'anteprima.
+          // iOS e web restano serviti da `apns`/`webpush`.
+          messagesToSend.push({
+            tokens,
+            data: {...data, title, body},
+            webpush: {...webpushOptions(data), notification: {...webpushOptions(data).notification, title, body}},
+            apns: {
+              payload: {
+                aps: {
+                  "mutable-content": 1,
+                  "alert": {title, body},
+                  "sound": "default",
+                  badge,
+                },
+              },
+            },
+            android: {priority: "high"},
+          });
+          continue;
+        }
         messagesToSend.push({
           tokens,
           // `notification` + `android.notification` restano necessari per l'affidabilità
