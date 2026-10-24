@@ -318,10 +318,10 @@ struct HomeWeatherStrip: View {
         .task { await model.loadAttribution() }
     }
 
-    /// In chiaro la scheda è azzurrina, non bianca: le nuvole multicolor di
+    /// In chiaro la scheda è grigio caldo, non bianca: le nuvole multicolor di
     /// WeatherKit sono bianche e su un fondo bianco sparivano.
     private var cardFill: Color {
-        colorScheme == .dark ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.80, green: 0.88, blue: 0.97)
+        colorScheme == .dark ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.902, green: 0.894, blue: 0.871)
     }
 
     /// Barra vuota ma presente: dice perché e offre l'unica azione utile.
