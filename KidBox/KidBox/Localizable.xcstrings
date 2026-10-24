@@ -49,6 +49,28 @@
         }
       }
     },
+    "Fonti dei dati" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data sources"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuentes de datos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sources des données"
+          }
+        }
+      }
+    },
     "–" : {
       "localizations" : {
         "en" : {

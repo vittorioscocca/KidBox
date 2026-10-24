@@ -3,8 +3,10 @@
 //  KidBox
 //
 //  La barra del meteo in Home: ora, prossime ore e minima/massima di oggi.
-//  Fonte Open-Meteo (senza chiave, la stessa su iOS e Android, così i due
-//  client non possono dare previsioni diverse). La posizione è una lettura
+//  Fonte WeatherKit (Android usa Open-Meteo: fonti diverse, valori che possono
+//  differire di un grado). Serve la capability WeatherKit sull'App ID, e Apple
+//  impone il marchio  Meteo col link alle fonti sotto i dati: senza, la
+//  revisione respinge l'app. La posizione è una lettura
 //  singola e approssimata, solo con l'app aperta; le coordinate restano sul
 //  telefono (UserDefaults) e non vanno mai a KidBox. Senza permesso, o senza
 //  rete, la barra non compare: una barra vuota in Home è peggio di nessuna barra.
@@ -12,6 +14,7 @@
 
 import SwiftUI
 import Combine
+import WeatherKit
 import CoreLocation
 
 // MARK: - Preferenza
@@ -26,35 +29,18 @@ enum KBHomeWeatherPreference {
 struct KBWeatherHour: Identifiable, Equatable {
     let date: Date
     let temperature: Int
-    let code: Int
-    let isDay: Bool
+    let symbol: String
     var id: Date { date }
 }
 
 struct KBWeatherForecast: Equatable {
     let temperature: Int
-    let code: Int
-    let isDay: Bool
+    let symbol: String
     let min: Int
     let max: Int
     let hours: [KBWeatherHour]
     let city: String?
     let fetchedAt: Date
-}
-
-/// Codici WMO di Open-Meteo → simbolo SF.
-func kbWeatherSymbol(code: Int, isDay: Bool) -> String {
-    switch code {
-    case 0: return isDay ? "sun.max.fill" : "moon.stars.fill"
-    case 1, 2: return isDay ? "cloud.sun.fill" : "cloud.moon.fill"
-    case 3: return "cloud.fill"
-    case 45, 48: return "cloud.fog.fill"
-    case 51...57: return "cloud.drizzle.fill"
-    case 61...67, 80...82: return "cloud.rain.fill"
-    case 71...77, 85, 86: return "cloud.snow.fill"
-    case 95...99: return "cloud.bolt.rain.fill"
-    default: return "cloud.fill"
-    }
 }
 
 // MARK: - Posizione (una lettura, approssimata)
@@ -137,6 +123,7 @@ private final class WeatherLocationProvider: NSObject, CLLocationManagerDelegate
 @MainActor
 final class HomeWeatherModel: ObservableObject {
     @Published private(set) var forecast: KBWeatherForecast?
+    @Published private(set) var attribution: WeatherAttribution?
 
     private let location = WeatherLocationProvider()
     private var lastLoad: Date?
@@ -155,6 +142,9 @@ final class HomeWeatherModel: ObservableObject {
         }
         do {
             let result = try await Self.fetch(latitude: loc.coordinate.latitude, longitude: loc.coordinate.longitude)
+            if attribution == nil {
+                attribution = try? await WeatherService.shared.attribution
+            }
             forecast = result
             lastLoad = Date()
         } catch {
@@ -162,69 +152,36 @@ final class HomeWeatherModel: ObservableObject {
         }
     }
 
-    private struct Response: Decodable {
-        struct Current: Decodable {
-            let temperature_2m: Double
-            let weather_code: Int
-            let is_day: Int
-        }
-        struct Hourly: Decodable {
-            let time: [String]
-            let temperature_2m: [Double]
-            let weather_code: [Int]
-            let is_day: [Int]
-        }
-        struct Daily: Decodable {
-            let temperature_2m_max: [Double]
-            let temperature_2m_min: [Double]
-        }
-        let timezone: String
-        let current: Current
-        let hourly: Hourly
-        let daily: Daily
-    }
-
     private static func fetch(latitude: Double, longitude: Double) async throws -> KBWeatherForecast {
-        var c = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
-        c.queryItems = [
-            .init(name: "latitude", value: String(format: "%.2f", latitude)),
-            .init(name: "longitude", value: String(format: "%.2f", longitude)),
-            .init(name: "current", value: "temperature_2m,weather_code,is_day"),
-            .init(name: "hourly", value: "temperature_2m,weather_code,is_day"),
-            .init(name: "daily", value: "temperature_2m_max,temperature_2m_min"),
-            .init(name: "timezone", value: "auto"),
-            .init(name: "forecast_days", value: "2"),
-        ]
-        let (data, resp) = try await URLSession.shared.data(from: c.url!)
-        guard (resp as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
-        let r = try JSONDecoder().decode(Response.self, from: data)
-
-        // Gli orari sono locali al luogo, senza fuso: si leggono nel suo fuso.
-        let fmt = DateFormatter()
-        fmt.locale = Locale(identifier: "en_US_POSIX")
-        fmt.dateFormat = "yyyy-MM-dd'T'HH:mm"
-        if let tz = TimeZone(identifier: r.timezone) { fmt.timeZone = tz }
+        let (current, hourly, daily) = try await WeatherService.shared.weather(
+            for: CLLocation(latitude: latitude, longitude: longitude),
+            including: .current, .hourly, .daily
+        )
         let now = Date()
-        var hours: [KBWeatherHour] = []
-        for i in r.hourly.time.indices {
-            guard let d = fmt.date(from: r.hourly.time[i]), d > now.addingTimeInterval(-3600) else { continue }
-            hours.append(KBWeatherHour(date: d,
-                                       temperature: Int(r.hourly.temperature_2m[i].rounded()),
-                                       code: r.hourly.weather_code[i],
-                                       isDay: r.hourly.is_day[i] == 1))
-            if hours.count == 8 { break }
-        }
+        let hours = hourly.forecast
+            .filter { $0.date > now }
+            .prefix(8)
+            .map {
+                KBWeatherHour(date: $0.date,
+                              temperature: Int($0.temperature.converted(to: .celsius).value.rounded()),
+                              symbol: $0.symbolName.kbFilled)
+            }
+        let today = daily.forecast.first
         return KBWeatherForecast(
-            temperature: Int(r.current.temperature_2m.rounded()),
-            code: r.current.weather_code,
-            isDay: r.current.is_day == 1,
-            min: Int((r.daily.temperature_2m_min.first ?? 0).rounded()),
-            max: Int((r.daily.temperature_2m_max.first ?? 0).rounded()),
-            hours: Array(hours.dropFirst()),
+            temperature: Int(current.temperature.converted(to: .celsius).value.rounded()),
+            symbol: current.symbolName.kbFilled,
+            min: Int((today?.lowTemperature.converted(to: .celsius).value ?? 0).rounded()),
+            max: Int((today?.highTemperature.converted(to: .celsius).value ?? 0).rounded()),
+            hours: Array(hours),
             city: nil,
             fetchedAt: now
         )
     }
+}
+
+private extension String {
+    /// WeatherKit dà i simboli senza «.fill» (e alcuni già pieni): si preferisce la versione piena.
+    var kbFilled: String { hasSuffix(".fill") ? self : self + ".fill" }
 }
 
 // MARK: - Vista
@@ -238,7 +195,7 @@ struct HomeWeatherStrip: View {
             if let f = model.forecast {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(spacing: 10) {
-                        Image(systemName: kbWeatherSymbol(code: f.code, isDay: f.isDay))
+                        Image(systemName: f.symbol)
                             .symbolRenderingMode(.multicolor)
                             .font(.system(size: 30))
                         Text("\(f.temperature)°")
@@ -255,7 +212,7 @@ struct HomeWeatherStrip: View {
                                     Text(h.date, format: .dateTime.hour())
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
-                                    Image(systemName: kbWeatherSymbol(code: h.code, isDay: h.isDay))
+                                    Image(systemName: h.symbol)
                                         .symbolRenderingMode(.multicolor)
                                         .font(.title3)
                                     Text("\(h.temperature)°")
@@ -263,6 +220,9 @@ struct HomeWeatherStrip: View {
                                 }
                             }
                         }
+                    }
+                    if let a = model.attribution {
+                        attributionRow(a)
                     }
                 }
                 .padding(14)
@@ -276,5 +236,24 @@ struct HomeWeatherStrip: View {
             }
         }
         .task { await model.load() }
+    }
+
+    /// Marchio  Meteo + link alle fonti: obbligatori per i dati WeatherKit.
+    private func attributionRow(_ a: WeatherAttribution) -> some View {
+        HStack(spacing: 8) {
+            AsyncImage(url: colorScheme == .dark ? a.combinedMarkDarkURL : a.combinedMarkLightURL) { image in
+                image.resizable().scaledToFit()
+            } placeholder: {
+                Color.clear
+            }
+            .frame(height: 12)
+            Link(destination: a.legalPageURL) {
+                Text("Fonti dei dati")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .underline()
+            }
+            Spacer()
+        }
     }
 }
