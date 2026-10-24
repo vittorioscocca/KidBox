@@ -306,7 +306,7 @@ struct HomeWeatherStrip: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(colorScheme == .dark ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(.systemBackground))
+                        .fill(cardFill)
                 )
                 .accessibilityElement(children: .combine)
                 .transition(.opacity)
@@ -318,8 +318,10 @@ struct HomeWeatherStrip: View {
         .task { await model.loadAttribution() }
     }
 
+    /// In chiaro la scheda è azzurrina, non bianca: le nuvole multicolor di
+    /// WeatherKit sono bianche e su un fondo bianco sparivano.
     private var cardFill: Color {
-        colorScheme == .dark ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(.systemBackground)
+        colorScheme == .dark ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.80, green: 0.88, blue: 0.97)
     }
 
     /// Barra vuota ma presente: dice perché e offre l'unica azione utile.
