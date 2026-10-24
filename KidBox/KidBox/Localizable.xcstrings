@@ -49,269 +49,8 @@
         }
       }
     },
-    "Aggiungi widget alla Home" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add widgets to Home"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir widgets al inicio"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter des widgets à l'accueil"
-          }
-        }
-      }
-    },
-    "Aggiunto" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Added"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadido"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouté"
-          }
-        }
-      }
-    },
-    "Consenti la posizione per vedere il meteo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Allow location to see the weather"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Permite la ubicación para ver el tiempo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Autorisez la localisation pour voir la météo"
-          }
-        }
-      }
-    },
-    "Fonti dei dati" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Data sources"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fuentes de datos"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sources des données"
-          }
-        }
-      }
-    },
-    "I widget compaiono in Home sotto la foto di famiglia." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Widgets appear on Home below the family photo."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los widgets aparecen en el inicio debajo de la foto familiar."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les widgets apparaissent à l'accueil sous la photo de famille."
-          }
-        }
-      }
-    },
-    "Le previsioni del tempo dove ti trovi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The weather forecast where you are"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El tiempo donde estás"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La météo là où vous êtes"
-          }
-        }
-      }
-    },
-    "Meteo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weather"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tiempo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Météo"
-          }
-        }
-      }
-    },
-    "Meteo non disponibile" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weather unavailable"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tiempo no disponible"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Météo indisponible"
-          }
-        }
-      }
-    },
-    "Non visualizzare più questo consiglio" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Don't show this tip again"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No volver a mostrar este consejo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ne plus afficher ce conseil"
-          }
-        }
-      }
-    },
-    "Puoi disattivarli in qualsiasi momento da Impostazioni → Widget." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You can turn them off at any time in Settings → Widgets."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Puedes desactivarlos cuando quieras en Ajustes → Widgets."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vous pouvez les désactiver à tout moment dans Réglages → Widgets."
-          }
-        }
-      }
-    },
-    "Scadenze, spese e novità della famiglia in un colpo d'occhio" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Family deadlines, expenses and news at a glance"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vencimientos, gastos y novedades de la familia de un vistazo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Échéances, dépenses et nouveautés de la famille en un coup d'œil"
-          }
-        }
-      }
-    },
-    "Widget" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Widgets"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Widgets"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Widgets"
-          }
-        }
-      }
+    " Meteo" : {
+
     },
     "–" : {
       "localizations" : {
@@ -860,28 +599,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%.0f %@ · %@ · %@"
-          }
-        }
-      }
-    },
-    "%1$@ scade %2$@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ is due %2$@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ vence %2$@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ arrive à échéance %2$@"
           }
         }
       }
@@ -1504,6 +1221,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ · échéance %2$@"
+          }
+        }
+      }
+    },
+    "%1$@ scade %2$@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ is due %2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ vence %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ arrive à échéance %2$@"
           }
         }
       }
@@ -3554,6 +3293,19 @@
         }
       }
     },
+    "%lld°" : {
+
+    },
+    "%lld° / %lld°" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld° / %2$lld°"
+          }
+        }
+      }
+    },
     "%lldx" : {
       "localizations" : {
         "en" : {
@@ -3792,6 +3544,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "+%lld"
+          }
+        }
+      }
+    },
+    "~%@ per %lld notte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~%@ for %lld night"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~%@ por %lld noche"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~%@ pour %lld nuit"
+          }
+        }
+      }
+    },
+    "~%@ per %lld notti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~%@ for %lld nights"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~%@ por %lld noches"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~%@ pour %lld nuits"
           }
         }
       }
@@ -7690,6 +7486,28 @@
         }
       }
     },
+    "Aggiungi widget alla Home" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add widgets to Home"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir widgets al inicio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter des widgets à l'accueil"
+          }
+        }
+      }
+    },
     "Aggiungi zona" : {
       "localizations" : {
         "en" : {
@@ -7752,6 +7570,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ajoutées aujourd'hui"
+          }
+        }
+      }
+    },
+    "Aggiunto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouté"
           }
         }
       }
@@ -15104,6 +14944,28 @@
         }
       }
     },
+    "Chiedi a…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedir a…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demander à…"
+          }
+        }
+      }
+    },
     "Chiedi agli altri" : {
       "localizations" : {
         "en" : {
@@ -15144,28 +15006,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Demander aux autres à ma place"
-          }
-        }
-      }
-    },
-    "Chiedi a…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ask…"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pedir a…"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Demander à…"
           }
         }
       }
@@ -18238,6 +18078,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Autoriser l'accès aux calendriers"
+          }
+        }
+      }
+    },
+    "Consenti la posizione per vedere il meteo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow location to see the weather"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permite la ubicación para ver el tiempo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorisez la localisation pour voir la météo"
           }
         }
       }
@@ -29175,6 +29037,28 @@
         }
       }
     },
+    "Fonti dei dati" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data sources"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuentes de datos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sources des données"
+          }
+        }
+      }
+    },
     "Fonti: Wikipedia e Google" : {
       "localizations" : {
         "en" : {
@@ -32493,6 +32377,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les voyages que vous créez apparaîtront ici."
+          }
+        }
+      }
+    },
+    "I widget compaiono in Home sotto la foto di famiglia." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Widgets appear on Home below the family photo."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los widgets aparecen en el inicio debajo de la foto familiar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les widgets apparaissent à l'accueil sous la photo de famille."
           }
         }
       }
@@ -39170,6 +39076,28 @@
         }
       }
     },
+    "Le previsioni del tempo dove ti trovi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The weather forecast where you are"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El tiempo donde estás"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La météo là où vous êtes"
+          }
+        }
+      }
+    },
     "Le ricerche di oggi sono finite: riprova domani." : {
       "comment" : "News: global daily budget reached",
       "localizations" : {
@@ -41677,6 +41605,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Message…"
+          }
+        }
+      }
+    },
+    "Meteo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weather"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiempo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Météo"
+          }
+        }
+      }
+    },
+    "Meteo non disponibile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weather unavailable"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiempo no disponible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Météo indisponible"
           }
         }
       }
@@ -46948,6 +46920,28 @@
         }
       }
     },
+    "Non visualizzare più questo consiglio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't show this tip again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No volver a mostrar este consejo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne plus afficher ce conseil"
+          }
+        }
+      }
+    },
     "Nota" : {
       "localizations" : {
         "en" : {
@@ -49735,28 +49729,6 @@
         }
       }
     },
-    "Ogni analisi consuma messaggi AI" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Each analysis uses AI messages"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada análisis consume mensajes de IA"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chaque analyse consomme des messages IA"
-          }
-        }
-      }
-    },
     "Ogni 15 giorni" : {
       "localizations" : {
         "en" : {
@@ -49775,6 +49747,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tous les 15 jours"
+          }
+        }
+      }
+    },
+    "Ogni analisi consuma messaggi AI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each analysis uses AI messages"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada análisis consume mensajes de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque analyse consomme des messages IA"
           }
         }
       }
@@ -50937,6 +50931,7 @@
       }
     },
     "Pagare: %@" : {
+      "comment" : "To-do nato da un pagamento di casa",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -56167,6 +56162,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vous pouvez en créer une nouvelle ou en rejoindre une avec un code d'invitation."
+          }
+        }
+      }
+    },
+    "Puoi disattivarli in qualsiasi momento da Impostazioni → Widget." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can turn them off at any time in Settings → Widgets."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes desactivarlos cuando quieras en Ajustes → Widgets."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez les désactiver à tout moment dans Réglages → Widgets."
           }
         }
       }
@@ -62045,6 +62062,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Échéances et paiements"
+          }
+        }
+      }
+    },
+    "Scadenze, spese e novità della famiglia in un colpo d'occhio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Family deadlines, expenses and news at a glance"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vencimientos, gastos y novedades de la familia de un vistazo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Échéances, dépenses et nouveautés de la famille en un coup d'œil"
           }
         }
       }
@@ -68616,6 +68655,28 @@
         }
       }
     },
+    "To-Do" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-Do"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarea"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-Do"
+          }
+        }
+      }
+    },
     "To-do che nessuno ha preso" : {
       "localizations" : {
         "en" : {
@@ -68656,28 +68717,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tâches que personne n'a prises : %@"
-          }
-        }
-      }
-    },
-    "To-Do" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "To-Do"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tarea"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "To-Do"
           }
         }
       }
@@ -73456,6 +73495,28 @@
         }
       }
     },
+    "Widget" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Widgets"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Widgets"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Widgets"
+          }
+        }
+      }
+    },
     "x %lld" : {
       "localizations" : {
         "en" : {
@@ -73540,50 +73601,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Zones d'arrivée"
-          }
-        }
-      }
-    },
-    "~%@ per %lld notte" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "~%@ for %lld night"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "~%@ por %lld noche"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "~%@ pour %lld nuit"
-          }
-        }
-      }
-    },
-    "~%@ per %lld notti" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "~%@ for %lld nights"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "~%@ por %lld noches"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "~%@ pour %lld nuits"
           }
         }
       }
