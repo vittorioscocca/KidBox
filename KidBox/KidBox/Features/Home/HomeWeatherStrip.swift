@@ -308,6 +308,7 @@ struct HomeWeatherStrip: View {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .fill(cardFill)
                 )
+                .overlay(cardBorder)
                 .accessibilityElement(children: .combine)
                 .transition(.opacity)
             } else {
@@ -322,6 +323,12 @@ struct HomeWeatherStrip: View {
     /// WeatherKit sono bianche e su un fondo bianco sparivano.
     private var cardFill: Color {
         colorScheme == .dark ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+
+    /// Contorno sottile in chiaro: la scheda è dello stesso colore dello sfondo.
+    private var cardBorder: some View {
+        RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .strokeBorder(colorScheme == .dark ? Color.clear : Color(red: 0.847, green: 0.839, blue: 0.816), lineWidth: 0.5)
     }
 
     /// Barra vuota ma presente: dice perché e offre l'unica azione utile.
@@ -372,6 +379,7 @@ struct HomeWeatherStrip: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(cardFill))
+        .overlay(cardBorder)
     }
 
     /// Meteo di Apple non ha uno schema documentato: `weather://` lo apre su
