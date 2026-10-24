@@ -115,8 +115,9 @@ public actor KBSaveClassifier {
     
     private func buildPrompt(_ text: String) -> String {
         """
-        Sei un assistente per un'app di famiglia italiana. Analizza il testo e \
-        restituisci SOLO JSON valido, senza markdown, senza spiegazioni.
+        Sei un assistente per un'app di famiglia. Il testo può essere in italiano, \
+        inglese, francese o spagnolo. Analizza il testo e restituisci SOLO JSON \
+        valido, senza markdown, senza spiegazioni.
         
         Schema esatto:
         {
@@ -189,6 +190,91 @@ public actor KBSaveClassifier {
     // Usa array di (KBSaveAction, Int) invece di Dictionary
     // per evitare la conformance Hashable su KBSaveAction.
     
+    // Le altre tre lingue dell'app. Le parole italiane si cercano come
+    // sottostringa (storico); queste a parola intera, perché le parole corte di
+    // una lingua cadono dentro quelle di un'altra («pan» sta in «pantaloni»).
+    private static let groceryWords: [String] = [
+        // en
+        "shopping", "groceries", "supermarket", "store", "buy", "milk", "bread", "eggs", "pasta", "rice",
+        "flour", "butter", "oil", "salt", "sugar", "coffee", "meat", "chicken", "fish", "ham", "cheese",
+        "vegetables", "fruit", "potatoes", "tomatoes", "salad", "carrots", "onions", "garlic", "yogurt",
+        "juice", "water", "wine", "beer", "cookies", "cereal", "honey", "jam", "detergent", "shampoo",
+        "soap", "toilet paper", "napkins",
+        // fr
+        "courses", "supermarché", "magasin", "acheter", "achète", "lait", "pain", "oeufs", "œufs", "pâtes",
+        "riz", "farine", "beurre", "huile", "sel", "sucre", "café", "viande", "poulet", "poisson", "jambon",
+        "fromage", "légumes", "fruits", "pommes de terre", "tomates", "salade", "carottes", "oignons", "ail",
+        "yaourt", "jus", "eau", "vin", "bière", "biscuits", "céréales", "miel", "confiture", "lessive",
+        "shampooing", "savon", "papier toilette", "serviettes",
+        // es
+        "compra", "supermercado", "tienda", "comprar", "leche", "pan", "huevos", "arroz", "harina",
+        "mantequilla", "aceite", "sal", "azúcar", "carne", "pollo", "pescado", "jamón", "queso", "verdura",
+        "fruta", "patatas", "ensalada", "zanahorias", "cebollas", "ajo", "yogur", "zumo", "agua", "vino",
+        "cerveza", "galletas", "cereales", "mermelada", "detergente", "champú", "jabón", "papel higiénico",
+        "servilletas"
+    ]
+    
+    private static let eventWords: [String] = [
+        // en
+        "appointment", "visit", "meeting", "lesson", "class", "practice", "match", "game", "show", "concert",
+        "cinema", "theater", "theatre", "birthday", "anniversary", "party", "ceremony", "wedding", "holiday",
+        "trip", "flight", "booking", "reservation", "deadline", "due", "tomorrow", "tonight", "today",
+        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "week", "month", "next",
+        "o'clock", "january", "february", "march", "april", "may", "june", "july", "august", "september",
+        "october", "november", "december",
+        // fr
+        "rendez-vous", "visite", "réunion", "rencontre", "cours", "entraînement", "spectacle", "cinéma",
+        "théâtre", "anniversaire", "fête", "cérémonie", "mariage", "vacances", "voyage", "vol", "réservation",
+        "échéance", "demain", "ce soir", "aujourd'hui", "lundi", "mardi", "mercredi", "jeudi", "vendredi",
+        "samedi", "dimanche", "semaine", "mois", "prochain", "prochaine", "janvier", "février", "mars",
+        "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+        // es
+        "cita", "visita", "reunión", "encuentro", "clase", "entrenamiento", "partido", "espectáculo",
+        "concierto", "cine", "teatro", "cumpleaños", "aniversario", "fiesta", "ceremonia", "boda",
+        "vacaciones", "viaje", "vuelo", "reserva", "plazo", "mañana", "esta noche", "hoy", "lunes", "martes",
+        "miércoles", "jueves", "viernes", "sábado", "domingo", "semana", "mes", "próximo", "próxima",
+        "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre",
+        "noviembre", "diciembre"
+    ]
+    
+    private static let todoWords: [String] = [
+        // en
+        "i need to", "we need to", "have to", "must", "should", "remember", "don't forget", "call", "write",
+        "send", "book", "pay", "pick up", "bring", "drop off", "fix", "prepare", "to do", "todo", "task",
+        "reminder", "urgent", "important", "priority",
+        // fr
+        "je dois", "on doit", "il faut", "rappelle-toi", "n'oublie pas", "appelle", "appeler", "écris",
+        "envoie", "envoyer", "réserve", "réserver", "paie", "payer", "récupère", "récupérer", "apporte",
+        "apporter", "répare", "prépare", "à faire", "rappel", "priorité",
+        // es
+        "tengo que", "debo", "debemos", "hay que", "recuerda", "no olvides", "llama", "llamar", "escribe",
+        "envía", "enviar", "reservar", "paga", "pagar", "recoge", "recoger", "trae", "traer", "arregla",
+        "prepara", "por hacer", "recordatorio", "urgente", "importante", "prioridad"
+    ]
+    
+    private static let noteWords: [String] = [
+        // en
+        "note", "info", "information", "link", "article", "read", "see", "interesting", "keep", "address",
+        "number", "code", "password", "pin", "recipe", "ingredients", "steps", "instructions",
+        // fr
+        "lien", "lis", "voir", "intéressant", "garde", "adresse", "numéro", "mot de passe", "recette",
+        "ingrédients",
+        // es
+        "nota", "apunte", "información", "enlace", "artículo", "lee", "ver", "interesante", "guarda",
+        "dirección", "número", "código", "contraseña", "receta", "ingredientes", "instrucciones"
+    ]
+    
+    /// Italiano a sottostringa (storico), le altre lingue a parola intera.
+    private func hits(_ lower: String, italian: [String], others: [String]) -> Int {
+        let fromItalian = italian.filter { lower.contains($0) }.count
+        let fromOthers = others.filter { word in
+            guard !italian.contains(word) else { return false }
+            let pattern = "(?<!\\p{L})" + NSRegularExpression.escapedPattern(for: word) + "(?!\\p{L})"
+            return lower.range(of: pattern, options: .regularExpression) != nil
+        }.count
+        return fromItalian + fromOthers
+    }
+    
     private func classifyWithHeuristics(text: String) -> KBClassificationResult {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let lower = trimmed.lowercased()
@@ -215,7 +301,7 @@ public actor KBSaveClassifier {
             "biscotti", "crackers", "cereali", "miele", "marmellata",
             "detersivo", "shampoo", "sapone", "carta igienica", "tovaglioli"
         ]
-        var groceryScore = groceryKeywords.filter { lower.contains($0) }.count
+        var groceryScore = hits(lower, italian: groceryKeywords, others: Self.groceryWords)
         if lines.count >= 2 { groceryScore += 3 }                              // lista multiriga
         if lines.count >= 2 && lines.allSatisfy({ $0.count < 30 }) { groceryScore += 2 } // righe brevi
         if groceryScore >= 2 {
@@ -237,7 +323,7 @@ public actor KBSaveClassifier {
             "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
             "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"
         ]
-        var eventScore = eventKeywords.filter { lower.contains($0) }.count
+        var eventScore = hits(lower, italian: eventKeywords, others: Self.eventWords)
         if detectedDate != nil { eventScore += 4 }                             // NSDataDetector ha trovato una data
         if eventScore >= 2 {
             scored.append((.event(title: trimmed, date: detectedDate), eventScore))
@@ -258,7 +344,7 @@ public actor KBSaveClassifier {
             "promemoria", "reminder", "nota bene", "nb:", "n.b.",
             "urgente", "importante", "priorità"
         ]
-        var todoScore = todoKeywords.filter { lower.contains($0) }.count
+        var todoScore = hits(lower, italian: todoKeywords, others: Self.todoWords)
         if trimmed.count < 80 && lines.count == 1 { todoScore += 2 }  // breve e diretto → boost
         if lines.count >= 3 { todoScore -= 3 }                        // 3+ righe → quasi mai un todo
         if lines.count >= 5 { todoScore -= 5 }                        // 5+ righe → mai un todo
@@ -275,7 +361,7 @@ public actor KBSaveClassifier {
             "indirizzo", "numero", "codice", "password", "pin",
             "ricetta", "ingredienti", "procedimento", "istruzioni"
         ]
-        let noteScore = noteKeywords.filter { lower.contains($0) }.count
+        let noteScore = hits(lower, italian: noteKeywords, others: Self.noteWords)
         let noteBody = lines.count > 1 ? lines.dropFirst().joined(separator: "\n") : trimmed
         // Le note hanno sempre punteggio minimo 1 (catch-all)
         scored.append((.note(title: lines.first ?? trimmed, body: noteBody), max(noteScore + 1, 1)))
