@@ -141,8 +141,19 @@ final class ChatRemoteStore {
         // dalla extension è sempre un nuovo messaggio quindi createdAt è sempre valido.
         let isExtension = Bundle.main.bundleIdentifier?.contains("ShareExtension") == true
         if !isExtension {
-            let snap = try await ref.getDocument()
-            if snap.exists { data.removeValue(forKey: "createdAt") }
+            // Solo per non riscrivere `createdAt` su un messaggio già esistente.
+            // Non deve mai bloccare l'invio: con il client Firestore momentaneamente
+            // «offline» `getDocument()` lancia subito («Failed to get document because
+            // the client is offline») e il messaggio finiva in errore senza nemmeno
+            // provare la scrittura. Si ripiega sulla cache e, se manca, si prosegue:
+            // `createdAt` del DTO è comunque quello locale del messaggio.
+            let existing: DocumentSnapshot?
+            if let server = try? await ref.getDocument() {
+                existing = server
+            } else {
+                existing = try? await ref.getDocument(source: .cache)
+            }
+            if existing?.exists == true { data.removeValue(forKey: "createdAt") }
         }
         
         // Retry fino a 3 volte per gestire la connessione lenta nella extension
