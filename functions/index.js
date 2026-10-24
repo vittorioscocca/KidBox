@@ -505,30 +505,36 @@ function webpushOptions(data) {
   };
 }
 
-let chatDataOnlyUidsCache = {at: 0, uids: new Set()};
+let chatDataOnlyCache = {at: 0, all: false, uids: new Set()};
 
 /**
- * Account di test per cui la chat prova il push SOLO `data` su Android
- * (`config/internalUsers.uids`): così l'anteprima si decifra sul telefono, ma
- * una ROM che non risveglia l'app (Xiaomi) toglie la notifica solo a loro.
- * Letto al massimo ogni 5 minuti per istanza. Documento illeggibile = nessuno.
- * @return {Promise<Set<string>>}
+ * Chi riceve la chat come push SOLO `data` su Android, così l'anteprima si
+ * decifra sul telefono (`textEnc`). Interruttore in `config/chatPush`:
+ * `dataOnlyAll: true` = tutti; altrimenti solo gli account di test
+ * (`config/internalUsers.uids`). Si spegne cambiando quel campo, senza deploy.
+ * Il rischio è lo stesso di sempre: una ROM che non risveglia l'app a processo
+ * killed (Xiaomi) fa sparire la notifica. Letto al massimo ogni 5 minuti per
+ * istanza. Documenti illeggibili = nessuno, cioè il comportamento di prima.
+ * @return {Promise<{all: boolean, uids: Set<string>}>}
  */
-async function chatDataOnlyUids() {
-  if (Date.now() - chatDataOnlyUidsCache.at < 5 * 60 * 1000) {
-    return chatDataOnlyUidsCache.uids;
-  }
+async function chatDataOnlyConfig() {
+  if (Date.now() - chatDataOnlyCache.at < 5 * 60 * 1000) return chatDataOnlyCache;
+  let all = false;
   let uids = new Set();
   try {
-    const snap = await admin.firestore()
-        .collection("config").doc("internalUsers").get();
-    const list = (snap.exists && snap.data().uids) || [];
+    const db = admin.firestore();
+    const [push, internal] = await Promise.all([
+      db.collection("config").doc("chatPush").get(),
+      db.collection("config").doc("internalUsers").get(),
+    ]);
+    all = push.exists && push.data().dataOnlyAll === true;
+    const list = (internal.exists && internal.data().uids) || [];
     uids = new Set(Array.isArray(list) ? list.filter((u) => typeof u === "string") : []);
   } catch (e) {
-    logger.warn("chatDataOnlyUids: config/internalUsers non leggibile", {error: e.message});
+    logger.warn("chatDataOnlyConfig: config non leggibile", {error: e.message});
   }
-  chatDataOnlyUidsCache = {at: Date.now(), uids};
-  return uids;
+  chatDataOnlyCache = {at: Date.now(), all, uids};
+  return chatDataOnlyCache;
 }
 
 /**
@@ -944,7 +950,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
           (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
       const badgeByUid = await incrementCountersAndGetBadges(
           {familyId, uids: recipients, field: "chat"});
-      const dataOnlyUids = await chatDataOnlyUids();
+      const dataOnlyCfg = await chatDataOnlyConfig();
 
       for (const uid of recipients) {
         const {tokens, lang, refsByToken} = tokensByUid.get(uid);
@@ -975,8 +981,8 @@ exports.notifyNewChatMessage = onDocumentCreated(
         }
 
         notifyTargets.push({uid, tokens, refsByToken});
-        if (dataOnlyUids.has(uid)) {
-          // PROVA (solo account di test): su Android niente `notification`, così
+        if (dataOnlyCfg.all || dataOnlyCfg.uids.has(uid)) {
+          // Su Android niente `notification`, così
           // gira `onMessageReceived` e il client decifra `textEnc` per l'anteprima.
           // iOS e web restano serviti da `apns`/`webpush`.
           messagesToSend.push({
