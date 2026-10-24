@@ -14,11 +14,6 @@ struct AppearanceSettingsView: View {
     @StateObject private var vm = SettingsViewModel()
     @Environment(\.colorScheme) private var colorScheme
 
-    /// Dashboard in Home: spenta di default, come l'ha voluta chi ha già
-    /// imparato la Home di oggi. Stessa chiave letta da `HomeView`.
-    @AppStorage(KBHomeDashboardPreference.key) private var showHomeDashboard = false
-    @AppStorage(KBHomeWeatherPreference.key) private var showHomeWeather = false
-    
     // MARK: - Dynamic theme (same as LoginView)
     
     private var backgroundColor: Color {
@@ -62,36 +57,6 @@ struct AppearanceSettingsView: View {
                     .buttonStyle(.plain)
                     .listRowBackground(cardBackground)
                 }
-            }
-
-            Section("Home") {
-                Toggle(isOn: $showHomeDashboard) {
-                    HStack(spacing: 14) {
-                        Image(systemName: "square.grid.2x2.fill")
-                            .font(.title3)
-                            .foregroundStyle(KBTheme.bubbleTint)
-                            .frame(width: 28)
-
-                        Text("Visualizza Dashboard in home page")
-                            .foregroundStyle(.primary)
-                    }
-                }
-                .tint(KBTheme.bubbleTint)
-                .listRowBackground(cardBackground)
-
-                Toggle(isOn: $showHomeWeather) {
-                    HStack(spacing: 14) {
-                        Image(systemName: "cloud.sun.fill")
-                            .font(.title3)
-                            .foregroundStyle(KBTheme.bubbleTint)
-                            .frame(width: 28)
-
-                        Text("Visualizza le previsioni del tempo in home page")
-                            .foregroundStyle(.primary)
-                    }
-                }
-                .tint(KBTheme.bubbleTint)
-                .listRowBackground(cardBackground)
             }
         }
         .scrollContentBackground(.hidden)

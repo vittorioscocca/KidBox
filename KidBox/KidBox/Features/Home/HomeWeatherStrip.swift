@@ -16,6 +16,7 @@ import SwiftUI
 import Combine
 import WeatherKit
 import CoreLocation
+import MapKit
 
 // MARK: - Preferenza
 
@@ -153,7 +154,8 @@ final class HomeWeatherModel: ObservableObject {
             return
         }
         do {
-            let result = try await Self.fetch(latitude: loc.coordinate.latitude, longitude: loc.coordinate.longitude)
+            let city = await Self.cityName(for: loc)
+            let result = try await Self.fetch(latitude: loc.coordinate.latitude, longitude: loc.coordinate.longitude, city: city)
             if attribution == nil {
                 attribution = try? await WeatherService.shared.attribution
             }
@@ -168,7 +170,24 @@ final class HomeWeatherModel: ObservableObject {
         }
     }
 
-    private static func fetch(latitude: Double, longitude: Double) async throws -> KBWeatherForecast {
+    private static let cityKey = "kb_weather_city"
+
+    /// Nome della località per l'intestazione. Se il geocoding fallisce resta
+    /// l'ultimo noto: le coordinate in cache sono le stesse a cui si riferisce.
+    private static func cityName(for location: CLLocation) async -> String? {
+        let d = UserDefaults.standard
+        if let request = MKReverseGeocodingRequest(location: location),
+           let item = try? await request.mapItems.first {
+            let name = item.addressRepresentations?.cityName ?? item.placemark.locality ?? item.placemark.subAdministrativeArea
+            if let name, !name.isEmpty {
+                d.set(name, forKey: cityKey)
+                return name
+            }
+        }
+        return d.string(forKey: cityKey)
+    }
+
+    private static func fetch(latitude: Double, longitude: Double, city: String?) async throws -> KBWeatherForecast {
         let (current, hourly, daily) = try await WeatherService.shared.weather(
             for: CLLocation(latitude: latitude, longitude: longitude),
             including: .current, .hourly, .daily
@@ -189,7 +208,7 @@ final class HomeWeatherModel: ObservableObject {
             min: Int((today?.lowTemperature.converted(to: .celsius).value ?? 0).rounded()),
             max: Int((today?.highTemperature.converted(to: .celsius).value ?? 0).rounded()),
             hours: Array(hours),
-            city: nil,
+            city: city,
             fetchedAt: now
         )
     }
@@ -210,33 +229,46 @@ struct HomeWeatherStrip: View {
         Group {
             if let f = model.forecast {
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 10) {
-                        Image(systemName: f.symbol)
-                            .symbolRenderingMode(.multicolor)
-                            .font(.system(size: 30))
-                        Text("\(f.temperature)°")
-                            .font(.system(size: 34, weight: .semibold, design: .rounded))
-                        Spacer()
-                        Text("\(f.max)° / \(f.min)°")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 18) {
-                            ForEach(f.hours) { h in
-                                VStack(spacing: 4) {
-                                    Text(h.date, format: .dateTime.hour())
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    Image(systemName: h.symbol)
-                                        .symbolRenderingMode(.multicolor)
-                                        .font(.title3)
-                                    Text("\(h.temperature)°")
-                                        .font(.subheadline.weight(.medium))
+                    VStack(alignment: .leading, spacing: 12) {
+                        if let city = f.city {
+                            Label(city, systemImage: "location.fill")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .labelStyle(.titleAndIcon)
+                        }
+                        HStack(spacing: 10) {
+                            Image(systemName: f.symbol)
+                                .symbolRenderingMode(.multicolor)
+                                .font(.system(size: 30))
+                            Text("\(f.temperature)°")
+                                .font(.system(size: 34, weight: .semibold, design: .rounded))
+                            Spacer()
+                            Text("\(f.max)° / \(f.min)°")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 18) {
+                                ForEach(f.hours) { h in
+                                    VStack(spacing: 4) {
+                                        Text(h.date, format: .dateTime.hour())
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Image(systemName: h.symbol)
+                                            .symbolRenderingMode(.multicolor)
+                                            .font(.title3)
+                                        Text("\(h.temperature)°")
+                                            .font(.subheadline.weight(.medium))
+                                    }
                                 }
                             }
                         }
                     }
+                    // Tutta la parte con i dati apre Meteo di Apple, che è la
+                    // fonte; il link alle fonti sotto resta un tocco a parte.
+                    .contentShape(Rectangle())
+                    .onTapGesture { openWeatherApp() }
+                    .accessibilityAddTraits(.isButton)
                     if let a = model.attribution {
                         attributionRow(a)
                     }
@@ -308,6 +340,17 @@ struct HomeWeatherStrip: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(cardFill))
+    }
+
+    /// Meteo di Apple non ha uno schema documentato: `weather://` lo apre su
+    /// iPhone e iPad; dove non risponde (Mac) si ripiega sulla pagina delle
+    /// fonti di Apple Meteo.
+    private func openWeatherApp() {
+        guard let url = URL(string: "weather://") else { return }
+        UIApplication.shared.open(url) { ok in
+            guard !ok, let legal = model.attribution?.legalPageURL else { return }
+            UIApplication.shared.open(legal)
+        }
     }
 
     /// Marchio  Meteo + link alle fonti: obbligatori per i dati WeatherKit.

@@ -39,6 +39,9 @@ struct SettingsView: View {
     @State private var updateTestReport: String?
 #endif
     
+    @AppStorage(KBHomeDashboardPreference.key) private var showHomeDashboard = false
+    @AppStorage(KBHomeWeatherPreference.key) private var showHomeWeather = false
+
     var body: some View {
         List {
             // La famiglia sta in una card sua, sopra l'elenco: è la prima cosa
@@ -62,6 +65,24 @@ struct SettingsView: View {
                             Text("Tema")
                                 .foregroundStyle(.primary)
                             Text(coordinator.appearanceMode.label)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .listRowBackground(cardBackground)
+
+                NavigationLink {
+                    WidgetSettingsView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "rectangle.3.group.fill")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Widget")
+                                .foregroundStyle(.primary)
+                            Text(WidgetSettingsView.summary(dashboard: showHomeDashboard, weather: showHomeWeather))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

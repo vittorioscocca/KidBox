@@ -71,6 +71,7 @@ struct HomeView: View {
     @State private var showFamilySwitcher = false
     @State private var showSearch = false
     @State private var showTips = false
+    @State private var showWidgetPicker = false
 
     /// Checklist "Per iniziare". Vive qui e non in una schermata a parte perché
     /// il suo unico momento utile è quello in cui l'utente guarda la Home e non
@@ -430,6 +431,17 @@ struct HomeView: View {
                         homeCarouselDots
                     }
 
+                    // Consiglio «Aggiungi widget»: solo finché nessuno dei due è
+                    // acceso, dopo la checklist (prima la Dashboard resterebbe
+                    // nascosta comunque) e non con la barra laterale, dove la
+                    // Dashboard c'è già sempre. Le regole dei tre giorni in
+                    // `KBHomeWidgetHint`.
+                    if hasFamily, !showHomeDashboard, !showHomeWeather,
+                       !onboarding.isVisible, !usesSidebarShell, KBHomeWidgetHint.isAllowed {
+                        HomeWidgetHintBanner { showWidgetPicker = true }
+                            .transition(.opacity)
+                    }
+
                     // Richieste aperte («Chi prende Marco?»): sopra a tutto,
                     // perché aspettano una risposta. Senza, la sezione non c'è.
                     if hasFamily, !openFamilyRequests.isEmpty {
@@ -536,6 +548,9 @@ struct HomeView: View {
             #endif
         }
         .ownerOnlyAlert(isPresented: $showOwnerOnly)
+        .sheet(isPresented: $showWidgetPicker) {
+            HomeWidgetPickerSheet()
+        }
         .sheet(isPresented: $showAIUpgrade) {
             UpgradeSheetView(triggerFeature: "home_upsell")
                 .environmentObject(KBSubscriptionManager.shared)
