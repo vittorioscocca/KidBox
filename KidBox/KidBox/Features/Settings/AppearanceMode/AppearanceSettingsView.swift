@@ -17,6 +17,7 @@ struct AppearanceSettingsView: View {
     /// Dashboard in Home: spenta di default, come l'ha voluta chi ha già
     /// imparato la Home di oggi. Stessa chiave letta da `HomeView`.
     @AppStorage(KBHomeDashboardPreference.key) private var showHomeDashboard = false
+    @AppStorage(KBHomeWeatherPreference.key) private var showHomeWeather = false
     
     // MARK: - Dynamic theme (same as LoginView)
     
@@ -72,6 +73,20 @@ struct AppearanceSettingsView: View {
                             .frame(width: 28)
 
                         Text("Visualizza Dashboard in home page")
+                            .foregroundStyle(.primary)
+                    }
+                }
+                .tint(KBTheme.bubbleTint)
+                .listRowBackground(cardBackground)
+
+                Toggle(isOn: $showHomeWeather) {
+                    HStack(spacing: 14) {
+                        Image(systemName: "cloud.sun.fill")
+                            .font(.title3)
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 28)
+
+                        Text("Visualizza le previsioni del tempo in home page")
                             .foregroundStyle(.primary)
                     }
                 }

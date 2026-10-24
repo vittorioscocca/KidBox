@@ -84,6 +84,7 @@ struct HomeView: View {
     /// Impostazioni > Tema > Home. Preferenza locale al dispositivo, come il
     /// selettore lista/griglia.
     @AppStorage(KBHomeDashboardPreference.key) private var showHomeDashboard = false
+    @AppStorage(KBHomeWeatherPreference.key) private var showHomeWeather = false
 
     // MARK: - Home carousel (foto famiglia + slide promozionali), circolare
     @State private var homeCarouselIndex: Int = 0
@@ -434,6 +435,10 @@ struct HomeView: View {
                     if hasFamily, !openFamilyRequests.isEmpty {
                         FamilyRequestsHomeSection(familyId: activeFamilyId, requests: openFamilyRequests)
                             .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+
+                    if showHomeWeather, hasFamily, !onboarding.isVisible {
+                        HomeWeatherStrip()
                     }
 
                     // Riepilogo: cosa c'è dentro le sezioni, prima delle sezioni.

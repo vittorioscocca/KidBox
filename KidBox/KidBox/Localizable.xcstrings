@@ -72793,6 +72793,28 @@
         }
       }
     },
+    "Visualizza le previsioni del tempo in home page" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show the weather forecast on the home page"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar el tiempo en la página de inicio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher la météo sur la page d'accueil"
+          }
+        }
+      }
+    },
     "Vita notturna" : {
       "comment" : "Travel style",
       "localizations" : {
