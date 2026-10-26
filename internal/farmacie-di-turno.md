@@ -1,8 +1,11 @@
 # Farmacie di turno (Pro e Max)
 
-Avviata il 26/10/2026. Backend in `functions/pharmacies/`, client da fare
-(riquadro in Salute + scorciatoia in Home, solo Pro/Max; i Free vedono la scheda
-che spiega il servizio).
+Avviata il 26/10/2026. Backend in `functions/pharmacies/`; client iOS
+(`Features/Pharmacies/`) e Android (`ui/screens/pharmacies/`) con riquadro in
+Salute e scorciatoia in Home (gruppo «Famiglia & Salute»); i Free vedono la
+scheda che spiega il servizio. Il comune è quello delle Notizie
+(`NewsFamilyStore`), e «Cambia» apre le loro impostazioni. Web app, Mac/iPad
+(barra laterale) e testi del listino piani: ancora da fare.
 
 ## Principio
 
