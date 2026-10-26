@@ -52,6 +52,996 @@
     " Meteo" : {
 
     },
+    "Aperte vicino a te" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open near you"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abiertas cerca de ti"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvertes près de chez vous"
+          }
+        }
+      }
+    },
+    "Apri %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir %@"
+          }
+        }
+      }
+    },
+    "Cerca la fonte (circa %d messaggi AI)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find the source (about %d AI messages)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar la fuente (unos %d mensajes de IA)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chercher la source (environ %d messages IA)"
+          }
+        }
+      }
+    },
+    "Chiama" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Call"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llamar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appeler"
+          }
+        }
+      }
+    },
+    "Di turno oggi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On duty today"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De guardia hoy"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De garde aujourd'hui"
+          }
+        }
+      }
+    },
+    "Di turno oggi nei comuni vicini" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On duty today in nearby towns"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De guardia hoy en municipios cercanos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De garde aujourd'hui dans les communes voisines"
+          }
+        }
+      }
+    },
+    "Farmacie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pharmacies"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Farmacias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pharmacies"
+          }
+        }
+      }
+    },
+    "Farmacie di turno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duty pharmacies"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Farmacias de guardia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pharmacies de garde"
+          }
+        }
+      }
+    },
+    "Farmacie di turno vicino a te" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duty pharmacies near you"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Farmacias de guardia cerca de ti"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pharmacies de garde près de chez vous"
+          }
+        }
+      }
+    },
+    "Fonte da verificare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source to verify"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuente por verificar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source à vérifier"
+          }
+        }
+      }
+    },
+    "Fonte ufficiale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Official source"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuente oficial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source officielle"
+          }
+        }
+      }
+    },
+    "Fonte ufficiale trovata dall'AI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Official source found by AI"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuente oficial encontrada por la IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source officielle trouvée par l'IA"
+          }
+        }
+      }
+    },
+    "Hai già provato diverse volte oggi: riprova domani." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have already tried several times today: try again tomorrow."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya lo has intentado varias veces hoy: vuelve a probar mañana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez déjà essayé plusieurs fois aujourd'hui : réessayez demain."
+          }
+        }
+      }
+    },
+    "Ho trovato la pagina, ma non sono in grado di estrarne i turni in modo affidabile. Puoi aprirla qui sotto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I found the page, but I can't reliably extract the shifts from it. You can open it below."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "He encontrado la página, pero no puedo extraer los turnos de forma fiable. Puedes abrirla abajo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai trouvé la page, mais je ne peux pas en extraire les gardes de façon fiable. Vous pouvez l'ouvrir ci-dessous."
+          }
+        }
+      }
+    },
+    "I turni possono cambiare: in caso di dubbio chiama la farmacia o guarda il cartello esposto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shifts can change: if in doubt, call the pharmacy or check the sign on display."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los turnos pueden cambiar: ante la duda, llama a la farmacia o mira el cartel expuesto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les gardes peuvent changer : en cas de doute, appelez la pharmacie ou consultez l'affichage."
+          }
+        }
+      }
+    },
+    "Imposta il comune" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set your town"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configura el municipio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Définir la commune"
+          }
+        }
+      }
+    },
+    "Imposta il comune della famiglia per vedere le farmacie di turno." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set your family's town to see the duty pharmacies."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configura el municipio de la familia para ver las farmacias de guardia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Définissez la commune de la famille pour voir les pharmacies de garde."
+          }
+        }
+      }
+    },
+    "Incolla l'indirizzo della pagina che mostra le farmacie di turno del tuo comune. Vale solo per la tua famiglia e ha la precedenza sulla fonte automatica. Se il sito non è già conosciuto, leggerlo costa circa %lld messaggi AI, una volta sola." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste the address of the page that shows your town's duty pharmacies. It only applies to your family and takes priority over the automatic source. If the site isn't already known, reading it costs about %lld AI messages, once."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pega la dirección de la página que muestra las farmacias de guardia de tu municipio. Vale solo para tu familia y tiene prioridad sobre la fuente automática. Si el sitio no se conoce ya, leerlo cuesta unos %lld mensajes de IA, una sola vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collez l'adresse de la page qui affiche les pharmacies de garde de votre commune. Elle ne vaut que pour votre famille et prime sur la source automatique. Si le site n'est pas déjà connu, le lire coûte environ %lld messages IA, une seule fois."
+          }
+        }
+      }
+    },
+    "La famiglia ha finito i messaggi AI disponibili." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your family has used all its available AI messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La familia ha agotado los mensajes de IA disponibles."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La famille a utilisé tous ses messages IA disponibles."
+          }
+        }
+      }
+    },
+    "La fonte non ha ancora pubblicato i turni di oggi, quindi non li mostro per non darti un elenco vecchio. Apri il sito per controllare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The source hasn't published today's shifts yet, so I'm not showing a list that might be out of date. Open the site to check."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La fuente aún no ha publicado los turnos de hoy, así que no muestro una lista que podría estar desactualizada. Abre el sitio para comprobarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La source n'a pas encore publié les gardes du jour, je ne montre donc pas une liste qui pourrait être périmée. Ouvrez le site pour vérifier."
+          }
+        }
+      }
+    },
+    "Le farmacie di turno del tuo comune, lette dalla fonte ufficiale e aggiornate ogni giorno. Incluse nei piani Pro e Max." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your town's duty pharmacies, read from the official source and updated every day. Included in the Pro and Max plans."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las farmacias de guardia de tu municipio, leídas de la fuente oficial y actualizadas cada día. Incluidas en los planes Pro y Max."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pharmacies de garde de votre commune, lues à la source officielle et mises à jour chaque jour. Incluses dans les formules Pro et Max."
+          }
+        }
+      }
+    },
+    "Le farmacie di turno sono disponibili per i comuni italiani." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duty pharmacies are available for Italian towns."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las farmacias de guardia están disponibles para los municipios italianos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pharmacies de garde sont disponibles pour les communes italiennes."
+          }
+        }
+      }
+    },
+    "Le farmacie di turno sono incluse nei piani Pro e Max." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duty pharmacies are included in the Pro and Max plans."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las farmacias de guardia están incluidas en los planes Pro y Max."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pharmacies de garde sont incluses dans les formules Pro et Max."
+          }
+        }
+      }
+    },
+    "Le farmacie di turno sono sospese per qualche ora. Riprova più tardi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duty pharmacies are paused for a few hours. Try again later."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las farmacias de guardia están en pausa unas horas. Vuelve a intentarlo más tarde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pharmacies de garde sont suspendues pour quelques heures. Réessayez plus tard."
+          }
+        }
+      }
+    },
+    "Manca il comune" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Town missing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falta el municipio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commune manquante"
+          }
+        }
+      }
+    },
+    "Nei prossimi giorni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the coming days"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En los próximos días"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans les prochains jours"
+          }
+        }
+      }
+    },
+    "Nessun turno aggiornato per oggi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No up-to-date shifts for today"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ningún turno actualizado para hoy"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune garde à jour pour aujourd'hui"
+          }
+        }
+      }
+    },
+    "Non ho ancora una fonte per questo comune" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I don't have a source for this town yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no tengo una fuente para este municipio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'ai pas encore de source pour cette commune"
+          }
+        }
+      }
+    },
+    "Non ho trovato una pagina ufficiale per questo comune. Puoi indicare tu il sito." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I couldn't find an official page for this town. You can enter the site yourself."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No he encontrado una página oficial para este municipio. Puedes indicar tú el sitio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'ai pas trouvé de page officielle pour cette commune. Vous pouvez indiquer le site vous-même."
+          }
+        }
+      }
+    },
+    "Non riesco a leggere i turni da questo sito: resta il link per aprirlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can't read the shifts from this site: the link stays so you can open it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No consigo leer los turnos de este sitio: queda el enlace para abrirlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'arrive pas à lire les gardes sur ce site : le lien reste pour l'ouvrir."
+          }
+        }
+      }
+    },
+    "Non riesco a leggere questo sito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can't read this site"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No consigo leer este sitio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'arrive pas à lire ce site"
+          }
+        }
+      }
+    },
+    "Non riesco ad aprire questo sito." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can't open this site."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No consigo abrir este sitio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'arrive pas à ouvrir ce site."
+          }
+        }
+      }
+    },
+    "Oggi nessuna farmacia di turno in questo comune. Qui sotto trovi quelle dei comuni vicini." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pharmacy is on duty in this town today. Below are those in nearby towns."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy no hay farmacias de guardia en este municipio. Abajo están las de los municipios cercanos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune pharmacie de garde dans cette commune aujourd'hui. Ci-dessous, celles des communes voisines."
+          }
+        }
+      }
+    },
+    "Per ora solo in Italia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Italy only for now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por ahora solo en Italia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour l'instant, uniquement en Italie"
+          }
+        }
+      }
+    },
+    "Per un'urgenza medica chiama il 112." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For a medical emergency call 112."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para una urgencia médica llama al 112."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En cas d'urgence médicale, appelez le 112."
+          }
+        }
+      }
+    },
+    "Posso cercare con l'AI la pagina ufficiale che pubblica i turni (Federfarma, Ordine dei farmacisti, ASL o Comune) e imparare a leggerla. Poi si aggiorna da sola, senza altri messaggi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can use AI to look for the official page that publishes the shifts (Federfarma, the pharmacists' association, the health authority or the town hall) and learn to read it. After that it updates by itself, with no more messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedo buscar con la IA la página oficial que publica los turnos (Federfarma, colegio de farmacéuticos, ASL o ayuntamiento) y aprender a leerla. Después se actualiza sola, sin más mensajes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je peux chercher avec l'IA la page officielle qui publie les gardes (Federfarma, ordre des pharmaciens, ASL ou mairie) et apprendre à la lire. Ensuite elle se met à jour toute seule, sans autres messages."
+          }
+        }
+      }
+    },
+    "Questa fonte non è ufficiale o non sono sicuro che sia quella giusta: verifica con una telefonata." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This source isn't official or I'm not sure it's the right one: check with a phone call."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta fuente no es oficial o no estoy seguro de que sea la correcta: comprueba con una llamada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette source n'est pas officielle ou je ne suis pas sûr que ce soit la bonne : vérifiez par téléphone."
+          }
+        }
+      }
+    },
+    "Questa ricerca costa circa %1$d messaggi AI e alla famiglia ne restano %2$d." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This search costs about %1$d AI messages and your family has %2$d left."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta búsqueda cuesta unos %1$d mensajes de IA y a la familia le quedan %2$d."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette recherche coûte environ %1$d messages IA et il en reste %2$d à la famille."
+          }
+        }
+      }
+    },
+    "Questo non sembra un indirizzo web." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This doesn't look like a web address."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto no parece una dirección web."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cela ne ressemble pas à une adresse web."
+          }
+        }
+      }
+    },
+    "Sito scelto da te" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Site chosen by you"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitio elegido por ti"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Site choisi par vous"
+          }
+        }
+      }
+    },
+    "Sto lavorando…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Working on it…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trabajando en ello…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je m'en occupe…"
+          }
+        }
+      }
+    },
+    "Torna alla fonte automatica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to the automatic source"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a la fuente automática"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revenir à la source automatique"
+          }
+        }
+      }
+    },
+    "Usa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser"
+          }
+        }
+      }
+    },
+    "Usa un altro sito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use another site"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar otro sitio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser un autre site"
+          }
+        }
+      }
+    },
+    "· aggiornato alle %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· updated at %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· actualizado a las %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· mis à jour à %@"
+          }
+        }
+      }
+    },
     "–" : {
       "localizations" : {
         "en" : {

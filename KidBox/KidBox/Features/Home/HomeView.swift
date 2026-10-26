@@ -869,6 +869,7 @@ enum HomeDestination {
     case pets(familyId: String)
     case homeItems(familyId: String)
     case vehicles(familyId: String)
+    case pharmacies(familyId: String)
     case familyLocation(familyId: String), familyPhotos(familyId: String), familySettings
     case askExpert, profile, settings, inviteCode, shopping(familyId: String)
     case pediatric(familyId: String, childId: String)
@@ -889,6 +890,7 @@ enum HomeDestination {
         case .pets(let fid):                 return .petsHome(familyId: fid)
         case .homeItems(let fid):            return .homeItemsHome(familyId: fid)
         case .vehicles(let fid):             return .vehiclesHome(familyId: fid)
+        case .pharmacies(let fid):           return .pharmacies(familyId: fid)
         case .familyLocation(let familyID):  return .familyLocation(familyId: familyID)
         case .familyPhotos(let familyId):    return .familyPhotos(familyId: familyId)
         case .familySettings:                return .familySettings
@@ -977,6 +979,7 @@ enum HomeCardID: String, CaseIterable, Codable {
     case homeItems
     case vehicles
     case travel
+    case pharmacies
 }
 
 /// Modalità di visualizzazione della Home: lista raggruppata (attuale) o griglia
@@ -1307,6 +1310,15 @@ private struct HomeCardGrid: View {
                 onNavigate(.homeItems(familyId: familyId))
             }
 
+        case .pharmacies:
+            // Il piano si controlla dentro la schermata (invito a Pro per i Free):
+            // da qui basta aprirla, come per le Notizie.
+            HomeCardView(title: "Farmacie di turno", subtitle: "Aperte vicino a te", systemImage: "cross.case.fill", tint: Color(hex: "#34A885") ?? .green) {
+                KBLog.navigation.kbDebug("Home: tap Pharmacies")
+                FABUsageTracker.shared.record("pharmacies")
+                onNavigate(.pharmacies(familyId: familyId))
+            }
+
         case .vehicles:
             HomeCardView(title: "Garage", subtitle: "Auto e scadenze", systemImage: "car.fill", tint: Color(hex: "#FF6B00") ?? .orange) {
                 KBLog.navigation.kbDebug("Home: tap Vehicles")
@@ -1386,7 +1398,7 @@ private struct HomeCardGrid: View {
     
     private func defaultOrder() -> [HomeCardID] {
         // ordine iniziale (puoi cambiarlo quando vuoi)
-        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .wallet, .passwords, .location, .photos, .expert, .travel, .pets, .homeItems, .vehicles]
+        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .wallet, .passwords, .location, .photos, .expert, .travel, .pets, .homeItems, .vehicles, .pharmacies]
     }
     
     private func loadOrder() -> [HomeCardID]? {
@@ -1623,13 +1635,14 @@ enum HomeCatalog {
         case .homeItems: return .init(id: id, title: "Casa", short: "Casa", symbol: "house.fill", tint: Color(hex: "#8B6914") ?? .brown, usageKey: "home_items")
         case .vehicles:  return .init(id: id, title: "Garage", short: "Garage", symbol: "car.fill", tint: Color(hex: "#FF6B00") ?? .orange, usageKey: "vehicles")
         case .travel:    return .init(id: id, title: "Viaggi", short: "Viaggi", symbol: "suitcase.fill", tint: .teal, usageKey: "travel")
+        case .pharmacies: return .init(id: id, title: "Farmacie di turno", short: "Farmacie", symbol: "cross.case.fill", tint: Color(hex: "#34A885") ?? .green, usageKey: "pharmacies")
         }
     }
 
     /// Gruppi tematici (Assistente escluso: ora è il bottone AI flottante).
     static let groups: [(name: LocalizedStringKey, ids: [HomeCardID])] = [
         ("Organizzazione",      [.note, .todo, .shopping, .calendar]),
-        ("Famiglia & Salute",   [.care, .chat]),
+        ("Famiglia & Salute",   [.care, .pharmacies, .chat]),
         ("Documenti & Denaro",  [.documents, .expenses, .wallet, .passwords]),
         ("Vita quotidiana",     [.location, .photos, .travel, .pets, .homeItems, .vehicles]),
     ]
@@ -1637,7 +1650,7 @@ enum HomeCatalog {
     /// Priorità di default per le scorciatoie quando l'utilizzo è ancora a zero.
     static let shortcutDefaultPriority: [HomeCardID] = [
         .calendar, .todo, .chat, .documents, .shopping, .note, .expenses,
-        .care, .wallet, .passwords, .location, .photos, .pets, .homeItems, .vehicles, .travel
+        .care, .wallet, .passwords, .location, .photos, .pets, .homeItems, .vehicles, .travel, .pharmacies
     ]
 
     /// Ordine "piatto" (senza gruppi) usato come ordine iniziale della vista a griglia:
@@ -1936,6 +1949,9 @@ private struct HomeCategoryList: View {
         case .vehicles:
             KBLog.navigation.kbDebug("Home: tap Vehicles")
             onNavigate(.vehicles(familyId: familyId))
+        case .pharmacies:
+            KBLog.navigation.kbDebug("Home: tap Pharmacies")
+            onNavigate(.pharmacies(familyId: familyId))
         case .travel:
             KBLog.navigation.kbDebug("Home: tap Travel")
             if !hasFamily {

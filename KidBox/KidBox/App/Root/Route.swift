@@ -88,6 +88,9 @@ enum Route: Hashable {
     /// Le notizie salvate col segnalibro: di chi le salva, non della famiglia.
     case newsSaved
 
+    /// Farmacie di turno (Pro e Max): fonte ufficiale letta dal codice.
+    case pharmacies(familyId: String)
+
     // MARK: - Spese
     /// `highlightExpenseId`: spesa arrivata da notifica, che la home apre
     /// appena la sincronizzazione la porta in locale.

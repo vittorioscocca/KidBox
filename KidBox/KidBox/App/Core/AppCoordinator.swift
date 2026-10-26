@@ -887,6 +887,8 @@ final class AppCoordinator: ObservableObject {
             NewsView(familyId: familyId)
         case .newsSaved:
             NewsSavedView()
+        case .pharmacies(let familyId):
+            PharmacyView(familyId: familyId)
 
         case .petsHome(let familyId):
             PetsHomeView(familyId: familyId)
