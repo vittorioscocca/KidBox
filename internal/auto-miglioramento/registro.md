@@ -61,25 +61,23 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
 - **Stato al 21/10/2026** (lettura diretta di Firestore): 6 richieste in tutto. 4 sono di prova (famiglie `ZZZ-…`, di cui 3 con link). Le 2 «vere» sono del 01/10, senza link, nella stessa famiglia (una ritirata, una presa). **0 richieste con link esterno da famiglie vere in 20 giorni.** Al ritmo attuale la previsione (≥ 10) è lontanissima e la soglia di falsificazione (< 5) è già quasi certa. Non è ancora un verdetto: la finestra chiude il 02/11. Se a quella data i conteggi sono questi, la scommessa è smentita; nel frattempo si può chiedere se c'è stata qualche spinta (note «Novità», comunicazioni) che faccia conoscere la funzione.
 - **Se smentita** (meno di 5 richieste con link): le famiglie continuano a chiedere direttamente su WhatsApp e il problema non era il motivo dell'invito; prima di altro lavoro sulle richieste, chiedere a 2-3 famiglie vere come si sono organizzate l'ultima volta che serviva qualcuno.
 
-### 10. Campagna Google per app, solo Android, ottimizzata su «famiglia creata»
-- **Cambio**: prima campagna Google Ads dell'account 868-406-1522, dopo le tre campagne Meta (ferme dal 03/10, 601,82 € spesi in tutto). GA4 collegato a Google Ads il 15/10/2026; conversione importata `family_created` Android, categoria «Registrazione». Una sola campagna: tipo app, Android, Italia, 10 € al giorno (150 € previsti; con la fine prorogata al 07/11, fino a 230 €), messaggio unico «chi prende Marco giovedì?». Niente Meta in parallelo.
-- **Previsione** (scritta il 15/10/2026, prima di spendere; le soglie sono stime mie dai dati di Meta, non concordate):
-  - **(a)** costo per `family_created` **sotto 5 €**;
-  - **(b)** almeno **1 famiglia su 12** tra quelle create dalla campagna arriva a 2+ membri entro 14 giorni dalla creazione.
+### 12. Campagna Meta «Lead» in quattro paesi, ottimizzata sul tap allo store
+- **Cambio**: campagna `KidBox - Lead - 4 paesi - Ott 2026` (id 120251083077570089), account 26185514281057282, pubblicata il 26/10/2026 sera. Obiettivo Contatti, conversione sul sito, evento `Lead` del pixel KidBox Web (1335685042033994), che la landing manda al tap su App Store o Play, solo dopo il consenso. Budget di campagna 10 €/giorno, «Volume più alto», senza data di fine. Quattro gruppi di inserzioni, uno per paese (IT, GB, FR, ES), età 25–65 (minimo dell'account), posizionamenti Advantage+ con Audience Network escluso a livello di account. In ogni gruppo un carosello a 6 schede nella lingua del paese (foto di famiglia + 5 schermate della demo; testi in `internal/store-listings/meta-ads/carosello/testi.md`). Destinazione `https://kidboxapp.com/`, UTM `utm_campaign=lead_4paesi_ott26`. Seconda inserzione video «Chi prende Marco giovedì?» prevista nello stesso gruppo: la data di aggiunta va scritta qui.
+- **Previsione** (scritta il 26/10/2026, prima di qualsiasi risultato; soglie proposte da me il 26/10, l'utente ha proseguito senza cambiarle). Nei **14 giorni dal 27/10 al 09/11** (circa 140 €):
+  - **(a)** almeno **40 `Lead`** (tap sugli store) attribuiti dalla campagna;
+  - **(b)** almeno **15 famiglie nuove** nelle coorti delle settimane del 26/10 e del 02/11;
+  - **(c)** almeno **3** di quelle famiglie con **2+ membri** al 23/11.
 - **Misura**:
-  - (a) spesa e conversioni dell'account Google Ads; controllo incrociato con `family_created` Android di GA4 nelle stesse date;
-  - (b) `node scripts/console-daily-report.js --cohorts-from <lunedì della settimana d'avvio>` sulle coorti dell'avvio. Il conteggio delle famiglie 2+ è su tutta la settimana: non si attribuisce alla sola campagna, e va detto.
-- **Data**: **21/11/2026**, cioè 14 giorni dopo la fine programmata (07/11), perché le famiglie con 2+ membri maturano dopo.
-- **Avvio**: pubblicata il 16/10/2026 con inizio il 16/10 e fine il 30/10; l'utente ha spostato la fine al 07/11 il 19/10 perché per 4 giorni la campagna non ha mostrato annunci. I giorni senza spesa non costano: il tetto resta 10 € al giorno, quindi fino a 230 €.
-- **Stato al 19/10**: stato «Idoneo», 0 impressioni, 0 clic. Diagnostica pulita su account, asset, budget, obiettivi e indicatori: Google la dà «in programma». Ipotesi: la conversione `family_created` è nata il 15/10 e senza storia l'ottimizzazione consegna poco. Piano: attendere fino al 21/10; se ancora 0 impressioni, passare **temporaneamente** a «Volume di installazioni» per qualche giorno e tornare alle azioni in-app. Una deviazione così va scritta qui con data, perché per quei giorni si misurano installazioni e non famiglie create.
-- **Deviazione, 21/10/2026**: la campagna è già passata a «Volume di installazioni (Tutti gli utenti)» (dichiarato dall'utente il 21/10, screenshot delle impostazioni; il passaggio è di pochi giorni prima, data esatta non registrata). Dal 14 al 20/10 risultano 0 impression, 0 clic, 0 € (Google: impression e installazioni «in programma»), e GA4 non vede costo, clic né sessioni `cpc` negli ultimi 14 giorni. Finché dura questa fase si misurano installazioni, non `family_created`: (a) non è valutabile. Se dopo 48 ore dal passaggio le impression restano a 0, controllare lo stato delle risorse, la fatturazione e la scheda dell'app su Play.
-- **Non misurabile se**: meno di 100 € spesi, o meno di 30 `family_created` dalla campagna.
+  - (a) azioni `offsite_conversion.fb_pixel_lead` della campagna, da `meta-ads-daily-report.js` o dagli insights dell'API, con la divisione per gruppo/paese. Controllo incrociato: il contatore della landing, sorgente `meta`.
+  - (b) e (c) `node scripts/console-daily-report.js --day 2026-11-22 --cohorts-from 2026-10-26`. Le coorti contano tutte le famiglie nate in quelle settimane, non solo quelle della campagna: va detto nel verdetto.
+- **Data**: **23/11/2026** (14 giorni dopo la fine della finestra, perché le famiglie con 2+ membri maturano dopo).
+- **Non misurabile se**: meno di 100 € spesi nella finestra, oppure Meta ferma le inserzioni per più di 3 giorni.
 - **Decisione, scritta ora**:
-  - (a) e (b) confermate → seconda tornata di 15 giorni, sempre su Android; poi valutare Apple Search Ads per l'iPhone;
-  - (a) confermata e (b) smentita → la pubblicità porta famiglie che non invitano: si lavora sull'invito e si pausa;
-  - (a) smentita → niente aumento di spesa; si rivedono messaggio e parole, e Google non si riprova prima di aver cambiato l'invito.
-- **Se smentita**: (a) la nostra offerta non converte nemmeno su un canale basato sull'intento di chi cerca; (b) il problema non è il canale ma il passaggio da 1 a 2 membri.
-- **Limite noto**: 150 € sono pochi per l'ottimizzazione automatica di Google, che di solito vuole decine di conversioni a settimana: i primi giorni sono apprendimento e i dati possono essere rumorosi.
+  - (a), (b) e (c) confermate → si tiene, si sposta il budget verso il paese che porta più famiglie 2+, e si prova a 15 €/giorno per 4 settimane;
+  - (a) confermata, (c) smentita → la pubblicità porta persone che installano ma non invitano: si pausa e si lavora sul premio al secondo membro prima di altra spesa;
+  - (a) smentita → il messaggio o il pubblico non funziona: si confronta col video e, se anche quello non porta, i soldi vanno sulle creator.
+- **Se smentita**: (a) chi vede KidBox su Meta non arriva fino allo store; (c) il canale porta organizzatori soli, e il problema resta il passaggio da 1 a 2 membri.
+- **Limite noto**: 10 €/giorno su quattro gruppi sono pochi per l'apprendimento di Meta (servono decine di conversioni a settimana per gruppo). Il pixel vede solo chi accetta i cookie, quindi i `Lead` sono una parte dei tap veri.
 
 ---
 
@@ -100,8 +98,32 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
 - **Se smentita**: un genitore che non ha preso un to-do lo sapeva già (le regole segnalano cose ovvie), oppure il momento dell'avviso è sbagliato.
 
 ## Chiuse
+
+### 10. Campagna Google per app, solo Android, ottimizzata su «famiglia creata»
+- **Cambio**: prima campagna Google Ads dell'account 868-406-1522, dopo le tre campagne Meta (ferme dal 03/10, 601,82 € spesi in tutto). GA4 collegato a Google Ads il 15/10/2026; conversione importata `family_created` Android, categoria «Registrazione». Una sola campagna: tipo app, Android, Italia, 10 € al giorno (150 € previsti; con la fine prorogata al 07/11, fino a 230 €), messaggio unico «chi prende Marco giovedì?». Niente Meta in parallelo.
+- **Previsione** (scritta il 15/10/2026, prima di spendere; le soglie sono stime mie dai dati di Meta, non concordate):
+  - **(a)** costo per `family_created` **sotto 5 €**;
+  - **(b)** almeno **1 famiglia su 12** tra quelle create dalla campagna arriva a 2+ membri entro 14 giorni dalla creazione.
+- **Misura**:
+  - (a) spesa e conversioni dell'account Google Ads; controllo incrociato con `family_created` Android di GA4 nelle stesse date;
+  - (b) `node scripts/console-daily-report.js --cohorts-from <lunedì della settimana d'avvio>` sulle coorti dell'avvio. Il conteggio delle famiglie 2+ è su tutta la settimana: non si attribuisce alla sola campagna, e va detto.
+- **Data**: **21/11/2026**, cioè 14 giorni dopo la fine programmata (07/11), perché le famiglie con 2+ membri maturano dopo.
+- **Avvio**: pubblicata il 16/10/2026 con inizio il 16/10 e fine il 30/10; l'utente ha spostato la fine al 07/11 il 19/10 perché per 4 giorni la campagna non ha mostrato annunci. I giorni senza spesa non costano: il tetto resta 10 € al giorno, quindi fino a 230 €.
+- **Stato al 19/10**: stato «Idoneo», 0 impressioni, 0 clic. Diagnostica pulita su account, asset, budget, obiettivi e indicatori: Google la dà «in programma». Ipotesi: la conversione `family_created` è nata il 15/10 e senza storia l'ottimizzazione consegna poco. Piano: attendere fino al 21/10; se ancora 0 impressioni, passare **temporaneamente** a «Volume di installazioni» per qualche giorno e tornare alle azioni in-app. Una deviazione così va scritta qui con data, perché per quei giorni si misurano installazioni e non famiglie create.
+- **Deviazione, 21/10/2026**: la campagna è già passata a «Volume di installazioni (Tutti gli utenti)» (dichiarato dall'utente il 21/10, screenshot delle impostazioni; il passaggio è di pochi giorni prima, data esatta non registrata). Dal 14 al 20/10 risultano 0 impression, 0 clic, 0 € (Google: impression e installazioni «in programma»), e GA4 non vede costo, clic né sessioni `cpc` negli ultimi 14 giorni. Finché dura questa fase si misurano installazioni, non `family_created`: (a) non è valutabile. Se dopo 48 ore dal passaggio le impression restano a 0, controllare lo stato delle risorse, la fatturazione e la scheda dell'app su Play.
+- **Non misurabile se**: meno di 100 € spesi, o meno di 30 `family_created` dalla campagna.
+- **Decisione, scritta ora**:
+  - (a) e (b) confermate → seconda tornata di 15 giorni, sempre su Android; poi valutare Apple Search Ads per l'iPhone;
+  - (a) confermata e (b) smentita → la pubblicità porta famiglie che non invitano: si lavora sull'invito e si pausa;
+  - (a) smentita → niente aumento di spesa; si rivedono messaggio e parole, e Google non si riprova prima di aver cambiato l'invito.
+- **Se smentita**: (a) la nostra offerta non converte nemmeno su un canale basato sull'intento di chi cerca; (b) il problema non è il canale ma il passaggio da 1 a 2 membri.
+- **Limite noto**: 150 € sono pochi per l'ottimizzazione automatica di Google, che di solito vuole decine di conversioni a settimana: i primi giorni sono apprendimento e i dati possono essere rumorosi.
 - **DEVIAZIONE (20/10/2026): da «Azioni in-app» a «Volume di installazioni», senza costo target.** Dopo 5 giorni a zero impressioni e diagnostica pulita, l'utente ha cambiato l'obiettivo di offerta, con un giorno di anticipo sul piano. Stesso budget (10 €/giorno), Italia, italiano, fine 07/11.
 - **Conseguenza per la misura:** finché resta su «Volume di installazioni» la campagna ottimizza le installazioni, non le famiglie create: la previsione (a) sul costo per `family_created` si legge comunque dal conteggio di GA4 (`family_created` Android nelle stesse date), ma non è più ciò che la campagna cerca. Piano: dopo circa 7 giorni e qualche famiglia creata come storia, tornare a «Azioni in-app» e scrivere qui la data. I giorni in «installazioni» vanno dichiarati nel verdetto del 21/11.
+- **VERDETTO (26/10/2026): non misurabile.** In una settimana la campagna non ha mai pubblicato: 0 impressioni, 0 clic, 0 € spesi, prima con «Azioni in-app» e poi con «Volume di installazioni». L'utente l'ha spenta il 26/10. Sotto i 100 € spesi la previsione non si giudica.
+- **Cosa resta valido:** Google Ads non ha consegnato con una conversione nata da un giorno (`family_created`, 15/10) né con le installazioni. La causa non è stata trovata: la diagnostica era pulita. Prima di riprovare Google, capire perché non consegnava (stato della scheda Play, approvazione degli asset, fatturazione), non cambiare solo l'offerta.
+- **Passa a Meta**: scommessa 12.
+
 ### 1. Wizard di onboarding a 2 pagine
 - **Cambio**: iOS 2.3.0 / Android 2.2.9 (53), in revisione dal 19/09/2026. Nome, cognome e famiglia in una schermata sola (`setup`), poi `invite` o `join_family`.
 - **Previsione**: iniziato → completato passa dal **56% al 75%** per utenti unici sui 28 giorni.
