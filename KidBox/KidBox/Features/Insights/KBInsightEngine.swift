@@ -138,35 +138,54 @@ enum KBInsightEngine {
         calendar: Calendar
     ) -> [KBInsightCandidate] {
         let today = calendar.startOfDay(for: now)
-        let taken = Set(
-            snapshot.doseLogs
-                .filter { $0.taken && !$0.isDeleted }
-                .map { "\($0.treatmentId)|\($0.dayNumber)|\($0.slotIndex)" }
-        )
+        let taken = takenKeys(snapshot)
 
         return snapshot.treatments.compactMap { t in
-            guard t.isActive, !t.isDeleted else { return nil }
-            let start = calendar.startOfDay(for: t.startDate)
-            guard let offset = calendar.dateComponents([.day], from: start, to: today).day,
-                  offset >= 0 else { return nil }
-            if !t.isLongTerm, offset >= t.durationDays { return nil }
-            if let end = t.endDate, calendar.startOfDay(for: end) < today { return nil }
-            if t.intervalBetweenDosesDays > 0, offset % t.intervalBetweenDosesDays != 0 { return nil }
-
-            let dayNumber = offset + 1
-            let firstMissing = t.scheduleTimes.enumerated().compactMap { slot, time -> Date? in
-                guard !taken.contains("\(t.id)|\(dayNumber)|\(slot)"),
-                      let at = Self.time(time, on: today, calendar: calendar) else { return nil }
-                return at
-            }.min()
-            guard let firstMissing else { return nil }
-
+            guard let firstMissing = uncoveredSlots(of: t, taken: taken, today: today, calendar: calendar)
+                .map(\.at).min() else { return nil }
             return KBInsightCandidate(
                 type: .treatmentDoseMissing,
                 entityId: "\(t.id)@\(today.kbDayKey(calendar: calendar))",
                 priority: .high,
                 fireAt: firstMissing.addingTimeInterval(doseGrace)
             )
+        }
+    }
+
+    /// Chiavi `cura|giorno|dose` delle dosi segnate come prese.
+    static func takenKeys(_ snapshot: KBInsightSnapshot) -> Set<String> {
+        Set(
+            snapshot.doseLogs
+                .filter { $0.taken && !$0.isDeleted }
+                .map { "\($0.treatmentId)|\($0.dayNumber)|\($0.slotIndex)" }
+        )
+    }
+
+    /// Le dosi di oggi di una cura non ancora segnate come prese, con l'orario
+    /// previsto. Vuoto se la cura oggi non ha dosi (finita, non ancora iniziata,
+    /// giorno senza dose in una cura a intervalli) o se sono tutte prese.
+    static func uncoveredSlots(
+        of t: KBInsightSnapshot.Treatment,
+        taken: Set<String>,
+        today: Date,
+        calendar: Calendar
+    ) -> [(slot: Int, time: String, at: Date)] {
+        guard t.isActive, !t.isDeleted else { return [] }
+        let start = calendar.startOfDay(for: t.startDate)
+        guard let offset = calendar.dateComponents([.day], from: start, to: today).day,
+              offset >= 0 else { return [] }
+        if !t.isLongTerm, offset >= t.durationDays { return [] }
+        if let end = t.endDate, calendar.startOfDay(for: end) < today { return [] }
+        if t.intervalBetweenDosesDays > 0, offset % t.intervalBetweenDosesDays != 0 { return [] }
+
+        let dayNumber = offset + 1
+        // Una cura a intervalli ha una sola dose nel giorno, al primo orario:
+        // gli altri orari in elenco non sono dosi da registrare.
+        let times = t.intervalBetweenDosesDays > 0 ? Array(t.scheduleTimes.prefix(1)) : t.scheduleTimes
+        return times.enumerated().compactMap { slot, time in
+            guard !taken.contains("\(t.id)|\(dayNumber)|\(slot)"),
+                  let at = Self.time(time, on: today, calendar: calendar) else { return nil }
+            return (slot, time, at)
         }
     }
 

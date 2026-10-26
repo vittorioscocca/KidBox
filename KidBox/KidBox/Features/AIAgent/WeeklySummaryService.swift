@@ -98,7 +98,16 @@ final class WeeklySummaryService {
             base: input,
             modelContext: modelContext
         )
-        await generateAndSchedule(input: enrichedInput, familyName: familyName, weekKey: currentWeek)
+        // Le cure che entrano nella sintesi sono solo quelle di chi la riceve e dei
+        // bambini registrati: la cura di un altro adulto la legge lui, dal suo telefono.
+        let familyId = forcedFamilyId ?? Self.resolveFamilyId(from: input)
+        let treatments = KBTreatmentScope.filter(
+            input.activeTreatments,
+            familyId: familyId,
+            uid: Auth.auth().currentUser?.uid ?? "",
+            context: modelContext
+        )
+        await generateAndSchedule(input: enrichedInput, familyName: familyName, weekKey: currentWeek, treatments: treatments)
     }
     
     /// Restituisce la sintesi dell'ultima settimana se disponibile.
@@ -210,13 +219,14 @@ final class WeeklySummaryService {
     private func generateAndSchedule(
         input:      PlanningContextInput,
         familyName: String,
-        weekKey:    String
+        weekKey:    String,
+        treatments: [KBTreatment]
     ) async {
         // Costruisce il system prompt della settimana passata
         let systemPrompt = buildWeeklySummaryPrompt(familyName: familyName)
         
         // Costruisce il messaggio utente con tutti i dati della settimana
-        let userMessage = buildWeeklyDataMessage(input: input)
+        let userMessage = buildWeeklyDataMessage(input: input, treatments: treatments)
         
         let aiMessages = [KBAIMessage(role: .user, content: userMessage)]
         
@@ -268,7 +278,7 @@ final class WeeklySummaryService {
     
     // MARK: - Data message
     
-    private func buildWeeklyDataMessage(input: PlanningContextInput) -> String {
+    private func buildWeeklyDataMessage(input: PlanningContextInput, treatments: [KBTreatment]) -> String {
         var lines: [String] = ["Genera la sintesi settimanale basandoti su questi dati:\n"]
         
         // Periodo
@@ -310,7 +320,7 @@ final class WeeklySummaryService {
         }
         
         // Treatments
-        let treats = input.activeTreatments.filter { !$0.isDeleted && $0.isActive }
+        let treats = treatments.filter { !$0.isDeleted && $0.isActive }
         if !treats.isEmpty {
             lines.append("\nCURE ATTIVE (\(treats.count)):")
             for t in treats.prefix(5) {

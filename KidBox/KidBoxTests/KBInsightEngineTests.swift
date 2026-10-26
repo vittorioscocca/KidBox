@@ -108,6 +108,43 @@ final class KBInsightEngineTests: XCTestCase {
         XCTAssertEqual(evaluate(s).first?.fireAt, at(2026, 10, 23, 21, 0))
     }
 
+    func testIntervalTreatmentOnlyCountsFirstTime() {
+        // Una dose ogni 2 giorni (oggi è il giorno 3, offset 2): solo il primo orario.
+        let t = treatment(interval: 2, times: ["08:00", "20:00"])
+        let s = KBInsightSnapshot(
+            treatments: [t],
+            doseLogs: [.init(treatmentId: "c1", dayNumber: 3, slotIndex: 0, taken: true, isDeleted: false)]
+        )
+        XCTAssertEqual(evaluate(s), [])
+    }
+
+    func testUncoveredSlotsListsOnlyTheNotTakenOnes() {
+        let s = KBInsightSnapshot(
+            treatments: [treatment()],
+            doseLogs: [.init(treatmentId: "c1", dayNumber: 3, slotIndex: 0, taken: true, isDeleted: false)]
+        )
+        let slots = KBInsightEngine.uncoveredSlots(
+            of: s.treatments[0], taken: KBInsightEngine.takenKeys(s),
+            today: cal.startOfDay(for: now), calendar: cal
+        )
+        XCTAssertEqual(slots.map(\.time), ["20:00"])
+    }
+
+    @MainActor
+    func testSnapshotKeepsOnlyMyselfAndRegisteredChildren() throws {
+        let context = ModelContext(ModelContainerProvider.makeContainer(inMemory: true))
+        context.insert(KBChild(id: "k", familyId: "f", name: "Marco", birthDate: nil,
+                               createdBy: "u", createdAt: now, updatedBy: nil, updatedAt: nil))
+        let start = at(2026, 10, 21, 9, 0)
+        context.insert(KBTreatment(id: "mine", familyId: "f", childId: "me", drugName: "A", startDate: start, scheduleTimes: ["08:00"]))
+        context.insert(KBTreatment(id: "kid", familyId: "f", childId: "k", drugName: "B", startDate: start, scheduleTimes: ["08:00"]))
+        context.insert(KBTreatment(id: "partner", familyId: "f", childId: "partnerUid", drugName: "C", startDate: start, scheduleTimes: ["08:00"]))
+        try context.save()
+
+        let snapshot = try KBInsightSnapshot.load(familyId: "f", uid: "me", context: context)
+        XCTAssertEqual(Set(snapshot.treatments.map(\.id)), ["mine", "kid"])
+    }
+
     func testAllDosesTakenGivesNothing() {
         let s = KBInsightSnapshot(
             treatments: [treatment()],
@@ -203,6 +240,8 @@ final class KBInsightEngineTests: XCTestCase {
         context.insert(free)
         context.insert(taken)
         context.insert(otherFamily)
+        context.insert(KBChild(id: "k", familyId: "f", name: "Marco", birthDate: nil,
+                               createdBy: "u", createdAt: now, updatedBy: nil, updatedAt: nil))
         context.insert(KBTreatment(id: "c1", familyId: "f", childId: "k", drugName: "Amoxicillina",
                                    startDate: at(2026, 10, 21, 9, 0), scheduleTimes: ["08:00"]))
         context.insert(KBDoseLog(familyId: "f", childId: "k", treatmentId: "c1", dayNumber: 3,

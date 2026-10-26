@@ -12,6 +12,7 @@
 //  4. Al tap: `NotificationManager` → `.askExpert` con testo in chat.
 //
 
+import FirebaseAuth
 import Foundation
 import UserNotifications
 import SwiftData
@@ -37,7 +38,6 @@ final class DailyBriefingService {
         modelContext: ModelContext,
         forcedFamilyId: String? = nil
     ) async {
-        _ = modelContext
         let familyId = forcedFamilyId ?? ""
 
         guard isEnabled else {
@@ -62,7 +62,9 @@ final class DailyBriefingService {
 
         guard await ProactiveAIGate.allows() else { return }
         KBLog.ai.kbInfo("DailyBriefingService: generating briefing for \(today)")
-        await generateAndSchedule(input: input, familyName: familyName, dateKey: today, familyId: familyId)
+        await generateAndSchedule(
+            input: input, familyName: familyName, dateKey: today, familyId: familyId, modelContext: modelContext
+        )
     }
 
     var lastBriefingText: String? {
@@ -80,10 +82,14 @@ final class DailyBriefingService {
         input: PlanningContextInput,
         familyName: String,
         dateKey: String,
-        familyId: String
+        familyId: String,
+        modelContext: ModelContext
     ) async {
         let systemPrompt = buildDailyBriefingPrompt(familyName: familyName)
-        let userMessage = buildDailyDataMessage(input: input)
+        let userMessage = buildDailyDataMessage(
+            input: input,
+            doseLines: pendingDoseLines(input: input, familyId: familyId, modelContext: modelContext)
+        )
 
         let aiMessages = [KBAIMessage(role: .user, content: userMessage)]
 
@@ -130,9 +136,40 @@ final class DailyBriefingService {
         """
     }
 
+    // MARK: - Dosi di oggi
+
+    /// Le dosi di oggi ancora da prendere, solo di chi riceve il briefing e dei
+    /// bambini registrati. Le dosi già registrate non si elencano: l'AI le
+    /// riportava come «da fare» e la cura risultava incompleta anche a metà giornata.
+    private func pendingDoseLines(input: PlanningContextInput, familyId: String, modelContext: ModelContext) -> [String] {
+        let fid = familyId.isEmpty ? (input.activeTreatments.first?.familyId ?? "") : familyId
+        let uid = Auth.auth().currentUser?.uid ?? ""
+        guard !fid.isEmpty,
+              let snapshot = try? KBInsightSnapshot.load(familyId: fid, uid: uid, context: modelContext) else { return [] }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let taken = KBInsightEngine.takenKeys(snapshot)
+        let byId = Dictionary(input.activeTreatments.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+
+        var lines: [String] = []
+        for t in snapshot.treatments.prefix(8) {
+            guard let treatment = byId[t.id] else { continue }
+            let open = KBInsightEngine.uncoveredSlots(of: t, taken: taken, today: today, calendar: calendar)
+            guard !open.isEmpty else { continue }
+            let subject = treatment.petId.isEmpty
+                ? (input.childNames[treatment.childId] ?? "")
+                : ""
+            let who = subject.isEmpty ? "" : " (\(subject))"
+            for slot in open {
+                lines.append("  • \(slot.time): \(treatment.drugName)\(who)")
+            }
+        }
+        return lines
+    }
+
     // MARK: - Data message (prossime 48h)
 
-    private func buildDailyDataMessage(input: PlanningContextInput) -> String {
+    private func buildDailyDataMessage(input: PlanningContextInput, doseLines: [String]) -> String {
         var lines: [String] = ["Genera il briefing del mattino basandoti su questi dati:\n"]
 
         let now = Date()
@@ -164,20 +201,9 @@ final class DailyBriefingService {
             }
         }
 
-        let activeTreatments = input.activeTreatments.filter { !$0.isDeleted && $0.isActive }
-        if !activeTreatments.isEmpty {
-            lines.append("\nDOSI MEDICINE OGGI:")
-            for treatment in activeTreatments.prefix(8) {
-                let child = input.childNames[treatment.childId] ?? treatment.childId
-                let times = treatment.scheduleTimes
-                if times.isEmpty {
-                    lines.append("  • \(treatment.drugName) per \(child)")
-                } else {
-                    for slot in times {
-                        lines.append("  • \(slot): \(treatment.drugName) (\(child))")
-                    }
-                }
-            }
+        if !doseLines.isEmpty {
+            lines.append("\nDOSI MEDICINE ANCORA DA PRENDERE OGGI (quelle già registrate sono escluse):")
+            lines.append(contentsOf: doseLines)
         }
 
         let dueTodos = input.openTodos.filter { todo in

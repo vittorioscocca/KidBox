@@ -25,9 +25,11 @@ extension KBInsightSnapshot {
         let todos = try context.fetch(FetchDescriptor<KBTodoItem>(
             predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false && $0.isDone == false }
         ))
+        // Solo le cure che riguardano chi riceve l'avviso: lui e i bambini registrati.
+        let subjects = KBTreatmentScope.subjectIds(familyId: familyId, uid: uid, context: context)
         let treatments = try context.fetch(FetchDescriptor<KBTreatment>(
             predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false && $0.isActive == true }
-        ))
+        )).filter { KBTreatmentScope.includes(childId: $0.childId, petId: $0.petId, subjects: subjects) }
         let treatmentIds = Set(treatments.map(\.id))
         let logs = try context.fetch(FetchDescriptor<KBDoseLog>(
             predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false && $0.taken == true }

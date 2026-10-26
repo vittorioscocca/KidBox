@@ -98,6 +98,12 @@ enum KBInsightNotificationScheduler {
                 wantedIds.insert(id)
                 if pendingIds.contains(id) { continue }
             } else {
+                // La consegna precedente era per un orario che non vale più (la
+                // dose delle 8 è stata presa, resta quella della sera): il banner
+                // già mostrato dice una cosa non più vera e va tolto.
+                if let notified = row.notifiedAt, notified <= now {
+                    center.removeDeliveredNotifications(withIdentifiers: [id])
+                }
                 deliverAt = deliveryDate(for: row.fireAt, type: type, now: now, prefs: prefs)
                 wantedIds.insert(id)
             }
