@@ -45919,6 +45919,72 @@
         }
       }
     },
+    "Perché ti chiediamo l'accesso a Salute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Why we ask for access to Health"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por qué te pedimos acceso a Salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pourquoi nous demandons l'accès à Santé"
+          }
+        }
+      }
+    },
+    "KidBox legge da Apple Salute passi, frequenza cardiaca, pressione, ossigeno, ECG, allenamenti, peso, altezza e data di nascita. Servono a mostrarli nella scheda del bambino e a compilare in automatico la sua cartella clinica." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox reads steps, heart rate, blood pressure, oxygen, ECG, workouts, weight, height and date of birth from Apple Health. They are used to show them on the child's page and to fill in their medical record automatically."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox lee de Apple Salud pasos, frecuencia cardíaca, presión, oxígeno, ECG, entrenamientos, peso, altura y fecha de nacimiento. Sirven para mostrarlos en la ficha del niño y rellenar automáticamente su historial médico."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox lit dans Apple Santé les pas, la fréquence cardiaque, la tension, l'oxygène, l'ECG, les entraînements, le poids, la taille et la date de naissance. Ils servent à les afficher dans la fiche de l'enfant et à remplir automatiquement son dossier médical."
+          }
+        }
+      }
+    },
+    "Le metriche restano su questo iPhone: solo peso, altezza e data di nascita vengono salvati nel profilo del bambino. KidBox non scrive nulla in Salute, e puoi scegliere quali dati condividere o revocare l'accesso in ogni momento da Impostazioni › Salute." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The metrics stay on this iPhone: only weight, height and date of birth are saved in the child's profile. KidBox writes nothing to Health, and you can choose which data to share or revoke access at any time in Settings › Health."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las métricas se quedan en este iPhone: solo el peso, la altura y la fecha de nacimiento se guardan en el perfil del niño. KidBox no escribe nada en Salud, y puedes elegir qué datos compartir o revocar el acceso en cualquier momento en Ajustes › Salud."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les mesures restent sur cet iPhone : seuls le poids, la taille et la date de naissance sont enregistrés dans le profil de l'enfant. KidBox n'écrit rien dans Santé, et tu peux choisir les données à partager ou révoquer l'accès à tout moment dans Réglages › Santé."
+          }
+        }
+      }
+    },
     "Non ancora collegato" : {
       "localizations" : {
         "en" : {

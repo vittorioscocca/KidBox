@@ -101,9 +101,13 @@ struct AppleHealthAppView: View {
 
     private var connectPrompt: some View {
         VStack(spacing: 12) {
-            Text("Non ancora collegato")
+            Text("Perché ti chiediamo l'accesso a Salute")
                 .font(.subheadline.weight(.semibold))
-            Text("Tocca il pulsante sotto per importare le metriche dall'app Salute.")
+            Text("KidBox legge da Apple Salute passi, frequenza cardiaca, pressione, ossigeno, ECG, allenamenti, peso, altezza e data di nascita. Servono a mostrarli nella scheda del bambino e a compilare in automatico la sua cartella clinica.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Text("Le metriche restano su questo iPhone: solo peso, altezza e data di nascita vengono salvati nel profilo del bambino. KidBox non scrive nulla in Salute, e puoi scegliere quali dati condividere o revocare l'accesso in ogni momento da Impostazioni › Salute.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
