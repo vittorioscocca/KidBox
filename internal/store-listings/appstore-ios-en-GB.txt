@@ -23,8 +23,8 @@ Appointments, tests, vaccines and treatments for children and adults, with remin
 SHOPPING AND EXPENSES
 A shared shopping list updated in real time: when one person ticks an item, the other sees it at once. Dictate shopping and to-dos to Alexa: “Alexa, ask mio box to add milk”. Expenses by category, with receipts and photos attached.
 
-DOCUMENTS
-Medical reports, prescriptions, certificates and photos in an encrypted archive with a key that stays with the family. Import an invoice, a prescription or a report: KidBox reads it and suggests the right actions: expense, event, visit, reminder. You choose what to confirm, with a tap.
+DOCUMENTS THAT FILE THEMSELVES
+Snap a bill, a medical report or a prescription and hand it to the assistant with the “+”: KidBox works out what it is and puts it in the right place. The bill becomes a Home due date, the report a visit with the doctor's words, lab results a test with the values, the prescription a treatment. The file stays attached and you confirm with a tap. All in an encrypted archive with a key that stays with the family.
 
 NEWS (PRO AND MAX)
 Every day, the news that matters to your family, from your country down to your town, each with its source. Nearby events go into the calendar with a tap.

@@ -23,8 +23,8 @@ Rendez-vous, examens, vaccins et traitements des enfants et des adultes, avec ra
 COURSES ET DÉPENSES
 Liste de courses partagée en temps réel : quand l'un coche, l'autre le voit aussitôt. Dictez courses et tâches à Alexa : « Alexa, demande à mio box d'ajouter du lait ». Dépenses par catégorie, avec tickets et photos joints.
 
-DOCUMENTS
-Comptes rendus, ordonnances, certificats et photos dans une archive chiffrée avec une clé qui reste dans la famille. Importez une facture, une ordonnance ou un compte rendu : KidBox le lit et propose les bonnes actions : dépense, événement, visite, rappel. Vous choisissez ce qu'il faut confirmer, d'un appui.
+DOCUMENTS BIEN RANGÉS
+Donnez à l'assistant, avec le « + », la photo d'une facture, d'un compte rendu ou d'une ordonnance : KidBox la range à sa place. La facture va dans Maison, le compte rendu dans une consultation, les analyses dans un examen, l'ordonnance dans un traitement, fichier joint. Vous confirmez. Le tout chiffré.
 
 ACTUALITÉS (PRO ET MAX)
 Chaque jour, les actualités utiles à votre famille, de votre pays à votre ville, chacune avec sa source. Les événements proches s'ajoutent au calendrier d'un appui.

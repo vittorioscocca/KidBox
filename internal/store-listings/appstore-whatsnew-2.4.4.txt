@@ -1,0 +1,39 @@
+# Novità iOS 2.4.4 — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 24/10/2026 sulle modifiche dopo la 2.4.3 (il 26/10 aggiunti in testa lo smistamento dei documenti dall'assistente e le farmacie di turno, entrati con la build 157): widget Meteo in Home (WeatherKit) e Impostazioni → Widget con consiglio animato; avvisi sui pagamenti di casa; Viaggi e età dei bambini tradotti.
+
+## it
+
+• Documenti che si sistemano da soli: nella chat dell'assistente tocca «+» e scansiona, fotografa o scegli un file. KidBox capisce cos'è: la bolletta diventa una scadenza in Casa, il referto una visita con le parole del medico, le analisi un esame con i valori, la ricetta una cura, con il file allegato. Prima di salvare puoi correggere tutto.
+• Farmacie di turno (Pro e Max): in Salute e in Home la farmacia di turno vicino a te, letta dalla fonte ufficiale del tuo comune, con chiamata e indicazioni in un tocco.
+• Meteo in Home: accendi il widget e vedi temperatura, prossime ore e minima e massima dove ti trovi, con le previsioni di Apple Meteo. Un tocco apre l'app Meteo.
+• Impostazioni → Widget: scegli cosa vedere in Home, Meteo e Dashboard. Finché non ne accendi uno, un consiglio animato in Home te lo ricorda; puoi spegnerlo con «Non visualizzare più».
+• Pagamenti di casa (Pro e Max): se una scadenza è vicina e nessuno ha il to-do, KidBox chiede «Chi se ne occupa?» e dalla notifica rispondi «Ci penso io» o «Chiedi agli altri».
+• Viaggi: il dettaglio del viaggio, con hotel, voli, ristoranti e attività, ora è tradotto in tutte e quattro le lingue, come l'età dei bambini.
+
+## en-GB
+
+• Documents that file themselves: in the assistant chat tap “+” and scan, snap or pick a file. KidBox works out what it is: the bill becomes a Home due date, the report a visit with the doctor's words, lab results a test with the values, the prescription a treatment, with the file attached. You can correct everything before saving.
+• Duty pharmacies (Pro and Max): in Health and on Home, the on-duty pharmacy near you, read from your town's official source, with call and directions in one tap.
+• Weather on Home: turn on the widget to see the temperature, the next hours and the day's high and low where you are, with forecasts from Apple Weather. A tap opens the Weather app.
+• Settings → Widgets: choose what to show on Home, Weather and Dashboard. Until you turn one on, an animated tip on Home reminds you; you can switch it off with "Don't show again".
+• Home payments (Pro and Max): if a due date is close and nobody has the to-do, KidBox asks "Who's taking care of it?" and from the notification you reply "I'll do it" or "Ask the others".
+• Trips: the trip detail, with hotels, flights, restaurants and activities, is now translated into all four languages, and so is the children's age.
+
+## es-ES
+
+• Documentos que se ordenan solos: en el chat del asistente toca «+» y escanea, fotografía o elige un archivo. KidBox entiende qué es: la factura pasa a ser un vencimiento en Casa, el informe una visita con lo que dijo el médico, los análisis una prueba con los valores, la receta un tratamiento, con el archivo adjunto. Antes de guardar puedes corregirlo todo.
+• Farmacias de guardia (Pro y Max): en Salud y en Inicio, la farmacia de guardia cerca de ti, leída de la fuente oficial de tu municipio, con llamada e indicaciones en un toque.
+• El tiempo en Inicio: activa el widget y ve la temperatura, las próximas horas y la mínima y máxima donde estás, con las previsiones de Apple Tiempo. Un toque abre la app Tiempo.
+• Ajustes → Widgets: elige qué ver en Inicio, Tiempo y Panel. Mientras no actives ninguno, un consejo animado en Inicio te lo recuerda; puedes apagarlo con «No mostrar más».
+• Pagos de casa (Pro y Max): si un vencimiento está cerca y nadie tiene la tarea, KidBox pregunta «¿Quién se encarga?» y desde la notificación respondes «Me encargo yo» o «Pregunta a los demás».
+• Viajes: el detalle del viaje, con hoteles, vuelos, restaurantes y actividades, ahora está traducido a los cuatro idiomas, igual que la edad de los niños.
+
+## fr-FR
+
+• Des documents qui se rangent seuls : dans le chat de l'assistant, touchez « + » et numérisez, photographiez ou choisissez un fichier. KidBox comprend ce que c'est : la facture devient une échéance de la Maison, le compte rendu une consultation avec les mots du médecin, les analyses un examen avec les valeurs, l'ordonnance un traitement, avec le fichier joint. Vous pouvez tout corriger avant d'enregistrer.
+• Pharmacies de garde (Pro et Max) : dans Santé et sur l'Accueil, la pharmacie de garde près de chez vous, lue sur la source officielle de votre commune, avec appel et itinéraire d'un toucher.
+• La météo sur l'Accueil : activez le widget et voyez la température, les prochaines heures et les min et max du jour là où vous êtes, avec les prévisions d'Apple Météo. Un toucher ouvre l'app Météo.
+• Réglages → Widgets : choisissez ce qui s'affiche sur l'Accueil, Météo et Tableau de bord. Tant que vous n'en activez aucun, un conseil animé sur l'Accueil vous le rappelle ; vous pouvez le désactiver avec « Ne plus afficher ».
+• Paiements de la maison (Pro et Max) : si une échéance approche et que personne n'a la tâche, KidBox demande « Qui s'en occupe ? » et depuis la notification vous répondez « Je m'en occupe » ou « Demander aux autres ».
+• Voyages : le détail du voyage, avec hôtels, vols, restaurants et activités, est désormais traduit dans les quatre langues, comme l'âge des enfants.

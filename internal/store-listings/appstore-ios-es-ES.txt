@@ -23,8 +23,8 @@ Visitas, pruebas, vacunas y tratamientos de niños y adultos, con recordatorios 
 COMPRA Y GASTOS
 Lista de la compra compartida y actualizada en tiempo real: cuando uno la tacha, el otro lo ve al instante. Dicta compra y tareas a Alexa: «Alexa, pídele a mio box que añada leche». Gastos por categoría, con tickets y fotos adjuntos.
 
-DOCUMENTOS
-Informes médicos, recetas, certificados y fotos en un archivo cifrado con una clave que se queda en la familia. Importa una factura, una receta o un informe: KidBox lo lee y propone las acciones adecuadas: gasto, evento, visita, recordatorio. Tú eliges qué confirmar, con un toque.
+DOCUMENTOS EN SU SITIO
+Dale al asistente, con el «+», la foto de una factura, un informe o una receta: KidBox la guarda donde va. La factura pasa a Casa, el informe a una visita, los análisis a una prueba, la receta a un tratamiento, con el archivo adjunto. Tú confirmas. Todo cifrado con una clave de la familia.
 
 NOTICIAS (PRO Y MAX)
 Cada día, las noticias útiles para tu familia, de tu país a tu ciudad, cada una con su fuente. Los eventos cercanos se añaden al calendario con un toque.

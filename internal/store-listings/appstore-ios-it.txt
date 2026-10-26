@@ -23,8 +23,8 @@ Visite, esami, vaccini e cure di bambini e adulti, con promemoria per le scadenz
 SPESA E SPESE
 Lista della spesa condivisa e aggiornata in tempo reale: quando uno la spunta, l'altro lo vede subito. Detti spesa e to-do ad Alexa: «Alexa, chiedi a mio box di aggiungere il latte». Spese per categoria, con scontrini e foto allegati.
 
-DOCUMENTI
-Referti, ricette, certificati e foto in un archivio cifrato con una chiave che resta alla famiglia. Importa una fattura, una ricetta o un referto: KidBox lo legge e propone le azioni giuste: spesa, evento, visita, promemoria. Tu scegli cosa confermare, con un tocco.
+DOCUMENTI CHE SI SISTEMANO DA SOLI
+Fotografa una bolletta, un referto o una ricetta e dalla all'assistente con il «+»: KidBox capisce cos'è e la mette al posto giusto. La bolletta diventa una scadenza di Casa, il referto una visita con le parole del medico, le analisi un esame con i valori, la ricetta una cura. Il file resta allegato e tu confermi con un tocco. Tutto in un archivio cifrato con una chiave che resta alla famiglia.
 
 NOTIZIE (PRO E MAX)
 Ogni giorno le notizie utili alla tua famiglia, dal paese alla tua città, ciascuna con la sua fonte. Gli eventi vicini si aggiungono al calendario con un tocco.

@@ -1,0 +1,20 @@
+<it-IT>
+• Farmacie di turno (Pro e Max): in Salute e in Home la farmacia di turno vicino a te, letta dalla fonte ufficiale del tuo comune, con il tipo di servizio, chiamata e indicazioni in un tocco.
+• Piano Fitness: un piano nuovo conserva lo storico delle sedute già fatte.
+• Avvisi: parlano solo di te e dei bambini e non ricordano più le dosi già prese.
+</it-IT>
+<en-US>
+• Duty pharmacies (Pro and Max): in Health and on Home, the on-duty pharmacy near you, read from your town's official source, with the type of service, call and directions in one tap.
+• Fitness Plan: a new plan keeps the history of the sessions you've already done.
+• Alerts: they only talk about you and the children and no longer remind you of doses already taken.
+</en-US>
+<fr-FR>
+• Pharmacies de garde (Pro et Max) : dans Santé et sur l'accueil, la pharmacie de garde près de chez vous, lue sur la source officielle de votre commune, avec le type de service, l'appel et l'itinéraire d'un toucher.
+• Plan Fitness : un nouveau plan conserve l'historique des séances déjà faites.
+• Alertes : elles ne parlent que de vous et des enfants et ne rappellent plus les doses déjà prises.
+</fr-FR>
+<es-ES>
+• Farmacias de guardia (Pro y Max): en Salud y en Inicio, la farmacia de guardia cerca de ti, leída de la fuente oficial de tu municipio, con el tipo de servicio, llamada e indicaciones en un toque.
+• Plan Fitness: un plan nuevo conserva el historial de las sesiones ya hechas.
+• Avisos: solo hablan de ti y de los niños y ya no recuerdan dosis ya tomadas.
+</es-ES>

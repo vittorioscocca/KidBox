@@ -137,7 +137,16 @@ Importi una fattura, una ricetta, un referto o qualsiasi documento e l'AI lo
 legge e propone le azioni giuste: aggiungere la spesa, creare l'evento in
 calendario, registrare la visita, impostare il promemoria del vaccino, archiviare
 la scadenza del veicolo. L'utente sceglie cosa confermare. Usa i messaggi AI del
-piano.
+piano (un messaggio per pagina letta, al massimo 3 pagine).
+Su iPhone e iPad il posto per un documento che non si sa dove mettere è il «+»
+nella chat dell'assistente (scansione, foto o file): l'AI capisce che documento
+è e lo smista. Bolletta → scadenza in Casa (la spesa nasce da sola); referto →
+visita con medico, diagnosi e indicazioni; analisi → esame con i valori letti;
+ricetta → una cura per ogni farmaco; scontrino → spesa. Vale per figli e adulti,
+e il file resta allegato alla scheda creata (o va in Documenti). Prima di
+salvare si possono correggere titolo, importo, data e persona. Oggi la lettura
+AI dei documenti c'è solo su iPhone e iPad: su Android e sul web arriverà
+più avanti.
 
 ### Wallet
 Biglietti (treni, aerei, concerti), abbonamenti, documenti d'identità e carte

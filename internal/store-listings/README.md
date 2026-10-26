@@ -133,3 +133,11 @@ sono stati provati, quindi le descrizioni Mac restano identiche. Da applicare su
 Novità della 2.4.3 in `appstore-whatsnew-2.4.3.txt`.
 Applicate il 23/10/2026 sulla iOS 2.4.3 (`PREPARE_FOR_SUBMISSION`): descrizione e Novità in quattro lingue, rilette dopo la scrittura. Mac non toccato.
 
+
+Il 26/10/2026 sulla iOS 2.4.4 (`PREPARE_FOR_SUBMISSION`, build 157): blocco Documenti della
+descrizione iOS riscritto sullo smistamento dal «+» dell'assistente (bolletta → Casa, referto →
+visita, analisi → esame, ricetta → cura); per stare nei 4000 caratteri lo spagnolo e il francese
+sono più corti. Mac invariato (`{{iOS||Mac}}`). Novità 2.4.4 con due punti nuovi in testa
+(documenti, farmacie di turno). Descrizione e Novità applicate e rilette. Play: note in
+`play-whatsnew-2.5.5.txt` (farmacie, storico fitness, avvisi) da incollare; il numero di versione
+è provvisorio e lo smistamento documenti non c'è ancora su Android.
