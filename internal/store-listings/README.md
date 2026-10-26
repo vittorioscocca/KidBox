@@ -139,5 +139,7 @@ descrizione iOS riscritto sullo smistamento dal «+» dell'assistente (bolletta 
 visita, analisi → esame, ricetta → cura); per stare nei 4000 caratteri lo spagnolo e il francese
 sono più corti. Mac invariato (`{{iOS||Mac}}`). Novità 2.4.4 con due punti nuovi in testa
 (documenti, farmacie di turno). Descrizione e Novità applicate e rilette. Play: note in
-`play-whatsnew-2.5.5.txt` (farmacie, storico fitness, avvisi) da incollare; il numero di versione
-è provvisorio e lo smistamento documenti non c'è ancora su Android.
+`play-whatsnew-2.5.5.txt` da incollare; il numero di versione è provvisorio. Riscritte lo stesso
+giorno col porting Android dello smistamento documenti (commit Android 87f151f): documenti in testa,
+farmacie, storico fitness; la riga sugli avvisi è uscita per stare nei 500 caratteri. Landing e chat
+del sito dicono ancora «presto su Android»: da cambiare quando la build è in vendita.
