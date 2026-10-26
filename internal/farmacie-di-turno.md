@@ -76,6 +76,17 @@ ha guardato solo `robots.txt`) e chiedere un permesso scritto.
 
 ## Trappole già incontrate
 
+- **Certificato intermedio mancante (ASL Benevento, 26/10/2026).** Molti siti
+  pubblici inviano solo il certificato del sito: `curl` e i browser recuperano
+  l'intermedio dall'indirizzo AIA, Node no (`UNABLE_TO_VERIFY_LEAF_SIGNATURE`) e
+  l'utente vedeva un errore generico. `fetch.js` lo recupera da sé e riprova una
+  volta; la verifica TLS resta attiva (certificati scaduti, autofirmati o di un
+  altro nome vengono rifiutati). Lo stesso errore non è mai «sito spento»: prova
+  prima con `curl -v`.
+- **Una pagina può non contenere i turni.** La pagina ASL Benevento ha solo
+  orari ordinari e una nota (e testo spam nascosto in fondo): la regola non
+  esce plausibile e l'utente vede «non riesco a leggere questo sito» col link.
+
 - `node-fetch` v3 dà il corpo come stream Node: per leggere a pezzi con
   `getReader()` serve il `fetch` globale di Node 22.
 - La ricerca web di Claude restituisce soprattutto aggregatori: l'URL scelto
