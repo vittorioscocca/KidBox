@@ -17,8 +17,12 @@ enum PharmacyServiceError: LocalizedError, Equatable {
     case attempts
     case disabled
     case invalidURL
-    /// Il sito non si apre (indirizzo interno, non risponde, non è una pagina di testo).
+    /// Il sito non si apre (indirizzo interno, non risponde).
     case unreachable
+    case blocked
+    case notFound
+    case tooLarge
+    case unsupported
     case network(String)
     case server(String)
 
@@ -44,8 +48,46 @@ enum PharmacyServiceError: LocalizedError, Equatable {
             return NSLocalizedString("Questo non sembra un indirizzo web.", comment: "Pharmacies: invalid URL")
         case .unreachable:
             return NSLocalizedString("Non riesco ad aprire questo sito.", comment: "Pharmacies: site unreachable")
+        case .blocked:
+            return NSLocalizedString("Il sito non permette la lettura automatica: puoi aprirlo dal link.", comment: "Pharmacies: site blocks automated access")
+        case .notFound:
+            return NSLocalizedString("Questa pagina non esiste più: controlla l'indirizzo.", comment: "Pharmacies: page not found")
+        case .tooLarge:
+            return NSLocalizedString("Il file è troppo grande per essere letto.", comment: "Pharmacies: file too large")
+        case .unsupported:
+            return NSLocalizedString("Questo tipo di file non si può leggere: servono una pagina web, un PDF o un'immagine.", comment: "Pharmacies: unsupported file type")
         case .network(let m), .server(let m):
             return m
+        }
+    }
+}
+
+/// Esito di una ricerca o di un sito indicato a mano. `why`: outdated,
+/// too-large, too-many-pages, blocked, not-found, unsupported, unreachable o
+/// no-data (vuoto quando è andata bene).
+struct PharmacySourceResult {
+    let status: String
+    let why: String
+
+    /// Il motivo, in parole, per chi non riesce a leggere i turni.
+    var explanation: String {
+        switch why {
+        case "outdated":
+            return NSLocalizedString("Ho trovato dei turni, ma non sono di questo periodo: il sito potrebbe non essere aggiornato.", comment: "Pharmacies: shifts found but outdated")
+        case "too-large":
+            return NSLocalizedString("Il file è troppo grande per essere letto.", comment: "Pharmacies: file too large")
+        case "too-many-pages":
+            return NSLocalizedString("Il documento è troppo lungo per essere un elenco di turni.", comment: "Pharmacies: document too long")
+        case "blocked":
+            return NSLocalizedString("Il sito non permette la lettura automatica: puoi aprirlo dal link.", comment: "Pharmacies: site blocks automated access")
+        case "not-found":
+            return NSLocalizedString("Questa pagina non esiste più: controlla l'indirizzo.", comment: "Pharmacies: page not found")
+        case "unsupported":
+            return NSLocalizedString("Questo tipo di file non si può leggere: servono una pagina web, un PDF o un'immagine.", comment: "Pharmacies: unsupported file type")
+        case "unreachable":
+            return NSLocalizedString("Non riesco ad aprire questo sito.", comment: "Pharmacies: site unreachable")
+        default:
+            return NSLocalizedString("Non riesco a leggere i turni da questo sito: resta il link per aprirlo.", comment: "Pharmacies: manual site unreadable")
         }
     }
 }
@@ -68,27 +110,27 @@ final class PharmacyService {
 
     // MARK: - Ricerca della fonte (AI, scala i messaggi)
 
-    /// `exists`, `found`, `unreadable` o `not-found`.
-    func findSource(familyId: String, place: NewsPlace) async throws -> String {
+    /// `exists`, `found`, `unreadable` o `not-found`, con il perché quando non si legge.
+    func findSource(familyId: String, place: NewsPlace) async throws -> PharmacySourceResult {
         try await ensurePaidPlan()
         let callable = functions.httpsCallable("findPharmacySource")
         callable.timeoutInterval = 300
         let reply: [String: Any] = try await callRaw(callable, ["familyId": familyId, "place": place.dictionary])
-        return reply["status"] as? String ?? "not-found"
+        return PharmacySourceResult(status: reply["status"] as? String ?? "not-found", why: reply["why"] as? String ?? "")
     }
 
     // MARK: - Sito indicato a mano
 
     /// `url == nil` toglie la scelta e torna alla fonte automatica.
     /// Risposta: `ok`, `unreadable` (il sito non si sa leggere: resta il link) o `cleared`.
-    func setSource(familyId: String, place: NewsPlace, url: String?) async throws -> String {
+    func setSource(familyId: String, place: NewsPlace, url: String?) async throws -> PharmacySourceResult {
         try await ensurePaidPlan()
         let callable = functions.httpsCallable("setPharmacySource")
         callable.timeoutInterval = 190
         var payload: [String: Any] = ["familyId": familyId, "place": place.dictionary]
         payload["url"] = url ?? NSNull()
         let reply: [String: Any] = try await callRaw(callable, payload)
-        return reply["status"] as? String ?? "unreadable"
+        return PharmacySourceResult(status: reply["status"] as? String ?? "unreadable", why: reply["why"] as? String ?? "")
     }
 
     // MARK: - Presidio e lettura
@@ -150,6 +192,14 @@ final class PharmacyService {
             )
         case .failedPrecondition where reason == "pharmacies-disabled":
             return PharmacyServiceError.disabled
+        case .failedPrecondition where reason == "blocked":
+            return PharmacyServiceError.blocked
+        case .failedPrecondition where reason == "not-found":
+            return PharmacyServiceError.notFound
+        case .failedPrecondition where reason == "too-large":
+            return PharmacyServiceError.tooLarge
+        case .failedPrecondition where reason == "unsupported":
+            return PharmacyServiceError.unsupported
         case .failedPrecondition:
             return PharmacyServiceError.unreachable
         case .invalidArgument where reason == "invalid-url":

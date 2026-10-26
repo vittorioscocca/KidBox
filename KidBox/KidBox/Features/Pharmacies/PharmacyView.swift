@@ -39,9 +39,11 @@ final class PharmacyViewModel: ObservableObject {
         notice = nil
         defer { isWorking = false }
         do {
-            let status = try await PharmacyService.shared.findSource(familyId: familyId, place: place)
-            if status == "not-found" {
+            let result = try await PharmacyService.shared.findSource(familyId: familyId, place: place)
+            if result.status == "not-found" {
                 notice = NSLocalizedString("Non ho trovato una pagina ufficiale per questo comune. Puoi indicare tu il sito.", comment: "Pharmacies: AI found nothing")
+            } else if result.status == "unreadable" {
+                notice = result.explanation
             }
             errorMessage = nil
             feed = try await PharmacyService.shared.fetch(familyId: familyId, place: place)
@@ -57,9 +59,9 @@ final class PharmacyViewModel: ObservableObject {
         notice = nil
         defer { isWorking = false }
         do {
-            let status = try await PharmacyService.shared.setSource(familyId: familyId, place: place, url: url)
-            if status == "unreadable" {
-                notice = NSLocalizedString("Non riesco a leggere i turni da questo sito: resta il link per aprirlo.", comment: "Pharmacies: manual site unreadable")
+            let result = try await PharmacyService.shared.setSource(familyId: familyId, place: place, url: url)
+            if result.status == "unreadable" {
+                notice = result.explanation
             }
             errorMessage = nil
             feed = try await PharmacyService.shared.fetch(familyId: familyId, place: place)

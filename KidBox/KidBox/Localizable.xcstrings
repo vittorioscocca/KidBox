@@ -360,6 +360,28 @@
         }
       }
     },
+    "Ho trovato dei turni, ma non sono di questo periodo: il sito potrebbe non essere aggiornato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I found shifts, but they're not for this period: the site may be out of date."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "He encontrado turnos, pero no son de este periodo: puede que el sitio no esté actualizado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai trouvé des gardes, mais elles ne sont pas de cette période : le site n'est peut-être pas à jour."
+          }
+        }
+      }
+    },
     "Ho trovato la pagina, ma non sono in grado di estrarne i turni in modo affidabile. Puoi aprirla qui sotto." : {
       "localizations" : {
         "en" : {
@@ -400,6 +422,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les gardes peuvent changer : en cas de doute, appelez la pharmacie ou consultez l'affichage."
+          }
+        }
+      }
+    },
+    "Il documento è troppo lungo per essere un elenco di turni." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The document is too long to be a shift list."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El documento es demasiado largo para ser una lista de turnos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le document est trop long pour être une liste de gardes."
+          }
+        }
+      }
+    },
+    "Il file è troppo grande per essere letto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The file is too large to be read."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El archivo es demasiado grande para leerlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le fichier est trop volumineux pour être lu."
+          }
+        }
+      }
+    },
+    "Il sito non permette la lettura automatica: puoi aprirlo dal link." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The site doesn't allow automatic reading: you can open it from the link."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El sitio no permite la lectura automática: puedes abrirlo desde el enlace."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le site n'autorise pas la lecture automatique : vous pouvez l'ouvrir depuis le lien."
           }
         }
       }
@@ -888,6 +976,28 @@
         }
       }
     },
+    "Questa pagina non esiste più: controlla l'indirizzo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This page no longer exists: check the address."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta página ya no existe: comprueba la dirección."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette page n'existe plus : vérifiez l'adresse."
+          }
+        }
+      }
+    },
     "Questa ricerca costa circa %1$d messaggi AI e alla famiglia ne restano %2$d." : {
       "localizations" : {
         "en" : {
@@ -928,6 +1038,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cela ne ressemble pas à une adresse web."
+          }
+        }
+      }
+    },
+    "Questo tipo di file non si può leggere: servono una pagina web, un PDF o un'immagine." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file type can't be read: it must be a web page, a PDF or an image."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este tipo de archivo no se puede leer: debe ser una página web, un PDF o una imagen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce type de fichier ne peut pas être lu : il faut une page web, un PDF ou une image."
           }
         }
       }
