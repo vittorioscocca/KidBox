@@ -2171,7 +2171,7 @@ private struct FitnessHealthPermissionSheet: View {
                 onAuthorize()
                 dismiss()
             } label: {
-                Text("Consenti l'accesso")
+                Text("Continua")
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 4)
             }

@@ -125,7 +125,7 @@ struct AppleHealthAppView: View {
                     ProgressView()
                         .tint(.white)
                 }
-                Text(snapshot == nil ? "Collega Apple Salute" : "Aggiorna dati")
+                Text(snapshot == nil ? "Continua" : "Aggiorna dati")
                     .fontWeight(.semibold)
             }
             .frame(maxWidth: .infinity)
