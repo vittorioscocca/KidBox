@@ -60,6 +60,21 @@ nella finestra. Una fonte con 3 letture fallite di fila passa a `error`.
 Le date senza anno prendono quello corrente (il successivo se già passate da
 > 40 giorni).
 
+## Listino e landing (26/10/2026)
+
+- Riga «💊 Farmacie di turno vicino a te, da fonti ufficiali» nelle feature del
+  **Pro** (e quindi del Max, che include il Pro) in `functions/plans.json`, in
+  4 lingue. **`config/plans` vivo non la ha finché dalla console non si preme
+  «Ripristina dal deploy»** (Piani → Listino piani): la landing e le app leggono
+  il documento vivo, quindi fino ad allora i riquadri dei piani non la mostrano.
+  Non lanciare `sync-plans-from-remote.js` prima: riscriverebbe `plans.json`
+  senza la riga.
+- Landing: sezione «Farmacie di turno» in `index.html` e `index-en.html`
+  (illustrazione disegnata in CSS, senza finti screenshot) e traduzioni ES/FR in
+  `tools/i18n/index.json`; la chat della landing la conosce
+  (`functions/landingChat/knowledge.md`). Quando esisteranno screenshot veri
+  (modalità demo), sostituire l'illustrazione.
+
 ## Fonti incluse (pilota del 26/10/2026)
 
 - **Lombardia**: JSON di `farmacia-aperta.eu/ajax/farmacie` (Federfarma

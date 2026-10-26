@@ -207,7 +207,20 @@
   "Free to start. No card required.",
   "<span class=\"st-in\"><span class=\"st-sub\">Download on the</span><span class=\"st-main\">App Store</span></span></a>\n      <a class=\"store\" href=\"https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox\" target=\"_blank\" rel=\"noopener\">",
   "<span class=\"st-in\"><span class=\"st-sub\">Get it on</span><span class=\"st-main\">Google Play</span></span></a>\n      <a class=\"store store-web\" href=\"https://app.kidboxapp.com\" target=\"_blank\" rel=\"noopener\">",
-  "I like the idea"
+  "I like the idea",
+  "💊 Duty pharmacies",
+  "The on-duty pharmacy near you, even at night.",
+  "KidBox looks for the official page that publishes your town's shifts (Federfarma, the pharmacists' association, the health authority or the town hall) and reads it for you, even when it's a PDF or an image. After that it updates by itself. On the Pro and Max plans.",
+  "<span class=\"ck\" style=\"background:var(--green)\">✓</span><span>Always with <b>the source</b> and the time of the last update</span>",
+  "<span class=\"ck\" style=\"background:var(--green)\">✓</span><span><b>Call</b> or open <b>directions</b> with one tap</span>",
+  "<span class=\"ck\" style=\"background:var(--green)\">✓</span><span>If it can't find your town, you enter the <b>site</b> yourself: it always takes priority</span>",
+  "Illustration of the duty pharmacies screen",
+  "Duty pharmacies",
+  "📍 Your town",
+  "<span style=\"font-size:.68rem;font-weight:700;color:var(--green)\">Night service</span><span style=\"font-size:.86rem;font-weight:800;color:var(--text)\">Central Pharmacy</span><span style=\"font-size:.74rem;color:var(--muted)\">12 Main Street</span><span style=\"display:flex;gap:6px;margin-top:3px\"><span style=\"font-size:.7rem;font-weight:700;color:var(--green);border:1px solid var(--green);border-radius:999px;padding:3px 10px\">📞 Call</span><span style=\"font-size:.7rem;font-weight:700;color:var(--green);border:1px solid var(--green);border-radius:999px;padding:3px 10px\">➜ Directions</span></span>",
+  "<span style=\"font-size:.68rem;font-weight:700;color:var(--green)\">Afternoon and holiday service</span><span style=\"font-size:.86rem;font-weight:800;color:var(--text)\">Saint Mark Pharmacy</span><span style=\"font-size:.74rem;color:var(--muted)\">40 Market Road</span><span style=\"display:flex;gap:6px;margin-top:3px\"><span style=\"font-size:.7rem;font-weight:700;color:var(--green);border:1px solid var(--green);border-radius:999px;padding:3px 10px\">📞 Call</span><span style=\"font-size:.7rem;font-weight:700;color:var(--green);border:1px solid var(--green);border-radius:999px;padding:3px 10px\">➜ Directions</span></span>",
+  "✓ Official source · updated at 10:52",
+  "<b>💊</b> <b>On-duty pharmacies near you, from official sources</b>"
  ],
  "es": [
   "KidBox · El agente de la familia",
@@ -417,7 +430,20 @@
   "Gratis para empezar. Sin tarjeta.",
   "<span class=\"st-in\"><span class=\"st-sub\">Descárgalo en el</span><span class=\"st-main\">App Store</span></span></a>\n      <a class=\"store\" href=\"https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox\" target=\"_blank\" rel=\"noopener\">",
   "<span class=\"st-in\"><span class=\"st-sub\">Disponible en</span><span class=\"st-main\">Google Play</span></span></a>\n      <a class=\"store store-web\" href=\"https://app.kidboxapp.com\" target=\"_blank\" rel=\"noopener\">",
-  "Me gusta la idea"
+  "Me gusta la idea",
+  "💊 Farmacias de guardia",
+  "La farmacia de guardia cerca de ti, también de noche.",
+  "KidBox busca la página oficial que publica los turnos de tu municipio (Federfarma, el colegio de farmacéuticos, la autoridad sanitaria o el ayuntamiento) y la lee por ti, incluso cuando es un PDF o una imagen. Después se actualiza sola. En los planes Pro y Max.",
+  "<span class=\"ck\" style=\"background:var(--green)\">✓</span><span>Siempre con <b>la fuente</b> y la hora de la última actualización</span>",
+  "<span class=\"ck\" style=\"background:var(--green)\">✓</span><span><b>Llama</b> o abre <b>cómo llegar</b> con un toque</span>",
+  "<span class=\"ck\" style=\"background:var(--green)\">✓</span><span>Si no encuentra tu municipio, indicas tú el <b>sitio</b>: siempre tiene prioridad</span>",
+  "Ilustración de la pantalla de farmacias de guardia",
+  "Farmacias de guardia",
+  "📍 Tu municipio",
+  "<span style=\"font-size:.68rem;font-weight:700;color:var(--green)\">Servicio nocturno</span><span style=\"font-size:.86rem;font-weight:800;color:var(--text)\">Farmacia Central</span><span style=\"font-size:.74rem;color:var(--muted)\">Calle Mayor, 12</span><span style=\"display:flex;gap:6px;margin-top:3px\"><span style=\"font-size:.7rem;font-weight:700;color:var(--green);border:1px solid var(--green);border-radius:999px;padding:3px 10px\">📞 Llamar</span><span style=\"font-size:.7rem;font-weight:700;color:var(--green);border:1px solid var(--green);border-radius:999px;padding:3px 10px\">➜ Cómo llegar</span></span>",
+  "<span style=\"font-size:.68rem;font-weight:700;color:var(--green)\">Servicio de tarde y festivos</span><span style=\"font-size:.86rem;font-weight:800;color:var(--text)\">Farmacia San Marcos</span><span style=\"font-size:.74rem;color:var(--muted)\">Calle del Mercado, 40</span><span style=\"display:flex;gap:6px;margin-top:3px\"><span style=\"font-size:.7rem;font-weight:700;color:var(--green);border:1px solid var(--green);border-radius:999px;padding:3px 10px\">📞 Llamar</span><span style=\"font-size:.7rem;font-weight:700;color:var(--green);border:1px solid var(--green);border-radius:999px;padding:3px 10px\">➜ Cómo llegar</span></span>",
+  "✓ Fuente oficial · actualizado a las 10:52",
+  "<b>💊</b> <b>Farmacias de guardia cerca de ti, de fuentes oficiales</b>"
  ],
  "fr": [
   "KidBox · L'agent de la famille",
@@ -627,6 +653,19 @@
   "Gratuit pour commencer. Sans carte.",
   "<span class=\"st-in\"><span class=\"st-sub\">Télécharger dans l'</span><span class=\"st-main\">App Store</span></span></a>\n      <a class=\"store\" href=\"https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox\" target=\"_blank\" rel=\"noopener\">",
   "<span class=\"st-in\"><span class=\"st-sub\">Disponible sur</span><span class=\"st-main\">Google Play</span></span></a>\n      <a class=\"store store-web\" href=\"https://app.kidboxapp.com\" target=\"_blank\" rel=\"noopener\">",
-  "J'aime l'idée"
+  "J'aime l'idée",
+  "💊 Pharmacies de garde",
+  "La pharmacie de garde près de chez vous, même la nuit.",
+  "KidBox cherche la page officielle qui publie les gardes de votre commune (Federfarma, l'ordre des pharmaciens, l'agence de santé ou la mairie) et la lit pour vous, même quand c'est un PDF ou une image. Ensuite elle se met à jour toute seule. Dans les formules Pro et Max.",
+  "<span class=\"ck\" style=\"background:var(--green)\">✓</span><span>Toujours avec <b>la source</b> et l'heure de la dernière mise à jour</span>",
+  "<span class=\"ck\" style=\"background:var(--green)\">✓</span><span><b>Appelez</b> ou ouvrez l'<b>itinéraire</b> d'un geste</span>",
+  "<span class=\"ck\" style=\"background:var(--green)\">✓</span><span>S'il ne trouve pas votre commune, vous indiquez vous-même le <b>site</b> : il a toujours la priorité</span>",
+  "Illustration de l'écran des pharmacies de garde",
+  "Pharmacies de garde",
+  "📍 Votre commune",
+  "<span style=\"font-size:.68rem;font-weight:700;color:var(--green)\">Service de nuit</span><span style=\"font-size:.86rem;font-weight:800;color:var(--text)\">Pharmacie Centrale</span><span style=\"font-size:.74rem;color:var(--muted)\">12 rue Principale</span><span style=\"display:flex;gap:6px;margin-top:3px\"><span style=\"font-size:.7rem;font-weight:700;color:var(--green);border:1px solid var(--green);border-radius:999px;padding:3px 10px\">📞 Appeler</span><span style=\"font-size:.7rem;font-weight:700;color:var(--green);border:1px solid var(--green);border-radius:999px;padding:3px 10px\">➜ Itinéraire</span></span>",
+  "<span style=\"font-size:.68rem;font-weight:700;color:var(--green)\">Service de l'après-midi et des jours fériés</span><span style=\"font-size:.86rem;font-weight:800;color:var(--text)\">Pharmacie Saint-Marc</span><span style=\"font-size:.74rem;color:var(--muted)\">40 rue du Marché</span><span style=\"display:flex;gap:6px;margin-top:3px\"><span style=\"font-size:.7rem;font-weight:700;color:var(--green);border:1px solid var(--green);border-radius:999px;padding:3px 10px\">📞 Appeler</span><span style=\"font-size:.7rem;font-weight:700;color:var(--green);border:1px solid var(--green);border-radius:999px;padding:3px 10px\">➜ Itinéraire</span></span>",
+  "✓ Source officielle · mis à jour à 10:52",
+  "<b>💊</b> <b>Pharmacies de garde près de chez vous, depuis des sources officielles</b>"
  ]
 }

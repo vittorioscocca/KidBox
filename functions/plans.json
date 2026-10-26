@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-05",
+  "updatedAt": "2026-10-26",
   "plans": {
     "free": {
       "id": "free",
@@ -255,6 +255,11 @@
             "strong": true
           },
           {
+            "icon": "💊",
+            "text": "Farmacie di turno vicino a te, da fonti ufficiali",
+            "strong": true
+          },
+          {
             "icon": "✈️",
             "text": "Pianificatore Viaggi con AI",
             "strong": true
@@ -304,6 +309,11 @@
           {
             "icon": "📰",
             "text": "News for your family: benefits, school, health and events nearby",
+            "strong": true
+          },
+          {
+            "icon": "💊",
+            "text": "On-duty pharmacies near you, from official sources",
             "strong": true
           },
           {
@@ -359,6 +369,11 @@
             "strong": true
           },
           {
+            "icon": "💊",
+            "text": "Pharmacies de garde près de chez vous, depuis des sources officielles",
+            "strong": true
+          },
+          {
             "icon": "✈️",
             "text": "Planificateur de voyages IA",
             "strong": true
@@ -408,6 +423,11 @@
           {
             "icon": "📰",
             "text": "Noticias para tu familia: ayudas, escuela, salud y eventos cercanos",
+            "strong": true
+          },
+          {
+            "icon": "💊",
+            "text": "Farmacias de guardia cerca de ti, de fuentes oficiales",
             "strong": true
           },
           {

@@ -219,6 +219,20 @@ KidBox ha diversi agenti AI, ognuno nella sezione che conosce:
   dalla lista della spesa. Le ricerche costano messaggi AI: ogni edizione al
   massimo 6 messaggi, e meno quando la leggono anche altre famiglie della stessa
   zona. Gli argomenti da seguire si scelgono in Impostazioni → Notizie.
+- **Farmacie di turno** (solo Pro e Max): un riquadro in Salute e una scorciatoia
+  in Home. Mostra le farmacie di turno del comune della famiglia (lo stesso
+  scelto per le Notizie), con chiamata e indicazioni, i turni dei giorni
+  successivi e il tipo di servizio (notturno, pomeridiano, festivo). I turni
+  vengono dalla pagina **ufficiale** (Federfarma, Ordine dei farmacisti, ASL o
+  Comune): l'AI la cerca e impara a leggerla una volta, anche quando è un PDF o
+  un'immagine, poi l'elenco si aggiorna da solo e ogni volta si vede la fonte e
+  l'ora dell'ultimo aggiornamento. Alcune zone (Lombardia, Torino e dintorni)
+  sono già pronte; altrove la prima ricerca costa qualche messaggio AI, una volta
+  sola, e può non trovare nulla: in quel caso, come in qualunque altro, l'utente
+  può indicare a mano il sito con «Usa un altro sito», che vale solo per la sua
+  famiglia. Se la fonte non è aggiornata l'app non mostra un elenco vecchio ma il
+  link al sito. I turni possono cambiare: per un dubbio si chiama la farmacia; per
+  un'urgenza medica il 112.
 - **Pianificatore di viaggi**: in Viaggi (Pro e Max).
 - **Piano Alimentare** e **Piano Fitness**: in Salute (Pro e Max).
 - **Document Intelligence**: legge documenti e propone azioni.
@@ -241,7 +255,7 @@ Regole che valgono per tutti i piani:
   limite di persone.
 - Il piano Free non scade ed è gratuito per sempre; include tutte le sezioni
   tranne quelle indicate come solo Pro e Max (Piano Alimentare, Piano Fitness,
-  itinerari di viaggio con l'AI, Notizie). Le altre funzioni AI sul Free usano i messaggi
+  itinerari di viaggio con l'AI, Notizie, Farmacie di turno). Le altre funzioni AI sul Free usano i messaggi
   di prova.
 - L'abbonamento si acquista dall'app (App Store su iPhone, iPad e Mac; Google
   Play su Android), mensile o annuale (l'annuale costa circa un terzo in meno
