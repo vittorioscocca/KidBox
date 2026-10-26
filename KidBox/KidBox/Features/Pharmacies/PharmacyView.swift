@@ -276,6 +276,9 @@ struct PharmacyView: View {
 
     private func shiftRow(_ s: PharmacyShift, showComune: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 6) {
+            if let service = s.serviceLabel {
+                Text(service).font(.caption.weight(.semibold)).foregroundStyle(tint)
+            }
             Text(s.name).font(.subheadline.bold())
             if !s.address.isEmpty || !s.comune.isEmpty {
                 Text([s.address, showComune || place.city.isEmpty ? s.comune : ""].filter { !$0.isEmpty }.joined(separator: " · "))

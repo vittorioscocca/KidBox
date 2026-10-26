@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 struct PharmacyShift: Codable, Identifiable, Hashable {
     var date: String
@@ -17,12 +18,26 @@ struct PharmacyShift: Codable, Identifiable, Hashable {
     var phone: String = ""
     var lat: Double? = nil
     var lng: Double? = nil
+    /// night, afternoon, holiday, afternoon_holiday, h24: opzionale, non tutte le fonti lo dicono.
+    var service: String? = nil
 
     var id: String { "\(date)|\(name)|\(comune)|\(address)" }
 
     /// Solo cifre e «+»: quello che `tel:` accetta.
     var dialNumber: String {
         phone.filter { $0.isNumber || $0 == "+" }
+    }
+
+    /// Il tipo di servizio, quando la fonte lo indica.
+    var serviceLabel: LocalizedStringKey? {
+        switch service {
+        case "night": return "Servizio notturno"
+        case "afternoon": return "Servizio pomeridiano"
+        case "holiday": return "Servizio festivo"
+        case "afternoon_holiday": return "Servizio pomeridiano e festivo"
+        case "h24": return "Aperta 24 ore"
+        default: return nil
+        }
     }
 
     /// Indirizzo e comune per la ricerca su Mappe.
