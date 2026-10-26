@@ -52,1234 +52,706 @@
     " Meteo" : {
 
     },
-    "Aperta 24 ore" : {
+    "Azione" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open 24 hours"
+            "value" : "Action"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abierta 24 horas"
+            "value" : "Acción"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouverte 24 h/24"
+            "value" : "Action"
           }
         }
       }
     },
-    "Aperte vicino a te" : {
+    "Carica un documento" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open near you"
+            "value" : "Upload a document"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abiertas cerca de ti"
+            "value" : "Subir un documento"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvertes près de chez vous"
+            "value" : "Ajouter un document"
           }
         }
       }
     },
-    "Apri %@" : {
+    "Casa · Scadenze e pagamenti" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open %@"
+            "value" : "Home · Bills and payments"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir %@"
+            "value" : "Casa · Vencimientos y pagos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrir %@"
+            "value" : "Maison · Échéances et paiements"
           }
         }
       }
     },
-    "Cerca la fonte (circa %d messaggi AI)" : {
+    "Casa: \"%@\" — %@." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find the source (about %d AI messages)"
+            "value" : "Home: \"%@\" — %@."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Buscar la fuente (unos %d mensajes de IA)"
+            "value" : "Casa: \"%@\" — %@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chercher la source (environ %d messages IA)"
+            "value" : "Maison : « %@ » — %@."
           }
         }
       }
     },
-    "Chiama" : {
+    "Casa: \"%@\"." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Call"
+            "value" : "Home: \"%@\"."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Llamar"
+            "value" : "Casa: \"%@\"."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Appeler"
+            "value" : "Maison : « %@ »."
           }
         }
       }
     },
-    "Di turno oggi" : {
+    "Cura: \"%@\"." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "On duty today"
+            "value" : "Treatment: \"%@\"."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "De guardia hoy"
+            "value" : "Tratamiento: \"%@\"."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "De garde aujourd'hui"
+            "value" : "Traitement : « %@ »."
           }
         }
       }
     },
-    "Di turno oggi nei comuni vicini" : {
+    "Documento analizzato" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "On duty today in nearby towns"
+            "value" : "Document analyzed"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "De guardia hoy en municipios cercanos"
+            "value" : "Documento analizado"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "De garde aujourd'hui dans les communes voisines"
+            "value" : "Document analysé"
           }
         }
       }
     },
-    "Farmacie" : {
+    "Documento smistato" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pharmacies"
+            "value" : "Document filed"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Farmacias"
+            "value" : "Documento archivado"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pharmacies"
+            "value" : "Document classé"
           }
         }
       }
     },
-    "Farmacie di turno" : {
+    "Esame / analisi" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duty pharmacies"
+            "value" : "Test / lab results"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Farmacias de guardia"
+            "value" : "Prueba / análisis"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pharmacies de garde"
+            "value" : "Examen / analyses"
           }
         }
       }
     },
-    "Farmacie di turno vicino a te" : {
+    "Esame: \"%@\"." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duty pharmacies near you"
+            "value" : "Test: \"%@\"."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Farmacias de guardia cerca de ti"
+            "value" : "Prueba: \"%@\"."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pharmacies de garde près de chez vous"
+            "value" : "Examen : « %@ »."
           }
         }
       }
     },
-    "Fonte da verificare" : {
+    "Evento calendario" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Source to verify"
+            "value" : "Calendar event"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fuente por verificar"
+            "value" : "Evento del calendario"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Source à vérifier"
+            "value" : "Événement du calendrier"
           }
         }
       }
     },
-    "Fonte ufficiale" : {
+    "File" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Official source"
+            "value" : "Files"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fuente oficial"
+            "value" : "Archivos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Source officielle"
+            "value" : "Fichiers"
           }
         }
       }
     },
-    "Fonte ufficiale trovata dall'AI" : {
+    "File allegato." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Official source found by AI"
+            "value" : "File attached."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fuente oficial encontrada por la IA"
+            "value" : "Archivo adjunto."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Source officielle trouvée par l'IA"
+            "value" : "Fichier joint."
           }
         }
       }
     },
-    "Hai già provato diverse volte oggi: riprova domani." : {
+    "File salvato in Documenti." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You have already tried several times today: try again tomorrow."
+            "value" : "File saved in Documents."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ya lo has intentado varias veces hoy: vuelve a probar mañana."
+            "value" : "Archivo guardado en Documentos."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vous avez déjà essayé plusieurs fois aujourd'hui : réessayez demain."
+            "value" : "Fichier enregistré dans Documents."
           }
         }
       }
     },
-    "Ho trovato dei turni, ma non sono di questo periodo: il sito potrebbe non essere aggiornato." : {
+    "Ho letto %@ e ho salvato:\n%@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I found shifts, but they're not for this period: the site may be out of date."
+            "value" : "I read %@ and saved:\n%@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "He encontrado turnos, pero no son de este periodo: puede que el sitio no esté actualizado."
+            "value" : "He leído %@ y he guardado:\n%@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "J'ai trouvé des gardes, mais elles ne sont pas de cette période : le site n'est peut-être pas à jour."
+            "value" : "J'ai lu %@ et enregistré :\n%@"
           }
         }
       }
     },
-    "Ho trovato la pagina, ma non sono in grado di estrarne i turni in modo affidabile. Puoi aprirla qui sotto." : {
+    "Il file verrà allegato a: %@." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I found the page, but I can't reliably extract the shifts from it. You can open it below."
+            "value" : "The file will be attached to: %@."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "He encontrado la página, pero no puedo extraer los turnos de forma fiable. Puedes abrirla abajo."
+            "value" : "El archivo se adjuntará a: %@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "J'ai trouvé la page, mais je ne peux pas en extraire les gardes de façon fiable. Vous pouvez l'ouvrir ci-dessous."
+            "value" : "Le fichier sera joint à : %@."
           }
         }
       }
     },
-    "I turni possono cambiare: in caso di dubbio chiama la farmacia o guarda il cartello esposto." : {
+    "Il file verrà salvato in Documenti." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shifts can change: if in doubt, call the pharmacy or check the sign on display."
+            "value" : "The file will be saved in Documents."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Los turnos pueden cambiar: ante la duda, llama a la farmacia o mira el cartel expuesto."
+            "value" : "El archivo se guardará en Documentos."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les gardes peuvent changer : en cas de doute, appelez la pharmacie ou consultez l'affichage."
+            "value" : "Le fichier sera enregistré dans Documents."
           }
         }
       }
     },
-    "Il documento è troppo lungo per essere un elenco di turni." : {
+    "Impossibile leggere il file." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The document is too long to be a shift list."
+            "value" : "Unable to read the file."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "El documento es demasiado largo para ser una lista de turnos."
+            "value" : "No se puede leer el archivo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le document est trop long pour être une liste de gardes."
+            "value" : "Impossible de lire le fichier."
           }
         }
       }
     },
-    "Il file è troppo grande per essere letto." : {
+    "Nessuna azione creata." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The file is too large to be read."
+            "value" : "No action created."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "El archivo es demasiado grande para leerlo."
+            "value" : "No se ha creado ninguna acción."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le fichier est trop volumineux pour être lu."
+            "value" : "Aucune action créée."
           }
         }
       }
     },
-    "Il sito non permette la lettura automatica: puoi aprirlo dal link." : {
+    "Non sono riuscito a leggere il documento. Riprova con una foto più nitida." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The site doesn't allow automatic reading: you can open it from the link."
+            "value" : "I couldn't read the document. Try again with a sharper photo."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "El sitio no permite la lectura automática: puedes abrirlo desde el enlace."
+            "value" : "No he podido leer el documento. Inténtalo de nuevo con una foto más nítida."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le site n'autorise pas la lecture automatique : vous pouvez l'ouvrir depuis le lien."
+            "value" : "Je n'ai pas réussi à lire le document. Réessayez avec une photo plus nette."
           }
         }
       }
     },
-    "Imposta il comune" : {
+    "Persona" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Set your town"
+            "value" : "Person"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Configura el municipio"
+            "value" : "Persona"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Définir la commune"
+            "value" : "Personne"
           }
         }
       }
     },
-    "Imposta il comune della famiglia per vedere le farmacie di turno." : {
+    "Promemoria salute" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Set your family's town to see the duty pharmacies."
+            "value" : "Health reminder"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Configura el municipio de la familia para ver las farmacias de guardia."
+            "value" : "Recordatorio de salud"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Définissez la commune de la famille pour voir les pharmacies de garde."
+            "value" : "Rappel santé"
           }
         }
       }
     },
-    "Incolla l'indirizzo della pagina che mostra le farmacie di turno del tuo comune. Vale solo per la tua famiglia e ha la precedenza sulla fonte automatica. Se il sito non è già conosciuto, leggerlo costa circa %lld messaggi AI, una volta sola." : {
+    "Rinomina documento" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Paste the address of the page that shows your town's duty pharmacies. It only applies to your family and takes priority over the automatic source. If the site isn't already known, reading it costs about %lld AI messages, once."
+            "value" : "Rename document"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pega la dirección de la página que muestra las farmacias de guardia de tu municipio. Vale solo para tu familia y tiene prioridad sobre la fuente automática. Si el sitio no se conoce ya, leerlo cuesta unos %lld mensajes de IA, una sola vez."
+            "value" : "Renombrar documento"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Collez l'adresse de la page qui affiche les pharmacies de garde de votre commune. Elle ne vaut que pour votre famille et prime sur la source automatique. Si le site n'est pas déjà connu, le lire coûte environ %lld messages IA, une seule fois."
+            "value" : "Renommer le document"
           }
         }
       }
     },
-    "La famiglia ha finito i messaggi AI disponibili." : {
+    "Scadenza veicolo" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your family has used all its available AI messages."
+            "value" : "Vehicle deadline"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La familia ha agotado los mensajes de IA disponibles."
+            "value" : "Vencimiento del vehículo"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La famille a utilisé tous ses messages IA disponibles."
+            "value" : "Échéance véhicule"
           }
         }
       }
     },
-    "La fonte non ha ancora pubblicato i turni di oggi, quindi non li mostro per non darti un elenco vecchio. Apri il sito per controllare." : {
+    "Scansione" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The source hasn't published today's shifts yet, so I'm not showing a list that might be out of date. Open the site to check."
+            "value" : "Scan"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La fuente aún no ha publicado los turnos de hoy, así que no muestro una lista que podría estar desactualizada. Abre el sitio para comprobarlo."
+            "value" : "Escaneo"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La source n'a pas encore publié les gardes du jour, je ne montre donc pas une liste qui pourrait être périmée. Ouvrez le site pour vérifier."
+            "value" : "Numérisation"
           }
         }
       }
     },
-    "Le farmacie di turno del tuo comune, lette dalla fonte ufficiale e aggiornate ogni giorno. Incluse nei piani Pro e Max." : {
+    "Scegli la persona" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your town's duty pharmacies, read from the official source and updated every day. Included in the Pro and Max plans."
+            "value" : "Choose the person"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las farmacias de guardia de tu municipio, leídas de la fuente oficial y actualizadas cada día. Incluidas en los planes Pro y Max."
+            "value" : "Elige a la persona"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les pharmacies de garde de votre commune, lues à la source officielle et mises à jour chaque jour. Incluses dans les formules Pro et Max."
+            "value" : "Choisissez la personne"
           }
         }
       }
     },
-    "Le farmacie di turno sono disponibili per i comuni italiani." : {
+    "Scegli…" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duty pharmacies are available for Italian towns."
+            "value" : "Choose…"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las farmacias de guardia están disponibles para los municipios italianos."
+            "value" : "Elegir…"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les pharmacies de garde sont disponibles pour les communes italiennes."
+            "value" : "Choisir…"
           }
         }
       }
     },
-    "Le farmacie di turno sono incluse nei piani Pro e Max." : {
+    "Si leggono solo PDF e immagini." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duty pharmacies are included in the Pro and Max plans."
+            "value" : "Only PDFs and images can be read."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las farmacias de guardia están incluidas en los planes Pro y Max."
+            "value" : "Solo se pueden leer PDF e imágenes."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les pharmacies de garde sont incluses dans les formules Pro et Max."
+            "value" : "Seuls les PDF et les images peuvent être lus."
           }
         }
       }
     },
-    "Le farmacie di turno sono sospese per qualche ora. Riprova più tardi." : {
+    "Sto leggendo il documento…" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duty pharmacies are paused for a few hours. Try again later."
+            "value" : "Reading the document…"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las farmacias de guardia están en pausa unas horas. Vuelve a intentarlo más tarde."
+            "value" : "Leyendo el documento…"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les pharmacies de garde sont suspendues pour quelques heures. Réessayez plus tard."
+            "value" : "Lecture du document…"
           }
         }
       }
     },
-    "Manca il comune" : {
+    "Visita registrata (%@)." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Town missing"
+            "value" : "Visit saved (%@)."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Falta el municipio"
+            "value" : "Visita guardada (%@)."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Commune manquante"
+            "value" : "Consultation enregistrée (%@)."
           }
         }
       }
     },
-    "Nei prossimi giorni" : {
+    "Visita registrata." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In the coming days"
+            "value" : "Visit saved."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "En los próximos días"
+            "value" : "Visita guardada."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dans les prochains jours"
+            "value" : "Consultation enregistrée."
           }
         }
       }
     },
-    "Nessun turno aggiornato per oggi" : {
+    "un documento" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No up-to-date shifts for today"
+            "value" : "a document"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ningún turno actualizado para hoy"
+            "value" : "un documento"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aucune garde à jour pour aujourd'hui"
-          }
-        }
-      }
-    },
-    "Non ho ancora una fonte per questo comune" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I don't have a source for this town yet"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aún no tengo una fuente para este municipio"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je n'ai pas encore de source pour cette commune"
-          }
-        }
-      }
-    },
-    "Non ho trovato una pagina ufficiale per questo comune. Puoi indicare tu il sito." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I couldn't find an official page for this town. You can enter the site yourself."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No he encontrado una página oficial para este municipio. Puedes indicar tú el sitio."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je n'ai pas trouvé de page officielle pour cette commune. Vous pouvez indiquer le site vous-même."
-          }
-        }
-      }
-    },
-    "Non riesco a leggere i turni da questo sito: resta il link per aprirlo." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I can't read the shifts from this site: the link stays so you can open it."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No consigo leer los turnos de este sitio: queda el enlace para abrirlo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je n'arrive pas à lire les gardes sur ce site : le lien reste pour l'ouvrir."
-          }
-        }
-      }
-    },
-    "Non riesco a leggere questo sito" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I can't read this site"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No consigo leer este sitio"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je n'arrive pas à lire ce site"
-          }
-        }
-      }
-    },
-    "Non riesco ad aprire questo sito." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I can't open this site."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No consigo abrir este sitio."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je n'arrive pas à ouvrir ce site."
-          }
-        }
-      }
-    },
-    "Oggi nessuna farmacia di turno in questo comune. Qui sotto trovi quelle dei comuni vicini." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pharmacy is on duty in this town today. Below are those in nearby towns."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hoy no hay farmacias de guardia en este municipio. Abajo están las de los municipios cercanos."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune pharmacie de garde dans cette commune aujourd'hui. Ci-dessous, celles des communes voisines."
-          }
-        }
-      }
-    },
-    "Per ora solo in Italia" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Italy only for now"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Por ahora solo en Italia"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pour l'instant, uniquement en Italie"
-          }
-        }
-      }
-    },
-    "Per un'urgenza medica chiama il 112." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "For a medical emergency call 112."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Para una urgencia médica llama al 112."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En cas d'urgence médicale, appelez le 112."
-          }
-        }
-      }
-    },
-    "Posso cercare con l'AI la pagina ufficiale che pubblica i turni (Federfarma, Ordine dei farmacisti, ASL o Comune) e imparare a leggerla. Poi si aggiorna da sola, senza altri messaggi." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I can use AI to look for the official page that publishes the shifts (Federfarma, the pharmacists' association, the health authority or the town hall) and learn to read it. After that it updates by itself, with no more messages."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Puedo buscar con la IA la página oficial que publica los turnos (Federfarma, colegio de farmacéuticos, ASL o ayuntamiento) y aprender a leerla. Después se actualiza sola, sin más mensajes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je peux chercher avec l'IA la page officielle qui publie les gardes (Federfarma, ordre des pharmaciens, ASL ou mairie) et apprendre à la lire. Ensuite elle se met à jour toute seule, sans autres messages."
-          }
-        }
-      }
-    },
-    "Questa fonte non è ufficiale o non sono sicuro che sia quella giusta: verifica con una telefonata." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This source isn't official or I'm not sure it's the right one: check with a phone call."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Esta fuente no es oficial o no estoy seguro de que sea la correcta: comprueba con una llamada."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cette source n'est pas officielle ou je ne suis pas sûr que ce soit la bonne : vérifiez par téléphone."
-          }
-        }
-      }
-    },
-    "Questa pagina non esiste più: controlla l'indirizzo." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This page no longer exists: check the address."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Esta página ya no existe: comprueba la dirección."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cette page n'existe plus : vérifiez l'adresse."
-          }
-        }
-      }
-    },
-    "Questa ricerca costa circa %1$d messaggi AI e alla famiglia ne restano %2$d." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This search costs about %1$d AI messages and your family has %2$d left."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Esta búsqueda cuesta unos %1$d mensajes de IA y a la familia le quedan %2$d."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cette recherche coûte environ %1$d messages IA et il en reste %2$d à la famille."
-          }
-        }
-      }
-    },
-    "Questo non sembra un indirizzo web." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This doesn't look like a web address."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Esto no parece una dirección web."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cela ne ressemble pas à une adresse web."
-          }
-        }
-      }
-    },
-    "Questo tipo di file non si può leggere: servono una pagina web, un PDF o un'immagine." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This file type can't be read: it must be a web page, a PDF or an image."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este tipo de archivo no se puede leer: debe ser una página web, un PDF o una imagen."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce type de fichier ne peut pas être lu : il faut une page web, un PDF ou une image."
-          }
-        }
-      }
-    },
-    "Servizio festivo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Holiday service"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servicio festivo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Service des jours fériés"
-          }
-        }
-      }
-    },
-    "Servizio notturno" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Night service"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servicio nocturno"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Service de nuit"
-          }
-        }
-      }
-    },
-    "Servizio pomeridiano" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afternoon service"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servicio de tarde"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Service de l'après-midi"
-          }
-        }
-      }
-    },
-    "Servizio pomeridiano e festivo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afternoon and holiday service"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servicio de tarde y festivos"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Service de l'après-midi et des jours fériés"
-          }
-        }
-      }
-    },
-    "Sito scelto da te" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Site chosen by you"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sitio elegido por ti"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Site choisi par vous"
-          }
-        }
-      }
-    },
-    "Sto lavorando…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Working on it…"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trabajando en ello…"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je m'en occupe…"
-          }
-        }
-      }
-    },
-    "Torna alla fonte automatica" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Back to the automatic source"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volver a la fuente automática"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Revenir à la source automatique"
-          }
-        }
-      }
-    },
-    "Usa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utiliser"
-          }
-        }
-      }
-    },
-    "Usa un altro sito" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use another site"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usar otro sitio"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utiliser un autre site"
-          }
-        }
-      }
-    },
-    "· aggiornato alle %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "· updated at %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "· actualizado a las %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "· mis à jour à %@"
+            "value" : "un document"
           }
         }
       }
@@ -1500,6 +972,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "· %lld avis sur Google"
+          }
+        }
+      }
+    },
+    "· aggiornato alle %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· updated at %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· actualizado a las %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· mis à jour à %@"
           }
         }
       }
@@ -10651,6 +10145,50 @@
         }
       }
     },
+    "Aperta 24 ore" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open 24 hours"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abierta 24 horas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouverte 24 h/24"
+          }
+        }
+      }
+    },
+    "Aperte vicino a te" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open near you"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abiertas cerca de ti"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvertes près de chez vous"
+          }
+        }
+      }
+    },
     "Apple App Salute" : {
       "localizations" : {
         "en" : {
@@ -11021,6 +10559,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvrir"
+          }
+        }
+      }
+    },
+    "Apri %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir %@"
           }
         }
       }
@@ -15140,6 +14700,29 @@
         }
       }
     },
+    "Cerca la fonte (circa %d messaggi AI)" : {
+      "comment" : "Pharmacies: find source button with AI cost",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find the source (about %d AI messages)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar la fuente (unos %d mensajes de IA)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chercher la source (environ %d messages IA)"
+          }
+        }
+      }
+    },
     "Cerca medico..." : {
       "localizations" : {
         "en" : {
@@ -15951,6 +15534,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Qui voyage ?"
+          }
+        }
+      }
+    },
+    "Chiama" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Call"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llamar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appeler"
           }
         }
       }
@@ -19271,6 +18876,7 @@
       }
     },
     "Consenti l'accesso" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -23635,6 +23241,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "D'habitude, tout ce que vous gardez dans KidBox tient dans un message. Avec beaucoup de documents et de comptes rendus, l'assistant peut tous les envoyer en entier, ce qui coûte plus de messages, ou garder en entier ceux liés à votre question et raccourcir les autres. Avec « Demander à chaque fois », vous choisissez avant chaque envoi. Avec la formule Free, et quand les messages restants ne suffisent pas, le contexte réduit est toujours utilisé."
+          }
+        }
+      }
+    },
+    "Di turno oggi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On duty today"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De guardia hoy"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De garde aujourd'hui"
+          }
+        }
+      }
+    },
+    "Di turno oggi nei comuni vicini" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On duty today in nearby towns"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De guardia hoy en municipios cercanos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De garde aujourd'hui dans les communes voisines"
           }
         }
       }
@@ -29894,6 +29544,72 @@
         }
       }
     },
+    "Farmacie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pharmacies"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Farmacias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pharmacies"
+          }
+        }
+      }
+    },
+    "Farmacie di turno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duty pharmacies"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Farmacias de guardia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pharmacies de garde"
+          }
+        }
+      }
+    },
+    "Farmacie di turno vicino a te" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duty pharmacies near you"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Farmacias de guardia cerca de ti"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pharmacies de garde près de chez vous"
+          }
+        }
+      }
+    },
     "Farmaco" : {
       "localizations" : {
         "en" : {
@@ -30265,6 +29981,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fitness Copilot"
+          }
+        }
+      }
+    },
+    "Fonte da verificare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source to verify"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuente por verificar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source à vérifier"
+          }
+        }
+      }
+    },
+    "Fonte ufficiale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Official source"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuente oficial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source officielle"
+          }
+        }
+      }
+    },
+    "Fonte ufficiale trovata dall'AI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Official source found by AI"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuente oficial encontrada por la IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source officielle trouvée par l'IA"
           }
         }
       }
@@ -32761,6 +32543,29 @@
         }
       }
     },
+    "Hai già provato diverse volte oggi: riprova domani." : {
+      "comment" : "Pharmacies: too many attempts today",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have already tried several times today: try again tomorrow."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya lo has intentado varias veces hoy: vuelve a probar mañana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez déjà essayé plusieurs fois aujourd'hui : réessayez demain."
+          }
+        }
+      }
+    },
     "Hai già un account?" : {
       "localizations" : {
         "en" : {
@@ -33215,6 +33020,51 @@
         }
       }
     },
+    "Ho trovato dei turni, ma non sono di questo periodo: il sito potrebbe non essere aggiornato." : {
+      "comment" : "Pharmacies: shifts found but outdated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I found shifts, but they're not for this period: the site may be out of date."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "He encontrado turnos, pero no son de este periodo: puede que el sitio no esté actualizado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai trouvé des gardes, mais elles ne sont pas de cette période : le site n'est peut-être pas à jour."
+          }
+        }
+      }
+    },
+    "Ho trovato la pagina, ma non sono in grado di estrarne i turni in modo affidabile. Puoi aprirla qui sotto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I found the page, but I can't reliably extract the shifts from it. You can open it below."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "He encontrado la página, pero no puedo extraer los turnos de forma fiable. Puedes abrirla abajo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai trouvé la page, mais je ne peux pas en extraire les gardes de façon fiable. Vous pouvez l'ouvrir ci-dessous."
+          }
+        }
+      }
+    },
     "Ho una data" : {
       "localizations" : {
         "en" : {
@@ -33565,6 +33415,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vos voyages"
+          }
+        }
+      }
+    },
+    "I turni possono cambiare: in caso di dubbio chiama la farmacia o guarda il cartello esposto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shifts can change: if in doubt, call the pharmacy or check the sign on display."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los turnos pueden cambiar: ante la duda, llama a la farmacia o mira el cartel expuesto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les gardes peuvent changer : en cas de doute, appelez la pharmacie ou consultez l'affichage."
           }
         }
       }
@@ -33921,6 +33793,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La liaison est active"
+          }
+        }
+      }
+    },
+    "Il documento è troppo lungo per essere un elenco di turni." : {
+      "comment" : "Pharmacies: document too long",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The document is too long to be a shift list."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El documento es demasiado largo para ser una lista de turnos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le document est trop long pour être une liste de gardes."
+          }
+        }
+      }
+    },
+    "Il file è troppo grande per essere letto." : {
+      "comment" : "Pharmacies: file too large",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The file is too large to be read."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El archivo es demasiado grande para leerlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le fichier est trop volumineux pour être lu."
           }
         }
       }
@@ -34683,6 +34601,29 @@
         }
       }
     },
+    "Il sito non permette la lettura automatica: puoi aprirlo dal link." : {
+      "comment" : "Pharmacies: site blocks automated access",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The site doesn't allow automatic reading: you can open it from the link."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El sitio no permite la lectura automática: puedes abrirlo desde el enlace."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le site n'autorise pas la lecture automatique : vous pouvez l'ouvrir depuis le lien."
+          }
+        }
+      }
+    },
     "Il to-do nasce quando qualcuno risponde «Ci penso io»: lo vedrete tutti." : {
       "localizations" : {
         "en" : {
@@ -35324,6 +35265,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Définissez les horaires pour %lld doses quotidiennes"
+          }
+        }
+      }
+    },
+    "Imposta il comune" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set your town"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configura el municipio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Définir la commune"
+          }
+        }
+      }
+    },
+    "Imposta il comune della famiglia per vedere le farmacie di turno." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set your family's town to see the duty pharmacies."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configura el municipio de la familia para ver las farmacias de guardia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Définissez la commune de la famille pour voir les pharmacies de garde."
           }
         }
       }
@@ -36167,6 +36152,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Inclus dans votre forfait %@"
+          }
+        }
+      }
+    },
+    "Incolla l'indirizzo della pagina che mostra le farmacie di turno del tuo comune. Vale solo per la tua famiglia e ha la precedenza sulla fonte automatica. Se il sito non è già conosciuto, leggerlo costa circa %lld messaggi AI, una volta sola." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste the address of the page that shows your town's duty pharmacies. It only applies to your family and takes priority over the automatic source. If the site isn't already known, reading it costs about %lld AI messages, once."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pega la dirección de la página que muestra las farmacias de guardia de tu municipio. Vale solo para tu familia y tiene prioridad sobre la fuente automática. Si el sitio no se conoce ya, leerlo cuesta unos %lld mensajes de IA, una sola vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collez l'adresse de la page qui affiche les pharmacies de garde de votre commune. Elle ne vaut que pour votre famille et prime sur la source automatique. Si le site n'est pas déjà connu, le lire coûte environ %lld messages IA, une seule fois."
           }
         }
       }
@@ -38005,6 +38012,28 @@
         }
       }
     },
+    "KidBox legge da Apple Salute passi, frequenza cardiaca, pressione, ossigeno, ECG, allenamenti, peso, altezza e data di nascita. Servono a mostrarli nella scheda del bambino e a compilare in automatico la sua cartella clinica." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox reads steps, heart rate, blood pressure, oxygen, ECG, workouts, weight, height and date of birth from Apple Health. They are used to show them on the child's page and to fill in their medical record automatically."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox lee de Apple Salud pasos, frecuencia cardíaca, presión, oxígeno, ECG, entrenamientos, peso, altura y fecha de nacimiento. Sirven para mostrarlos en la ficha del niño y rellenar automáticamente su historial médico."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox lit dans Apple Santé les pas, la fréquence cardiaque, la tension, l'oxygène, l'ECG, les entraînements, le poids, la taille et la date de naissance. Ils servent à les afficher dans la fiche de l'enfant et à remplir automatiquement son dossier médical."
+          }
+        }
+      }
+    },
     "KidBox legge i calendari già configurati su questo dispositivo (Google, iCloud, Outlook) e si aggiorna da solo quando cambiano. Gli eventi restano sul telefono: la famiglia non li vede, a meno che tu non ne copi uno in KidBox." : {
       "localizations" : {
         "en" : {
@@ -38947,6 +38976,29 @@
         }
       }
     },
+    "La famiglia ha finito i messaggi AI disponibili." : {
+      "comment" : "Pharmacies: AI quota reached",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your family has used all its available AI messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La familia ha agotado los mensajes de IA disponibles."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La famille a utilisé tous ses messages IA disponibles."
+          }
+        }
+      }
+    },
     "La famiglia ha già 10 calendari iscritti." : {
       "localizations" : {
         "en" : {
@@ -39070,6 +39122,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La famille sera créée avec les enfants saisis."
+          }
+        }
+      }
+    },
+    "La fonte non ha ancora pubblicato i turni di oggi, quindi non li mostro per non darti un elenco vecchio. Apri il sito per controllare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The source hasn't published today's shifts yet, so I'm not showing a list that might be out of date. Open the site to check."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La fuente aún no ha publicado los turnos de hoy, así que no muestro una lista que podría estar desactualizada. Abre el sitio para comprobarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La source n'a pas encore publié les gardes du jour, je ne montre donc pas une liste qui pourrait être périmée. Ouvrez le site pour vérifier."
           }
         }
       }
@@ -39476,7 +39550,7 @@
       }
     },
     "La ricerca sta impiegando più del solito. Riprova fra poco." : {
-      "comment" : "News: timeout",
+      "comment" : "News: timeout\nPharmacies: timeout",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -39943,6 +40017,96 @@
         }
       }
     },
+    "Le farmacie di turno del tuo comune, lette dalla fonte ufficiale e aggiornate ogni giorno. Incluse nei piani Pro e Max." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your town's duty pharmacies, read from the official source and updated every day. Included in the Pro and Max plans."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las farmacias de guardia de tu municipio, leídas de la fuente oficial y actualizadas cada día. Incluidas en los planes Pro y Max."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pharmacies de garde de votre commune, lues à la source officielle et mises à jour chaque jour. Incluses dans les formules Pro et Max."
+          }
+        }
+      }
+    },
+    "Le farmacie di turno sono disponibili per i comuni italiani." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duty pharmacies are available for Italian towns."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las farmacias de guardia están disponibles para los municipios italianos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pharmacies de garde sont disponibles pour les communes italiennes."
+          }
+        }
+      }
+    },
+    "Le farmacie di turno sono incluse nei piani Pro e Max." : {
+      "comment" : "Pharmacies: plan required",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duty pharmacies are included in the Pro and Max plans."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las farmacias de guardia están incluidas en los planes Pro y Max."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pharmacies de garde sont incluses dans les formules Pro et Max."
+          }
+        }
+      }
+    },
+    "Le farmacie di turno sono sospese per qualche ora. Riprova più tardi." : {
+      "comment" : "Pharmacies: feature switched off",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duty pharmacies are paused for a few hours. Try again later."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las farmacias de guardia están en pausa unas horas. Vuelve a intentarlo más tarde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pharmacies de garde sont suspendues pour quelques heures. Réessayez plus tard."
+          }
+        }
+      }
+    },
     "Le immagini del documento verranno analizzate dall'AI. Questa operazione consumerà %lld messaggi del tuo piano Max." : {
       "localizations" : {
         "en" : {
@@ -40005,6 +40169,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les informations sont extraites des comptes rendus archivés. Elles ne remplacent pas l'avis de votre médecin traitant."
+          }
+        }
+      }
+    },
+    "Le metriche restano su questo iPhone: solo peso, altezza e data di nascita vengono salvati nel profilo del bambino. KidBox non scrive nulla in Salute, e puoi scegliere quali dati condividere o revocare l'accesso in ogni momento da Impostazioni › Salute." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The metrics stay on this iPhone: only weight, height and date of birth are saved in the child's profile. KidBox writes nothing to Health, and you can choose which data to share or revoke access at any time in Settings › Health."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las métricas se quedan en este iPhone: solo el peso, la altura y la fecha de nacimiento se guardan en el perfil del niño. KidBox no escribe nada en Salud, y puedes elegir qué datos compartir o revocar el acceso en cualquier momento en Ajustes › Salud."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les mesures restent sur cet iPhone : seuls le poids, la taille et la date de naissance sont enregistrés dans le profil de l'enfant. KidBox n'écrit rien dans Santé, et tu peux choisir les données à partager ou révoquer l'accès à tout moment dans Réglages › Santé."
           }
         }
       }
@@ -40331,7 +40517,7 @@
       }
     },
     "Le ricerche di oggi sono finite: riprova domani." : {
-      "comment" : "News: global daily budget reached",
+      "comment" : "News: global daily budget reached\nPharmacies: global daily budget reached",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -41700,6 +41886,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Majuscules (A–Z)"
+          }
+        }
+      }
+    },
+    "Manca il comune" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Town missing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falta el municipio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commune manquante"
           }
         }
       }
@@ -44303,6 +44511,28 @@
         }
       }
     },
+    "Nei prossimi giorni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the coming days"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En los próximos días"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans les prochains jours"
+          }
+        }
+      }
+    },
     "Neonato" : {
       "localizations" : {
         "en" : {
@@ -45295,6 +45525,28 @@
         }
       }
     },
+    "Nessun turno aggiornato per oggi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No up-to-date shifts for today"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ningún turno actualizado para hoy"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune garde à jour pour aujourd'hui"
+          }
+        }
+      }
+    },
     "Nessun vaccino nel periodo selezionato" : {
       "localizations" : {
         "en" : {
@@ -45541,7 +45793,7 @@
       }
     },
     "Nessuna connessione. Controlla Wi‑Fi o dati mobili." : {
-      "comment" : "News: offline",
+      "comment" : "News: offline\nPharmacies: offline",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -47151,73 +47403,8 @@
         }
       }
     },
-    "Perché ti chiediamo l'accesso a Salute" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Why we ask for access to Health"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Por qué te pedimos acceso a Salud"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pourquoi nous demandons l'accès à Santé"
-          }
-        }
-      }
-    },
-    "KidBox legge da Apple Salute passi, frequenza cardiaca, pressione, ossigeno, ECG, allenamenti, peso, altezza e data di nascita. Servono a mostrarli nella scheda del bambino e a compilare in automatico la sua cartella clinica." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KidBox reads steps, heart rate, blood pressure, oxygen, ECG, workouts, weight, height and date of birth from Apple Health. They are used to show them on the child's page and to fill in their medical record automatically."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KidBox lee de Apple Salud pasos, frecuencia cardíaca, presión, oxígeno, ECG, entrenamientos, peso, altura y fecha de nacimiento. Sirven para mostrarlos en la ficha del niño y rellenar automáticamente su historial médico."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KidBox lit dans Apple Santé les pas, la fréquence cardiaque, la tension, l'oxygène, l'ECG, les entraînements, le poids, la taille et la date de naissance. Ils servent à les afficher dans la fiche de l'enfant et à remplir automatiquement son dossier médical."
-          }
-        }
-      }
-    },
-    "Le metriche restano su questo iPhone: solo peso, altezza e data di nascita vengono salvati nel profilo del bambino. KidBox non scrive nulla in Salute, e puoi scegliere quali dati condividere o revocare l'accesso in ogni momento da Impostazioni › Salute." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The metrics stay on this iPhone: only weight, height and date of birth are saved in the child's profile. KidBox writes nothing to Health, and you can choose which data to share or revoke access at any time in Settings › Health."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las métricas se quedan en este iPhone: solo el peso, la altura y la fecha de nacimiento se guardan en el perfil del niño. KidBox no escribe nada en Salud, y puedes elegir qué datos compartir o revocar el acceso en cualquier momento en Ajustes › Salud."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les mesures restent sur cet iPhone : seuls le poids, la taille et la date de naissance sont enregistrés dans le profil de l'enfant. KidBox n'écrit rien dans Santé, et tu peux choisir les données à partager ou révoquer l'accès à tout moment dans Réglages › Santé."
-          }
-        }
-      }
-    },
     "Non ancora collegato" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -47687,6 +47874,51 @@
         }
       }
     },
+    "Non ho ancora una fonte per questo comune" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I don't have a source for this town yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no tengo una fuente para este municipio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'ai pas encore de source pour cette commune"
+          }
+        }
+      }
+    },
+    "Non ho trovato una pagina ufficiale per questo comune. Puoi indicare tu il sito." : {
+      "comment" : "Pharmacies: AI found nothing",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I couldn't find an official page for this town. You can enter the site yourself."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No he encontrado una página oficial para este municipio. Puedes indicar tú el sitio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'ai pas trouvé de page officielle pour cette commune. Vous pouvez indiquer le site vous-même."
+          }
+        }
+      }
+    },
     "Non indicato" : {
       "localizations" : {
         "en" : {
@@ -47952,6 +48184,29 @@
         }
       }
     },
+    "Non riesco a leggere i turni da questo sito: resta il link per aprirlo." : {
+      "comment" : "Pharmacies: manual site unreadable",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can't read the shifts from this site: the link stays so you can open it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No consigo leer los turnos de este sitio: queda el enlace para abrirlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'arrive pas à lire les gardes sur ce site : le lien reste pour l'ouvrir."
+          }
+        }
+      }
+    },
     "Non riesco a leggere lo stato del collegamento." : {
       "localizations" : {
         "en" : {
@@ -47970,6 +48225,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impossible de lire l'état de la liaison."
+          }
+        }
+      }
+    },
+    "Non riesco a leggere questo sito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can't read this site"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No consigo leer este sitio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'arrive pas à lire ce site"
           }
         }
       }
@@ -48014,6 +48291,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impossible de dissocier Alexa. Réessayez."
+          }
+        }
+      }
+    },
+    "Non riesco ad aprire questo sito." : {
+      "comment" : "Pharmacies: site unreachable",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can't open this site."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No consigo abrir este sitio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'arrive pas à ouvrir ce site."
           }
         }
       }
@@ -50872,6 +51172,28 @@
         }
       }
     },
+    "Oggi nessuna farmacia di turno in questo comune. Qui sotto trovi quelle dei comuni vicini." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pharmacy is on duty in this town today. Below are those in nearby towns."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy no hay farmacias de guardia en este municipio. Abajo están las de los municipios cercanos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune pharmacie de garde dans cette commune aujourd'hui. Ci-dessous, celles des communes voisines."
+          }
+        }
+      }
+    },
     "Oggi niente di nuovo per gli argomenti che segui." : {
       "localizations" : {
         "en" : {
@@ -53648,6 +53970,28 @@
         }
       }
     },
+    "Per ora solo in Italia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Italy only for now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por ahora solo en Italia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour l'instant, uniquement en Italie"
+          }
+        }
+      }
+    },
     "Per salvare questo contatto in Rubrica devi consentire l'accesso ai Contatti dalle Impostazioni." : {
       "localizations" : {
         "en" : {
@@ -53758,6 +54102,28 @@
         }
       }
     },
+    "Per un'urgenza medica chiama il 112." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For a medical emergency call 112."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para una urgencia médica llama al 112."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En cas d'urgence médicale, appelez le 112."
+          }
+        }
+      }
+    },
     "Per usare KidBox al meglio ti consigliamo di aggiornare all'ultima versione: contiene miglioramenti e correzioni." : {
       "localizations" : {
         "en" : {
@@ -53798,6 +54164,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pour utiliser l'IA, vous devez d'abord accepter les conditions d'utilisation dans Réglages → Assistant IA."
+          }
+        }
+      }
+    },
+    "Perché ti chiediamo l'accesso a Salute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Why we ask for access to Health"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por qué te pedimos acceso a Salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pourquoi nous demandons l'accès à Santé"
           }
         }
       }
@@ -54975,6 +55363,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Position non autorisée. Saisissez votre ville ci-dessous ou activez la position dans Réglages."
+          }
+        }
+      }
+    },
+    "Posso cercare con l'AI la pagina ufficiale che pubblica i turni (Federfarma, Ordine dei farmacisti, ASL o Comune) e imparare a leggerla. Poi si aggiorna da sola, senza altri messaggi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can use AI to look for the official page that publishes the shifts (Federfarma, the pharmacists' association, the health authority or the town hall) and learn to read it. After that it updates by itself, with no more messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedo buscar con la IA la página oficial que publica los turnos (Federfarma, colegio de farmacéuticos, ASL o ayuntamiento) y aprender a leerla. Después se actualiza sola, sin más mensajes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je peux chercher avec l'IA la page officielle qui publie les gardes (Federfarma, ordre des pharmaciens, ASL ou mairie) et apprendre à la lire. Ensuite elle se met à jour toute seule, sans autres messages."
           }
         }
       }
@@ -58353,6 +58763,28 @@
         }
       }
     },
+    "Questa fonte non è ufficiale o non sono sicuro che sia quella giusta: verifica con una telefonata." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This source isn't official or I'm not sure it's the right one: check with a phone call."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta fuente no es oficial o no estoy seguro de que sea la correcta: comprueba con una llamada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette source n'est pas officielle ou je ne suis pas sûr que ce soit la bonne : vérifiez par téléphone."
+          }
+        }
+      }
+    },
     "questa foto" : {
       "localizations" : {
         "en" : {
@@ -58464,6 +58896,29 @@
         }
       }
     },
+    "Questa pagina non esiste più: controlla l'indirizzo." : {
+      "comment" : "Pharmacies: page not found",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This page no longer exists: check the address."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta página ya no existe: comprueba la dirección."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette page n'existe plus : vérifiez l'adresse."
+          }
+        }
+      }
+    },
     "questa password" : {
       "localizations" : {
         "en" : {
@@ -58482,6 +58937,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ce mot de passe"
+          }
+        }
+      }
+    },
+    "Questa ricerca costa circa %1$d messaggi AI e alla famiglia ne restano %2$d." : {
+      "comment" : "Pharmacies: AI quota not enough",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This search costs about %1$d AI messages and your family has %2$d left."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta búsqueda cuesta unos %1$d mensajes de IA y a la familia le quedan %2$d."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette recherche coûte environ %1$d messages IA et il en reste %2$d à la famille."
           }
         }
       }
@@ -59004,6 +59482,29 @@
         }
       }
     },
+    "Questo non sembra un indirizzo web." : {
+      "comment" : "Pharmacies: invalid URL",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This doesn't look like a web address."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto no parece una dirección web."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cela ne ressemble pas à une adresse web."
+          }
+        }
+      }
+    },
     "Questo QR non è un invito KidBox valido." : {
       "localizations" : {
         "en" : {
@@ -59022,6 +59523,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ce QR code n'est pas une invitation KidBox valide."
+          }
+        }
+      }
+    },
+    "Questo tipo di file non si può leggere: servono una pagina web, un PDF o un'immagine." : {
+      "comment" : "Pharmacies: unsupported file type",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file type can't be read: it must be a web page, a PDF or an image."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este tipo de archivo no se puede leer: debe ser una página web, un PDF o una imagen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce type de fichier ne peut pas être lu : il faut une page web, un PDF ou une image."
           }
         }
       }
@@ -61815,7 +62339,7 @@
       }
     },
     "Risposta inattesa dal server. Riprova fra poco." : {
-      "comment" : "News: undecodable response",
+      "comment" : "News: undecodable response\nPharmacies: undecodable response",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -65980,6 +66504,94 @@
         }
       }
     },
+    "Servizio festivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Holiday service"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servicio festivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Service des jours fériés"
+          }
+        }
+      }
+    },
+    "Servizio notturno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Night service"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servicio nocturno"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Service de nuit"
+          }
+        }
+      }
+    },
+    "Servizio pomeridiano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afternoon service"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servicio de tarde"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Service de l'après-midi"
+          }
+        }
+      }
+    },
+    "Servizio pomeridiano e festivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afternoon and holiday service"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servicio de tarde y festivos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Service de l'après-midi et des jours fériés"
+          }
+        }
+      }
+    },
     "Servono %1$d messaggi AI per generare il piano ma ne restano %2$d su %3$d oggi. Riprova domani." : {
       "comment" : "Fitness plan quota error\nMeal plan quota error",
       "localizations" : {
@@ -66692,6 +67304,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Système"
+          }
+        }
+      }
+    },
+    "Sito scelto da te" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Site chosen by you"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitio elegido por ti"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Site choisi par vous"
           }
         }
       }
@@ -68349,6 +68983,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Je finalise l'itinéraire de %d jours"
+          }
+        }
+      }
+    },
+    "Sto lavorando…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Working on it…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trabajando en ello…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je m'en occupe…"
           }
         }
       }
@@ -70064,6 +70720,7 @@
       }
     },
     "Tocca il pulsante sotto per importare le metriche dall'app Salute." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -70500,6 +71157,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Retour à la connexion"
+          }
+        }
+      }
+    },
+    "Torna alla fonte automatica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to the automatic source"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a la fuente automática"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revenir à la source automatique"
           }
         }
       }
@@ -72408,6 +73087,28 @@
         }
       }
     },
+    "Usa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser"
+          }
+        }
+      }
+    },
     "Usa «Punto elenco» per righe con bullet; le note sono visibili anche nella lista." : {
       "localizations" : {
         "en" : {
@@ -72514,6 +73215,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Utiliser cette plage"
+          }
+        }
+      }
+    },
+    "Usa un altro sito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use another site"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar otro sitio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser un autre site"
           }
         }
       }

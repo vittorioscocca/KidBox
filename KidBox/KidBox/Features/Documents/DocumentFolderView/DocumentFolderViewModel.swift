@@ -71,14 +71,6 @@ final class DocumentFolderViewModel: ObservableObject {
     @Published var isAnalyzingDocument = false
     @Published var docIntelPayload: DocIntelPayload?
 
-    /// Wrapper Identifiable per presentare la sheet di conferma azioni.
-    struct DocIntelPayload: Identifiable {
-        let id = UUID()
-        let result: DocIntelResult
-        let documentId: String
-        let children: [DocumentIntelligenceService.ChildRef]
-        let vehicles: [DocumentIntelligenceService.VehicleRef]
-    }
     
     // Photo Library
     @Published var showPhotoLibrary = false
@@ -1196,18 +1188,7 @@ final class DocumentFolderViewModel: ObservableObject {
         guard AISettings.shared.isEnabled, AISettings.shared.documentIntelligenceEnabled else { return }
         guard let modelContext else { return }
 
-        let fid = familyId
-        let allChildren = (try? modelContext.fetch(FetchDescriptor<KBChild>())) ?? []
-        let children = allChildren
-            .filter { $0.familyId == fid }
-            .map { DocumentIntelligenceService.ChildRef(id: $0.id, name: $0.name) }
-        let allVehicles = (try? modelContext.fetch(
-            FetchDescriptor<KBVehicle>(predicate: #Predicate { $0.familyId == fid && !$0.isDeleted })
-        )) ?? []
-        let vehicles = allVehicles.map { v -> DocumentIntelligenceService.VehicleRef in
-            let label = [v.name, v.brand, v.model].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
-            return DocumentIntelligenceService.VehicleRef(id: v.id, label: label.isEmpty ? v.name : label)
-        }
+        let (children, vehicles) = DocumentIntelligenceService.familyRefs(familyId: familyId, modelContext: modelContext)
 
         isAnalyzingDocument = true
         let result = await DocumentIntelligenceService.analyze(

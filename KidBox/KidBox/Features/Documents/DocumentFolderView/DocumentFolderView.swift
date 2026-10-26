@@ -1311,7 +1311,7 @@ private extension DocumentFolderView {
                         payload: payload,
                         familyId: view.familyId,
                         modelContext: view.modelContext,
-                        onDone: {
+                        onDone: { _ in
                             view.viewModel.docIntelPayload = nil
                             view.viewModel.reload()
                         }

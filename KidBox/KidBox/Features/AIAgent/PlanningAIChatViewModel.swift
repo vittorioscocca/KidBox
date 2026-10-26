@@ -19,6 +19,7 @@ import Foundation
 import SwiftData
 import Combine
 import FirebaseAuth
+import UIKit
 
 @MainActor
 final class PlanningAIChatViewModel: ObservableObject {
@@ -45,6 +46,10 @@ final class PlanningAIChatViewModel: ObservableObject {
     @Published private(set) var pendingSendText = ""
     @Published private(set) var choiceFullUnits = 1
     @Published private(set) var choiceReducedUnits = 1
+
+    /// Documento caricato col «+»: in lettura, poi la scheda di conferma.
+    @Published private(set) var isAnalyzingDocument = false
+    @Published var docIntelPayload: DocIntelPayload?
 
     /// Ultimo snapshot letto: serve alle card d'azione della view.
     @Published private(set) var snapshot: AgentMemorySnapshot?
@@ -117,19 +122,7 @@ final class PlanningAIChatViewModel: ObservableObject {
             enqueuePendingExtractions(snapshot: snap)
             subscribeToAIChatSync()
             // Quanti messaggi restano: decide se il contesto ridotto parte da solo.
-            Task { [weak self] in
-                guard let usage = try? await AIService.shared.fetchUsage() else { return }
-                self?.usageTodaySnapshot = usage.usageToday
-                self?.dailyLimitSnapshot = usage.dailyLimit
-                self?.quotaPeriodSnapshot = usage.period
-                self?.quota = AssistantQuota(
-                    used: usage.usageToday,
-                    limit: usage.dailyLimit,
-                    period: usage.period,
-                    monthlyUsed: usage.monthlyUsage,
-                    monthlyLimit: usage.monthlyLimit
-                )
-            }
+            Task { [weak self] in await self?.refreshQuota() }
 
             contextPrepared = true
             KBLog.ai.kbInfo("PlanningAIChatVM ready docs=\(snap.documents.count) events=\(snap.events.count) facts=\(snap.memoryFacts.count)")
@@ -167,6 +160,20 @@ final class PlanningAIChatViewModel: ObservableObject {
         try? modelContext.save()
         SyncCenter.shared.pushAIConversation(conversation, modelContext: modelContext)
         KBLog.ai.kbInfo("PlanningAIChatVM injected briefing chars=\(trimmed.count) force=\(force)")
+    }
+
+    private func refreshQuota() async {
+        guard let usage = try? await AIService.shared.fetchUsage() else { return }
+        usageTodaySnapshot = usage.usageToday
+        dailyLimitSnapshot = usage.dailyLimit
+        quotaPeriodSnapshot = usage.period
+        quota = AssistantQuota(
+            used: usage.usageToday,
+            limit: usage.dailyLimit,
+            period: usage.period,
+            monthlyUsed: usage.monthlyUsage,
+            monthlyLimit: usage.monthlyLimit
+        )
     }
 
     func finishStreaming(messageId: String) {
@@ -638,4 +645,136 @@ struct AssistantQuota: Equatable {
     var isNearLimit: Bool { limit > 0 && used >= Int(Double(limit) * 0.8) }
     /// Il mese compare solo quando si avvicina: prima sarebbe rumore.
     var showsMonth: Bool { monthlyLimit > 0 && monthlyUsed >= Int(Double(monthlyLimit) * 0.8) }
+}
+
+// MARK: - Documenti dal «+»
+
+/// Il «+» della chat: l'assistente è il posto da cui smistare un documento
+/// quando non si sa dove va. L'AI capisce cos'è (bolletta, referto, analisi,
+/// ricetta…), la scheda di conferma mostra dove finirà, il file si allega alla
+/// scheda creata. Ogni pagina letta costa un messaggio, come in Documenti.
+extension PlanningAIChatViewModel {
+
+    /// File scelto da File (PDF o immagine).
+    func importDocument(fileURL: URL) async {
+        let ok = fileURL.startAccessingSecurityScopedResource()
+        defer { if ok { fileURL.stopAccessingSecurityScopedResource() } }
+        guard let data = try? Data(contentsOf: fileURL), !data.isEmpty else {
+            errorMessage = NSLocalizedString("Impossibile leggere il file.", comment: "Assistant document import")
+            return
+        }
+        let name = fileURL.lastPathComponent
+        await analyzeImported(data: data, fileName: name, mimeType: Self.mimeType(forExtension: fileURL.pathExtension))
+    }
+
+    /// Foto dalla libreria.
+    func importPhoto(data: Data) async {
+        guard let image = UIImage(data: data), let jpeg = image.jpegData(compressionQuality: 0.85) else {
+            errorMessage = NSLocalizedString("Impossibile leggere il file.", comment: "Assistant document import")
+            return
+        }
+        await analyzeImported(data: jpeg, fileName: Self.fileName(base: NSLocalizedString("Foto", comment: "Imported file name"), ext: "jpg"), mimeType: "image/jpeg")
+    }
+
+    /// Pagine dallo scanner di documenti: un PDF solo.
+    func importScan(pages: [UIImage]) async {
+        guard let first = pages.first else { return }
+        let bounds = CGRect(origin: .zero, size: first.size)
+        let pdf = UIGraphicsPDFRenderer(bounds: bounds).pdfData { ctx in
+            for page in pages {
+                ctx.beginPage(withBounds: CGRect(origin: .zero, size: page.size), pageInfo: [:])
+                page.draw(in: CGRect(origin: .zero, size: page.size))
+            }
+        }
+        await analyzeImported(data: pdf, fileName: Self.fileName(base: NSLocalizedString("Scansione", comment: "Imported file name"), ext: "pdf"), mimeType: "application/pdf")
+    }
+
+    /// Chiusa la scheda: se qualcosa è stato creato resta traccia nella
+    /// conversazione (anche per le domande successive all'assistente).
+    func finishDocumentImport(title: String, documentType: String?, summary: String?) {
+        if let file = docIntelPayload?.sourceFile {
+            try? FileManager.default.removeItem(at: file.deletingLastPathComponent())
+        }
+        docIntelPayload = nil
+        guard let summary, !summary.isEmpty, let conversation else { return }
+        let user = makeMessage(role: .user, text: "📎 \(title)")
+        let kind = documentType ?? NSLocalizedString("un documento", comment: "Assistant document import")
+        let reply = String(format: NSLocalizedString("Ho letto %@ e ho salvato:\n%@", comment: "Assistant document import"), kind, summary)
+        let assistant = makeMessage(role: .assistant, text: reply)
+        for m in [user, assistant] {
+            m.conversation = conversation
+            conversation.messages.append(m)
+            messages.append(m)
+        }
+        try? modelContext.save()
+        SyncCenter.shared.pushAIConversation(conversation, modelContext: modelContext)
+        actionExecutionSummary = NSLocalizedString("Documento smistato", comment: "Assistant document import toast")
+    }
+
+    private func analyzeImported(data: Data, fileName: String, mimeType: String) async {
+        guard !isAnalyzingDocument, !isLoading else { return }
+        errorMessage = nil
+
+        // Copia privata: i file di File valgono solo finché dura lo scope, e
+        // l'allegato si carica dopo la conferma.
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("assistant-import-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = dir.appendingPathComponent(fileName)
+        do {
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            try data.write(to: fileURL, options: .atomic)
+        } catch {
+            errorMessage = NSLocalizedString("Impossibile leggere il file.", comment: "Assistant document import")
+            return
+        }
+
+        let refs = DocumentIntelligenceService.familyRefs(familyId: familyId, modelContext: modelContext)
+        isAnalyzingDocument = true
+        defer { isAnalyzingDocument = false }
+        do {
+            var result = try await DocumentIntelligenceService.analyzeThrowing(
+                data: data, fileName: fileName, mimeType: mimeType,
+                children: refs.persons, vehicles: refs.vehicles
+            )
+            // Con il focus di Salute la persona è già scelta.
+            if let personId = focus?.personId, refs.persons.contains(where: { $0.id == personId }) {
+                for i in result.actions.indices where result.actions[i].needsPerson && result.actions[i].childId == nil {
+                    result.actions[i].childId = personId
+                }
+            }
+            AppAnalytics.aiMessageSent(agentType: "documento", plan: KBSubscriptionManager.shared.currentPlan.rawValue)
+            KBLog.ai.kbInfo("PlanningAIChatVM document analyzed category=\(result.category ?? "-") actions=\(result.actions.count)")
+            docIntelPayload = DocIntelPayload(
+                result: result, sourceFile: fileURL,
+                children: refs.persons, vehicles: refs.vehicles
+            )
+        } catch DocumentIntelligenceService.AnalyzeError.unreadable {
+            errorMessage = NSLocalizedString("Si leggono solo PDF e immagini.", comment: "Assistant document import")
+            try? FileManager.default.removeItem(at: dir)
+        } catch DocumentIntelligenceService.AnalyzeError.badResponse {
+            errorMessage = NSLocalizedString("Non sono riuscito a leggere il documento. Riprova con una foto più nitida.", comment: "Assistant document import")
+            try? FileManager.default.removeItem(at: dir)
+        } catch {
+            errorMessage = error.localizedDescription
+            try? FileManager.default.removeItem(at: dir)
+            KBLog.ai.kbError("PlanningAIChatVM document analysis FAILED: \(error)")
+        }
+        await refreshQuota()
+    }
+
+    private static func fileName(base: String, ext: String) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd HH.mm"
+        return "\(base) \(f.string(from: Date())).\(ext)"
+    }
+
+    private static func mimeType(forExtension ext: String) -> String {
+        switch ext.lowercased() {
+        case "pdf": return "application/pdf"
+        case "jpg", "jpeg": return "image/jpeg"
+        case "png": return "image/png"
+        case "heic": return "image/heic"
+        default: return "application/octet-stream"
+        }
+    }
 }

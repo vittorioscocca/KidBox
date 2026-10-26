@@ -25,6 +25,9 @@
 import SwiftUI
 import SwiftData
 import FirebaseAuth
+import PhotosUI
+import UniformTypeIdentifiers
+import VisionKit
 
 // MARK: - Entry point
 
@@ -255,6 +258,12 @@ private struct PlanningAIChatInnerView: View {
     @State private var prefillEventTitle = ""
     @State private var prefillTodoTitle  = ""
     
+    // ── Documento dal «+» ─────────────────────────────────────────
+    @State private var showDocScanner = false
+    @State private var showPhotoPicker = false
+    @State private var photoItem: PhotosPickerItem?
+    @State private var showFileImporter = false
+
     // ── Scroll proxy ──────────────────────────────────────────────
     @Namespace private var bottomID
     
@@ -444,6 +453,94 @@ private struct PlanningAIChatInnerView: View {
         .sheet(isPresented: $showAISettings) {
             NavigationStack { AISettingsView() }
         }
+        // Documento dal «+»: scanner, foto, file → lettura → scheda di conferma.
+        .fullScreenCover(isPresented: $showDocScanner) {
+            WalletDocumentScannerView(
+                onFinish: { pages in
+                    showDocScanner = false
+                    Task { await vm.importScan(pages: pages) }
+                },
+                onCancel: { showDocScanner = false }
+            )
+            .ignoresSafeArea()
+        }
+        .photosPicker(isPresented: $showPhotoPicker, selection: $photoItem, matching: .images)
+        .onChange(of: photoItem) { _, item in
+            guard let item else { return }
+            photoItem = nil
+            Task {
+                if let data = try? await item.loadTransferable(type: Data.self) {
+                    await vm.importPhoto(data: data)
+                }
+            }
+        }
+        .fileImporter(
+            isPresented: $showFileImporter,
+            allowedContentTypes: [.pdf, .image],
+            allowsMultipleSelection: false
+        ) { result in
+            guard case .success(let urls) = result, let url = urls.first else { return }
+            Task { await vm.importDocument(fileURL: url) }
+        }
+        .sheet(item: $vm.docIntelPayload) { payload in
+            DocumentIntelligenceSheet(
+                payload: payload,
+                familyId: familyId,
+                modelContext: modelContext,
+                onDone: { summary in
+                    vm.finishDocumentImport(
+                        title: payload.result.suggestedTitle ?? payload.sourceFile?.deletingPathExtension().lastPathComponent ?? "",
+                        documentType: payload.result.documentType,
+                        summary: summary
+                    )
+                }
+            )
+        }
+        .overlay {
+            if vm.isAnalyzingDocument {
+                VStack(spacing: 10) {
+                    ProgressView()
+                    Text("Sto leggendo il documento…")
+                        .font(.footnote.weight(.medium))
+                }
+                .padding(22)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+            }
+        }
+    }
+
+    /// Il «+» accanto al campo di testo: un documento da smistare.
+    private var attachMenu: some View {
+        Menu {
+            Button {
+                showDocScanner = true
+            } label: {
+                Label("Scansiona documento", systemImage: "doc.viewfinder")
+            }
+            .disabled(!VNDocumentCameraViewController.isSupported)
+            Button {
+                showPhotoPicker = true
+            } label: {
+                Label("Foto", systemImage: "photo.on.rectangle")
+            }
+            Button {
+                showFileImporter = true
+            } label: {
+                Label("File", systemImage: "folder")
+            }
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(KBTheme.inputBackground(colorScheme))
+                    .frame(width: 38, height: 38)
+                Image(systemName: "plus")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(vm.isLoading || vm.isAnalyzingDocument ? Color.secondary : tint)
+            }
+        }
+        .disabled(vm.isLoading || vm.isAnalyzingDocument)
+        .accessibilityLabel(Text("Carica un documento"))
+        .padding(.bottom, 2)
     }
     
     // MARK: - Provider badge
@@ -992,6 +1089,8 @@ private struct PlanningAIChatInnerView: View {
             }
             
             HStack(alignment: .bottom, spacing: 10) {
+                attachMenu
+
                 // Input field — parte da una riga (42pt) e cresce con il testo
                 // fino a 6 righe, poi scorre dentro.
                 TextField("Chiedi all'assistente…", text: $vm.inputText, axis: .vertical)
