@@ -298,6 +298,14 @@ enum FamilyRequestService {
 
     /// «Ci penso io» o «Non posso». Il server decide chi vince e crea il to-do.
     static func respond(familyId: String, requestId: String, yes: Bool) async throws -> Outcome {
+        #if DEBUG
+        // Demo per screenshot e video: la richiesta è inventata e il server non
+        // la conosce, quindi l'esito si simula.
+        if requestId == "demo-request", CommandLine.arguments.contains("-KBDemoSeed") {
+            try? await Task.sleep(for: .milliseconds(500))
+            return yes ? .claimedByMe : .declined
+        }
+        #endif
         do {
             let result = try await functions.httpsCallable("respondToRequest").call([
                 "familyId": familyId,
