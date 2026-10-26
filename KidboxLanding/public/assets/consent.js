@@ -21,6 +21,10 @@
  *
  * Eventi: page_view automatico, `store_click` sui link ad App Store, Google
  * Play e web app (store: ios | android | web).
+ * Meta Pixel (solo dopo il consenso): `PageView`; `Lead` {store: ios|android}
+ * al tap sullo store; `OpenWebApp` al tap sulla web app; `EngagedVisit` dopo
+ * dieci secondi con la pagina visibile. Gli eventi «no-code» dello strumento
+ * di Meta (Download iOS App / Android App) vanno tolti: contarebbero due volte.
  *
  * In fondo c'è anche il **contatore nostro** (functions/landingTraffic.js),
  * che non dipende dal consenso perché non usa cookie né identificativi: manda
@@ -38,7 +42,7 @@
   var A_KEY = "kidbox:analyticsConsent";
   var M_KEY = "kidbox:marketingConsent";
   var GA_ID = "G-0PG65CW2VF";
-  var PIXEL_ID = "1510585797527208";
+  var PIXEL_ID = "1335685042033994";
   var script = document.currentScript;
   var noBanner = script && script.hasAttribute("data-no-banner");
   var lang = (document.documentElement.lang || "it").slice(0, 2);
@@ -236,6 +240,13 @@
       if (store && window.__kbGaLoaded) {
         window.gtag("event", "store_click", { store: store, page_path: location.pathname });
       }
+      // Meta Pixel: esiste solo dopo il consenso pubblicitario. `Lead` è il tap
+      // sullo store (l'evento su cui ottimizzare le inserzioni); la web app è
+      // un'altra strada e ha il suo evento, per non mescolare i due numeri.
+      if (store && window.fbq) {
+        if (store === "web") window.fbq("trackCustom", "OpenWebApp", { page_path: location.pathname });
+        else window.fbq("track", "Lead", { store: store, page_path: location.pathname });
+      }
     });
     // Anche all'avvio: gtag può riscrivere un cookie mentre la pagina si
     // ricarica dopo il ritiro del consenso.
@@ -316,6 +327,9 @@
       timer = setTimeout(function () {
         sent = true;
         ping({ event: "engaged", src: src, page: page });
+        // Stessa soglia dei dieci secondi anche per Meta (con consenso): è il
+        // segnale che separa una visita da un tap accidentale.
+        if (window.fbq) window.fbq("trackCustom", "EngagedVisit", { page: page });
       }, Math.max(0, 10000 - seen));
     }
     document.addEventListener("visibilitychange", function () {
