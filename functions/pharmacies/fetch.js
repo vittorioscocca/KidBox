@@ -175,7 +175,7 @@ async function download(rawUrl, opts = {}) {
           agent: () => agentFor(url),
           headers: {
             "User-Agent": USER_AGENT,
-            "Accept": opts.accept || "text/html, application/json;q=0.9, application/xml;q=0.8, */*;q=0.1",
+            "Accept": opts.accept || (opts.binary ? "image/png, image/jpeg, image/webp, image/gif" : "text/html, application/json;q=0.9, application/xml;q=0.8, */*;q=0.1"),
             "Accept-Language": "it-IT,it;q=0.9",
           },
         });
@@ -198,7 +198,12 @@ async function download(rawUrl, opts = {}) {
     if (res.status === 429 || res.status >= 500) throw new FetchError(ERR.UNREACHABLE, `HTTP ${res.status}`);
     if (!res.ok) throw new FetchError(ERR.HTTP, `HTTP ${res.status}`);
     const contentType = res.headers.get("content-type") || "";
-    if (contentType && !TEXT_TYPES.test(contentType)) throw new FetchError(ERR.NOT_TEXT, contentType);
+    if (opts.binary) {
+      // Immagini dei turni (solo i formati che l'AI sa leggere).
+      if (!/^image\/(png|jpe?g|webp|gif)/i.test(contentType)) throw new FetchError(ERR.NOT_TEXT, contentType);
+    } else if (contentType && !TEXT_TYPES.test(contentType)) {
+      throw new FetchError(ERR.NOT_TEXT, contentType);
+    }
     const declared = Number(res.headers.get("content-length") || 0);
     if (declared > maxBytes) throw new FetchError(ERR.TOO_LARGE, `${declared} byte`);
 
@@ -212,7 +217,8 @@ async function download(rawUrl, opts = {}) {
       }
       chunks.push(chunk);
     }
-    return {text: Buffer.concat(chunks).toString("utf8"), finalUrl: url.toString(), contentType};
+    const buffer = Buffer.concat(chunks);
+    return {text: opts.binary ? "" : buffer.toString("utf8"), buffer, finalUrl: url.toString(), contentType};
   }
   throw new FetchError(ERR.UNREACHABLE, "troppi redirect");
 }

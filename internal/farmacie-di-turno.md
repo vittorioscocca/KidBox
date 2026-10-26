@@ -74,6 +74,23 @@ Le date senza anno prendono quello corrente (il successivo se già passate da
 **Da fare prima di allargare:** leggere i termini d'uso di Federfarma (il pilota
 ha guardato solo `robots.txt`) e chiedere un permesso scritto.
 
+## Turni in immagine (ASL Benevento, 26/10/2026)
+
+Molti enti pubblicano ogni mese una tabella come PNG. La regola `vision`
+(`{"type":"vision","imageSelector":"…"}`, `vision.js`) fa leggere le immagini
+all'AI con la vista **solo quando cambiano**: la fonte conserva l'impronta
+(`imageHash`) e ogni 12 ore lo scheduler scarica la pagina e le immagini (circa
+120 KB) ma chiama l'AI solo se l'impronta è nuova. Quindi circa una lettura al
+mese per fonte, per tutte le famiglie che la usano; costo registrato in
+`pharmacy_usage.byKind.vision` e `ai_costs.pharmacyCostUsd`.
+L'AI restituisce intervalli («dal 04 ott al 10 ott») che il codice espande in un
+turno per giorno, con `service` (`night`, `afternoon`, `holiday`,
+`afternoon_holiday`, `h24`). La lettura inline di `getPharmacies` non chiama mai
+l'AI: se il mese cambia e l'immagine nuova non è ancora stata letta, resta
+«nessun turno aggiornato per oggi» col link, mai un elenco vecchio.
+Limiti: niente PDF (solo png/jpeg/webp/gif, 3 immagini da 4 MB al massimo); una
+tabella illeggibile o implausibile cade in «non riesco a leggere questo sito».
+
 ## Trappole già incontrate
 
 - **Certificato intermedio mancante (ASL Benevento, 26/10/2026).** Molti siti

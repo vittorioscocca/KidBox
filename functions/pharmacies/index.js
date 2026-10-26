@@ -34,6 +34,7 @@ const {searchWithClaude, estimateCostUsd, MODEL_SONNET} = require("../news/searc
 const {download, parseUrl, FetchError} = require("./fetch");
 const {sanitizeRule, applyRule, plausible, addDays} = require("./rules");
 const {BUILTIN_SOURCES} = require("./builtin");
+const vision = require("./vision");
 
 const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
 const REGION = "europe-west1";
@@ -192,8 +193,8 @@ function skeleton(body, contentType) {
   const s = body
       .replace(/<!--[\s\S]*?-->/g, "")
       .replace(/<(script|style|svg|noscript|head|iframe|template)\b[\s\S]*?<\/\1>/gi, "")
-      .replace(/\s(?!class=|id=)[a-zA-Z_:][\w:.-]*="[^"]*"/g, "")
-      .replace(/\s(?!class=|id=)[a-zA-Z_:][\w:.-]*='[^']*'/g, "")
+      .replace(/\s(?!class=|id=|alt=|src=)[a-zA-Z_:][\w:.-]*="[^"]*"/g, "")
+      .replace(/\s(?!class=|id=|alt=|src=)[a-zA-Z_:][\w:.-]*='[^']*'/g, "")
       .replace(/\s+/g, " ");
   return s.slice(0, 60000);
 }
@@ -205,6 +206,9 @@ Forme ammesse:
 HTML: {"type":"html","dayContainerSelector":"CSS del blocco di UN giorno (opzionale)","dayHeaderSelector":"CSS, relativo al blocco, dell'intestazione con la data del giorno (opzionale)","itemSelector":"CSS di UNA farmacia","fields":{"name":"CSS relativo alla riga oppure \\":self\\" per il testo diretto","address":"…","comune":"…","phone":"…"},"detailSelector":"CSS di un elemento unico con più dati separati (opzionale)","detailSeparator":" — ","detailFields":["comune","address","phone"]}
 JSON: {"type":"json","itemsPath":"percorso.a.punti.verso.l'array","where":{"campo":valore},"dateField":"campo con la data (opzionale)","fields":{"name":"campo","address":"campo","comune":"campo","phone":"campo","lat":"campo","lng":"campo"}}
 
+VISIONE: {"type":"vision","imageSelector":"CSS delle <img> che contengono le tabelle dei turni"}
+  Usala quando nel codice non c'è l'elenco in testo ma ci sono immagini (alt o nome file tipo «Turni Farmacie Ottobre 2026») che sembrano le tabelle dei turni: le leggerà l'AI con la vista.
+
 Regole:
 - Usa SOLO selettori che compaiono nel codice che ti do. Non inventare classi.
 - Vanno estratte le farmacie DI TURNO (notturno, festivo, h24): se la pagina ha anche l'elenco generale, scegli la parte dei turni.
@@ -215,7 +219,7 @@ Regole:
  * Chiede all'AI una regola per una pagina e la prova. Un solo tentativo di
  * correzione, con il motivo del fallimento.
  * @param {{apiKey: string, url: string, place: object, body: string, contentType: string, todayKey: string}} o
- * @return {Promise<{rule: ?object, entries: object[], costUsd: number, reason: string}>}
+ * @return {Promise<{rule: ?object, entries: object[], costUsd: number, reason: string, imageHash?: string}>}
  */
 async function generateRule(o) {
   const page = skeleton(o.body, o.contentType);
@@ -235,6 +239,16 @@ async function generateRule(o) {
     if (!rule) {
       feedback = "\nLa regola precedente non era valida: rispetta esattamente le forme ammesse.";
       continue;
+    }
+    if (rule.type === "vision") {
+      try {
+        const v = await vision.readFromPage({rule, pageHtml: o.body, pageUrl: o.url, apiKey: o.apiKey, place: o.place, todayKey: o.todayKey});
+        costUsd += v.costUsd;
+        if (v.entries) return {rule, entries: v.entries, costUsd, reason: "", imageHash: v.hash};
+        return {rule: null, entries: [], costUsd, reason: v.reason || "vision-failed"};
+      } catch (e) {
+        return {rule: null, entries: [], costUsd, reason: "vision-error"};
+      }
     }
     const entries = applyRule(rule, o.body, o.todayKey);
     const check = plausible(entries, o.todayKey);
@@ -356,7 +370,7 @@ function build(deps) {
    * @param {string} key
    * @return {Promise<{ok: boolean, reason?: string}>}
    */
-  async function refreshSource(key) {
+  async function refreshSource(key, opts = {}) {
     const src = await getSource(key);
     if (!src?.rule || !src.url) return {ok: false, reason: "no-rule"};
     const todayKey = todayKeyRome();
@@ -379,6 +393,7 @@ function build(deps) {
     }
     const rule = sanitizeRule(src.rule);
     if (!rule) return fail("bad-rule");
+    if (rule.type === "vision") return refreshVision(key, src, rule, page, todayKey, fail, opts);
     const entries = applyRule(rule, page.text, todayKey).filter((e) => e.date >= addDays(todayKey, -1));
     const check = plausible(entries, todayKey);
     if (!check.ok) return fail(check.reason);
@@ -400,6 +415,58 @@ function build(deps) {
   }
 
   /**
+   * Fonti con i turni in immagine: la pagina si scarica sempre, ma l'AI legge le
+   * immagini solo se sono cambiate (impronta). Senza chiave (chiamata di
+   * lettura) o oltre il tetto di spesa non si fa nulla: restano i turni già letti.
+   * @param {string} key
+   * @param {object} src
+   * @param {object} rule
+   * @param {{text: string, finalUrl: string}} page
+   * @param {string} todayKey
+   * @param {Function} fail
+   * @param {{allowAI?: boolean}} opts
+   * @return {Promise<{ok: boolean, reason?: string}>}
+   */
+  async function refreshVision(key, src, rule, page, todayKey, fail, opts) {
+    if (!opts.allowAI) return {ok: false, reason: "vision-needs-ai"};
+    const cfg = await loadConfig();
+    if (await overBudget(todayKey, cfg)) {
+      await sourceRef(key).set({nextFetchAtMs: Date.now() + 6 * HOUR_MS}, {merge: true});
+      return {ok: false, reason: "budget"};
+    }
+    let v;
+    try {
+      v = await vision.readFromPage({
+        rule, pageHtml: page.text, pageUrl: page.finalUrl, apiKey: ANTHROPIC_API_KEY.value(),
+        place: src.place || {}, todayKey, knownHash: src.imageHash,
+      });
+    } catch (e) {
+      return fail(e instanceof FetchError ? e.code : String(e.message || e).slice(0, 80));
+    }
+    if (v.costUsd) await recordSpend(todayKey, "vision", v.costUsd, 0);
+    const next = Date.now() + 12 * HOUR_MS;
+    if (v.unchanged) {
+      await Promise.all([
+        shiftsRef(key).set({fetchedAtMs: Date.now()}, {merge: true}),
+        sourceRef(key).set({status: "ok", failures: 0, lastError: null, lastOkAtMs: Date.now(), nextFetchAtMs: next}, {merge: true}),
+      ]);
+      return {ok: true};
+    }
+    if (!v.entries) return fail(v.reason || "vision-failed");
+    const entries = v.entries.filter((e) => e.date >= addDays(todayKey, -1)).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)).slice(0, MAX_STORED_ENTRIES);
+    if (!entries.length) return fail("date-fuori-finestra");
+    await Promise.all([
+      shiftsRef(key).set({
+        entries, fetchedAtMs: Date.now(), url: src.url, label: src.label, coverageEnd: entries[entries.length - 1].date, contentHash: v.hash,
+      }),
+      sourceRef(key).set({
+        status: "ok", failures: 0, lastError: null, lastOkAtMs: Date.now(), nextFetchAtMs: next, imageHash: v.hash,
+      }, {merge: true}),
+    ]);
+    return {ok: true};
+  }
+
+  /**
    * Legge i turni salvati e, se mancano o sono vecchi, li rilegge subito.
    * @param {string} key
    * @param {boolean} touch segna la fonte come «letta» (tiene vivo l'aggiornamento)
@@ -408,7 +475,7 @@ function build(deps) {
   async function loadShifts(key, touch) {
     let snap = await shiftsRef(key).get();
     const age = snap.exists ? Date.now() - (snap.get("fetchedAtMs") || 0) : Infinity;
-    if (age > 6 * HOUR_MS) {
+    if (age > 6 * HOUR_MS && (await getSource(key))?.rule?.type !== "vision") {
       await refreshSource(key).catch((e) => logger.warn("pharmacies: refresh in lettura", {key, error: e.message}));
       snap = await shiftsRef(key).get();
     }
@@ -684,18 +751,21 @@ L'url deve essere uno dei risultati della ricerca, mai inventato.`;
           }
           let rule = null;
           let entries = [];
+          let imageHash = null;
           if (page && found.format !== "pdf") {
             const g = await generateRule({apiKey: ANTHROPIC_API_KEY.value(), url, place, body: page.text, contentType: page.contentType, todayKey});
             cost += g.costUsd;
             rule = g.rule;
             entries = g.entries;
+            imageHash = g.imageHash || null;
           }
           const official = found.official === true;
           const high = found.confidence === "high";
           const confidence = rule && official && high ? "ai" : "uncertain";
           await sourceRef(key).set({
             key, kind: "ai", label: text(found.label, 80) || hostOf(url), url, pageUrl: url, urlHost: hostOf(url),
-            rule: rule || null, confidence, official, aiConfidence: text(found.confidence, 8), format: text(found.format, 8),
+            rule: rule || null, imageHash: imageHash || null, place: {city: place.city, province: place.province, region: place.region},
+            confidence, official, aiConfidence: text(found.confidence, 8), format: text(found.format, 8),
             coverage: "listed", placeKey: key, status: rule ? "ok" : "unreadable", failures: 0,
             createdAtMs: Date.now(), lastReadAtMs: Date.now(), nextFetchAtMs: Date.now() + (rule ? 3 * HOUR_MS : 30 * DAY_MS),
           });
@@ -778,6 +848,7 @@ L'url deve essere uno dei risultati della ricerca, mai inventato.`;
           }
         }
         let costNote = 0;
+        let imageHash = null;
         if (!rule) {
           if (await overBudget(todayKey, cfg)) {
             throw new HttpsError("resource-exhausted", "Le letture di oggi sono finite: riprova domani.", {reason: "pharmacies-budget"});
@@ -797,6 +868,7 @@ L'url deve essere uno dei risultati della ricerca, mai inventato.`;
           await settle(ctx, reserved, unitsFor(g.costUsd, cfg, reserved));
           rule = g.rule;
           entries = g.entries;
+          imageHash = g.imageHash || null;
           costNote = g.costUsd;
         }
 
@@ -804,6 +876,7 @@ L'url deve essere uno dei risultati della ricerca, mai inventato.`;
         await Promise.all([
           sourceRef(key).set({
             key, kind: "manual", familyId, label: host, url, pageUrl: url, urlHost: host, rule: rule || null,
+            imageHash, place: {city: place.city, province: place.province, region: place.region},
             confidence: "manual", coverage: "listed", status: readable ? "ok" : "unreadable", failures: 0,
             createdAtMs: Date.now(), lastReadAtMs: Date.now(), nextFetchAtMs: Date.now() + (readable ? 3 * HOUR_MS : 30 * DAY_MS),
           }),
@@ -822,7 +895,7 @@ L'url deve essere uno dei risultati della ricerca, mai inventato.`;
   // ── refreshPharmacyShifts (ogni ora, senza AI) ──────────────────────────────
 
   const refreshPharmacyShifts = onSchedule(
-      {region: REGION, schedule: "every 60 minutes", timeZone: TZ, maxInstances: 1, timeoutSeconds: 540, memory: "512MiB"},
+      {region: REGION, schedule: "every 60 minutes", timeZone: TZ, maxInstances: 1, timeoutSeconds: 540, memory: "512MiB", secrets: [ANTHROPIC_API_KEY]},
       async () => {
         const deadline = Date.now() + 480_000;
         const due = await db().collection("pharmacy_sources").where("nextFetchAtMs", "<=", Date.now()).limit(80).get();
@@ -831,7 +904,7 @@ L'url deve essere uno dei risultati della ricerca, mai inventato.`;
         for (const doc of due.docs) {
           if (Date.now() > deadline) break;
           if (Date.now() - (doc.get("lastReadAtMs") || 0) > IDLE_MS) continue;
-          const r = await refreshSource(doc.id).catch((e) => ({ok: false, reason: e.message}));
+          const r = await refreshSource(doc.id, {allowAI: true}).catch((e) => ({ok: false, reason: e.message}));
           if (r.ok) done++;
           else failed++;
         }
@@ -842,4 +915,4 @@ L'url deve essere uno dei risultati della ricerca, mai inventato.`;
   return {getPharmacies, findPharmacySource, setPharmacySource, refreshPharmacyShifts};
 }
 
-module.exports = {build, _internal: {norm}};
+module.exports = {build, _internal: {norm, skeleton}};

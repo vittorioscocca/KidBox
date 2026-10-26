@@ -132,6 +132,11 @@ function sanitizeRule(raw) {
     }
     return rule;
   }
+  if (raw.type === "vision") {
+    // Turni pubblicati come immagine: l'AI le legge quando cambiano (vision.js).
+    const imageSelector = sel(raw.imageSelector);
+    return imageSelector ? {v: 1, type: "vision", imageSelector} : null;
+  }
   if (raw.type === "html") {
     const fields = {};
     for (const f of FIELDS) {
@@ -174,6 +179,7 @@ function toEntry(raw, date) {
   if (!name) return null;
   const phone = clean(raw.phone, 24).replace(/[^+\d\s./-]/g, "").trim();
   const entry = {date, name, comune: clean(raw.comune, 60), address: clean(raw.address, 120), phone};
+  if (raw.service) entry.service = clean(raw.service, 24);
   const lat = coord(raw.lat, 90);
   const lng = coord(raw.lng, 180);
   if (lat !== null && lng !== null) {
@@ -203,6 +209,8 @@ function htmlText(el, selector) {
  * @return {object[]} voci {date, name, comune, address, phone, lat?, lng?}
  */
 function applyRule(rule, text, todayKey) {
+  // Le regole «vision» non si applicano al testo: le esegue vision.js.
+  if (rule.type === "vision") return [];
   const out = [];
   const seen = new Set();
   const push = (raw, date) => {
