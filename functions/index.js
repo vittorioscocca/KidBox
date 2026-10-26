@@ -5815,6 +5815,13 @@ async function deleteFamilyCompletely(familyId) {
   // famiglia, non le sopravvivono.
   await db.collection("news_offers").doc(familyId).delete().catch(() => {});
 
+  // Farmacie di turno: la scelta manuale del sito è della famiglia e se ne va con lei.
+  await Promise.all([
+    db.collection("pharmacy_family").doc(familyId).delete(),
+    db.collection("pharmacy_sources").doc(`manual_${familyId}`).delete(),
+    db.collection("pharmacy_shifts").doc(`manual_${familyId}`).delete(),
+  ]).catch(() => {});
+
   // Rimuovi contatore AI famiglia
   await deleteCollection(db.collection(`ai_usage/family_${familyId}/daily`)).catch(() => {});
   await db.collection("ai_usage").doc(`family_${familyId}`).delete().catch(() => {});
@@ -8682,3 +8689,17 @@ exports.getFamilyNews = news.getFamilyNews;
 exports.getNewsOffers = news.getNewsOffers;
 exports.buildNewsEdition = news.buildNewsEdition;
 exports.prepareNewsEditions = news.prepareNewsEditions;
+
+// Farmacie di turno (Pro e Max): fonte ufficiale trovata dall'AI o indicata
+// dall'utente, regola di lettura scritta una volta, turni riletti dal codice.
+// Disegno in internal/farmacie-di-turno.md.
+const pharmacies = require("./pharmacies").build({
+  assertFamilyMember,
+  resolveAIQuota,
+  checkAndIncrementAIUsage,
+  refundAIUsage,
+});
+exports.getPharmacies = pharmacies.getPharmacies;
+exports.findPharmacySource = pharmacies.findPharmacySource;
+exports.setPharmacySource = pharmacies.setPharmacySource;
+exports.refreshPharmacyShifts = pharmacies.refreshPharmacyShifts;
