@@ -74,7 +74,7 @@ Le date senza anno prendono quello corrente (il successivo se già passate da
 **Da fare prima di allargare:** leggere i termini d'uso di Federfarma (il pilota
 ha guardato solo `robots.txt`) e chiedere un permesso scritto.
 
-## Turni in immagine (ASL Benevento, 26/10/2026)
+## Turni in immagine o PDF (ASL Benevento, 26/10/2026)
 
 Molti enti pubblicano ogni mese una tabella come PNG. La regola `vision`
 (`{"type":"vision","imageSelector":"…"}`, `vision.js`) fa leggere le immagini
@@ -88,8 +88,29 @@ turno per giorno, con `service` (`night`, `afternoon`, `holiday`,
 `afternoon_holiday`, `h24`). La lettura inline di `getPharmacies` non chiama mai
 l'AI: se il mese cambia e l'immagine nuova non è ancora stata letta, resta
 «nessun turno aggiornato per oggi» col link, mai un elenco vecchio.
-Limiti: niente PDF (solo png/jpeg/webp/gif, 3 immagini da 4 MB al massimo); una
-tabella illeggibile o implausibile cade in «non riesco a leggere questo sito».
+**PDF**: l'AI li legge come documento (anche quelli scansionati). La regola
+`vision` ha tre modi di trovare i file: `self` (l'indirizzo stesso è un PDF o
+un'immagine), `imageSelector` (immagini nella pagina), `linkSelector` (link a
+PDF o immagini nella pagina; allo scheletro che vede l'AI restano solo i link
+che portano a un documento). Fino a 3 file per fonte, PDF ≤ 8 MB e ≤ 25 pagine,
+immagini ≤ 4 MB.
+
+**Download robusto** (`fetch.js`): il tipo di file si riconosce dai primi byte e
+non dall'intestazione (un PDF servito come `application/octet-stream` si legge
+lo stesso); codifica del testo letta da `charset` o dal `<meta>` (i siti in
+windows-1252 non rompono più gli accenti); le richieste passeggere (rete, 429,
+5xx) si ripetono due volte; certificato intermedio mancante recuperato dall'AIA;
+motivi distinti per «bloccato» (401/403/406/451), «non trovato», «troppo
+grande», «tipo non supportato».
+
+**Il perché all'utente**: `setPharmacySource` e `findPharmacySource` restituiscono
+`why` (`outdated` = ho trovato turni ma di un altro periodo, `too-large`,
+`too-many-pages`, `blocked`, `not-found`, `unsupported`, `unreachable`, `no-data`)
+e i client lo spiegano in parole.
+
+Limiti noti: pagine che caricano i turni con JavaScript (la pagina scaricata è
+vuota), PDF dietro un'altra pagina intermedia (due salti), fogli di calcolo e
+archivi: cadono in «non riesco a leggere questo sito» col link.
 
 ## Trappole già incontrate
 

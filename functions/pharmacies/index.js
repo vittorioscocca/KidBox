@@ -181,6 +181,18 @@ function taggedJson(raw, tag) {
 }
 
 /**
+ * Il perché di un «non riesco a leggere», in poche categorie che i client sanno
+ * spiegare all'utente.
+ * @param {string} reason motivo tecnico
+ * @return {string}
+ */
+function whyOf(reason) {
+  if (reason === "date-fuori-finestra") return "outdated";
+  if (["too-large", "too-many-pages", "blocked", "not-found", "unsupported", "unreachable"].includes(reason)) return reason;
+  return "no-data";
+}
+
+/**
  * Una versione compatta della pagina, buona per un prompt: niente script, stili
  * né attributi tranne classi e id, che sono ciò che serve a scrivere i selettori.
  * @param {string} body
@@ -193,8 +205,16 @@ function skeleton(body, contentType) {
   const s = body
       .replace(/<!--[\s\S]*?-->/g, "")
       .replace(/<(script|style|svg|noscript|head|iframe|template)\b[\s\S]*?<\/\1>/gi, "")
-      .replace(/\s(?!class=|id=|alt=|src=)[a-zA-Z_:][\w:.-]*="[^"]*"/g, "")
-      .replace(/\s(?!class=|id=|alt=|src=)[a-zA-Z_:][\w:.-]*='[^']*'/g, "")
+      // Dei link restano solo quelli che portano a un documento (PDF, immagini,
+      // «scarica», «allegato»): sono ciò che serve a una regola di lettura.
+      .replace(/<a\b([^>]*)>/gi, (tag, attrs) => {
+        const href = /\bhref\s*=\s*["']([^"']*)["']/i.exec(attrs)?.[1] || "";
+        const keep = /\.(pdf|png|jpe?g|webp|gif)(\?|#|$)/i.test(href) || /(download|allegat|attachment|getfile|documento)/i.test(href);
+        const cls = /\bclass\s*=\s*["']([^"']*)["']/i.exec(attrs)?.[1];
+        return `<a${cls ? ` class="${cls}"` : ""}${keep ? ` href="${href}"` : ""}>`;
+      })
+      .replace(/\s(?!class=|id=|alt=|src=|href=)[a-zA-Z_:][\w:.-]*="[^"]*"/g, "")
+      .replace(/\s(?!class=|id=|alt=|src=|href=)[a-zA-Z_:][\w:.-]*='[^']*'/g, "")
       .replace(/\s+/g, " ");
   return s.slice(0, 60000);
 }
@@ -206,8 +226,8 @@ Forme ammesse:
 HTML: {"type":"html","dayContainerSelector":"CSS del blocco di UN giorno (opzionale)","dayHeaderSelector":"CSS, relativo al blocco, dell'intestazione con la data del giorno (opzionale)","itemSelector":"CSS di UNA farmacia","fields":{"name":"CSS relativo alla riga oppure \\":self\\" per il testo diretto","address":"…","comune":"…","phone":"…"},"detailSelector":"CSS di un elemento unico con più dati separati (opzionale)","detailSeparator":" — ","detailFields":["comune","address","phone"]}
 JSON: {"type":"json","itemsPath":"percorso.a.punti.verso.l'array","where":{"campo":valore},"dateField":"campo con la data (opzionale)","fields":{"name":"campo","address":"campo","comune":"campo","phone":"campo","lat":"campo","lng":"campo"}}
 
-VISIONE: {"type":"vision","imageSelector":"CSS delle <img> che contengono le tabelle dei turni"}
-  Usala quando nel codice non c'è l'elenco in testo ma ci sono immagini (alt o nome file tipo «Turni Farmacie Ottobre 2026») che sembrano le tabelle dei turni: le leggerà l'AI con la vista.
+DOCUMENTO (i turni sono in un file e non in testo): {"type":"vision","imageSelector":"CSS delle <img> con le tabelle dei turni (opzionale)","linkSelector":"CSS dei <a> che portano al PDF o all'immagine dei turni (opzionale)"}
+  Usala quando nel codice non c'è l'elenco in testo ma ci sono immagini (alt o nome tipo «Turni Farmacie Ottobre 2026») o link a PDF (compaiono con il loro href) che sembrano i turni: li leggerà l'AI. Se i PDF sono più d'uno (uno per mese), scegli un selettore che prenda il più recente, di solito il primo; se non puoi distinguerli, prendili tutti.
 
 Regole:
 - Usa SOLO selettori che compaiono nel codice che ti do. Non inventare classi.
@@ -218,18 +238,29 @@ Regole:
 /**
  * Chiede all'AI una regola per una pagina e la prova. Un solo tentativo di
  * correzione, con il motivo del fallimento.
- * @param {{apiKey: string, url: string, place: object, body: string, contentType: string, todayKey: string}} o
+ * @param {{apiKey: string, url: string, place: object, page: {kind: string, text: string, contentType: string, finalUrl: string}, todayKey: string}} o
  * @return {Promise<{rule: ?object, entries: object[], costUsd: number, reason: string, imageHash?: string}>}
  */
 async function generateRule(o) {
-  const page = skeleton(o.body, o.contentType);
+  // L'indirizzo è già un PDF o un'immagine: non c'è una pagina da capire, si legge il file.
+  if (o.page.kind !== "text") {
+    const rule = {v: 1, type: "vision", self: true};
+    try {
+      const v = await vision.readFromPage({rule, page: o.page, apiKey: o.apiKey, place: o.place, todayKey: o.todayKey});
+      if (v.entries) return {rule, entries: v.entries, costUsd: v.costUsd, reason: "", imageHash: v.hash};
+      return {rule: null, entries: [], costUsd: v.costUsd, reason: v.reason || "vision-failed"};
+    } catch (e) {
+      return {rule: null, entries: [], costUsd: 0, reason: e.code || "vision-error"};
+    }
+  }
+  const html = skeleton(o.page.text, o.page.contentType);
   let costUsd = 0;
   let feedback = "";
   for (let attempt = 0; attempt < 2; attempt++) {
     const reply = await callClaude({
       apiKey: o.apiKey,
       system: RULE_SYSTEM,
-      user: `Zona: ${o.place.city || "?"} (${o.place.province || o.place.region || "Italia"}). Pagina: ${o.url}\nOggi: ${o.todayKey}.${feedback}\n\n<pagina>\n${page}\n</pagina>`,
+      user: `Zona: ${o.place.city || "?"} (${o.place.province || o.place.region || "Italia"}). Pagina: ${o.url}\nOggi: ${o.todayKey}.${feedback}\n\n<pagina>\n${html}\n</pagina>`,
     });
     costUsd += estimateCostUsd(reply.usage, MODEL_SONNET);
     const json = taggedJson(reply.text, "kidbox_rule");
@@ -242,15 +273,15 @@ async function generateRule(o) {
     }
     if (rule.type === "vision") {
       try {
-        const v = await vision.readFromPage({rule, pageHtml: o.body, pageUrl: o.url, apiKey: o.apiKey, place: o.place, todayKey: o.todayKey});
+        const v = await vision.readFromPage({rule, page: o.page, apiKey: o.apiKey, place: o.place, todayKey: o.todayKey});
         costUsd += v.costUsd;
         if (v.entries) return {rule, entries: v.entries, costUsd, reason: "", imageHash: v.hash};
         return {rule: null, entries: [], costUsd, reason: v.reason || "vision-failed"};
       } catch (e) {
-        return {rule: null, entries: [], costUsd, reason: "vision-error"};
+        return {rule: null, entries: [], costUsd, reason: e.code || "vision-error"};
       }
     }
-    const entries = applyRule(rule, o.body, o.todayKey);
+    const entries = applyRule(rule, o.page.text, o.todayKey);
     const check = plausible(entries, o.todayKey);
     if (check.ok) return {rule, entries, costUsd, reason: ""};
     feedback = `\nLa regola precedente ha prodotto ${entries.length} righe e non è plausibile (${check.reason}). Correggila.`;
@@ -394,6 +425,7 @@ function build(deps) {
     const rule = sanitizeRule(src.rule);
     if (!rule) return fail("bad-rule");
     if (rule.type === "vision") return refreshVision(key, src, rule, page, todayKey, fail, opts);
+    if (page.kind !== "text") return fail("unsupported");
     const entries = applyRule(rule, page.text, todayKey).filter((e) => e.date >= addDays(todayKey, -1));
     const check = plausible(entries, todayKey);
     if (!check.ok) return fail(check.reason);
@@ -421,7 +453,7 @@ function build(deps) {
    * @param {string} key
    * @param {object} src
    * @param {object} rule
-   * @param {{text: string, finalUrl: string}} page
+   * @param {{kind: string, text: string, buffer: Buffer, mediaType: string, finalUrl: string}} page
    * @param {string} todayKey
    * @param {Function} fail
    * @param {{allowAI?: boolean}} opts
@@ -437,7 +469,7 @@ function build(deps) {
     let v;
     try {
       v = await vision.readFromPage({
-        rule, pageHtml: page.text, pageUrl: page.finalUrl, apiKey: ANTHROPIC_API_KEY.value(),
+        rule, page, apiKey: ANTHROPIC_API_KEY.value(),
         place: src.place || {}, todayKey, knownHash: src.imageHash,
       });
     } catch (e) {
@@ -743,17 +775,22 @@ L'url deve essere uno dei risultati della ricerca, mai inventato.`;
           }
           const url = allowed.get(norm1);
           let page;
+          let downloadCode = "";
           try {
             page = await download(url);
           } catch (e) {
             page = null;
+            downloadCode = e.code || "unreachable";
             logger.warn("pharmacies: pagina trovata ma non scaricabile", {url, error: e.message});
           }
           let rule = null;
           let entries = [];
           let imageHash = null;
-          if (page && found.format !== "pdf") {
-            const g = await generateRule({apiKey: ANTHROPIC_API_KEY.value(), url, place, body: page.text, contentType: page.contentType, todayKey});
+          let why = "";
+          if (!page) why = downloadCode || "unreachable";
+          if (page) {
+            const g = await generateRule({apiKey: ANTHROPIC_API_KEY.value(), url, place, page, todayKey});
+            why = g.reason;
             cost += g.costUsd;
             rule = g.rule;
             entries = g.entries;
@@ -779,7 +816,7 @@ L'url deve essere uno dei risultati della ricerca, mai inventato.`;
           await recordSpend(todayKey, "discovery", cost, searches);
           await settle(ctx, reserved, unitsFor(cost, cfg, reserved));
           logger.info("findPharmacySource", {familyId, key, url, confidence, readable: !!rule, cost});
-          return {status: rule ? "found" : "unreadable", confidence};
+          return {status: rule ? "found" : "unreadable", confidence, why: rule ? "" : whyOf(why)};
         } catch (e) {
           await recordSpend(todayKey, "discovery", cost, searches);
           await deps.refundAIUsage(familyId, ctx.uid, ctx.quota, reserved).catch(() => {});
@@ -840,6 +877,7 @@ L'url deve essere uno dei risultati della ricerca, mai inventato.`;
         for (const candidate of candidates) {
           const r = sanitizeRule(candidate);
           if (!r) continue;
+          if (page.kind !== "text") continue;
           const e = applyRule(r, page.text, todayKey);
           if (plausible(e, todayKey).ok) {
             rule = r;
@@ -849,6 +887,7 @@ L'url deve essere uno dei risultati della ricerca, mai inventato.`;
         }
         let costNote = 0;
         let imageHash = null;
+        let why = "";
         if (!rule) {
           if (await overBudget(todayKey, cfg)) {
             throw new HttpsError("resource-exhausted", "Le letture di oggi sono finite: riprova domani.", {reason: "pharmacies-budget"});
@@ -858,7 +897,7 @@ L'url deve essere uno dei risultati della ricerca, mai inventato.`;
           await reserve(ctx, reserved);
           let g;
           try {
-            g = await generateRule({apiKey: ANTHROPIC_API_KEY.value(), url, place, body: page.text, contentType: page.contentType, todayKey});
+            g = await generateRule({apiKey: ANTHROPIC_API_KEY.value(), url, place, page, todayKey});
           } catch (e) {
             await deps.refundAIUsage(familyId, ctx.uid, ctx.quota, reserved).catch(() => {});
             logger.error("pharmacies: regola fallita", {familyId, error: e.message});
@@ -869,6 +908,7 @@ L'url deve essere uno dei risultati della ricerca, mai inventato.`;
           rule = g.rule;
           entries = g.entries;
           imageHash = g.imageHash || null;
+          why = g.reason;
           costNote = g.costUsd;
         }
 
@@ -888,7 +928,7 @@ L'url deve essere uno dei risultati della ricerca, mai inventato.`;
             }) : shiftsRef(key).delete(),
         ]);
         logger.info("setPharmacySource", {familyId, host, readable, cost: costNote});
-        return {status: readable ? "ok" : "unreadable"};
+        return {status: readable ? "ok" : "unreadable", why: readable ? "" : whyOf(why)};
       },
   );
 

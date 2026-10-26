@@ -16,7 +16,7 @@ const http = require("node:http");
 const crypto = require("node:crypto");
 const {_internal} = require("../calendarFeeds");
 
-const MAX_BYTES = 6 * 1024 * 1024;
+const MAX_BYTES = 8 * 1024 * 1024;
 const TIMEOUT_MS = 15_000;
 const MAX_REDIRECTS = 3;
 const USER_AGENT = "KidBox-Farmacie/1.0 (+https://kidboxapp.com)";
@@ -38,8 +38,12 @@ const ERR = {
   PRIVATE: "private-address",
   UNREACHABLE: "unreachable",
   HTTP: "http-error",
+  /** Il sito rifiuta l'accesso automatico (401, 403, 406, 451). */
+  BLOCKED: "blocked",
+  NOT_FOUND: "not-found",
   TOO_LARGE: "too-large",
-  NOT_TEXT: "not-text",
+  /** Un tipo di file che non sappiamo leggere (archivi, fogli di calcolo, …). */
+  UNSUPPORTED: "unsupported",
 };
 
 /**
@@ -153,10 +157,55 @@ function agentFor(url) {
 const TEXT_TYPES = /^(text\/|application\/(json|xml|xhtml\+xml|.*\+json|.*\+xml))/i;
 
 /**
- * Scarica un documento di testo, seguendo a mano i redirect.
+ * Che cos'è davvero questo file? Si guardano i primi byte, non l'intestazione:
+ * i siti pubblici servono spesso un PDF come `application/octet-stream` o
+ * un'immagine come `text/html`.
+ * @param {Buffer} buf
+ * @param {string} contentType
+ * @return {{kind: string, mediaType: string}} kind: pdf, image, text o other
+ */
+function sniff(buf, contentType) {
+  const head = buf.subarray(0, 12);
+  if (head.subarray(0, 5).toString("latin1") === "%PDF-") return {kind: "pdf", mediaType: "application/pdf"};
+  if (head[0] === 0x89 && head.subarray(1, 4).toString("latin1") === "PNG") return {kind: "image", mediaType: "image/png"};
+  if (head[0] === 0xff && head[1] === 0xd8) return {kind: "image", mediaType: "image/jpeg"};
+  if (head.subarray(0, 4).toString("latin1") === "GIF8") return {kind: "image", mediaType: "image/gif"};
+  if (head.subarray(0, 4).toString("latin1") === "RIFF" && head.subarray(8, 12).toString("latin1") === "WEBP") {
+    return {kind: "image", mediaType: "image/webp"};
+  }
+  if (TEXT_TYPES.test(contentType || "")) return {kind: "text", mediaType: ""};
+  // Senza un tipo chiaro: è testo se i primi byte non hanno caratteri di controllo.
+  const sample = buf.subarray(0, 1024);
+  const looksText = !sample.includes(0) && (contentType === "" || /octet-stream|binary/i.test(contentType));
+  return looksText ? {kind: "text", mediaType: ""} : {kind: "other", mediaType: ""};
+}
+
+/**
+ * Testo di una pagina con la codifica giusta: i siti più vecchi sono in
+ * windows-1252 e leggerli come UTF-8 rompe le lettere accentate (e i nomi).
+ * @param {Buffer} buf
+ * @param {string} contentType
+ * @return {string}
+ */
+function decodeText(buf, contentType) {
+  let charset = /charset=["']?([\w-]+)/i.exec(contentType || "")?.[1];
+  if (!charset) charset = /<meta[^>]+charset=["']?([\w-]+)/i.exec(buf.subarray(0, 2048).toString("latin1"))?.[1];
+  try {
+    return new TextDecoder(charset || "utf-8").decode(buf);
+  } catch (_) {
+    return buf.toString("utf8");
+  }
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Scarica un documento qualsiasi, seguendo a mano i redirect. Una richiesta che
+ * fallisce per un motivo passeggero (rete, 429, 5xx) si ripete una volta.
  * @param {string} rawUrl
  * @param {{maxBytes?: number, accept?: string}} [opts]
- * @return {Promise<{text: string, finalUrl: string, contentType: string}>}
+ * @return {Promise<{kind: string, mediaType: string, text: string, buffer: Buffer, finalUrl: string, contentType: string}>}
+ *   `text` è piena solo per `kind: "text"`; per PDF e immagini c'è `buffer`
  */
 async function download(rawUrl, opts = {}) {
   const fetchNode = (await import("node-fetch")).default;
@@ -165,7 +214,8 @@ async function download(rawUrl, opts = {}) {
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     await assertPublicHost(url);
     let res;
-    for (let attempt = 0; attempt < 2; attempt++) {
+    let tlsRetried = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
       try {
@@ -175,16 +225,27 @@ async function download(rawUrl, opts = {}) {
           agent: () => agentFor(url),
           headers: {
             "User-Agent": USER_AGENT,
-            "Accept": opts.accept || (opts.binary ? "image/png, image/jpeg, image/webp, image/gif" : "text/html, application/json;q=0.9, application/xml;q=0.8, */*;q=0.1"),
+            "Accept": opts.accept || "text/html, application/json;q=0.9, application/pdf;q=0.9, image/*;q=0.8, */*;q=0.1",
             "Accept-Language": "it-IT,it;q=0.9",
           },
         });
+        if ((res.status === 429 || res.status >= 500) && attempt < 2) {
+          await sleep(1200 * (attempt + 1));
+          continue;
+        }
         break;
       } catch (e) {
         // Intermedio mancante: una volta sola si prova a recuperarlo.
-        if (attempt === 0 && url.protocol === "https:" && TLS_CHAIN_ERRORS.has(e.code) && !intermediates.has(url.hostname)) {
+        if (!tlsRetried && url.protocol === "https:" && TLS_CHAIN_ERRORS.has(e.code) && !intermediates.has(url.hostname)) {
+          tlsRetried = true;
           const found = await fetchIntermediates(url);
           if (found.length) continue;
+        }
+        // Un errore di rete passeggero si riprova; un certificato sbagliato no.
+        const transient = e.name === "AbortError" || ["ECONNRESET", "ETIMEDOUT", "EAI_AGAIN", "ECONNREFUSED"].includes(e.code);
+        if (transient && attempt < 2) {
+          await sleep(1200 * (attempt + 1));
+          continue;
         }
         throw new FetchError(ERR.UNREACHABLE, e.name === "AbortError" ? "timeout" : `${e.code || ""} ${e.message || e}`.trim());
       } finally {
@@ -196,14 +257,10 @@ async function download(rawUrl, opts = {}) {
       continue;
     }
     if (res.status === 429 || res.status >= 500) throw new FetchError(ERR.UNREACHABLE, `HTTP ${res.status}`);
+    if ([401, 403, 406, 451].includes(res.status)) throw new FetchError(ERR.BLOCKED, `HTTP ${res.status}`);
+    if (res.status === 404 || res.status === 410) throw new FetchError(ERR.NOT_FOUND, `HTTP ${res.status}`);
     if (!res.ok) throw new FetchError(ERR.HTTP, `HTTP ${res.status}`);
     const contentType = res.headers.get("content-type") || "";
-    if (opts.binary) {
-      // Immagini dei turni (solo i formati che l'AI sa leggere).
-      if (!/^image\/(png|jpe?g|webp|gif)/i.test(contentType)) throw new FetchError(ERR.NOT_TEXT, contentType);
-    } else if (contentType && !TEXT_TYPES.test(contentType)) {
-      throw new FetchError(ERR.NOT_TEXT, contentType);
-    }
     const declared = Number(res.headers.get("content-length") || 0);
     if (declared > maxBytes) throw new FetchError(ERR.TOO_LARGE, `${declared} byte`);
 
@@ -218,7 +275,12 @@ async function download(rawUrl, opts = {}) {
       chunks.push(chunk);
     }
     const buffer = Buffer.concat(chunks);
-    return {text: opts.binary ? "" : buffer.toString("utf8"), buffer, finalUrl: url.toString(), contentType};
+    const {kind, mediaType} = sniff(buffer, contentType);
+    if (kind === "other") throw new FetchError(ERR.UNSUPPORTED, contentType || "sconosciuto");
+    return {
+      kind, mediaType, buffer, contentType, finalUrl: url.toString(),
+      text: kind === "text" ? decodeText(buffer, contentType) : "",
+    };
   }
   throw new FetchError(ERR.UNREACHABLE, "troppi redirect");
 }

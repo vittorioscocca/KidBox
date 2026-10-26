@@ -133,9 +133,12 @@ function sanitizeRule(raw) {
     return rule;
   }
   if (raw.type === "vision") {
-    // Turni pubblicati come immagine: l'AI le legge quando cambiano (vision.js).
-    const imageSelector = sel(raw.imageSelector);
-    return imageSelector ? {v: 1, type: "vision", imageSelector} : null;
+    // Turni pubblicati come immagine o PDF: l'AI li legge quando cambiano (vision.js).
+    const rule = {v: 1, type: "vision"};
+    if (sel(raw.imageSelector)) rule.imageSelector = sel(raw.imageSelector);
+    if (sel(raw.linkSelector)) rule.linkSelector = sel(raw.linkSelector);
+    if (raw.self === true) rule.self = true;
+    return rule.imageSelector || rule.linkSelector || rule.self ? rule : null;
   }
   if (raw.type === "html") {
     const fields = {};

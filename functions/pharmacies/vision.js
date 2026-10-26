@@ -1,12 +1,17 @@
 /* eslint-disable max-len */
 // ─────────────────────────────────────────────────────────────────────────────
-// FARMACIE DI TURNO — turni pubblicati come IMMAGINE (o tabella in un'immagine).
+// FARMACIE DI TURNO — turni pubblicati come IMMAGINE o come PDF.
 //
-// Molti enti (ASL, Comuni, Ordini) caricano ogni mese una tabella come PNG: non
-// c'è testo né regola CSS che tenga. Qui l'AI legge l'immagine con la vista, ma
-// SOLO quando l'immagine cambia (impronta delle immagini nel documento
+// Molti enti (ASL, Comuni, Ordini) caricano ogni mese una tabella come PNG o
+// come PDF: non c'è testo né regola CSS che tenga. Qui l'AI legge il documento
+// (le immagini con la vista, i PDF come documento: anche quelli scansionati), ma
+// SOLO quando il contenuto cambia (impronta dei file nel documento
 // `pharmacy_sources`): di solito una volta al mese e per tutte le famiglie che
 // leggono quella fonte. Il resto dei giorni il codice riusa i turni già letti.
+//
+// Una regola `vision` dice dove prendere i file: `self` (l'indirizzo stesso è
+// un PDF o un'immagine), `imageSelector` (immagini dentro la pagina),
+// `linkSelector` (link a PDF o immagini nella pagina).
 // L'estrazione dà intervalli («dal 04 ott al 10 ott: Farmacia X») e qui si
 // espandono in un turno per giorno.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -17,12 +22,15 @@ const {estimateCostUsd, MODEL_SONNET} = require("../news/search");
 const {download} = require("./fetch");
 const {addDays, clean, plausible} = require("./rules");
 
-const MAX_IMAGES = 3;
+const MAX_DOCS = 3;
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_PDF_BYTES = 8 * 1024 * 1024;
+/** Un PDF più lungo di così non è un elenco di turni (e costerebbe troppo da leggere). */
+const MAX_PDF_PAGES = 25;
 const MAX_SPAN_DAYS = 62;
 const MAX_ENTRIES = 3000;
 
-const SYSTEM = `Leggi tabelle di turni di farmacie italiane da una o più immagini e trasformale in JSON.
+const SYSTEM = `Leggi tabelle di turni di farmacie italiane da uno o più documenti (immagini o PDF) e trasformale in JSON.
 Rispondi SOLO con <kidbox_shifts>{"comune":"…","entries":[{"from":"YYYY-MM-DD","to":"YYYY-MM-DD","name":"Farmacia …","address":"…","phone":"","service":"notturno|pomeridiano|festivo|pomeridiano e festivo|h24|altro"}]}</kidbox_shifts>.
 Regole:
 - Ogni riga della tabella è UNA voce, con le date di inizio e fine così come scritte («DAL 04 OTT. AL 10 OTT.»). Se una riga ha una sola data, from = to.
@@ -30,7 +38,7 @@ Regole:
 - «service» è il titolo della tabella (SERVIZIO NOTTURNO, SERVIZIO POMERIDIANO E FESTIVO, …) o quello del contesto.
 - name: il nome della farmacia come scritto, in forma leggibile («FARM. MANNA FEDERICO» → «Farmacia Manna Federico»). address: via o rione come scritto; se manca, "". phone: solo se è scritto.
 - «comune»: il comune a cui si riferiscono i turni (dal titolo, dal contesto o dall'indirizzo). Se non si capisce, "".
-- Non inventare righe, date o indirizzi. Se un'immagine non contiene turni, restituisci entries: [].`;
+- Non inventare righe, date o indirizzi. Se un documento non contiene turni (o è di un altro comune o di un altro periodo), non inventare: restituisci per esso nessuna voce.`;
 
 /**
  * @param {string} s
@@ -47,43 +55,90 @@ function serviceKind(s) {
 }
 
 /**
- * Trova e scarica le immagini della pagina indicate dalla regola.
- * @param {{imageSelector: string}} rule
- * @param {string} pageHtml
- * @param {string} pageUrl
- * @return {Promise<{images: {mediaType: string, data: Buffer, url: string}[], hash: string}>}
+ * Pagine del PDF, contate dagli oggetti «/Type /Page». Con i PDF compressi in
+ * flussi di oggetti può dare 0: in quel caso conta solo il limite in byte.
+ * @param {Buffer} buf
+ * @return {number}
  */
-async function fetchImages(rule, pageHtml, pageUrl) {
-  const root = parse(pageHtml);
-  const urls = [];
-  for (const el of root.querySelectorAll(rule.imageSelector)) {
-    const src = el.getAttribute("src") || el.getAttribute("data-src") || "";
-    if (!src || src.startsWith("data:")) continue;
-    try {
-      const abs = new URL(src, pageUrl).toString();
-      if (!urls.includes(abs)) urls.push(abs);
-    } catch (_) {/* indirizzo non valido: si salta */}
-    if (urls.length >= MAX_IMAGES) break;
-  }
-  const images = [];
-  for (const url of urls) {
-    const r = await download(url, {binary: true, maxBytes: MAX_IMAGE_BYTES});
-    images.push({mediaType: r.contentType.split(";")[0].trim().toLowerCase(), data: r.buffer, url});
-  }
-  const hash = crypto.createHash("sha1");
-  for (const img of images) hash.update(img.data);
-  return {images, hash: hash.digest("hex")};
+function countPdfPages(buf) {
+  return (buf.toString("latin1").match(/\/Type\s*\/Page(?![s\w])/g) || []).length;
 }
 
 /**
- * @param {{apiKey: string, images: {mediaType: string, data: Buffer}[], place: object, todayKey: string}} o
+ * Raccoglie i documenti da leggere: la pagina stessa se è un PDF o un'immagine,
+ * oppure i file indicati dalla regola dentro la pagina.
+ * @param {{self?: boolean, imageSelector?: string, linkSelector?: string}} rule
+ * @param {{kind: string, text: string, buffer: Buffer, mediaType: string, finalUrl: string}} page
+ * @return {Promise<{docs: {kind: string, mediaType: string, data: Buffer, url: string}[], hash: string, reason: string}>}
+ */
+async function fetchMedia(rule, page) {
+  const docs = [];
+  let reason = "";
+  const accept = (kind, mediaType, data, url) => {
+    if (kind === "pdf") {
+      if (data.length > MAX_PDF_BYTES) {
+        reason = "too-large";
+        return;
+      }
+      if (countPdfPages(data) > MAX_PDF_PAGES) {
+        reason = "too-many-pages";
+        return;
+      }
+    } else if (data.length > MAX_IMAGE_BYTES) {
+      reason = "too-large";
+      return;
+    }
+    docs.push({kind, mediaType, data, url});
+  };
+
+  if (page.kind !== "text") {
+    accept(page.kind, page.mediaType, page.buffer, page.finalUrl);
+  } else {
+    const root = parse(page.text);
+    const urls = [];
+    const add = (raw) => {
+      if (!raw || raw.startsWith("data:") || raw.startsWith("#") || /^(mailto|tel|javascript):/i.test(raw)) return;
+      try {
+        const abs = new URL(raw, page.finalUrl).toString();
+        if (!urls.includes(abs)) urls.push(abs);
+      } catch (_) {/* indirizzo non valido: si salta */}
+    };
+    if (rule.imageSelector) {
+      for (const el of root.querySelectorAll(rule.imageSelector)) add(el.getAttribute("src") || el.getAttribute("data-src") || "");
+    }
+    if (rule.linkSelector) {
+      for (const el of root.querySelectorAll(rule.linkSelector)) add(el.getAttribute("href") || "");
+    }
+    for (const url of urls.slice(0, MAX_DOCS + 2)) {
+      if (docs.length >= MAX_DOCS) break;
+      let r;
+      try {
+        r = await download(url, {maxBytes: MAX_PDF_BYTES, accept: "application/pdf, image/*;q=0.9, */*;q=0.1"});
+      } catch (e) {
+        reason = reason || e.code || "unreachable";
+        continue;
+      }
+      // Un link che porta a un'altra pagina web non è un documento: si salta.
+      if (r.kind === "pdf" || r.kind === "image") accept(r.kind, r.mediaType, r.buffer, r.finalUrl);
+    }
+  }
+  const hash = crypto.createHash("sha1");
+  for (const d of docs) hash.update(d.data);
+  return {docs, hash: hash.digest("hex"), reason: docs.length ? "" : reason || "no-documents"};
+}
+
+/**
+ * @param {{apiKey: string, docs: {kind: string, mediaType: string, data: Buffer}[], place: object, todayKey: string}} o
  * @return {Promise<{entries: object[], comune: string, costUsd: number}>}
  */
-async function readImages(o) {
+async function readDocs(o) {
   const fetchNode = (await import("node-fetch")).default;
   const content = [];
-  for (const img of o.images) {
-    content.push({type: "image", source: {type: "base64", media_type: img.mediaType, data: img.data.toString("base64")}});
+  for (const doc of o.docs) {
+    content.push({
+      type: doc.kind === "pdf" ? "document" : "image",
+      source: {type: "base64", media_type: doc.mediaType, data: doc.data.toString("base64")},
+    });
   }
   content.push({type: "text", text: `Oggi è ${o.todayKey}. Zona dell'utente: ${o.place?.city || "?"}${o.place?.province ? ` (${o.place.province})` : ""}. Estrai i turni.`});
   const controller = new AbortController();
@@ -155,16 +210,16 @@ function expand(list, comune) {
 }
 
 /**
- * Scarica le immagini, le legge (se servono) e controlla che il risultato sia plausibile.
- * @param {{rule: object, pageHtml: string, pageUrl: string, apiKey: string, place: object, todayKey: string, knownHash?: string}} o
- * @return {Promise<{entries: ?object[], hash: string, unchanged: boolean, costUsd: number, reason: string}>}
- *   `unchanged`: le immagini sono le stesse dell'ultima lettura, non si è speso nulla
+ * Prende i documenti, li legge (se servono) e controlla che il risultato sia plausibile.
+ * @param {{rule: object, page: object, apiKey: string, place: object, todayKey: string, knownHash?: string}} o
+ * @return {Promise<{entries: ?object[], hash: string, unchanged: boolean, costUsd: number, reason: string, comune?: string}>}
+ *   `unchanged`: i documenti sono gli stessi dell'ultima lettura, non si è speso nulla
  */
 async function readFromPage(o) {
-  const {images, hash} = await fetchImages(o.rule, o.pageHtml, o.pageUrl);
-  if (!images.length) return {entries: null, hash, unchanged: false, costUsd: 0, reason: "no-images"};
+  const {docs, hash, reason} = await fetchMedia(o.rule, o.page);
+  if (!docs.length) return {entries: null, hash, unchanged: false, costUsd: 0, reason};
   if (o.knownHash && o.knownHash === hash) return {entries: null, hash, unchanged: true, costUsd: 0, reason: ""};
-  const read = await readImages({apiKey: o.apiKey, images, place: o.place, todayKey: o.todayKey});
+  const read = await readDocs({apiKey: o.apiKey, docs, place: o.place, todayKey: o.todayKey});
   const check = plausible(read.entries, o.todayKey);
   return {
     entries: check.ok ? read.entries : null,
@@ -176,4 +231,4 @@ async function readFromPage(o) {
   };
 }
 
-module.exports = {readFromPage, expand, serviceKind};
+module.exports = {readFromPage, expand, serviceKind, _test: {fetchMedia, countPdfPages}};
