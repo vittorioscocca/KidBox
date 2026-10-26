@@ -52,710 +52,6 @@
     " Meteo" : {
 
     },
-    "Azione" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Action"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Acción"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Action"
-          }
-        }
-      }
-    },
-    "Carica un documento" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upload a document"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subir un documento"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter un document"
-          }
-        }
-      }
-    },
-    "Casa · Scadenze e pagamenti" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Home · Bills and payments"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Casa · Vencimientos y pagos"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Maison · Échéances et paiements"
-          }
-        }
-      }
-    },
-    "Casa: \"%@\" — %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Home: \"%@\" — %@."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Casa: \"%@\" — %@."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Maison : « %@ » — %@."
-          }
-        }
-      }
-    },
-    "Casa: \"%@\"." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Home: \"%@\"."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Casa: \"%@\"."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Maison : « %@ »."
-          }
-        }
-      }
-    },
-    "Cura: \"%@\"." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Treatment: \"%@\"."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tratamiento: \"%@\"."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Traitement : « %@ »."
-          }
-        }
-      }
-    },
-    "Documento analizzato" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Document analyzed"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Documento analizado"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Document analysé"
-          }
-        }
-      }
-    },
-    "Documento smistato" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Document filed"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Documento archivado"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Document classé"
-          }
-        }
-      }
-    },
-    "Esame / analisi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Test / lab results"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prueba / análisis"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Examen / analyses"
-          }
-        }
-      }
-    },
-    "Esame: \"%@\"." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Test: \"%@\"."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prueba: \"%@\"."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Examen : « %@ »."
-          }
-        }
-      }
-    },
-    "Evento calendario" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calendar event"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Evento del calendario"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Événement du calendrier"
-          }
-        }
-      }
-    },
-    "File" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Files"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Archivos"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fichiers"
-          }
-        }
-      }
-    },
-    "File allegato." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "File attached."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Archivo adjunto."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fichier joint."
-          }
-        }
-      }
-    },
-    "File salvato in Documenti." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "File saved in Documents."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Archivo guardado en Documentos."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fichier enregistré dans Documents."
-          }
-        }
-      }
-    },
-    "Ho letto %@ e ho salvato:\n%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I read %@ and saved:\n%@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "He leído %@ y he guardado:\n%@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "J'ai lu %@ et enregistré :\n%@"
-          }
-        }
-      }
-    },
-    "Il file verrà allegato a: %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The file will be attached to: %@."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El archivo se adjuntará a: %@."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le fichier sera joint à : %@."
-          }
-        }
-      }
-    },
-    "Il file verrà salvato in Documenti." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The file will be saved in Documents."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El archivo se guardará en Documentos."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le fichier sera enregistré dans Documents."
-          }
-        }
-      }
-    },
-    "Impossibile leggere il file." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unable to read the file."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se puede leer el archivo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible de lire le fichier."
-          }
-        }
-      }
-    },
-    "Nessuna azione creata." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No action created."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se ha creado ninguna acción."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune action créée."
-          }
-        }
-      }
-    },
-    "Non sono riuscito a leggere il documento. Riprova con una foto più nitida." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I couldn't read the document. Try again with a sharper photo."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No he podido leer el documento. Inténtalo de nuevo con una foto más nítida."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je n'ai pas réussi à lire le document. Réessayez avec une photo plus nette."
-          }
-        }
-      }
-    },
-    "Persona" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Person"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Persona"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Personne"
-          }
-        }
-      }
-    },
-    "Promemoria salute" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Health reminder"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recordatorio de salud"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rappel santé"
-          }
-        }
-      }
-    },
-    "Rinomina documento" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rename document"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Renombrar documento"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Renommer le document"
-          }
-        }
-      }
-    },
-    "Scadenza veicolo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vehicle deadline"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vencimiento del vehículo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Échéance véhicule"
-          }
-        }
-      }
-    },
-    "Scansione" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scan"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escaneo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Numérisation"
-          }
-        }
-      }
-    },
-    "Scegli la persona" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose the person"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elige a la persona"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choisissez la personne"
-          }
-        }
-      }
-    },
-    "Scegli…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose…"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elegir…"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choisir…"
-          }
-        }
-      }
-    },
-    "Si leggono solo PDF e immagini." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Only PDFs and images can be read."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solo se pueden leer PDF e imágenes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seuls les PDF et les images peuvent être lus."
-          }
-        }
-      }
-    },
-    "Sto leggendo il documento…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reading the document…"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leyendo el documento…"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lecture du document…"
-          }
-        }
-      }
-    },
-    "Visita registrata (%@)." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Visit saved (%@)."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Visita guardada (%@)."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Consultation enregistrée (%@)."
-          }
-        }
-      }
-    },
-    "Visita registrata." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Visit saved."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Visita guardada."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Consultation enregistrée."
-          }
-        }
-      }
-    },
-    "un documento" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "a document"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "un documento"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "un document"
-          }
-        }
-      }
-    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -12339,6 +11635,28 @@
         }
       }
     },
+    "Azione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Action"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acción"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Action"
+          }
+        }
+      }
+    },
     "Azioni proposte" : {
       "localizations" : {
         "en" : {
@@ -13741,6 +13059,28 @@
         }
       }
     },
+    "Carica un documento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upload a document"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subir un documento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter un document"
+          }
+        }
+      }
+    },
     "Carica un documento una volta sola: tutta la famiglia lo vede subito, senza doverlo chiedere a nessuno." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14348,6 +13688,28 @@
         }
       }
     },
+    "Casa · Scadenze e pagamenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home · Bills and payments"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casa · Vencimientos y pagos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maison · Échéances et paiements"
+          }
+        }
+      }
+    },
     "Casa è ancora vuota" : {
       "localizations" : {
         "en" : {
@@ -14366,6 +13728,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La maison est encore vide"
+          }
+        }
+      }
+    },
+    "Casa: \"%@\" — %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home: \"%@\" — %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casa: \"%@\" — %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maison : « %@ » — %@."
+          }
+        }
+      }
+    },
+    "Casa: \"%@\"." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home: \"%@\"."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casa: \"%@\"."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maison : « %@ »."
           }
         }
       }
@@ -21453,6 +20859,28 @@
         }
       }
     },
+    "Cura: \"%@\"." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Treatment: \"%@\"."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tratamiento: \"%@\"."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Traitement : « %@ »."
+          }
+        }
+      }
+    },
     "Cure" : {
       "localizations" : {
         "en" : {
@@ -23887,6 +23315,28 @@
         }
       }
     },
+    "Documento analizzato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document analyzed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documento analizado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document analysé"
+          }
+        }
+      }
+    },
     "Documento non trovato" : {
       "localizations" : {
         "en" : {
@@ -23905,6 +23355,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Document introuvable"
+          }
+        }
+      }
+    },
+    "Documento smistato" : {
+      "comment" : "Assistant document import toast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document filed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documento archivado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document classé"
           }
         }
       }
@@ -27562,6 +27035,28 @@
         }
       }
     },
+    "Esame / analisi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test / lab results"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba / análisis"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Examen / analyses"
+          }
+        }
+      }
+    },
     "Esame medico" : {
       "localizations" : {
         "en" : {
@@ -27580,6 +27075,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Examen médical"
+          }
+        }
+      }
+    },
+    "Esame: \"%@\"." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test: \"%@\"."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba: \"%@\"."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Examen : « %@ »."
           }
         }
       }
@@ -28576,6 +28093,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Événement"
+          }
+        }
+      }
+    },
+    "Evento calendario" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar event"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Evento del calendario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Événement du calendrier"
           }
         }
       }
@@ -29874,6 +29413,72 @@
         }
       }
     },
+    "File" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Files"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archivos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fichiers"
+          }
+        }
+      }
+    },
+    "File allegato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File attached."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archivo adjunto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fichier joint."
+          }
+        }
+      }
+    },
+    "File salvato in Documenti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File saved in Documents."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archivo guardado en Documentos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fichier enregistré dans Documents."
+          }
+        }
+      }
+    },
     "Filtra per anno" : {
       "localizations" : {
         "en" : {
@@ -30274,6 +29879,7 @@
       }
     },
     "Foto" : {
+      "comment" : "Imported file name",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -32997,6 +32603,29 @@
         }
       }
     },
+    "Ho letto %@ e ho salvato:\n%@" : {
+      "comment" : "Assistant document import",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I read %@ and saved:\n%@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "He leído %@ y he guardado:\n%@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai lu %@ et enregistré :\n%@"
+          }
+        }
+      }
+    },
     "Ho spazio libero domani pomeriggio?" : {
       "comment" : "Assistant suggestion",
       "localizations" : {
@@ -33839,6 +33468,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le fichier est trop volumineux pour être lu."
+          }
+        }
+      }
+    },
+    "Il file verrà allegato a: %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The file will be attached to: %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El archivo se adjuntará a: %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le fichier sera joint à : %@."
+          }
+        }
+      }
+    },
+    "Il file verrà salvato in Documenti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The file will be saved in Documents."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El archivo se guardará en Documentos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le fichier sera enregistré dans Documents."
           }
         }
       }
@@ -35152,6 +34825,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impossible de chiffrer la carte : la clé de la famille n'est pas disponible sur cet appareil."
+          }
+        }
+      }
+    },
+    "Impossibile leggere il file." : {
+      "comment" : "Assistant document import",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to read the file."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se puede leer el archivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de lire le fichier."
           }
         }
       }
@@ -45725,6 +45421,28 @@
         }
       }
     },
+    "Nessuna azione creata." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No action created."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha creado ninguna acción."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune action créée."
+          }
+        }
+      }
+    },
     "Nessuna carta" : {
       "localizations" : {
         "en" : {
@@ -48381,6 +48099,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ne se répète pas"
+          }
+        }
+      }
+    },
+    "Non sono riuscito a leggere il documento. Riprova con una foto più nitida." : {
+      "comment" : "Assistant document import",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I couldn't read the document. Try again with a sharper photo."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No he podido leer el documento. Inténtalo de nuevo con una foto más nítida."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'ai pas réussi à lire le document. Réessayez avec une photo plus nette."
           }
         }
       }
@@ -54432,6 +54173,28 @@
         }
       }
     },
+    "Persona" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Person"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Persona"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personne"
+          }
+        }
+      }
+    },
     "Personalizza date e viaggiatori" : {
       "localizations" : {
         "en" : {
@@ -57007,6 +56770,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rappel pour « %@ »"
+          }
+        }
+      }
+    },
+    "Promemoria salute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Health reminder"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordatorio de salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rappel santé"
           }
         }
       }
@@ -61985,6 +61770,28 @@
         }
       }
     },
+    "Rinomina documento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename document"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renombrar documento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renommer le document"
+          }
+        }
+      }
+    },
     "Riorganizzazione della settimana…" : {
       "localizations" : {
         "en" : {
@@ -63822,6 +63629,28 @@
         }
       }
     },
+    "Scadenza veicolo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vehicle deadline"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vencimiento del vehículo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Échéance véhicule"
+          }
+        }
+      }
+    },
     "Scadenza: %@" : {
       "localizations" : {
         "en" : {
@@ -64241,6 +64070,29 @@
         }
       }
     },
+    "Scansione" : {
+      "comment" : "Imported file name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escaneo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Numérisation"
+          }
+        }
+      }
+    },
     "Scaricamento…" : {
       "localizations" : {
         "en" : {
@@ -64572,6 +64424,28 @@
         }
       }
     },
+    "Scegli la persona" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the person"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige a la persona"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez la personne"
+          }
+        }
+      }
+    },
     "Scegli le date del viaggio" : {
       "localizations" : {
         "en" : {
@@ -64700,6 +64574,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choisissez un élément dans la barre latérale."
+          }
+        }
+      }
+    },
+    "Scegli…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elegir…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir…"
           }
         }
       }
@@ -67108,6 +67004,29 @@
         }
       }
     },
+    "Si leggono solo PDF e immagini." : {
+      "comment" : "Assistant document import",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only PDFs and images can be read."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo se pueden leer PDF e imágenes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seuls les PDF et les images peuvent être lus."
+          }
+        }
+      }
+    },
     "Sicurezza password" : {
       "localizations" : {
         "en" : {
@@ -69005,6 +68924,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Je m'en occupe…"
+          }
+        }
+      }
+    },
+    "Sto leggendo il documento…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading the document…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leyendo el documento…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lecture du document…"
           }
         }
       }
@@ -72666,6 +72607,29 @@
         }
       }
     },
+    "un documento" : {
+      "comment" : "Assistant document import",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "a document"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "un documento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "un document"
+          }
+        }
+      }
+    },
     "Un membro della famiglia" : {
       "localizations" : {
         "en" : {
@@ -74839,6 +74803,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Visite prescriptrice"
+          }
+        }
+      }
+    },
+    "Visita registrata (%@)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visit saved (%@)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visita guardada (%@)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consultation enregistrée (%@)."
+          }
+        }
+      }
+    },
+    "Visita registrata." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visit saved."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visita guardada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consultation enregistrée."
           }
         }
       }
