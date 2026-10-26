@@ -26,8 +26,7 @@ struct FitnessSessionsView: View {
     /// completamento quando c'è: una seduta spostata è stata svolta il giorno in
     /// cui è stata chiusa, non quello in cui era stata programmata.
     private var doneSessions: [FitnessSession] {
-        plan.allSessions
-            .filter { $0.status == .done }
+        plan.doneHistory
             .sorted { performedDate($0) > performedDate($1) }
     }
 

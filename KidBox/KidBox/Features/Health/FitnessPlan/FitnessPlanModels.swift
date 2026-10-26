@@ -653,6 +653,9 @@ struct FitnessPlanDocument: Codable, Equatable {
     /// Firestore è uno solo per profilo e la rigenerazione lo sovrascrive.
     /// Opzionale per la stessa ragione di `loggedWorkouts`.
     var previousCycles: [FitnessPlanRecap]?
+    /// Sedute fatte dei piani precedenti: la rigenerazione non le cancella, lo
+    /// storico delle sessioni resta consultabile. Opzionale come i campi sopra.
+    var archivedSessions: [FitnessSession]?
 
     var logged: [FitnessLoggedWorkout] { loggedWorkouts ?? [] }
 
@@ -690,6 +693,14 @@ struct FitnessPlanDocument: Codable, Equatable {
     var allSessions: [FitnessSession] {
         weeks.flatMap(\.sessions).sorted { $0.date < $1.date }
     }
+
+    /// Sedute fatte di questo piano e dei precedenti, per storico e registro corse.
+    var doneHistory: [FitnessSession] {
+        (archivedSessions ?? []) + allSessions.filter { $0.status == .done }
+    }
+
+    /// Sedute fatte da portare nel piano che sostituisce questo.
+    var sessionsToArchive: [FitnessSession] { doneHistory }
 
     func session(id: String) -> FitnessSession? {
         weeks.lazy.flatMap(\.sessions).first { $0.id == id }

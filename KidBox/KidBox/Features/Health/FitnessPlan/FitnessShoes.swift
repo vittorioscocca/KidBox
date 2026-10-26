@@ -130,7 +130,7 @@ enum FitnessShoeLedger {
     /// (`matchedWorkoutId`) e non compare fra i `loggedWorkouts`.
     static func runs(in plan: FitnessPlanDocument) -> [Run] {
         var result: [Run] = []
-        for session in plan.allSessions where session.status == .done {
+        for session in plan.doneHistory {
             guard let meters = session.actualDistanceMeters, meters >= 10 else { continue }
             let symbol: String
             if let actual = session.actualActivityTitle, !actual.isEmpty {

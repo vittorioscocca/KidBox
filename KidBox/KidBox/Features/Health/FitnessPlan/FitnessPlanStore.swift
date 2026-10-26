@@ -35,6 +35,48 @@ enum FitnessPlanStore {
         FitnessShoeStore.reconcile(plan: document, childId: childId)
     }
 
+    // MARK: - Storico delle sedute
+
+    private static let archivePrefix = "kidbox.fitnessplan.archive."
+
+    private struct Archive: Codable {
+        var sessions: [FitnessSession]
+        var workouts: [FitnessLoggedWorkout]
+    }
+
+    /// Mette da parte le sedute fatte del piano che sta per sparire (eliminato
+    /// dall'utente): il prossimo piano le riprende e lo storico non si perde.
+    static func archiveHistory(of plan: FitnessPlanDocument, childId: String) {
+        let archive = Archive(sessions: plan.sessionsToArchive, workouts: plan.logged)
+        guard !archive.sessions.isEmpty || !archive.workouts.isEmpty,
+              let data = try? JSONEncoder().encode(archive) else { return }
+        UserDefaults.standard.set(data, forKey: archivePrefix + childId)
+    }
+
+    /// Porta lo storico (del piano corrente o messo da parte) dentro un piano nuovo.
+    static func carryHistory(
+        into document: FitnessPlanDocument,
+        from old: FitnessPlanDocument?,
+        childId: String
+    ) -> FitnessPlanDocument {
+        var sessions = old?.sessionsToArchive ?? []
+        var workouts = old?.logged ?? []
+        if let data = UserDefaults.standard.data(forKey: archivePrefix + childId),
+           let stored = try? JSONDecoder().decode(Archive.self, from: data) {
+            sessions += stored.sessions
+            workouts += stored.workouts
+        }
+        UserDefaults.standard.removeObject(forKey: archivePrefix + childId)
+        var seen = Set<String>()
+        sessions = sessions.filter { seen.insert($0.id).inserted }
+        var seenWorkouts = Set<String>()
+        workouts = workouts.filter { seenWorkouts.insert($0.id).inserted }
+        var result = document
+        if !sessions.isEmpty { result.archivedSessions = sessions }
+        if !workouts.isEmpty { result.loggedWorkouts = workouts + document.logged }
+        return result
+    }
+
     static func clear(childId: String) {
         UserDefaults.standard.removeObject(forKey: planPrefix + childId)
         UserDefaults.standard.removeObject(forKey: reviewedWeeksPrefix + childId)

@@ -1658,7 +1658,10 @@ struct FitnessPlanView: View {
             displayedMonth = startOfMonth(selectedDay)
             adjustmentProposal = nil
             FitnessPlanStore.resetReviewedWeeks(childId: childId)
-            await persist(result.document, rescheduleNotifications: true)
+            let document = FitnessPlanStore.carryHistory(
+                into: result.document, from: plan, childId: childId
+            )
+            await persist(document, rescheduleNotifications: true)
             if KBHealthKitService.shared.isAvailable {
                 reviewAfterHealthPermission = true
                 showHealthPermission = true
@@ -1913,6 +1916,7 @@ struct FitnessPlanView: View {
 
     @MainActor
     private func deletePlan() async {
+        if let plan { FitnessPlanStore.archiveHistory(of: plan, childId: childId) }
         FitnessPlanStore.clear(childId: childId)
         await FitnessPlanNotificationManager.removePlan(childId: childId)
         await FitnessPlanRemoteStore.delete(childId: childId)
