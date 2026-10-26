@@ -38,7 +38,7 @@
   var A_KEY = "kidbox:analyticsConsent";
   var M_KEY = "kidbox:marketingConsent";
   var GA_ID = "G-0PG65CW2VF";
-  var PIXEL_ID = "1335685042033994";
+  var PIXEL_ID = "1510585797527208";
   var script = document.currentScript;
   var noBanner = script && script.hasAttribute("data-no-banner");
   var lang = (document.documentElement.lang || "it").slice(0, 2);
