@@ -563,6 +563,7 @@ struct BubbleRowView: View, Equatable {
     let onEdit: (() -> Void)?
     let onDelete: () -> Void
     let onSaveToApp: () -> Void
+    let onSuggestedAction: (KBSaveAction) -> Void
     let onReply: () -> Void
     
     var body: some View {
@@ -588,6 +589,7 @@ struct BubbleRowView: View, Equatable {
                 onEdit: canAct ? onEdit : nil,
                 onDelete: onDelete,
                 onSaveToApp: onSaveToApp,
+                onSuggestedAction: onSuggestedAction,
                 onReply: onReply,
                 repliedTo: repliedTo,
                 onReplyContextTap: {
@@ -1398,6 +1400,7 @@ private struct ChatConversationView: View {
                 selectedMessageIds.insert(msg.id)
             },
             onSaveToApp: { messageForSave = msg },
+            onSuggestedAction: { action in handleSaveAction(action) },
             onReply: { viewModel.startReply(to: msg) }
         )
     }

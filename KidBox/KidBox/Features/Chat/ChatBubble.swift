@@ -31,6 +31,7 @@ struct ChatBubble: View {
     let onEdit: (() -> Void)?
     let onDelete: (() -> Void)?
     let onSaveToApp: (() -> Void)?
+    let onSuggestedAction: ((KBSaveAction) -> Void)?
     let onReply: () -> Void
     let repliedTo: KBChatMessage?
     let onReplyContextTap: () -> Void
@@ -91,6 +92,7 @@ struct ChatBubble: View {
         onEdit: (() -> Void)?,
         onDelete: (() -> Void)?,
         onSaveToApp: (() -> Void)?,
+        onSuggestedAction: ((KBSaveAction) -> Void)? = nil,
         onReply: @escaping () -> Void,
         repliedTo: KBChatMessage?,
         onReplyContextTap: @escaping () -> Void,
@@ -105,6 +107,7 @@ struct ChatBubble: View {
         self.onEdit = onEdit
         self.onDelete = onDelete
         self.onSaveToApp = onSaveToApp
+        self.onSuggestedAction = onSuggestedAction
         self.onReply = onReply
         self.repliedTo = repliedTo
         self.onReplyContextTap = onReplyContextTap
@@ -245,6 +248,13 @@ struct ChatBubble: View {
             
             if !message.reactions.isEmpty {
                 reactionRow.padding(.horizontal, isOwn ? 16 : 54)
+            }
+            
+            if message.type == .text, !message.isDeletedForEveryone, let onSuggestedAction {
+                ChatSuggestedActionsRow(message: message, onTap: onSuggestedAction)
+                    .padding(.leading, isOwn ? 12 : 54)
+                    .padding(.trailing, isOwn ? 16 : 12)
+                    .padding(.top, 2)
             }
         }
         .frame(maxWidth: .infinity, alignment: isOwn ? .trailing : .leading)
@@ -1182,7 +1192,8 @@ struct ChatBubble: View {
         if message.type == .text {
             Button { copyTextToPasteboard() } label: { Label("Copia", systemImage: "doc.on.doc") }
         }
-        if !message.quickSaveActions.isEmpty {
+        // Il testo si salva dai banner sotto la bolla; qui restano foto, video e documenti.
+        if message.type != .text, !message.quickSaveActions.isEmpty {
             Button { onSaveToApp?() } label: {
                 Label("Salva in…", systemImage: "square.and.arrow.down")
             }

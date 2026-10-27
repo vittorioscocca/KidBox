@@ -76,6 +76,12 @@ public actor KBSaveClassifier {
         return classifyWithHeuristics(text: text)
     }
     
+    /// Banner sotto la bolla: solo regole (niente modello, gira per ogni messaggio).
+    /// Il catch-all «Nota» compare solo se il testo lo merita.
+    public func suggestedChips(text: String) -> [KBSaveAction] {
+        classifyWithHeuristics(text: text, forChips: true).actions
+    }
+    
     public nonisolated func classify(mediaURL: String, mimeHint: KBMediaHint) -> KBClassificationResult {
         switch mimeHint {
         case .image:
@@ -278,7 +284,7 @@ public actor KBSaveClassifier {
         return fromItalian + fromOthers
     }
     
-    private func classifyWithHeuristics(text: String) -> KBClassificationResult {
+    private func classifyWithHeuristics(text: String, forChips: Bool = false) -> KBClassificationResult {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let lower = trimmed.lowercased()
         let lines = trimmed
@@ -367,7 +373,9 @@ public actor KBSaveClassifier {
         let noteScore = hits(lower, italian: noteKeywords, others: Self.noteWords)
         let noteBody = lines.count > 1 ? lines.dropFirst().joined(separator: "\n") : trimmed
         // Le note hanno sempre punteggio minimo 1 (catch-all)
-        scored.append((.note(title: lines.first ?? trimmed, body: noteBody), max(noteScore + 1, 1)))
+        if !forChips || noteScore >= 2 || lines.count >= 3 || trimmed.count > 160 {
+            scored.append((.note(title: lines.first ?? trimmed, body: noteBody), max(noteScore + 1, 1)))
+        }
         
         // Ordina per punteggio decrescente
         let sorted = scored

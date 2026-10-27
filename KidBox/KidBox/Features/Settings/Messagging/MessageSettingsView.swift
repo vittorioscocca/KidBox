@@ -63,6 +63,28 @@ struct MessageSettingsView: View {
             }
 
             Section {
+                NavigationLink {
+                    KBSuggestedActionsSettingsView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Azioni suggerite")
+                                .foregroundStyle(.primary)
+                            Text("Banner sotto i messaggi: calendario, spesa, to-do, Note, mappa")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .listRowBackground(cardBackground)
+            } header: {
+                Text("Azioni suggerite")
+            }
+
+            Section {
                 Toggle(isOn: Binding(
                     get: { viewModel.audioTranscriptionEnabled },
                     set: { viewModel.toggleAudioTranscription($0) }
