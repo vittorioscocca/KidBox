@@ -85,6 +85,7 @@ struct KBShareSheet: View {
                     case .note:             return .note
                     case .document:         return .document
                     case .encryptedMedia:   return .encryptedMedia   // ← NUOVO
+                    case .map:              return nil
                     }
                 }
                 guard !aiDests.isEmpty else { return }

@@ -113,7 +113,7 @@ private struct ActionCard: View {
                 .frame(width: 36, height: 36)
                 .background(action.color.opacity(0.12), in: Circle())
             
-            Text(action.label)
+            Text(LocalizedStringKey(action.label))
                 .font(.subheadline.weight(.medium))
             
             Spacer()
@@ -138,7 +138,14 @@ extension KBChatMessage {
         case .text:
             guard let text = self.text?.trimmingCharacters(in: .whitespacesAndNewlines),
                   !text.isEmpty else { return .empty }
-            return await KBSaveClassifier.shared.classify(text: text)
+            var result = await KBSaveClassifier.shared.classify(text: text)
+            if let address = KBAddressDetector.firstAddress(in: text) {
+                result = KBClassificationResult(
+                    actions: [.map(address: address)] + result.actions,
+                    detectedDate: result.detectedDate,
+                    isAIClassified: result.isAIClassified)
+            }
+            return result
             
         case .photo:
             guard let url = mediaURL else { return .empty }
@@ -177,6 +184,9 @@ extension KBChatMessage {
                 .filter { !$0.isEmpty }
             
             var result: [KBSaveAction] = []
+            if let address = KBAddressDetector.firstAddress(in: text) {
+                result.append(.map(address: address))
+            }
             if lines.count >= 2 { result.append(.grocery(lines: lines)) }
             
             let detector = try? NSDataDetector(
@@ -231,6 +241,7 @@ extension KBSaveAction {
         case .note:             return "Nota"
         case .document:         return "Documenti"
         case .encryptedMedia:   return "Foto e video"
+        case .map:              return "Mostra in Mappe"
         }
     }
     var icon: String {
@@ -241,6 +252,7 @@ extension KBSaveAction {
         case .note:             return "note.text"
         case .document:         return "folder.fill"
         case .encryptedMedia:   return "photo.stack.fill"
+        case .map:              return "map.fill"
         }
     }
     var color: Color {
@@ -251,6 +263,22 @@ extension KBSaveAction {
         case .note:             return .yellow
         case .document:         return Color(red: 0.6, green: 0.45, blue: 0.85)
         case .encryptedMedia:   return .cyan
+        case .map:              return .blue
         }
+    }
+}
+
+// MARK: - Riconoscimento indirizzi
+
+enum KBAddressDetector {
+    /// Primo indirizzo postale nel testo (NSDataDetector), nil se assente.
+    nonisolated static func firstAddress(in text: String) -> String? {
+        guard let detector = try? NSDataDetector(
+            types: NSTextCheckingResult.CheckingType.address.rawValue) else { return nil }
+        let range = NSRange(text.startIndex..., in: text)
+        guard let m = detector.firstMatch(in: text, range: range),
+              let r = Range(m.range, in: text) else { return nil }
+        let s = String(text[r]).trimmingCharacters(in: .whitespacesAndNewlines)
+        return s.isEmpty ? nil : s
     }
 }

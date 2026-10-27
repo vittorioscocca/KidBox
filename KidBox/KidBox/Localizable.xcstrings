@@ -62856,6 +62856,28 @@
         }
       }
     },
+    "Mostra in Mappe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show in Maps"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar en Mapas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher dans Plans"
+          }
+        }
+      }
+    },
     "Salva in…" : {
       "localizations" : {
         "en" : {

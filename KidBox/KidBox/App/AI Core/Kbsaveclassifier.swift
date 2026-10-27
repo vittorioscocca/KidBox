@@ -34,6 +34,8 @@ public enum KBSaveAction: Identifiable, Sendable {
     /// Invia foto o video nella sezione "Foto e video" crittografati (FamilyPhotosView).
     /// `sourceURL` è l'URL locale o remoto del media; `isVideo` distingue foto da video.
     case encryptedMedia(sourceURL: String, fileName: String, isVideo: Bool)
+    /// Mostra in Mappe un indirizzo riconosciuto nel messaggio.
+    case map(address: String)
     
     public var id: String {
         switch self {
@@ -43,6 +45,7 @@ public enum KBSaveAction: Identifiable, Sendable {
         case .note:             return "note"
         case .document:         return "document"
         case .encryptedMedia:   return "encryptedMedia"
+        case .map:              return "map"
         }
     }
 }

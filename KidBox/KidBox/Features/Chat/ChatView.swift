@@ -1499,6 +1499,11 @@ private struct ChatConversationView: View {
         
         switch action {
             
+        case .map(let address):
+            var c = URLComponents(string: "https://maps.apple.com/")
+            c?.queryItems = [URLQueryItem(name: "q", value: address)]
+            if let url = c?.url { UIApplication.shared.open(url) }
+            
         case .todo(let title):
             coordinator.pendingShareTodoDraft = AppCoordinator.PendingShareTodoDraft(title: title)
             coordinator.navigate(to: .todo)
