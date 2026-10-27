@@ -73,7 +73,7 @@ struct MessageSettingsView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Azioni suggerite")
                                 .foregroundStyle(.primary)
-                            Text("Banner sotto i messaggi: calendario, spesa, to-do, Note, mappa")
+                            Text("Banner sotto i messaggi: calendario, spesa, to-do, Note, mappa, foto e documenti")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

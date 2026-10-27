@@ -562,7 +562,6 @@ struct BubbleRowView: View, Equatable {
     let onReactionTap: (String) -> Void
     let onEdit: (() -> Void)?
     let onDelete: () -> Void
-    let onSaveToApp: () -> Void
     let onSuggestedAction: (KBSaveAction) -> Void
     let onReply: () -> Void
     
@@ -588,7 +587,6 @@ struct BubbleRowView: View, Equatable {
                 onLongPress: { messageForReaction = msg },
                 onEdit: canAct ? onEdit : nil,
                 onDelete: onDelete,
-                onSaveToApp: onSaveToApp,
                 onSuggestedAction: onSuggestedAction,
                 onReply: onReply,
                 repliedTo: repliedTo,
@@ -628,7 +626,6 @@ private struct ChatConversationView: View {
     @Query private var familyMembers: [KBFamilyMember]
     @State private var dayGroups: [ChatDayGroup] = []
     @FocusState private var isInputFocused: Bool
-    @State private var messageForSave: KBChatMessage? = nil
     @State private var isLoadingMedia = false
     
     // MARK: - Theme
@@ -1018,14 +1015,6 @@ private struct ChatConversationView: View {
             .presentationDetents([.medium])
         }
         .storageUpgradeSheet($showStorageUpgrade)
-        .sheet(item: $messageForSave) { msg in
-            ChatSaveSheet(
-                message: msg,
-                onSelect: { action in handleSaveAction(action) },
-                onDismiss: { messageForSave = nil }
-            )
-            .presentationDetents([.medium, .large])
-        }
     }
     
 #if targetEnvironment(macCatalyst)
@@ -1399,7 +1388,6 @@ private struct ChatConversationView: View {
                 isSelecting = true
                 selectedMessageIds.insert(msg.id)
             },
-            onSaveToApp: { messageForSave = msg },
             onSuggestedAction: { action in handleSaveAction(action) },
             onReply: { viewModel.startReply(to: msg) }
         )

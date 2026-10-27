@@ -2,8 +2,9 @@
 //  ChatSuggestedActions.swift
 //  KidBox  ← solo main app target
 //
-//  «Azioni suggerite»: piccoli banner sotto la bolla di un messaggio di testo
-//  (Aggiungi a calendario, lista spesa, to-do, Note; Mostra in mappa) che alla
+//  «Azioni suggerite»: piccoli banner sotto la bolla di un messaggio (Aggiungi a
+//  calendario, lista spesa, to-do, Note; Mostra in mappa; Salva in Foto e video
+//  o in Documenti per i media) che alla
 //  pressione eseguono subito l'azione. Ogni tipo si accende/spegne da
 //  Impostazioni > Messaggi > Azioni suggerite.
 //  Un tipo acceso ma mai toccato per 30 giorni si spegne da solo: l'orologio
@@ -15,7 +16,7 @@ import SwiftUI
 // MARK: - Preferenze
 
 enum KBSuggestedActionKind: String, CaseIterable, Identifiable {
-    case calendar, grocery, todo, note, map
+    case calendar, grocery, todo, note, map, photos, documents
     
     var id: String { rawValue }
     
@@ -29,6 +30,8 @@ enum KBSuggestedActionKind: String, CaseIterable, Identifiable {
         case .todo:     return "Aggiungi a to-do"
         case .note:     return "Aggiungi a Note"
         case .map:      return "Mostra in mappa"
+        case .photos:   return "Salva in Foto e video"
+        case .documents: return "Salva in Documenti"
         }
     }
     var icon: String {
@@ -38,6 +41,8 @@ enum KBSuggestedActionKind: String, CaseIterable, Identifiable {
         case .todo:     return "checkmark.circle.fill"
         case .note:     return "note.text"
         case .map:      return "map.fill"
+        case .photos:   return "photo.stack.fill"
+        case .documents: return "folder.fill"
         }
     }
     var color: Color {
@@ -47,6 +52,8 @@ enum KBSuggestedActionKind: String, CaseIterable, Identifiable {
         case .todo:     return .orange
         case .note:     return .yellow
         case .map:      return .blue
+        case .photos:   return .cyan
+        case .documents: return Color(red: 0.6, green: 0.45, blue: 0.85)
         }
     }
     
@@ -91,7 +98,8 @@ extension KBSaveAction {
         case .todo:    return .todo
         case .note:    return .note
         case .map:     return .map
-        case .document, .encryptedMedia: return nil
+        case .encryptedMedia: return .photos
+        case .document: return .documents
         }
     }
 }
@@ -103,6 +111,10 @@ enum KBSuggestedActionsCache {
     private static var cache: [String: [KBSaveAction]] = [:]
     
     static func actions(for message: KBChatMessage) async -> [KBSaveAction] {
+        // Foto e video → «Foto e video», documento → «Documenti»: un banner solo.
+        if message.type == .photo || message.type == .video || message.type == .document {
+            return Array(message.quickSaveActions.prefix(1))
+        }
         guard message.type == .text,
               let text = message.text?.trimmingCharacters(in: .whitespacesAndNewlines),
               !text.isEmpty else { return [] }
@@ -134,6 +146,8 @@ struct ChatSuggestedActionsRow: View {
     @AppStorage(KBSuggestedActionKind.todo.defaultsKey)     private var todoOn = true
     @AppStorage(KBSuggestedActionKind.note.defaultsKey)     private var noteOn = true
     @AppStorage(KBSuggestedActionKind.map.defaultsKey)      private var mapOn = true
+    @AppStorage(KBSuggestedActionKind.photos.defaultsKey)   private var photosOn = true
+    @AppStorage(KBSuggestedActionKind.documents.defaultsKey) private var documentsOn = true
     
     private func isOn(_ kind: KBSuggestedActionKind) -> Bool {
         switch kind {
@@ -142,6 +156,8 @@ struct ChatSuggestedActionsRow: View {
         case .todo:     return todoOn
         case .note:     return noteOn
         case .map:      return mapOn
+        case .photos:   return photosOn
+        case .documents: return documentsOn
         }
     }
     
@@ -164,7 +180,7 @@ struct ChatSuggestedActionsRow: View {
                 }
             }
         }
-        .task(id: message.id + (message.text ?? "")) {
+        .task(id: message.id + (message.text ?? "") + (message.mediaURL ?? "")) {
             let found = await KBSuggestedActionsCache.actions(for: message)
             // Fuori dall'aggiornamento della view: può spegnere un tipo scaduto.
             for kind in Set(found.compactMap(\.suggestedKind)) { kind.noteShown() }
@@ -223,7 +239,7 @@ struct KBSuggestedActionsSettingsView: View {
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("I suggerimenti che non usi smetteranno di apparire dopo 30 giorni.")
-                    Text("Sotto un messaggio di testo compaiono i banner delle azioni attive: un tocco e l'azione parte. Il riconoscimento avviene sul dispositivo.")
+                    Text("Sotto un messaggio compaiono i banner delle azioni attive: un tocco e l'azione parte. Il riconoscimento avviene sul dispositivo.")
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)

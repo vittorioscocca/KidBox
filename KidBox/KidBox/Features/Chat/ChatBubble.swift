@@ -30,7 +30,6 @@ struct ChatBubble: View {
     let onLongPress: () -> Void
     let onEdit: (() -> Void)?
     let onDelete: (() -> Void)?
-    let onSaveToApp: (() -> Void)?
     let onSuggestedAction: ((KBSaveAction) -> Void)?
     let onReply: () -> Void
     let repliedTo: KBChatMessage?
@@ -91,7 +90,6 @@ struct ChatBubble: View {
         onLongPress: @escaping () -> Void,
         onEdit: (() -> Void)?,
         onDelete: (() -> Void)?,
-        onSaveToApp: (() -> Void)?,
         onSuggestedAction: ((KBSaveAction) -> Void)? = nil,
         onReply: @escaping () -> Void,
         repliedTo: KBChatMessage?,
@@ -106,7 +104,6 @@ struct ChatBubble: View {
         self.onLongPress = onLongPress
         self.onEdit = onEdit
         self.onDelete = onDelete
-        self.onSaveToApp = onSaveToApp
         self.onSuggestedAction = onSuggestedAction
         self.onReply = onReply
         self.repliedTo = repliedTo
@@ -250,7 +247,8 @@ struct ChatBubble: View {
                 reactionRow.padding(.horizontal, isOwn ? 16 : 54)
             }
             
-            if message.type == .text, !message.isDeletedForEveryone, let onSuggestedAction {
+            if [.text, .photo, .video, .document].contains(message.type),
+               !message.isDeletedForEveryone, let onSuggestedAction {
                 ChatSuggestedActionsRow(message: message, onTap: onSuggestedAction)
                     .padding(.leading, isOwn ? 12 : 54)
                     .padding(.trailing, isOwn ? 16 : 12)
@@ -1191,12 +1189,6 @@ struct ChatBubble: View {
         Button { onLongPress() } label: { Label("Reagisci", systemImage: "face.smiling") }
         if message.type == .text {
             Button { copyTextToPasteboard() } label: { Label("Copia", systemImage: "doc.on.doc") }
-        }
-        // Il testo si salva dai banner sotto la bolla; qui restano foto, video e documenti.
-        if message.type != .text, !message.quickSaveActions.isEmpty {
-            Button { onSaveToApp?() } label: {
-                Label("Salva in…", systemImage: "square.and.arrow.down")
-            }
         }
         if isOwn, message.type == .text, let onEdit {
             Button { onEdit() } label: { Label("Modifica", systemImage: "pencil") }

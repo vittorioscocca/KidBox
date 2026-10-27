@@ -63010,46 +63010,46 @@
         }
       }
     },
-    "Banner sotto i messaggi: calendario, spesa, to-do, Note, mappa" : {
+    "Banner sotto i messaggi: calendario, spesa, to-do, Note, mappa, foto e documenti" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Banners under messages: calendar, shopping, to-dos, Notes, map"
+            "value" : "Banners under messages: calendar, shopping, to-dos, Notes, map, photos and documents"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Banners bajo los mensajes: calendario, compra, tareas, Notas, mapa"
+            "value" : "Banners bajo los mensajes: calendario, compra, tareas, Notas, mapa, fotos y documentos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bannières sous les messages : calendrier, courses, tâches, Notes, carte"
+            "value" : "Bannières sous les messages : calendrier, courses, tâches, Notes, carte, photos et documents"
           }
         }
       }
     },
-    "Sotto un messaggio di testo compaiono i banner delle azioni attive: un tocco e l'azione parte. Il riconoscimento avviene sul dispositivo." : {
+    "Sotto un messaggio compaiono i banner delle azioni attive: un tocco e l'azione parte. Il riconoscimento avviene sul dispositivo." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Banners for the active actions appear under a text message: one tap and the action runs. Recognition happens on your device."
+            "value" : "Banners for the active actions appear under a message: one tap and the action runs. Recognition happens on your device."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bajo un mensaje de texto aparecen los banners de las acciones activas: un toque y la acción se ejecuta. El reconocimiento se hace en tu dispositivo."
+            "value" : "Bajo un mensaje aparecen los banners de las acciones activas: un toque y la acción se ejecuta. El reconocimiento se hace en tu dispositivo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sous un message texte apparaissent les bannières des actions actives : un appui et l'action s'exécute. La reconnaissance se fait sur votre appareil."
+            "value" : "Sous un message apparaissent les bannières des actions actives : un appui et l'action s'exécute. La reconnaissance se fait sur votre appareil."
           }
         }
       }
@@ -63072,6 +63072,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les suggestions que vous n’utilisez pas cesseront d’apparaître après 30 jours."
+          }
+        }
+      }
+    },
+    "Salva in Foto e video" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to Photos & Videos"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar en Fotos y vídeos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer dans Photos et vidéos"
+          }
+        }
+      }
+    },
+    "Salva in Documenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to Documents"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar en Documentos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer dans Documents"
           }
         }
       }
