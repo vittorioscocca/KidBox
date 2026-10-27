@@ -38,7 +38,6 @@ struct ChatBubble: View {
     let highlightedMessageId: String?
     let searchText: String
     
-    @State private var bubbleFrame: CGRect = .zero
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.openChatMedia) private var openChatMedia
 
@@ -211,7 +210,6 @@ struct ChatBubble: View {
                 }
                 
                 bubbleBody
-                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { bubbleFrame = $0 }
                     .onLongPressGesture(minimumDuration: 0.35) { showActions() }
                     .offset(x: swipeX)
                     .gesture(
@@ -1196,7 +1194,7 @@ struct ChatBubble: View {
         }
         onShowActions(ChatMessageActionsRequest(
             message: message,
-            frame: bubbleFrame,
+            repliedTo: repliedTo,
             isOwn: isOwn,
             currentUID: currentUID,
             actions: actions,

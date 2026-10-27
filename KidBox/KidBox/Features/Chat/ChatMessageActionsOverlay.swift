@@ -2,10 +2,11 @@
 //  ChatMessageActionsOverlay.swift
 //  KidBox  ← solo main app target
 //
-//  Pressione lunga su un messaggio, come WhatsApp: lo sfondo si scurisce
-//  lasciando nitida la bolla, sopra compare la barra delle reazioni e sotto il
-//  menu. Il menu di sistema (.contextMenu) non permette una barra toccabile
-//  sopra il messaggio, per questo è disegnato a mano.
+//  Pressione lunga su un messaggio, come WhatsApp: lo sfondo si sfoca, al
+//  centro compare una copia della bolla con sopra la barra delle reazioni e
+//  sotto il menu. Un messaggio troppo lungo si taglia (con una sfumatura) così
+//  il menu resta sempre intero. Il menu di sistema (.contextMenu) non permette
+//  una barra toccabile sopra il messaggio, per questo è disegnato a mano.
 //  «Azioni suggerite» si apre dentro il menu stesso: un tocco esegue l'azione.
 //
 
@@ -24,8 +25,7 @@ struct ChatMenuAction: Identifiable {
 struct ChatMessageActionsRequest: Identifiable {
     let id = UUID()
     let message: KBChatMessage
-    /// Cornice della bolla in coordinate globali.
-    let frame: CGRect
+    let repliedTo: KBChatMessage?
     let isOwn: Bool
     let currentUID: String
     let actions: [ChatMenuAction]
@@ -62,71 +62,80 @@ struct ChatMessageActionsOverlay: View {
 
     var body: some View {
         GeometryReader { geo in
-            let origin = geo.frame(in: .global).origin
-            let bubble = request.frame.offsetBy(dx: -origin.x, dy: -origin.y)
             let menuHeight = CGFloat(menuRows) * rowHeight + 12
-            let fitsBelow = bubble.maxY + gap + menuHeight <= geo.size.height - 4
-            let menuTop = fitsBelow
-                ? bubble.maxY + gap
-                : max(4 + barHeight + gap, bubble.minY - gap - menuHeight)
-            let barTop = fitsBelow
-                ? max(4, bubble.minY - gap - barHeight)
-                : max(4, menuTop - gap - barHeight)
-
-            ZStack(alignment: .topLeading) {
-                dimLayer(bubble: bubble)
+            // Quel che resta per la bolla dopo barra, menu e margini.
+            let bubbleMax = max(80, geo.size.height - barHeight - menuHeight - gap * 2 - 24)
+            
+            ZStack {
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .overlay(Color.black.opacity(0.18))
                     .ignoresSafeArea()
                     .onTapGesture { close() }
-
-                reactionBar
-                    .frame(height: barHeight)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .alignmentGuide(.leading) { d in
-                        -xFor(width: d.width, bubble: bubble, container: geo.size.width)
-                    }
-                    .offset(y: barTop)
-
-                menu
-                    .frame(width: menuWidth)
-                    .alignmentGuide(.leading) { _ in
-                        -xFor(width: menuWidth, bubble: bubble, container: geo.size.width)
-                    }
-                    .offset(y: menuTop)
+                
+                VStack(alignment: request.isOwn ? .trailing : .leading, spacing: gap) {
+                    reactionBar
+                        .frame(height: barHeight)
+                        .padding(.leading, request.isOwn ? 0 : 54)
+                        .padding(.trailing, request.isOwn ? 12 : 0)
+                    
+                    bubblePreview(maxHeight: bubbleMax)
+                    
+                    menu
+                        .frame(width: menuWidth)
+                        .padding(.leading, request.isOwn ? 0 : 54)
+                        .padding(.trailing, request.isOwn ? 12 : 0)
+                }
+                .frame(maxWidth: .infinity, alignment: request.isOwn ? .trailing : .leading)
+                .scaleEffect(appeared ? 1 : 0.92)
             }
-            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+            .frame(width: geo.size.width, height: geo.size.height)
             .opacity(appeared ? 1 : 0)
-            .scaleEffect(appeared ? 1 : 0.96)
         }
         .task {
             withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) { appeared = true }
             suggestions = await KBSuggestedActionsCache.actions(for: request.message)
         }
     }
-
-    /// Allineata al bordo della bolla (a destra per i propri messaggi), dentro lo schermo.
-    private func xFor(width: CGFloat, bubble: CGRect, container: CGFloat) -> CGFloat {
-        let x = request.isOwn ? bubble.maxX - width : bubble.minX
-        return min(max(8, x), container - width - 8)
-    }
-
-    // MARK: Sfondo con la bolla ritagliata
-
-    private func dimLayer(bubble: CGRect) -> some View {
-        Rectangle()
-            .fill(.ultraThinMaterial)
-            .overlay(Color.black.opacity(0.18))
-            .mask {
-                Rectangle()
-                    .overlay(alignment: .topLeading) {
-                        RoundedRectangle(cornerRadius: 18)
-                            .frame(width: bubble.width, height: bubble.height)
-                            .offset(x: bubble.minX, y: bubble.minY)
-                            .blendMode(.destinationOut)
-                    }
-                    .compositingGroup()
+    
+    // MARK: Copia della bolla
+    
+    /// La stessa bolla della chat, senza tocchi. Se è più alta dello spazio
+    /// libero si vede l'inizio, sfumato in fondo.
+    private func bubblePreview(maxHeight: CGFloat) -> some View {
+        ChatHeightCap(maxHeight: maxHeight) {
+            ChatBubble(
+                message: request.message,
+                isOwn: request.isOwn,
+                currentUID: request.currentUID,
+                onReactionTap: { _ in },
+                onLongPress: {},
+                onEdit: nil,
+                onDelete: nil,
+                onReply: {},
+                repliedTo: request.repliedTo,
+                onReplyContextTap: {},
+                highlightedMessageId: nil,
+                searchText: ""
+            )
+        }
+        .clipped()
+        .mask {
+            GeometryReader { g in
+                let cut = g.size.height >= maxHeight - 1
+                LinearGradient(
+                    stops: [
+                        .init(color: .black, location: 0),
+                        .init(color: .black, location: cut ? 0.85 : 1),
+                        .init(color: cut ? .clear : .black, location: 1),
+                    ],
+                    startPoint: .top, endPoint: .bottom
+                )
             }
+        }
+        .allowsHitTesting(false)
     }
-
+    
     // MARK: Reazioni
 
     private var reactionBar: some View {
@@ -250,5 +259,22 @@ struct ChatMessageActionsOverlay: View {
     private func close() {
         withAnimation(.easeOut(duration: 0.15)) { appeared = false }
         onDismiss()
+    }
+}
+
+/// Altezza vera del contenuto, ma mai oltre `maxHeight` (il resto si taglia).
+/// `frame(maxHeight:)` invece prendeva tutto lo spazio e staccava il menu
+/// dai messaggi corti.
+private struct ChatHeightCap: Layout {
+    let maxHeight: CGFloat
+    
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let sub = subviews.first else { return .zero }
+        let s = sub.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil))
+        return CGSize(width: s.width, height: min(s.height, maxHeight))
+    }
+    
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews.first?.place(at: bounds.origin, proposal: ProposedViewSize(width: bounds.width, height: nil))
     }
 }
