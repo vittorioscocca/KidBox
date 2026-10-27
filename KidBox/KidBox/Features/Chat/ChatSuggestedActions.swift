@@ -169,7 +169,9 @@ struct ChatSuggestedActionsRow: View {
     }
     
     var body: some View {
-        Group {
+        // Non un Group: vuoto non avrebbe viste a cui agganciare .task, e il
+        // calcolo dei banner non partirebbe mai.
+        VStack(spacing: 0) {
             if !visible.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
