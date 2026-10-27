@@ -554,6 +554,7 @@ struct BubbleRowView: View, Equatable {
     let isOwn: Bool
     let canAct: Bool
     @Binding var messageForReaction: KBChatMessage?
+    @Binding var actionsRequest: ChatMessageActionsRequest?
     @Binding var highlightedMessageId: String?
     @Binding var isSelecting: Bool
     @Binding var selectedMessageIds: Set<String>
@@ -588,6 +589,7 @@ struct BubbleRowView: View, Equatable {
                 onEdit: canAct ? onEdit : nil,
                 onDelete: onDelete,
                 onSuggestedAction: onSuggestedAction,
+                onShowActions: { actionsRequest = $0 },
                 onReply: onReply,
                 repliedTo: repliedTo,
                 onReplyContextTap: {
@@ -730,6 +732,7 @@ private struct ChatConversationView: View {
     
     // Reaction picker
     @State private var messageForReaction: KBChatMessage?
+    @State private var actionsRequest: ChatMessageActionsRequest?
     
     // Clear chat
     
@@ -927,6 +930,12 @@ private struct ChatConversationView: View {
             Button("Annulla", role: .cancel) {}
         } message: {
             Text("Questa azione eliminerà tutti i messaggi per tutti i membri della famiglia. Non è reversibile.")
+        }
+        .overlay {
+            if let request = actionsRequest {
+                ChatMessageActionsOverlay(request: request) { actionsRequest = nil }
+                    .id(request.id)
+            }
         }
         .sheet(item: $messageForReaction) { msg in
             ReactionPickerSheet(message: msg) { emoji in
@@ -1376,6 +1385,7 @@ private struct ChatConversationView: View {
             isOwn: isOwn,
             canAct: canAct,
             messageForReaction: $messageForReaction,
+            actionsRequest: $actionsRequest,
             highlightedMessageId: $highlightedMessageId,
             isSelecting: $isSelecting,
             selectedMessageIds: $selectedMessageIds,

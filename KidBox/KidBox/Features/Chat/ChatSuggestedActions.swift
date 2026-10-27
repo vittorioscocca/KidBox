@@ -2,11 +2,10 @@
 //  ChatSuggestedActions.swift
 //  KidBox  ← solo main app target
 //
-//  «Azioni suggerite»: piccoli banner sotto la bolla di un messaggio (Aggiungi a
-//  calendario, lista spesa, to-do, Note; Mostra in mappa; Salva in Foto e video
-//  o in Documenti per i media) che alla
-//  pressione eseguono subito l'azione. Ogni tipo si accende/spegne da
-//  Impostazioni > Messaggi > Azioni suggerite.
+//  «Azioni suggerite»: la voce del menu a pressione lunga (ChatMessageActionsOverlay)
+//  che propone Aggiungi a calendario, lista spesa, to-do, Note; Mostra in mappa;
+//  Salva in Foto e video o in Documenti per i media. Un tocco esegue l'azione.
+//  Ogni tipo si accende/spegne da Impostazioni > Messaggi > Azioni suggerite.
 //  Un tipo acceso ma mai toccato per 30 giorni si spegne da solo: l'orologio
 //  parte la prima volta che compare, riparte a ogni tocco e a ogni riaccensione.
 //
@@ -104,7 +103,7 @@ extension KBSaveAction {
     }
 }
 
-// MARK: - Calcolo (con cache: le bolle si ricreano scorrendo)
+// MARK: - Calcolo (con cache: lo stesso messaggio si riapre più volte)
 
 @MainActor
 enum KBSuggestedActionsCache {
@@ -129,89 +128,6 @@ enum KBSuggestedActionsCache {
         let limited = Array(result.prefix(3))
         cache[key] = limited
         return limited
-    }
-}
-
-// MARK: - Riga di banner
-
-struct ChatSuggestedActionsRow: View {
-    let message: KBChatMessage
-    let onTap: (KBSaveAction) -> Void
-    
-    @State private var actions: [KBSaveAction] = []
-    @State private var doneIds: Set<String> = []
-    // Letti da @AppStorage così il banner sparisce appena si spegne il tipo.
-    @AppStorage(KBSuggestedActionKind.calendar.defaultsKey) private var calendarOn = true
-    @AppStorage(KBSuggestedActionKind.grocery.defaultsKey)  private var groceryOn = true
-    @AppStorage(KBSuggestedActionKind.todo.defaultsKey)     private var todoOn = true
-    @AppStorage(KBSuggestedActionKind.note.defaultsKey)     private var noteOn = true
-    @AppStorage(KBSuggestedActionKind.map.defaultsKey)      private var mapOn = true
-    @AppStorage(KBSuggestedActionKind.photos.defaultsKey)   private var photosOn = true
-    @AppStorage(KBSuggestedActionKind.documents.defaultsKey) private var documentsOn = true
-    
-    private func isOn(_ kind: KBSuggestedActionKind) -> Bool {
-        switch kind {
-        case .calendar: return calendarOn
-        case .grocery:  return groceryOn
-        case .todo:     return todoOn
-        case .note:     return noteOn
-        case .map:      return mapOn
-        case .photos:   return photosOn
-        case .documents: return documentsOn
-        }
-    }
-    
-    private var visible: [(action: KBSaveAction, kind: KBSuggestedActionKind)] {
-        actions.compactMap { a in
-            guard let k = a.suggestedKind, isOn(k) else { return nil }
-            return (a, k)
-        }
-    }
-    
-    var body: some View {
-        // Non un Group: vuoto non avrebbe viste a cui agganciare .task, e il
-        // calcolo dei banner non partirebbe mai.
-        VStack(spacing: 0) {
-            if !visible.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(visible, id: \.action.id) { item in
-                            chip(item.action, item.kind)
-                        }
-                    }
-                }
-            }
-        }
-        .task(id: message.id + (message.text ?? "") + (message.mediaURL ?? "")) {
-            let found = await KBSuggestedActionsCache.actions(for: message)
-            // Fuori dall'aggiornamento della view: può spegnere un tipo scaduto.
-            for kind in Set(found.compactMap(\.suggestedKind)) { kind.noteShown() }
-            actions = found
-        }
-    }
-    
-    private func chip(_ action: KBSaveAction, _ kind: KBSuggestedActionKind) -> some View {
-        let done = doneIds.contains(action.id)
-        return Button {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            doneIds.insert(action.id)
-            kind.markUsed()
-            onTap(action)
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: done ? "checkmark.circle.fill" : kind.icon)
-                    .font(.footnote)
-                    .foregroundStyle(done ? Color.green : kind.color)
-                Text(LocalizedStringKey(kind.title))
-                    .font(.footnote)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
-            .background(Color(.secondarySystemBackground), in: Capsule())
-        }
-        .buttonStyle(.plain)
     }
 }
 
@@ -241,7 +157,7 @@ struct KBSuggestedActionsSettingsView: View {
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("I suggerimenti che non usi smetteranno di apparire dopo 30 giorni.")
-                    Text("Sotto un messaggio compaiono i banner delle azioni attive: un tocco e l'azione parte. Il riconoscimento avviene sul dispositivo.")
+                    Text("Tieni premuto un messaggio e scegli «Azioni suggerite»: compaiono solo le azioni attive e un tocco le esegue. Il riconoscimento avviene sul dispositivo.")
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)

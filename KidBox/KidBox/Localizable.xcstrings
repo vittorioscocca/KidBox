@@ -6046,6 +6046,94 @@
         }
       }
     },
+    "Aggiungi a calendario" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Calendar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir al calendario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter au calendrier"
+          }
+        }
+      }
+    },
+    "Aggiungi a lista spesa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to shopping list"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir a la lista de la compra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter à la liste de courses"
+          }
+        }
+      }
+    },
+    "Aggiungi a Note" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Notes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir a Notas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter aux Notes"
+          }
+        }
+      }
+    },
+    "Aggiungi a to-do" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to to-dos"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir a tareas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter aux tâches"
+          }
+        }
+      }
+    },
     "Aggiungi ad album" : {
       "localizations" : {
         "en" : {
@@ -9508,6 +9596,7 @@
       }
     },
     "Apple Intelligence" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11679,6 +11768,28 @@
         }
       }
     },
+    "Azioni suggerite" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggested actions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acciones sugeridas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actions suggérées"
+          }
+        }
+      }
+    },
     "B" : {
       "localizations" : {
         "en" : {
@@ -11765,6 +11876,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Banque / gestionnaire / agence"
+          }
+        }
+      }
+    },
+    "Nel menu a pressione lunga: calendario, spesa, to-do, Note, mappa, foto e documenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the long-press menu: calendar, shopping, to-dos, Notes, map, photos and documents"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En el menú al mantener pulsado: calendario, compra, tareas, Notas, mapa, fotos y documentos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans le menu d’appui long : calendrier, courses, tâches, Notes, carte, photos et documents"
           }
         }
       }
@@ -33026,6 +33159,28 @@
         }
       }
     },
+    "I suggerimenti che non usi smetteranno di apparire dopo 30 giorni." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggestions you don’t use will stop appearing after 30 days."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las sugerencias que no uses dejarán de aparecer después de 30 días."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les suggestions que vous n’utilisez pas cesseront d’apparaître après 30 jours."
+          }
+        }
+      }
+    },
     "I tuoi viaggi" : {
       "localizations" : {
         "en" : {
@@ -43847,6 +44002,51 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher le numéro et le code PIN de la carte."
+          }
+        }
+      }
+    },
+    "Mostra in mappa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show on map"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar en el mapa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher sur la carte"
+          }
+        }
+      }
+    },
+    "Mostra in Mappe" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show in Maps"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar en Mapas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher dans Plans"
           }
         }
       }
@@ -62856,222 +63056,24 @@
         }
       }
     },
-    "Mostra in Mappe" : {
+    "Salva in Documenti" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Show in Maps"
+            "value" : "Save to Documents"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar en Mapas"
+            "value" : "Guardar en Documentos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afficher dans Plans"
-          }
-        }
-      }
-    },
-    "Aggiungi a calendario" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to Calendar"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir al calendario"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter au calendrier"
-          }
-        }
-      }
-    },
-    "Aggiungi a lista spesa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to shopping list"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir a la lista de la compra"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter à la liste de courses"
-          }
-        }
-      }
-    },
-    "Aggiungi a to-do" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to to-dos"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir a tareas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter aux tâches"
-          }
-        }
-      }
-    },
-    "Aggiungi a Note" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to Notes"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir a Notas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter aux Notes"
-          }
-        }
-      }
-    },
-    "Mostra in mappa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show on map"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar en el mapa"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher sur la carte"
-          }
-        }
-      }
-    },
-    "Azioni suggerite" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suggested actions"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Acciones sugeridas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actions suggérées"
-          }
-        }
-      }
-    },
-    "Banner sotto i messaggi: calendario, spesa, to-do, Note, mappa, foto e documenti" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Banners under messages: calendar, shopping, to-dos, Notes, map, photos and documents"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Banners bajo los mensajes: calendario, compra, tareas, Notas, mapa, fotos y documentos"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bannières sous les messages : calendrier, courses, tâches, Notes, carte, photos et documents"
-          }
-        }
-      }
-    },
-    "Sotto un messaggio compaiono i banner delle azioni attive: un tocco e l'azione parte. Il riconoscimento avviene sul dispositivo." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Banners for the active actions appear under a message: one tap and the action runs. Recognition happens on your device."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bajo un mensaje aparecen los banners de las acciones activas: un toque y la acción se ejecuta. El reconocimiento se hace en tu dispositivo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sous un message apparaissent les bannières des actions actives : un appui et l'action s'exécute. La reconnaissance se fait sur votre appareil."
-          }
-        }
-      }
-    },
-    "I suggerimenti che non usi smetteranno di apparire dopo 30 giorni." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suggestions you don’t use will stop appearing after 30 days."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las sugerencias que no uses dejarán de aparecer después de 30 días."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les suggestions que vous n’utilisez pas cesseront d’apparaître après 30 jours."
+            "value" : "Enregistrer dans Documents"
           }
         }
       }
@@ -63098,29 +63100,8 @@
         }
       }
     },
-    "Salva in Documenti" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save to Documents"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Guardar en Documentos"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enregistrer dans Documents"
-          }
-        }
-      }
-    },
     "Salva in…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -67951,6 +67932,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remplacer la photo"
+          }
+        }
+      }
+    },
+    "Tieni premuto un messaggio e scegli «Azioni suggerite»: compaiono solo le azioni attive e un tocco le esegue. Il riconoscimento avviene sul dispositivo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Long-press a message and choose «Suggested actions»: only the active actions appear, and one tap runs them. Recognition happens on your device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsado un mensaje y elige «Acciones sugeridas»: solo aparecen las acciones activas y un toque las ejecuta. El reconocimiento se hace en tu dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appuyez longuement sur un message et choisissez « Actions suggérées » : seules les actions actives apparaissent et un appui les exécute. La reconnaissance se fait sur votre appareil."
           }
         }
       }

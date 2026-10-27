@@ -31,12 +31,14 @@ struct ChatBubble: View {
     let onEdit: (() -> Void)?
     let onDelete: (() -> Void)?
     let onSuggestedAction: ((KBSaveAction) -> Void)?
+    let onShowActions: ((ChatMessageActionsRequest) -> Void)?
     let onReply: () -> Void
     let repliedTo: KBChatMessage?
     let onReplyContextTap: () -> Void
     let highlightedMessageId: String?
     let searchText: String
     
+    @State private var bubbleFrame: CGRect = .zero
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.openChatMedia) private var openChatMedia
 
@@ -91,6 +93,7 @@ struct ChatBubble: View {
         onEdit: (() -> Void)?,
         onDelete: (() -> Void)?,
         onSuggestedAction: ((KBSaveAction) -> Void)? = nil,
+        onShowActions: ((ChatMessageActionsRequest) -> Void)? = nil,
         onReply: @escaping () -> Void,
         repliedTo: KBChatMessage?,
         onReplyContextTap: @escaping () -> Void,
@@ -105,6 +108,7 @@ struct ChatBubble: View {
         self.onEdit = onEdit
         self.onDelete = onDelete
         self.onSuggestedAction = onSuggestedAction
+        self.onShowActions = onShowActions
         self.onReply = onReply
         self.repliedTo = repliedTo
         self.onReplyContextTap = onReplyContextTap
@@ -132,17 +136,6 @@ struct ChatBubble: View {
     /// Posto per ora e spunte in fondo all'ultima riga: stesso testo dell'ora in
     /// caption2, trasparente, più lo spazio delle spunte. Lo spazio normale
     /// iniziale lascia andare a capo il blocco intero.
-    private var timeReserve: AttributedString {
-        var reserve = " \u{00A0}\u{00A0}\u{00A0}"
-        if message.editedAt != nil { reserve += String(localized: "Modificato") + "\u{00A0}" }
-        reserve += cachedTimeString
-        if isOwn { reserve += "\u{00A0}\u{00A0}\u{00A0}\u{00A0}\u{00A0}" }
-        var s = AttributedString(reserve)
-        s.font = .caption2
-        s.foregroundColor = .clear
-        return s
-    }
-    
     private var maxBubbleWidth: CGFloat {
         let w = Self.screenWidth
         switch dynamicTypeSize {
@@ -218,7 +211,8 @@ struct ChatBubble: View {
                 }
                 
                 bubbleBody
-                    .contextMenu { if !message.isDeletedForEveryone { contextMenuItems } }
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { bubbleFrame = $0 }
+                    .onLongPressGesture(minimumDuration: 0.35) { showActions() }
                     .offset(x: swipeX)
                     .gesture(
                         DragGesture(minimumDistance: 20)
@@ -247,13 +241,6 @@ struct ChatBubble: View {
                 reactionRow.padding(.horizontal, isOwn ? 16 : 54)
             }
             
-            if [.text, .photo, .video, .document].contains(message.type),
-               !message.isDeletedForEveryone, let onSuggestedAction {
-                ChatSuggestedActionsRow(message: message, onTap: onSuggestedAction)
-                    .padding(.leading, isOwn ? 12 : 54)
-                    .padding(.trailing, isOwn ? 16 : 12)
-                    .padding(.top, 2)
-            }
         }
         .frame(maxWidth: .infinity, alignment: isOwn ? .trailing : .leading)
         .padding(.vertical, 2)
@@ -403,20 +390,22 @@ struct ChatBubble: View {
                     }
                 } else {
                     // Come WhatsApp: ora e spunte in basso a destra, un po' sotto
-                    // l'ultima riga. In coda al testo c'è uno spazio trasparente
-                    // largo quanto l'ora: se ci sta resta accanto all'ultima
-                    // parola, altrimenti va a capo da solo.
-                    ChatHuggingMaxWidth(maxWidth: max(maxBubbleWidth - 24, 100)) {
-                    ZStack(alignment: .bottomTrailing) {
-                        Text(cachedHighlightedText + timeReserve)
+                    // l'ultima riga se lì c'è posto, altrimenti su una riga loro.
+                    // L'ultima riga la misura TextKit: lo spazio trasparente in coda
+                    // al testo, usato prima, con gli «a capo» faceva misurare a
+                    // SwiftUI una bolla troppo stretta e l'ora finiva sul testo.
+                    let plain = String(cachedHighlightedText.characters)
+                    ChatTextWithTimeLayout(
+                        maxWidth: max(maxBubbleWidth - 24, 100),
+                        lastLineWidth: { ChatTextWithTimeLayout.lastLineWidth(of: plain, width: $0) }
+                    ) {
+                        Text(cachedHighlightedText)
                             .font(.body)
                             .foregroundStyle(isOwn ? .white : .primary)
                             .multilineTextAlignment(.leading)
                             .lineLimit(nil)
                             .fixedSize(horizontal: false, vertical: true)
-                            .padding(.bottom, 7)
                         timeAndChecks
-                    }
                     }
                 }
             }
@@ -1183,24 +1172,38 @@ struct ChatBubble: View {
     
     // MARK: - Context menu
     
-    @ViewBuilder
-    private var contextMenuItems: some View {
-        Button { onReply() } label: { Label("Rispondi", systemImage: "arrowshape.turn.up.left") }
-        Button { onLongPress() } label: { Label("Reagisci", systemImage: "face.smiling") }
+    /// Pressione lunga: la bolla prepara le voci, ChatView mostra il menu
+    /// con la barra delle reazioni (ChatMessageActionsOverlay).
+    private func showActions() {
+        guard !message.isDeletedForEveryone, let onShowActions else { return }
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        var actions: [ChatMenuAction] = [
+            ChatMenuAction(id: "reply", title: "Rispondi", icon: "arrowshape.turn.up.left") { onReply() }
+        ]
         if message.type == .text {
-            Button { copyTextToPasteboard() } label: { Label("Copia", systemImage: "doc.on.doc") }
+            actions.append(ChatMenuAction(id: "copy", title: "Copia", icon: "doc.on.doc") { copyTextToPasteboard() })
         }
         if isOwn, message.type == .text, let onEdit {
-            Button { onEdit() } label: { Label("Modifica", systemImage: "pencil") }
-        }
-        if let onDelete {
-            Button(role: .destructive) { onDelete() } label: { Label("Elimina", systemImage: "trash") }
+            actions.append(ChatMenuAction(id: "edit", title: "Modifica", icon: "pencil") { onEdit() })
         }
         if message.type == .audio, let transcript = message.transcriptPreviewText, !transcript.isEmpty {
-            Button { copyTranscriptToPasteboard() } label: {
-                Label("Copia trascrizione", systemImage: "text.badge.checkmark")
-            }
+            actions.append(ChatMenuAction(id: "transcript", title: "Copia trascrizione", icon: "text.badge.checkmark") {
+                copyTranscriptToPasteboard()
+            })
         }
+        if let onDelete {
+            actions.append(ChatMenuAction(id: "delete", title: "Elimina", icon: "trash", isDestructive: true) { onDelete() })
+        }
+        onShowActions(ChatMessageActionsRequest(
+            message: message,
+            frame: bubbleFrame,
+            isOwn: isOwn,
+            currentUID: currentUID,
+            actions: actions,
+            onReact: onReactionTap,
+            onMoreReactions: onLongPress,
+            onSuggestedAction: onSuggestedAction
+        ))
     }
     
     private func copyTranscriptToPasteboard() {
@@ -1927,17 +1930,61 @@ extension Comparable {
     }
 }
 
-/// Limita la larghezza senza allargare: `frame(maxWidth:)` prende tutta la
-/// larghezza offerta e ogni bolla di testo diventava larga al massimo.
-struct ChatHuggingMaxWidth: Layout {
+/// Testo + ora come WhatsApp: l'ora sta accanto all'ultima riga se c'è posto,
+/// un po' più in basso; altrimenti va su una riga sua. La larghezza dell'ultima
+/// riga la misura TextKit con lo stesso font del testo.
+struct ChatTextWithTimeLayout: Layout {
     let maxWidth: CGFloat
+    let lastLineWidth: (CGFloat) -> CGFloat
+    var gap: CGFloat = 6
+    var inlineDrop: CGFloat = 7
+
+    private func compute(_ proposal: ProposedViewSize, _ subviews: Subviews)
+    -> (size: CGSize, text: CGSize) {
+        let w = min(proposal.width ?? maxWidth, maxWidth)
+        let text = subviews[0].sizeThatFits(ProposedViewSize(width: w, height: nil))
+        let time = subviews[1].sizeThatFits(.unspecified)
+        let last = lastLineWidth(w)
+        if last + gap + time.width <= w {
+            return (CGSize(width: max(text.width, last + gap + time.width),
+                           height: text.height + inlineDrop), text)
+        }
+        return (CGSize(width: max(text.width, time.width),
+                       height: text.height + time.height + 2), text)
+    }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let width = min(proposal.width ?? maxWidth, maxWidth)
-        return subviews.first?.sizeThatFits(ProposedViewSize(width: width, height: nil)) ?? .zero
+        compute(proposal, subviews).size
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        subviews.first?.place(at: bounds.origin, proposal: ProposedViewSize(width: bounds.width, height: bounds.height))
+        let r = compute(ProposedViewSize(width: bounds.width, height: nil), subviews)
+        subviews[0].place(at: bounds.origin, proposal: ProposedViewSize(width: bounds.width, height: r.text.height))
+        subviews[1].place(at: CGPoint(x: bounds.maxX, y: bounds.maxY), anchor: .bottomTrailing, proposal: .unspecified)
+    }
+
+    private static let cache = NSCache<NSString, NSNumber>()
+
+    /// Larghezza dell'ultima riga di `text` impaginato a `width` col font .body.
+    static func lastLineWidth(of text: String, width: CGFloat) -> CGFloat {
+        let font = UIFont.preferredFont(forTextStyle: .body)
+        let key = "\(width)|\(font.pointSize)|\(text)" as NSString
+        if let hit = cache.object(forKey: key) { return CGFloat(hit.doubleValue) }
+        let storage = NSTextStorage(string: text, attributes: [.font: font])
+        let manager = NSLayoutManager()
+        storage.addLayoutManager(manager)
+        let container = NSTextContainer(size: CGSize(width: width, height: .greatestFiniteMagnitude))
+        container.lineFragmentPadding = 0
+        manager.addTextContainer(container)
+        manager.ensureLayout(for: container)
+        var last: CGFloat = 0
+        manager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: manager.numberOfGlyphs)) {
+            _, used, _, _, _ in last = used.width
+        }
+        if text.hasSuffix("\n") { last = 0 }
+        // Margine: TextKit e Text di SwiftUI possono differire di qualche decimale.
+        let result = ceil(last) + 2
+        cache.setObject(NSNumber(value: Double(result)), forKey: key)
+        return result
     }
 }
