@@ -9,7 +9,7 @@ import {
   serverTimestamp,
   setDoc,
 } from "firebase/firestore";
-import { db } from "../firebase";
+import { auth, db } from "../firebase";
 
 /**
  * Posizione di famiglia: porting di LocationRemoteStore (iOS).
@@ -34,7 +34,7 @@ function liveDoc(familyId, uid) {
 }
 
 /** @param mode "realtime" | "temporary" */
-export async function startSharing({ familyId, uid, name, mode, expiresAt }) {
+export async function startSharing({ familyId, uid, name, mode, expiresAt, sharedWith = [] }) {
   const data = {
     isSharing: true,
     mode,
@@ -46,6 +46,8 @@ export async function startSharing({ familyId, uid, name, mode, expiresAt }) {
   // col merge resterebbe, e chi legge solo la data nasconderebbe la posizione.
   data.expiresAt = expiresAt ? Timestamp.fromDate(expiresAt) : deleteField();
   data.stoppedReason = deleteField();
+  // Destinatari: vuoto = tutta la famiglia (come iOS e Android).
+  data.sharedWith = sharedWith.length ? sharedWith : deleteField();
   await setDoc(doc(locationsCol(familyId), uid), data, { merge: true });
 }
 
@@ -136,6 +138,11 @@ export function listenSharedLocations({ familyId, onChange, onError }) {
       snap.docs.forEach((d) => {
         const data = d.data();
         if (!data.isSharing) return;
+        // Condivisa solo con alcuni: chi non è nell'elenco non la vede (la
+        // propria sì). Il filtro è qui e non nelle rules, come sui client nativi.
+        const myUid = auth.currentUser?.uid;
+        const only = Array.isArray(data.sharedWith) ? data.sharedWith : [];
+        if (only.length && d.id !== myUid && !only.includes(myUid)) return;
         // Una condivisione a tempo scaduta non va mostrata: lo scheduler la
         // ripulisce ogni 5 minuti, nel frattempo la si ignora.
         // Solo per le temporanee: un documento «realtime» può portarsi dietro

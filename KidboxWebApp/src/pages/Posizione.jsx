@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFamily } from "../FamilyContext";
 import { useAuth } from "../AuthContext";
+import { useFamilyMembers } from "../hooks/useFamilyMembers";
 import { useTranslation } from "../i18n/LocaleContext";
 import {
   deleteGeofence,
@@ -49,6 +50,12 @@ export default function Posizione() {
   const [sharing, setSharing] = useState(false);
   const [mode, setMode] = useState("realtime");
   const [duration, setDuration] = useState(2);
+  // Destinatari: vuoto = tutta la famiglia.
+  const [recipients, setRecipients] = useState([]);
+  const members = useFamilyMembers(currentFamilyId);
+  const otherMembers = members.filter((m) => m.id !== user?.uid);
+  const toggleRecipient = (id) =>
+    setRecipients((r) => (r.includes(id) ? r.filter((x) => x !== id) : [...r, id]));
   const [error, setError] = useState(null);
   const [focus, setFocus] = useState(null);
   const [zoneDraft, setZoneDraft] = useState(null);
@@ -124,6 +131,7 @@ export default function Posizione() {
         name: user.displayName || user.email || "",
         mode,
         expiresAt,
+        sharedWith: recipients,
       });
     } catch (err) {
       setError(err.message);
@@ -304,6 +312,23 @@ export default function Posizione() {
                     ))}
                   </div>
                 )}
+                <div className="duration-row" role="group" aria-label={t.location.shareWith}>
+                  <button
+                    className={"cat-chip" + (recipients.length === 0 ? " active" : "")}
+                    onClick={() => setRecipients([])}
+                  >
+                    {t.location.allFamily}
+                  </button>
+                  {otherMembers.map((m) => (
+                    <button
+                      key={m.id}
+                      className={"cat-chip" + (recipients.includes(m.id) ? " active" : "")}
+                      onClick={() => toggleRecipient(m.id)}
+                    >
+                      {(m.displayName || m.email || "").trim() || "Utente"}
+                    </button>
+                  ))}
+                </div>
                 <button className="docs-btn primary" onClick={beginSharing}>
                   ▶ {t.location.shareOn}
                 </button>

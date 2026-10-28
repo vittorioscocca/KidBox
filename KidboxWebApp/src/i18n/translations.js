@@ -1542,6 +1542,8 @@ export const translations = {
     location: {
       title: "Posizione",
       shareOn: "Condividi posizione",
+      allFamily: "Tutta la famiglia",
+      shareWith: "Con chi condividere",
       shareOff: "Interrompi condivisione",
       sharing: "Stai condividendo",
       mode: "Modalità",
@@ -3239,6 +3241,8 @@ export const translations = {
     location: {
       title: "Location",
       shareOn: "Share location",
+      allFamily: "Whole family",
+      shareWith: "Share with",
       shareOff: "Stop sharing",
       sharing: "You are sharing",
       mode: "Mode",
@@ -4881,6 +4885,8 @@ export const translations = {
     location: {
       title: "Position",
       shareOn: "Partager la position",
+      allFamily: "Toute la famille",
+      shareWith: "Partager avec",
       shareOff: "Arrêter le partage",
       sharing: "Vous partagez",
       mode: "Mode",
@@ -6523,6 +6529,8 @@ export const translations = {
     location: {
       title: "Ubicación",
       shareOn: "Compartir ubicación",
+      allFamily: "Toda la familia",
+      shareWith: "Compartir con",
       shareOff: "Dejar de compartir",
       sharing: "Estás compartiendo",
       mode: "Modo",
