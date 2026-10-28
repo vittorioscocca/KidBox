@@ -19,6 +19,8 @@ enum KBLocationDefaults {
     static let displayName = "kb_location_displayName"
     static let isSharing   = "kb_location_isSharing"
     static let expiresAt   = "kb_location_expiresAt"
+    /// Destinatari della condivisione attiva (uid); assente = tutta la famiglia.
+    static let sharedWith  = "kb_location_sharedWith"
 
     /// Sessione geofence: persistita INDIPENDENTEMENTE dalla condivisione live, così
     /// `GeofenceMonitorService` può attribuire (uid/familyId/displayName) gli eventi

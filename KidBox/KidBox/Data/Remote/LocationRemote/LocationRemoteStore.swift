@@ -19,7 +19,8 @@ final class LocationRemoteStore {
         uid: String,
         name: String,
         mode: ShareMode,
-        expiresAt: Date?
+        expiresAt: Date?,
+        sharedWith: [String] = []
     ) async throws {
 
         var data: [String: Any] = [
@@ -40,6 +41,14 @@ final class LocationRemoteStore {
             data["expiresAt"] = FieldValue.delete()
         }
         data["stoppedReason"] = FieldValue.delete()
+
+        // Destinatari: elenco vuoto = tutta la famiglia (come prima, e come i
+        // documenti scritti dalle versioni vecchie, che il campo non ce l'hanno).
+        if sharedWith.isEmpty {
+            data["sharedWith"] = FieldValue.delete()
+        } else {
+            data["sharedWith"] = sharedWith
+        }
 
         try await db.collection("families")
             .document(familyId)
@@ -129,7 +138,9 @@ final class LocationRemoteStore {
             let mode: ShareMode
             let expiresAt: Date?
             let avatarURL: String?
+            let sharedWith: [String]
         }
+        let myUid = Auth.auth().currentUser?.uid ?? ""
 
         var statusByUid: [String: Status] = [:]
         var coordListeners: [String: ListenerRegistration] = [:]
@@ -243,11 +254,19 @@ final class LocationRemoteStore {
 
                     let avatarURL = data["avatarURL"] as? String
 
+                    // Condivisa solo con alcuni: chi non è nell'elenco non la
+                    // vede (la propria sì, sempre).
+                    let sharedWith = (data["sharedWith"] as? [String]) ?? []
+                    if !sharedWith.isEmpty, doc.documentID != myUid, !sharedWith.contains(myUid) {
+                        continue
+                    }
+
                     newStatus[doc.documentID] = Status(
                         name: name,
                         mode: mode,
                         expiresAt: expires,
-                        avatarURL: avatarURL
+                        avatarURL: avatarURL,
+                        sharedWith: sharedWith
                     )
                 }
 

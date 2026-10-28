@@ -45,6 +45,8 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
     @Published private(set) var isSharing = false
     @Published private(set) var mode: ShareMode?
     @Published private(set) var expiresAt: Date?
+    /// Destinatari scelti (uid); vuoto = tutta la famiglia.
+    @Published private(set) var sharedWith: [String] = []
     /// Famiglia in cui questo dispositivo sta condividendo.
     @Published private(set) var familyId: String?
     /// Ultimo fix affidabile ricevuto, scritto o no: serve alla UI (indirizzo).
@@ -167,6 +169,7 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
         self.displayName = defaults.string(forKey: KBLocationDefaults.displayName) ?? "Utente"
         self.mode = expires == nil ? .realtime : .temporary
         self.expiresAt = expires
+        self.sharedWith = defaults.stringArray(forKey: KBLocationDefaults.sharedWith) ?? []
         self.isSharing = true
 
         if let expires, expires <= Date() {
@@ -185,7 +188,7 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
     /// Avvia la condivisione in `familyId`. `false` se la scrittura dello stato
     /// su Firestore fallisce (lo stato locale torna com'era prima).
     @discardableResult
-    func start(familyId: String, displayName: String, mode: ShareMode, expiresAt: Date?) async -> Bool {
+    func start(familyId: String, displayName: String, mode: ShareMode, expiresAt: Date?, sharedWith: [String] = []) async -> Bool {
         guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return false }
 
         // Finché il server non conferma, niente coordinate: i fix che arrivano
@@ -203,6 +206,7 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
         self.displayName = displayName
         self.mode = mode
         self.expiresAt = expiresAt
+        self.sharedWith = sharedWith
         self.isSharing = true
         persist()
 
@@ -215,7 +219,8 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
                 uid: uid,
                 name: displayName,
                 mode: mode,
-                expiresAt: expiresAt
+                expiresAt: expiresAt,
+                sharedWith: sharedWith
             )
         } catch {
             KBLog.app.kbError("LocationSharing start failed: \(error.localizedDescription)")
@@ -622,6 +627,11 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
         defaults.set(familyId, forKey: KBLocationDefaults.familyId)
         defaults.set(displayName, forKey: KBLocationDefaults.displayName)
         defaults.set(true, forKey: KBLocationDefaults.isSharing)
+        if sharedWith.isEmpty {
+            defaults.removeObject(forKey: KBLocationDefaults.sharedWith)
+        } else {
+            defaults.set(sharedWith, forKey: KBLocationDefaults.sharedWith)
+        }
         if let expiresAt {
             defaults.set(expiresAt.timeIntervalSince1970, forKey: KBLocationDefaults.expiresAt)
         } else {
@@ -636,6 +646,7 @@ final class LocationSharingService: NSObject, ObservableObject, CLLocationManage
         defaults.removeObject(forKey: KBLocationDefaults.familyId)
         defaults.removeObject(forKey: KBLocationDefaults.displayName)
         defaults.removeObject(forKey: KBLocationDefaults.expiresAt)
+        defaults.removeObject(forKey: KBLocationDefaults.sharedWith)
         defaults.set(false, forKey: KBLocationDefaults.isSharing)
         NotificationCenter.default.post(name: .kbLocationSharingStateChanged, object: nil)
     }

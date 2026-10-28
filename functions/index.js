@@ -1307,9 +1307,13 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
         return;
       }
 
+      // `sharedWith` vuoto o assente = tutta la famiglia. Lo stop non lo
+      // tocca, quindi anche «ha smesso» va alle stesse persone.
+      const onlyUids = Array.isArray(after.sharedWith) && after.sharedWith.length > 0 ?
+        new Set(after.sharedWith) : null;
       const targetUids = membersSnap.docs
           .map((d) => d.id)
-          .filter((uid) => uid && uid !== subjectUid);
+          .filter((uid) => uid && uid !== subjectUid && (!onlyUids || onlyUids.has(uid)));
 
       if (targetUids.length === 0) {
         logger.info("notifyLocationSharingChanged: no targets (only subject?)");

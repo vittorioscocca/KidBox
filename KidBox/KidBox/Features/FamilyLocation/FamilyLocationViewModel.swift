@@ -25,6 +25,7 @@ final class FamilyLocationViewModel: ObservableObject {
     @Published private(set) var isSharing: Bool = false
     @Published private(set) var myMode: ShareMode?
     @Published private(set) var myExpiresAt: Date?
+    @Published private(set) var mySharedWith: [String] = []
     @Published private(set) var myCurrentAddress: String? = nil
 
     @Published var geofences: [KBGeofence] = []
@@ -66,6 +67,7 @@ final class FamilyLocationViewModel: ObservableObject {
         Publishers.CombineLatest4(sharing.$isSharing, sharing.$familyId, sharing.$mode, sharing.$expiresAt)
             .sink { [weak self] active, sharingFamilyId, mode, expiresAt in
                 guard let self else { return }
+                self.mySharedWith = (active && sharingFamilyId == self.familyId) ? self.sharing.sharedWith : []
                 let here = active && sharingFamilyId == self.familyId
                 self.isSharing = here
                 self.myMode = here ? mode : nil
@@ -237,16 +239,16 @@ final class FamilyLocationViewModel: ObservableObject {
 
     // MARK: - Actions
 
-    func startRealtime(displayName: String) async {
+    func startRealtime(displayName: String, sharedWith: [String] = []) async {
         myCurrentDisplayName = displayName
-        await sharing.start(familyId: familyId, displayName: displayName, mode: .realtime, expiresAt: nil)
+        await sharing.start(familyId: familyId, displayName: displayName, mode: .realtime, expiresAt: nil, sharedWith: sharedWith)
         syncGeofenceMonitor()
     }
 
-    func startTemporary(hours: Int, displayName: String) async {
+    func startTemporary(hours: Int, displayName: String, sharedWith: [String] = []) async {
         myCurrentDisplayName = displayName
         let expires = Date().addingTimeInterval(Double(hours) * 3600)
-        await sharing.start(familyId: familyId, displayName: displayName, mode: .temporary, expiresAt: expires)
+        await sharing.start(familyId: familyId, displayName: displayName, mode: .temporary, expiresAt: expires, sharedWith: sharedWith)
         syncGeofenceMonitor()
     }
 

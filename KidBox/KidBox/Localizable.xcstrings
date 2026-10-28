@@ -11880,28 +11880,6 @@
         }
       }
     },
-    "Nel menu a pressione lunga: calendario, spesa, to-do, Note, mappa, foto e documenti" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In the long-press menu: calendar, shopping, to-dos, Notes, map, photos and documents"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En el menú al mantener pulsado: calendario, compra, tareas, Notas, mapa, fotos y documentos"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dans le menu d’appui long : calendrier, courses, tâches, Notes, carte, photos et documents"
-          }
-        }
-      }
-    },
     "Bar, locali, serate" : {
       "comment" : "Travel style detail",
       "localizations" : {
@@ -44429,6 +44407,28 @@
         }
       }
     },
+    "Nel menu a pressione lunga: calendario, spesa, to-do, Note, mappa, foto e documenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the long-press menu: calendar, shopping, to-dos, Notes, map, photos and documents"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En el menú al mantener pulsado: calendario, compra, tareas, Notas, mapa, fotos y documentos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans le menu d’appui long : calendrier, courses, tâches, Notes, carte, photos et documents"
+          }
+        }
+      }
+    },
     "Neonato" : {
       "localizations" : {
         "en" : {
@@ -59756,6 +59756,7 @@
       }
     },
     "Reagisci" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -67936,28 +67937,6 @@
         }
       }
     },
-    "Tieni premuto un messaggio e scegli «Azioni suggerite»: compaiono solo le azioni attive e un tocco le esegue. Il riconoscimento avviene sul dispositivo." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Long-press a message and choose «Suggested actions»: only the active actions appear, and one tap runs them. Recognition happens on your device."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mantén pulsado un mensaje y elige «Acciones sugeridas»: solo aparecen las acciones activas y un toque las ejecuta. El reconocimiento se hace en tu dispositivo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Appuyez longuement sur un message et choisissez « Actions suggérées » : seules les actions actives apparaissent et un appui les exécute. La reconnaissance se fait sur votre appareil."
-          }
-        }
-      }
-    },
     "Sottoint." : {
       "localizations" : {
         "en" : {
@@ -70415,6 +70394,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Maintenez appuyé sur la carte pour déplacer le repère"
+          }
+        }
+      }
+    },
+    "Tieni premuto un messaggio e scegli «Azioni suggerite»: compaiono solo le azioni attive e un tocco le esegue. Il riconoscimento avviene sul dispositivo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Long-press a message and choose «Suggested actions»: only the active actions appear, and one tap runs them. Recognition happens on your device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsado un mensaje y elige «Acciones sugeridas»: solo aparecen las acciones activas y un toque las ejecuta. El reconocimiento se hace en tu dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appuyez longuement sur un message et choisissez « Actions suggérées » : seules les actions actives apparaissent et un appui les exécute. La reconnaissance se fait sur votre appareil."
           }
         }
       }
@@ -75897,6 +75898,116 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Zones d'arrivée"
+          }
+        }
+      }
+    },
+    "Con chi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con"
+          }
+        }
+      }
+    },
+    "Modalità" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modo"
+          }
+        }
+      }
+    },
+    "Con chi condividere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share with"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partager avec"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir con"
+          }
+        }
+      }
+    },
+    "Solo le persone scelte vedranno la tua posizione sulla mappa." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only the people you choose will see your location on the map."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seules les personnes choisies verront ta position sur la carte."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo las personas elegidas verán tu ubicación en el mapa."
+          }
+        }
+      }
+    },
+    "Stai condividendo la tua posizione con alcuni membri" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're sharing your location with some members"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu partages ta position avec certains membres"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estás compartiendo tu ubicación con algunos miembros"
           }
         }
       }

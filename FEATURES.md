@@ -181,6 +181,13 @@ verrebbe da pensare. Ognuna è costata almeno una volta.
   avviata. Su Android il servizio riscrive la posizione ogni 15 minuti anche
   da fermo, e se tace il server lo risveglia con una push silenziosa
   (`resumeStaleLocationSharing`).
+- **Condivisione a tutta la famiglia o ad alcuni** (iOS e Android, 28/10/2026):
+  `locations/{uid}.sharedWith` è l'elenco degli uid destinatari; assente o
+  vuoto = tutta la famiglia (anche i documenti vecchi). Il filtro è **nel
+  client** (chi non è nell'elenco scarta il documento) e nella push
+  `notifyLocationSharingChanged`; le rules NON lo impongono, perché una
+  `list` non filtra e romperebbe le versioni già installate. La web app non
+  lo conosce ancora.
 - **La riga «Distanza» del Piano Fitness è dichiarata a Google Play**: deve
   restare visibile anche a zero, altrimenti `READ_DISTANCE` diventa
   indimostrabile. Nel Piano Alimentare invece non deve comparire.

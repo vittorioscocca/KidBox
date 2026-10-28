@@ -34,9 +34,15 @@ struct FamilyLocationView: View {
     /// Impedisce che il fit iniziale venga ripetuto ad ogni aggiornamento di coordinate
     @State private var hasPerformedInitialFit = false
     
-    @State private var showShareAlert = false
-    @State private var showDurationSheet = false
+    @State private var showShareSheet = false
     @State private var selectedHours = 2
+    /// false = condivisione temporanea (con `selectedHours`), true = tempo reale.
+    @State private var shareRealtime = true
+    /// Destinatari: tutta la famiglia, oppure solo `shareSelectedUserIds`.
+    @State private var shareAllMembers = true
+    @State private var shareSelectedUserIds: Set<String> = []
+    @State private var showRecipientPicker = false
+    @Query private var familyMembers: [KBFamilyMember]
 
     /// Vista satellitare attiva. Non viene persistita: la mappa riparte sempre
     /// dalla vista standard, come fa Mappe di sistema.
@@ -48,6 +54,11 @@ struct FamilyLocationView: View {
     
     init(familyId: String) {
         self.familyId = familyId
+        let fid = familyId
+        _familyMembers = Query(
+            filter: #Predicate<KBFamilyMember> { $0.familyId == fid && $0.isDeleted == false },
+            sort: [SortDescriptor(\KBFamilyMember.displayName, order: .forward)]
+        )
         _viewModel = StateObject(wrappedValue: FamilyLocationViewModel(familyId: familyId))
     }
     
@@ -151,7 +162,9 @@ struct FamilyLocationView: View {
                 hasAnySharedPositions: !viewModel.sharedUsers.isEmpty,
                 onToggleChanged: { isOn in
                     if isOn {
-                        showShareAlert = true
+                        shareAllMembers = true
+                        shareSelectedUserIds = []
+                        showShareSheet = true
                     } else {
                         Task { await viewModel.stopSharing() }
                     }
@@ -223,18 +236,8 @@ struct FamilyLocationView: View {
                 viewModel.updateDisplayName(name)
             }
         }
-        .alert("Condividi la tua posizione", isPresented: $showShareAlert) {
-            Button("Tempo reale") {
-                let name = myDisplayName()
-                Task { await viewModel.startRealtime(displayName: name) }
-            }
-            Button("Temporaneamente") {
-                showDurationSheet = true
-            }
-            Button("Annulla", role: .cancel) {}
-        }
-        .sheet(isPresented: $showDurationSheet) {
-            durationSheet
+        .sheet(isPresented: $showShareSheet) {
+            shareSheet
         }
     }
     
@@ -409,34 +412,96 @@ struct FamilyLocationView: View {
         }
     }
     
-    // MARK: - Sheet durata
+    // MARK: - Sheet condivisione
     
-    private var durationSheet: some View {
+    /// Altri membri a cui si può limitare la condivisione (sé stessi esclusi).
+    private var otherMembers: [KBFamilyMember] {
+        let myUid = Auth.auth().currentUser?.uid ?? ""
+        return familyMembers.filter { $0.userId != myUid }
+    }
+    
+    private var recipientsSummary: String {
+        if shareAllMembers || shareSelectedUserIds.isEmpty {
+            return String(localized: "Tutta la famiglia")
+        }
+        let names = otherMembers
+            .filter { shareSelectedUserIds.contains($0.userId) }
+            .map { $0.displayName ?? String(localized: "Membro") }
+        return names.joined(separator: ", ")
+    }
+    
+    private var shareSheet: some View {
         VStack(spacing: 20) {
-            Text("Condividi temporaneamente")
+            Text("Condividi la tua posizione")
                 .font(.title2)
                 .bold()
             
-            Picker("Durata", selection: $selectedHours) {
-                Text("2 ore").tag(2)
-                Text("3 ore").tag(3)
-                Text("8 ore").tag(8)
+            Button {
+                showRecipientPicker = true
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Con chi")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Text(recipientsSummary)
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.leading)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(12)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            }
+            .buttonStyle(.plain)
+            
+            Picker("Modalità", selection: $shareRealtime) {
+                Text("Tempo reale").tag(true)
+                Text("Temporaneamente").tag(false)
             }
             .pickerStyle(.segmented)
             
+            if !shareRealtime {
+                Picker("Durata", selection: $selectedHours) {
+                    Text("2 ore").tag(2)
+                    Text("3 ore").tag(3)
+                    Text("8 ore").tag(8)
+                }
+                .pickerStyle(.segmented)
+            }
+            
             Button("Conferma") {
                 let name = myDisplayName()
-                Task { await viewModel.startTemporary(hours: selectedHours, displayName: name) }
-                showDurationSheet = false
+                let recipients = shareAllMembers ? [] : Array(shareSelectedUserIds).sorted()
+                let hours = selectedHours
+                if shareRealtime {
+                    Task { await viewModel.startRealtime(displayName: name, sharedWith: recipients) }
+                } else {
+                    Task { await viewModel.startTemporary(hours: hours, displayName: name, sharedWith: recipients) }
+                }
+                showShareSheet = false
             }
             .buttonStyle(.borderedProminent)
             
             Button("Annulla", role: .cancel) {
-                showDurationSheet = false
+                showShareSheet = false
             }
         }
         .padding()
         .presentationDetents([.medium])
+        .sheet(isPresented: $showRecipientPicker) {
+            GeofenceMemberPickerSheet(
+                navigationTitle: String(localized: "Con chi condividere"),
+                sectionTitle: String(localized: "Membri"),
+                footer: String(localized: "Solo le persone scelte vedranno la tua posizione sulla mappa."),
+                useAllMembers: $shareAllMembers,
+                selectedUserIds: $shareSelectedUserIds,
+                members: otherMembers
+            )
+        }
     }
     
     // MARK: - Status lines
@@ -448,6 +513,9 @@ struct FamilyLocationView: View {
         guard viewModel.isSharing else { return nil }
         switch viewModel.myMode {
         case .realtime:
+            if !viewModel.mySharedWith.isEmpty {
+                return String(localized: "Stai condividendo la tua posizione con alcuni membri")
+            }
             return String(localized: "Stai condividendo la tua posizione")
         case .temporary:
             guard let expires = viewModel.myExpiresAt else { return String(localized: "Stai condividendo temporaneamente") }
