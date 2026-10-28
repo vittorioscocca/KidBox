@@ -335,6 +335,7 @@ struct RootHostView: View {
             // willEnterForeground non scatta. Controlliamo qui.
             coordinator.handleIncomingShare(modelContext: modelContext)
             coordinator.consumePendingControlWidgetRouteIfNeeded(modelContext: modelContext)
+            coordinator.consumePendingQuickActionIfNeeded(modelContext: modelContext, usesSidebar: usesSidebarShell)
 
             // Invito arrivato da link mentre l'utente non era ancora
             // autenticato: qui l'app è pronta e la sessione esiste.
@@ -342,6 +343,7 @@ struct RootHostView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             coordinator.consumePendingControlWidgetRouteIfNeeded(modelContext: modelContext)
+            coordinator.consumePendingQuickActionIfNeeded(modelContext: modelContext, usesSidebar: usesSidebarShell)
             // Ritorno in primo piano subito dopo la registrazione.
             Task { await consumePendingInviteIfNeeded() }
         }
@@ -579,6 +581,8 @@ struct RootHostView: View {
         .animation(.easeInOut(duration: 0.2), value: coordinator.deepLinkLoadingMessage)
         .animation(.spring(), value: showRevokedAlert)
         .animation(.spring(), value: coordinator.globalBannerMessage)
+        // Tocco lungo sull'icona ad app già aperta.
+        .modifier(KBQuickActionListener(usesSidebar: usesSidebarShell))
         .onChange(of: coordinator.globalBannerMessage) { _, newValue in
             guard newValue != nil else { return }
             Task { @MainActor in

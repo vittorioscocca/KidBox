@@ -70,8 +70,25 @@ final class AppDelegate: NSObject,
         AppDelegate.supportedOrientations ?? AppOrientation.defaultMask(for: window?.windowScene)
     }
     
+    // MARK: - Scorciatoie dell'icona (tocco lungo)
+
+    /// A freddo la scorciatoia arriva nelle opzioni di connessione; a caldo la
+    /// riceve `KBSceneDelegate`.
+    func application(
+        _ application: UIApplication,
+        configurationForConnecting connectingSceneSession: UISceneSession,
+        options: UIScene.ConnectionOptions
+    ) -> UISceneConfiguration {
+        if let item = options.shortcutItem {
+            KBQuickActions.handle(item)
+        }
+        let config = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
+        config.delegateClass = KBSceneDelegate.self
+        return config
+    }
+
     // MARK: - App lifecycle
-    
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -104,6 +121,7 @@ final class AppDelegate: NSObject,
         // Deve essere chiamato il prima possibile, prima di impostare il delegate,
         // così iOS conosce già le categorie quando arriva la prima notifica.
         KBNotificationCategoryRegistry.registerAll()
+        KBQuickActions.refresh()
         // ──────────────────────────────────────────────────────────────────
         
         // Condividi la sessione Auth con la Share Extension tramite Keychain sharing.

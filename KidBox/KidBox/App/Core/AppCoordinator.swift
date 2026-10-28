@@ -32,6 +32,13 @@ final class AppCoordinator: ObservableObject {
     @Published var path: [Route] = [] {
         didSet {
             trackScreenViewIfNeeded()
+            // Entrata in una sezione dalla Home: alimenta le scorciatoie dell'icona.
+            if path.count == 1, oldValue.first != path.first, let route = path.first {
+                let fid = activeFamilyId ?? ""
+                if let section = SidebarSection.main.first(where: { $0 != .dashboard && $0.route(familyId: fid) == route }) {
+                    KBQuickActions.record(section)
+                }
+            }
         }
     }
 
@@ -48,6 +55,7 @@ final class AppCoordinator: ObservableObject {
         didSet {
             guard rootTab != oldValue else { return }
             trackScreenViewIfNeeded()
+            if rootTab == .news { KBQuickActions.record(.news) }
         }
     }
 
@@ -59,7 +67,11 @@ final class AppCoordinator: ObservableObject {
 
     /// La sezione scelta nella barra laterale (Mac, iPad e iPhone Duo aperto):
     /// la radice sotto la pila quando non c'è la barra in basso.
-    @Published var sidebarSection: SidebarSection? = .dashboard
+    @Published var sidebarSection: SidebarSection? = .dashboard {
+        didSet {
+            if let section = sidebarSection, section != oldValue { KBQuickActions.record(section) }
+        }
+    }
 
     /// Barra in basso → barra laterale (il Duo si apre, l'iPad esce da Split
     /// View): se la prima schermata della pila è la radice di una sezione,
@@ -1137,6 +1149,35 @@ final class AppCoordinator: ObservableObject {
         path.append(.familyPhotos(familyId: familyId))
         openFamilyPhotosCameraForFamilyId = familyId
         KBLog.navigation.kbInfo("Control shortcut: familyPhotos + camera pending fid=\(familyId)")
+    }
+
+    /// Apre la sezione scelta col tocco lungo sull'icona. Se l'app non è ancora
+    /// pronta (non autenticato, famiglia non caricata) la richiesta resta in
+    /// `KBQuickActions.pending` e si riprova al prossimo passaggio.
+    func consumePendingQuickActionIfNeeded(modelContext: ModelContext, usesSidebar: Bool) {
+        KBQuickActions.refresh()
+        guard let section = KBQuickActions.pending, isAuthenticated else { return }
+
+        let fid = activeFamilyId
+            ?? UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.string(forKey: "activeFamilyId")
+            ?? (try? modelContext.fetch(
+                FetchDescriptor<KBFamily>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)])
+            ))?.first?.id
+        if section.requiresFamily, (fid ?? "").isEmpty { return }
+
+        KBQuickActions.pending = nil
+        KBLog.navigation.kbInfo("Quick action: apro sezione \(section.rawValue)")
+
+        if usesSidebar {
+            path.removeAll()
+            sidebarSection = section
+        } else if section == .news {
+            selectRootTab(.news)
+        } else {
+            path.removeAll()
+            rootTab = .home
+            navigate(to: section.route(familyId: fid ?? ""))
+        }
     }
 
     /// Stessi valori scritti da `App/Intents/OpenKidBoxFamilyPhotosCameraIntent` (estensione + app).
