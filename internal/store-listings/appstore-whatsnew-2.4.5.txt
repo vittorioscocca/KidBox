@@ -1,0 +1,35 @@
+# Novità iOS 2.4.5 — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 28/10/2026 sulle modifiche dopo la 2.4.4: azioni suggerite e pressione lunga nella chat, Posizione con scelta dei destinatari, Notizie «Acqua e luce», scorciatoie dell'icona.
+
+## it
+
+• Chat, azioni suggerite: sotto un messaggio compare un banner per salvarlo dove serve (calendario, spesa, to-do, Note) e «Mostra in Mappe» quando c'è un indirizzo. Sotto foto, video e documenti trovi «Salva in Foto e video» e «Salva in Documenti». Da Impostazioni → Messaggi → Azioni suggerite accendi o spegni ogni tipo; quelli che non usi per 30 giorni si spengono da soli.
+• Chat, pressione lunga come su WhatsApp: il messaggio va al centro, con le reazioni sopra e il menu sotto. Un messaggio lungo si taglia con una sfumatura invece di finire sotto il menu.
+• Posizione: scegli se condividerla con tutta la famiglia o solo con alcuni membri; la notifica «sta condividendo» arriva solo a chi può vederla.
+• Notizie: nuovo argomento «Acqua e luce», con interruzioni, razionamenti ed emergenze di acqua ed elettricità nella tua zona. È spento di default: lo accendi dalle impostazioni.
+• Tocco lungo sull'icona di KidBox: le quattro scorciatoie sono le sezioni che usi di più.
+
+## en-GB
+
+• Chat suggested actions: under a message a banner lets you save it where it belongs (calendar, shopping, to-do, Notes), and "Show in Maps" when there is an address. Under photos, videos and documents you'll find "Save to Photos & videos" and "Save to Documents". In Settings → Messages → Suggested actions you can switch each type on or off; the ones you haven't used for 30 days switch off on their own.
+• Chat long press, like WhatsApp: the message moves to the centre, with reactions above and the menu below. A long message fades out instead of ending up under the menu.
+• Location: choose whether to share it with the whole family or only some members; the "is sharing" notification goes only to those who can see it.
+• News: new "Water and power" topic, with outages, rationing and emergencies for water and electricity in your area. It is off by default: turn it on in Settings.
+• Long press on the KidBox icon: the four shortcuts are the sections you use most.
+
+## es-ES
+
+• Chat, acciones sugeridas: bajo un mensaje aparece un banner para guardarlo donde corresponde (calendario, compra, tareas, Notas) y «Mostrar en Mapas» cuando hay una dirección. Bajo fotos, vídeos y documentos encuentras «Guardar en Fotos y vídeos» y «Guardar en Documentos». En Ajustes → Mensajes → Acciones sugeridas activas o desactivas cada tipo; los que no usas en 30 días se apagan solos.
+• Chat, pulsación larga como en WhatsApp: el mensaje pasa al centro, con las reacciones arriba y el menú abajo. Un mensaje largo se corta con un degradado en lugar de quedar bajo el menú.
+• Ubicación: elige si compartirla con toda la familia o solo con algunos miembros; la notificación «está compartiendo» llega solo a quien puede verla.
+• Noticias: nuevo tema «Agua y luz», con cortes, restricciones y emergencias de agua y electricidad en tu zona. Viene apagado: lo activas en Ajustes.
+• Pulsación larga en el icono de KidBox: los cuatro accesos directos son las secciones que más usas.
+
+## fr-FR
+
+• Chat, actions suggérées : sous un message, une bannière permet de l'enregistrer au bon endroit (calendrier, courses, tâches, Notes), et « Afficher dans Plans » quand il y a une adresse. Sous les photos, vidéos et documents, « Enregistrer dans Photos et vidéos » et « Enregistrer dans Documents ». Dans Réglages → Messages → Actions suggérées, activez ou désactivez chaque type ; ceux que vous n'utilisez pas pendant 30 jours se désactivent seuls.
+• Chat, appui long comme sur WhatsApp : le message passe au centre, avec les réactions au-dessus et le menu en dessous. Un long message s'estompe au lieu de finir sous le menu.
+• Position : choisissez de la partager avec toute la famille ou seulement avec certains membres ; la notification « partage sa position » n'arrive qu'à ceux qui peuvent la voir.
+• Actualités : nouveau sujet « Eau et électricité », avec coupures, restrictions et urgences d'eau et d'électricité dans votre zone. Désactivé par défaut : activez-le dans les réglages.
+• Appui long sur l'icône KidBox : les quatre raccourcis sont les sections que vous utilisez le plus.

@@ -1,0 +1,51 @@
+# Novità macOS 2.4.5 — testi «Novità» per App Store Connect (Mac)
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 28/10/2026. Cumulano le novità della 2.4.4 Mac (meteo, widget, viaggi, già scritte il 24/10) con quelle iOS 2.4.4 mai uscite su Mac (documenti dall'assistente, farmacie di turno) e con la 2.4.5. Rispetto a iOS mancano le scorciatoie dell'icona (non esistono sul Mac) e la pressione lunga della chat. L'avviso sui pagamenti di casa resta perché era già nel testo italiano su App Store Connect.
+
+## it
+
+• Chat, azioni suggerite: sotto un messaggio compare un banner per salvarlo dove serve (calendario, spesa, to-do, Note) e «Mostra in Mappe» quando c'è un indirizzo. Sotto foto, video e documenti trovi «Salva in Foto e video» e «Salva in Documenti». Da Impostazioni → Messaggi → Azioni suggerite accendi o spegni ogni tipo; quelli che non usi per 30 giorni si spengono da soli.
+• Posizione: scegli se condividerla con tutta la famiglia o solo con alcuni membri; la notifica «sta condividendo» arriva solo a chi può vederla.
+• Notizie: nuovo argomento «Acqua e luce», con interruzioni, razionamenti ed emergenze di acqua ed elettricità nella tua zona. È spento di default: lo accendi dalle impostazioni.
+• Documenti che si sistemano da soli: nella chat dell'assistente tocca «+» e scansiona, fotografa o scegli un file. KidBox capisce cos'è: la bolletta diventa una scadenza in Casa, il referto una visita con le parole del medico, le analisi un esame con i valori, la ricetta una cura, con il file allegato. Prima di salvare puoi correggere tutto.
+• Farmacie di turno (Pro e Max): in Salute e in Home la farmacia di turno vicino a te, letta dalla fonte ufficiale del tuo comune, con chiamata e indicazioni in un tocco.
+• Pagamenti di casa (Pro e Max): se una scadenza è vicina e nessuno ha il to-do, KidBox chiede «Chi se ne occupa?» e dalla notifica rispondi «Ci penso io» o «Chiedi agli altri».
+• Meteo in Home: accendi il widget e vedi temperatura, prossime ore e minima e massima dove ti trovi, con le previsioni di Apple Meteo. Un tocco apre l'app Meteo.
+• Impostazioni → Widget: scegli cosa vedere in Home, Meteo e Dashboard. Finché non ne accendi uno, un consiglio animato in Home te lo ricorda; puoi spegnerlo con «Non visualizzare più».
+• Viaggi: il dettaglio del viaggio, con hotel, voli, ristoranti e attività, ora è tradotto in tutte e quattro le lingue, come l'età dei bambini.
+
+## en-GB
+
+• Chat suggested actions: under a message a banner lets you save it where it belongs (calendar, shopping, to-do, Notes), and "Show in Maps" when there is an address. Under photos, videos and documents you'll find "Save to Photos & videos" and "Save to Documents". In Settings → Messages → Suggested actions you can switch each type on or off; the ones you haven't used for 30 days switch off on their own.
+• Location: choose whether to share it with the whole family or only some members; the "is sharing" notification goes only to those who can see it.
+• News: new "Water and power" topic, with outages, rationing and emergencies for water and electricity in your area. It is off by default: turn it on in Settings.
+• Documents that file themselves: in the assistant chat tap "+" and scan, snap or pick a file. KidBox works out what it is: the bill becomes a Home due date, the report a visit with the doctor's words, lab results a test with the values, the prescription a treatment, with the file attached. You can correct everything before saving.
+• Duty pharmacies (Pro and Max): in Health and on Home, the on-duty pharmacy near you, read from your town's official source, with call and directions in one tap.
+• Home payments (Pro and Max): if a due date is close and nobody has the to-do, KidBox asks "Who's taking care of it?" and from the notification you reply "I'll do it" or "Ask the others".
+• Weather on Home: turn on the widget to see the temperature, the next hours and the day's high and low where you are, with forecasts from Apple Weather. A tap opens the Weather app.
+• Settings → Widgets: choose what to show on Home, Weather and Dashboard. Until you turn one on, an animated tip on Home reminds you; you can switch it off with "Don't show again".
+• Trips: the trip detail, with hotels, flights, restaurants and activities, is now translated into all four languages, and so is the children's age.
+
+## es-ES
+
+• Chat, acciones sugeridas: bajo un mensaje aparece un banner para guardarlo donde corresponde (calendario, compra, tareas, Notas) y «Mostrar en Mapas» cuando hay una dirección. Bajo fotos, vídeos y documentos encuentras «Guardar en Fotos y vídeos» y «Guardar en Documentos». En Ajustes → Mensajes → Acciones sugeridas activas o desactivas cada tipo; los que no usas en 30 días se apagan solos.
+• Ubicación: elige si compartirla con toda la familia o solo con algunos miembros; la notificación «está compartiendo» llega solo a quien puede verla.
+• Noticias: nuevo tema «Agua y luz», con cortes, restricciones y emergencias de agua y electricidad en tu zona. Viene apagado: lo activas en Ajustes.
+• Documentos que se ordenan solos: en el chat del asistente toca «+» y escanea, fotografía o elige un archivo. KidBox entiende qué es: la factura pasa a ser un vencimiento en Casa, el informe una visita con lo que dijo el médico, los análisis una prueba con los valores, la receta un tratamiento, con el archivo adjunto. Antes de guardar puedes corregirlo todo.
+• Farmacias de guardia (Pro y Max): en Salud y en Inicio, la farmacia de guardia cerca de ti, leída de la fuente oficial de tu municipio, con llamada e indicaciones en un toque.
+• Pagos de casa (Pro y Max): si un vencimiento está cerca y nadie tiene la tarea, KidBox pregunta «¿Quién se encarga?» y desde la notificación respondes «Me encargo yo» o «Pregunta a los demás».
+• El tiempo en Inicio: activa el widget y ve la temperatura, las próximas horas y la mínima y máxima donde estás, con las previsiones de Apple Tiempo. Un toque abre la app Tiempo.
+• Ajustes → Widgets: elige qué ver en Inicio, Tiempo y Panel. Mientras no actives ninguno, un consejo animado en Inicio te lo recuerda; puedes apagarlo con «No mostrar más».
+• Viajes: el detalle del viaje, con hoteles, vuelos, restaurantes y actividades, ahora está traducido a los cuatro idiomas, igual que la edad de los niños.
+
+## fr-FR
+
+• Chat, actions suggérées : sous un message, une bannière permet de l'enregistrer au bon endroit (calendrier, courses, tâches, Notes), et « Afficher dans Plans » quand il y a une adresse. Sous les photos, vidéos et documents, « Enregistrer dans Photos et vidéos » et « Enregistrer dans Documents ». Dans Réglages → Messages → Actions suggérées, activez ou désactivez chaque type ; ceux que vous n'utilisez pas pendant 30 jours se désactivent seuls.
+• Position : choisissez de la partager avec toute la famille ou seulement avec certains membres ; la notification « partage sa position » n'arrive qu'à ceux qui peuvent la voir.
+• Actualités : nouveau sujet « Eau et électricité », avec coupures, restrictions et urgences d'eau et d'électricité dans votre zone. Désactivé par défaut : activez-le dans les réglages.
+• Des documents qui se rangent seuls : dans le chat de l'assistant, touchez « + » et numérisez, photographiez ou choisissez un fichier. KidBox comprend ce que c'est : la facture devient une échéance de la Maison, le compte rendu une consultation avec les mots du médecin, les analyses un examen avec les valeurs, l'ordonnance un traitement, avec le fichier joint. Vous pouvez tout corriger avant d'enregistrer.
+• Pharmacies de garde (Pro et Max) : dans Santé et sur l'Accueil, la pharmacie de garde près de chez vous, lue sur la source officielle de votre commune, avec appel et itinéraire d'un toucher.
+• Paiements de la maison (Pro et Max) : si une échéance approche et que personne n'a la tâche, KidBox demande « Qui s'en occupe ? » et depuis la notification vous répondez « Je m'en occupe » ou « Demander aux autres ».
+• La météo sur l'Accueil : activez le widget et voyez la température, les prochaines heures et les min et max du jour là où vous êtes, avec les prévisions d'Apple Météo. Un toucher ouvre l'app Météo.
+• Réglages → Widgets : choisissez ce qui s'affiche sur l'Accueil, Météo et Tableau de bord. Tant que vous n'en activez aucun, un conseil animé sur l'Accueil vous le rappelle ; vous pouvez le désactiver avec « Ne plus afficher ».
+• Voyages : le détail du voyage, avec hôtels, vols, restaurants et activités, est désormais traduit dans les quatre langues, comme l'âge des enfants.
