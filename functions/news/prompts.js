@@ -19,7 +19,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Gli argomenti fra cui l'utente sceglie nelle impostazioni (id stabili: li salvano i client). */
-const CATEGORIES = ["economy", "bonus", "school", "health", "growth", "leisure", "society"];
+const CATEGORIES = ["economy", "bonus", "school", "health", "growth", "leisure", "society", "utilities"];
+/**
+ * Gli argomenti accesi di default: «utilities» (avvisi di acqua e luce) si
+ * accende dalle impostazioni, chi non ha mai scelto non se lo trova.
+ */
+const DEFAULT_CATEGORIES = CATEGORIES.filter((c) => c !== "utilities");
 const LEVELS = ["country", "region", "city"];
 /** Che cos'è la data chiave di una notizia: decide l'etichetta («Scade il», «Dal», «Pagamento il»). */
 const KEY_DATE_KINDS = ["deadline", "start", "payment"];
@@ -212,7 +217,7 @@ EVENTI (fino a ${p.maxEvents}) — da oggi ai ${EVENTS_HORIZON_DAYS} giorni succ
 
 Oggi è ${p.today.label} (${p.today.dateKey}).
 
-NOTIZIE (fino a ${p.maxItems}: metà della regione ${p.region}, metà della città ${p.city} e della sua provincia) — non quelle nazionali: bonus e contributi regionali e comunali per le famiglie, scuola (calendario regionale, mense, trasporti, chiusure, allerte meteo per le scuole), sanità regionale e servizi dell'azienda sanitaria locale, servizi del comune per l'infanzia, trasporti, iniziative per famiglie. Categorie: ${CATEGORIES.join(", ")}. Una notizia vale se è uscita negli ultimi ${NEWS_MAX_AGE_DAYS} giorni, oppure se è uscita al massimo ${OPEN_MEASURE_MAX_AGE_DAYS} giorni fa e la sua data chiave (una scadenza, un inizio, un pagamento) deve ancora arrivare.${eventsPart}
+NOTIZIE (fino a ${p.maxItems}: metà della regione ${p.region}, metà della città ${p.city} e della sua provincia) — non quelle nazionali: bonus e contributi regionali e comunali per le famiglie, scuola (calendario regionale, mense, trasporti, chiusure, allerte meteo per le scuole), sanità regionale e servizi dell'azienda sanitaria locale, servizi del comune per l'infanzia, trasporti, iniziative per famiglie, e per la categoria utilities gli avvisi su acqua ed elettricità (e gas) nella zona: interruzioni programmate o per guasto, lavori sulla rete, razionamenti e ordinanze per siccità o crisi idrica, divieti d'uso dell'acqua, acqua non potabile, blackout e distacchi — cerca presso il gestore idrico e il distributore elettrico locale (per esempio e-distribuzione in Italia), il comune e la protezione civile; la data chiave è l'inizio o la fine dell'interruzione (keyDateKind "start" o "deadline"), il campo action dice cosa fare (fare scorta d'acqua, evitare certi orari), mai l'elenco di vie o numeri di utenza. Categorie: ${CATEGORIES.join(", ")}. Una notizia vale se è uscita negli ultimi ${NEWS_MAX_AGE_DAYS} giorni, oppure se è uscita al massimo ${OPEN_MEASURE_MAX_AGE_DAYS} giorni fa e la sua data chiave (una scadenza, un inizio, un pagamento) deve ancora arrivare.${eventsPart}
 
 COME LAVORARE: lancia insieme le ricerche (regione, città, eventi), guarda titoli, date e prime righe dei risultati, poi approfondisci solo quello che scegli.
 
@@ -583,6 +588,7 @@ function hostOf(url) {
 
 module.exports = {
   CATEGORIES,
+  DEFAULT_CATEGORIES,
   COUNTRY_GROUPS,
   LEVELS,
   KEY_DATE_KINDS,

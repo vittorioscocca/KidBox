@@ -52,7 +52,7 @@ final class NewsPrefsStore: ObservableObject {
     func update(_ change: (inout NewsPrefs) -> Void) {
         var next = prefs
         change(&next)
-        if next.categories.isEmpty { next.categories = NewsCategory.allCases }
+        if next.categories.isEmpty { next.categories = NewsCategory.defaults }
         next.updatedAt = Date()
         guard next != prefs else { return }
         prefs = next
@@ -83,7 +83,7 @@ final class NewsPrefsStore: ObservableObject {
         var p = NewsPrefs()
         if let cats = d["categories"] as? [String] {
             let parsed = cats.compactMap(NewsCategory.init(rawValue:))
-            p.categories = parsed.isEmpty ? NewsCategory.allCases : NewsCategory.allCases.filter(parsed.contains)
+            p.categories = parsed.isEmpty ? NewsCategory.defaults : NewsCategory.allCases.filter(parsed.contains)
         }
         p.personalOffers = d["personalOffers"] as? Bool ?? true
         if let ms = (d["updatedAtMs"] as? NSNumber)?.doubleValue {

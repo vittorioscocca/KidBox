@@ -52,6 +52,50 @@
     " Meteo" : {
 
     },
+    "Acqua e luce" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Water and power"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agua y luz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eau et électricité"
+          }
+        }
+      }
+    },
+    "Interruzioni, razionamenti ed emergenze di acqua ed elettricità nella tua zona" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outages, rationing and emergencies for water and electricity in your area"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cortes, restricciones y emergencias de agua y electricidad en tu zona"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coupures, restrictions et urgences d'eau et d'électricité près de chez vous"
+          }
+        }
+      }
+    },
     "–" : {
       "localizations" : {
         "en" : {

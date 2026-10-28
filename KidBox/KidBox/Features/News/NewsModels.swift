@@ -17,7 +17,10 @@ import CryptoKit
 /// quelli del server (`CATEGORIES` in `functions/news/prompts.js`) e di Android:
 /// non si traducono e non si rinominano.
 enum NewsCategory: String, CaseIterable, Identifiable, Codable {
-    case economy, bonus, school, health, growth, leisure, society
+    case economy, bonus, school, health, growth, leisure, society, utilities
+
+    /// Gli argomenti accesi di default: «Acqua e luce» si accende dalle impostazioni.
+    static var defaults: [NewsCategory] { allCases.filter { $0 != .utilities } }
 
     var id: String { rawValue }
 
@@ -30,6 +33,7 @@ enum NewsCategory: String, CaseIterable, Identifiable, Codable {
         case .growth:  return "Crescita"
         case .leisure: return "Tempo libero"
         case .society: return "Società"
+        case .utilities: return "Acqua e luce"
         }
     }
 
@@ -42,6 +46,7 @@ enum NewsCategory: String, CaseIterable, Identifiable, Codable {
         case .growth:  return "Crescita ed educazione dei figli"
         case .leisure: return "Eventi vicino a te e iniziative per famiglie"
         case .society: return "Leggi e cambiamenti che toccano le famiglie"
+        case .utilities: return "Interruzioni, razionamenti ed emergenze di acqua ed elettricità nella tua zona"
         }
     }
 
@@ -54,6 +59,7 @@ enum NewsCategory: String, CaseIterable, Identifiable, Codable {
         case .growth:  return "figure.and.child.holdinghands"
         case .leisure: return "ticket.fill"
         case .society: return "person.3.fill"
+        case .utilities: return "drop.fill"
         }
     }
 
@@ -66,6 +72,7 @@ enum NewsCategory: String, CaseIterable, Identifiable, Codable {
         case .growth:  return Color(red: 0.55, green: 0.40, blue: 0.85)
         case .leisure: return Color(red: 0.10, green: 0.60, blue: 0.70)
         case .society: return Color(red: 0.45, green: 0.45, blue: 0.55)
+        case .utilities: return Color(red: 0.15, green: 0.50, blue: 0.80)
         }
     }
 }
@@ -145,7 +152,7 @@ struct NewsFamilySettings: Equatable {
 /// stesse edizioni della famiglia. Non cambiano le notizie degli altri e non
 /// costano niente.
 struct NewsPrefs: Equatable {
-    var categories: [NewsCategory] = NewsCategory.allCases
+    var categories: [NewsCategory] = NewsCategory.defaults
     /// Mostrare le offerte su misura della famiglia (si cercano solo su richiesta).
     var personalOffers: Bool = true
     var updatedAt: Date = .distantPast

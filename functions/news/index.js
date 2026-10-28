@@ -207,9 +207,9 @@ function parsePlace(raw) {
  * @return {string[]}
  */
 function parseCategories(raw) {
-  if (!Array.isArray(raw)) return [...P.CATEGORIES];
+  if (!Array.isArray(raw)) return [...P.DEFAULT_CATEGORIES];
   const set = new Set(raw.filter((c) => P.CATEGORIES.includes(c)));
-  return set.size ? P.CATEGORIES.filter((c) => set.has(c)) : [...P.CATEGORIES];
+  return set.size ? P.CATEGORIES.filter((c) => set.has(c)) : [...P.DEFAULT_CATEGORIES];
 }
 
 /**
