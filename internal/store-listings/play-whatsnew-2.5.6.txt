@@ -1,0 +1,28 @@
+<it-IT>
+• Notizie: nuovo argomento «Acqua e luce», con interruzioni, razionamenti ed emergenze di acqua ed elettricità nella tua zona. Lo accendi da Impostazioni.
+• Posizione: scegli se condividerla con tutta la famiglia o solo con alcuni membri.
+• Documenti: con «Smista automaticamente i documenti» l'AI legge il file appena caricato e propone le azioni.
+• Chat: la pressione lunga funziona come su iOS, con le reazioni sopra e il menu sotto.
+• Farmacie di turno per Pro e Max.
+</it-IT>
+<en-US>
+• News: new "Water and power" topic, with outages, rationing and emergencies for water and electricity in your area. Turn it on in Settings.
+• Location: choose whether to share it with the whole family or only some members.
+• Documents: with "Automatically sort documents" the AI reads the file you just uploaded and suggests actions.
+• Chat: long-press works like on iOS, with reactions above and the menu below.
+• On-duty pharmacies for Pro and Max.
+</en-US>
+<fr-FR>
+• Actualités : nouveau sujet « Eau et électricité », avec coupures, restrictions et urgences d'eau et d'électricité près de chez vous. À activer dans Réglages.
+• Position : choisissez de la partager avec toute la famille ou seulement avec certains membres.
+• Documents : avec « Trier automatiquement les documents », l'IA lit le fichier ajouté et propose des actions.
+• Chat : appui long comme sur iOS, réactions au-dessus et menu en dessous.
+• Pharmacies de garde pour Pro et Max.
+</fr-FR>
+<es-ES>
+• Noticias: nuevo tema «Agua y luz», con cortes, restricciones y emergencias de agua y electricidad en tu zona. Actívalo en Ajustes.
+• Ubicación: elige si compartirla con toda la familia o solo con algunos miembros.
+• Documentos: con «Clasifica automáticamente los documentos» la IA lee el archivo recién subido y propone acciones.
+• Chat: la pulsación larga funciona como en iOS, con las reacciones arriba y el menú abajo.
+• Farmacias de guardia para Pro y Max.
+</es-ES>

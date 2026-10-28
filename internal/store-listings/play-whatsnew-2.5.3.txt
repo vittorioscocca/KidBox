@@ -1,0 +1,24 @@
+<it-IT>
+• Notifiche della chat: ora vedi il testo del messaggio, non più solo «Nuovo messaggio».
+• Nuovo widget Meteo in Home: temperatura, prossime ore e minima/massima dove ti trovi.
+• Impostazioni > Widget: scegli cosa vedere in Home (Meteo e Dashboard).
+• Un consiglio animato in Home ti ricorda di aggiungere i widget, finché non scegli di non vederlo più.
+</it-IT>
+<en-US>
+• Chat notifications: you now see the message text, not just "New message".
+• New Weather widget on Home: temperature, next hours and daily high/low where you are.
+• Settings > Widgets: choose what to show on Home (Weather and Dashboard).
+• An animated tip on Home reminds you to add widgets, until you choose not to see it again.
+</en-US>
+<fr-FR>
+• Notifications du chat : vous voyez maintenant le texte du message, plus seulement « Nouveau message ».
+• Nouveau widget Météo sur l'accueil : température, prochaines heures et min/max du jour là où vous êtes.
+• Réglages > Widgets : choisissez ce qui s'affiche sur l'accueil (Météo et Tableau de bord).
+• Un conseil animé sur l'accueil vous rappelle d'ajouter les widgets, jusqu'à ce que vous choisissiez de ne plus le voir.
+</fr-FR>
+<es-ES>
+• Notificaciones del chat: ahora ves el texto del mensaje, no solo «Nuevo mensaje».
+• Nuevo widget del Tiempo en Inicio: temperatura, próximas horas y mín./máx. del día donde estás.
+• Ajustes > Widgets: elige qué ver en Inicio (Tiempo y Panel).
+• Un consejo animado en Inicio te recuerda añadir widgets, hasta que elijas no verlo más.
+</es-ES>

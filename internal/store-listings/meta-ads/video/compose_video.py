@@ -3,7 +3,7 @@
 1080x1920, 30 fps, 15 s, una versione per lingua. Testi e telefono restano
 nella zona che Reels e Stories non coprono (14% in alto, 35% in basso).
 
-Scene: 0–2,5 s titolo + notifica di Luca che scende sul telefono; 2,5–7 s
+Scene: 0–2,5 s titolo e notifica di Luca già visibili (il primo fotogramma è la copertina); 2,5–7 s
 registrazione vera del tap su «Ci penso io»; 7–12 s calendario, to-do e spese;
 12–15 s chiusura.
 
@@ -201,16 +201,13 @@ def main():
         t = i / FPS
         img = bg.copy()
         if t < 2.5:
-            # Il telefono sale, poi scende la notifica.
-            rise = ease(t / 0.6)
-            draw_text(img, txt["hook"], 400, 92, alpha=ease(t / 0.4))
-            place_phone(img, first_phone, dy=int((1 - rise) * 500))
-            if t > 0.8:
-                k = ease((t - 0.8) / 0.45)
-                card = notification(t, txt, icon)
-                y = PHONE_TOP + P["off"] + int(-180 + k * 230)
-                card.putalpha(card.split()[3].point(lambda a: int(a * k)))
-                img.alpha_composite(card, ((W - card.width) // 2, y))
+            # Titolo, telefono e notifica già al primo fotogramma: Meta ne fa la
+            # copertina. La notifica ondeggia appena perché non sembri ferma.
+            draw_text(img, txt["hook"], 400, 92)
+            place_phone(img, first_phone)
+            card = notification(t, txt, icon)
+            y = PHONE_TOP + P["off"] + 50 + int(6 * math.sin(t * 2 * math.pi / 1.25))
+            img.alpha_composite(card, ((W - card.width) // 2, y))
         elif t < 7.0:
             fi = rec_start + int((t - 2.5) * FPS)
             fr = Image.open(rec[min(fi, len(rec) - 1)]).convert("RGB")

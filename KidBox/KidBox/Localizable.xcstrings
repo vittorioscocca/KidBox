@@ -17593,6 +17593,50 @@
         }
       }
     },
+    "Con chi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec"
+          }
+        }
+      }
+    },
+    "Con chi condividere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share with"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir con"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partager avec"
+          }
+        }
+      }
+    },
     "Con contesto ampio mostra la scelta prima di ogni invio." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -17950,6 +17994,7 @@
       }
     },
     "Condividi temporaneamente" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -43211,6 +43256,28 @@
         }
       }
     },
+    "Modalità" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode"
+          }
+        }
+      }
+    },
     "Modello" : {
       "localizations" : {
         "en" : {
@@ -67892,6 +67959,28 @@
         }
       }
     },
+    "Solo le persone scelte vedranno la tua posizione sulla mappa." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only the people you choose will see your location on the map."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo las personas elegidas verán tu ubicación en el mapa."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seules les personnes choisies verront ta position sur la carte."
+          }
+        }
+      }
+    },
     "Solo per vaccini da programmare: imposta la data prevista del richiamo." : {
       "localizations" : {
         "en" : {
@@ -68818,6 +68907,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vous partagez votre position"
+          }
+        }
+      }
+    },
+    "Stai condividendo la tua posizione con alcuni membri" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're sharing your location with some members"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estás compartiendo tu ubicación con algunos miembros"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu partages ta position avec certains membres"
           }
         }
       }
@@ -75942,116 +76053,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Zones d'arrivée"
-          }
-        }
-      }
-    },
-    "Con chi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "With"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avec"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Con"
-          }
-        }
-      }
-    },
-    "Modalità" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mode"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mode"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Modo"
-          }
-        }
-      }
-    },
-    "Con chi condividere" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Share with"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Partager avec"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Compartir con"
-          }
-        }
-      }
-    },
-    "Solo le persone scelte vedranno la tua posizione sulla mappa." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Only the people you choose will see your location on the map."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seules les personnes choisies verront ta position sur la carte."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solo las personas elegidas verán tu ubicación en el mapa."
-          }
-        }
-      }
-    },
-    "Stai condividendo la tua posizione con alcuni membri" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You're sharing your location with some members"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu partages ta position avec certains membres"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Estás compartiendo tu ubicación con algunos miembros"
           }
         }
       }

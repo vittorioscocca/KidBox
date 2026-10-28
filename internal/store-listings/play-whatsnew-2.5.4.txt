@@ -1,0 +1,20 @@
+<it-IT>
+• Chat: tieni premuto un messaggio e scegli «Salva in KidBox…» per farne un to-do, un evento, una voce della spesa o una nota. KidBox riconosce testi e date da solo.
+• Meteo: un tocco sulla barra in Home apre le previsioni complete, con vento, umidità, le prossime 24 ore e i 7 giorni.
+• Chat: la pressione lunga sul testo apre di nuovo il menu del messaggio e i fogli si chiudono in modo più fluido.
+</it-IT>
+<en-US>
+• Chat: long-press a message and choose "Save to KidBox…" to turn it into a to-do, an event, a shopping item or a note. KidBox recognises texts and dates on its own.
+• Weather: tap the bar on Home to open the full forecast, with wind, humidity, the next 24 hours and 7 days.
+• Chat: long-pressing the text opens the message menu again, and sheets now close more smoothly.
+</en-US>
+<fr-FR>
+• Chat : appuyez longuement sur un message et choisissez « Enregistrer dans KidBox… » pour en faire une tâche, un événement, un article de courses ou une note. KidBox reconnaît seul les textes et les dates.
+• Météo : touchez la barre sur l'accueil pour ouvrir les prévisions complètes, avec vent, humidité, les 24 prochaines heures et 7 jours.
+• Chat : l'appui long sur le texte rouvre le menu du message et les feuilles se ferment plus fluidement.
+</fr-FR>
+<es-ES>
+• Chat: mantén pulsado un mensaje y elige «Guardar en KidBox…» para convertirlo en una tarea, un evento, un producto de la compra o una nota. KidBox reconoce solo los textos y las fechas.
+• Tiempo: toca la barra en Inicio para abrir la previsión completa, con viento, humedad, las próximas 24 horas y 7 días.
+• Chat: la pulsación larga sobre el texto vuelve a abrir el menú del mensaje y las hojas se cierran con más fluidez.
+</es-ES>

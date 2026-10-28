@@ -1,0 +1,27 @@
+# Novità macOS 2.4.4 — testi «Novità» per App Store Connect (Mac)
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 24/10/2026. Rispetto a iOS manca l'avviso sui pagamenti di casa (gli avvisi proattivi non sono stati provati sul Mac).
+
+## it
+
+• Meteo in Home: accendi il widget e vedi temperatura, prossime ore e minima e massima dove ti trovi, con le previsioni di Apple Meteo. Un tocco apre l'app Meteo.
+• Impostazioni → Widget: scegli cosa vedere in Home, Meteo e Dashboard. Finché non ne accendi uno, un consiglio animato in Home te lo ricorda; puoi spegnerlo con «Non visualizzare più».
+• Viaggi: il dettaglio del viaggio, con hotel, voli, ristoranti e attività, ora è tradotto in tutte e quattro le lingue, come l'età dei bambini.
+
+## en-GB
+
+• Weather on Home: turn on the widget to see the temperature, the next hours and the day's high and low where you are, with forecasts from Apple Weather. A tap opens the Weather app.
+• Settings → Widgets: choose what to show on Home, Weather and Dashboard. Until you turn one on, an animated tip on Home reminds you; you can switch it off with "Don't show again".
+• Trips: the trip detail, with hotels, flights, restaurants and activities, is now translated into all four languages, and so is the children's age.
+
+## es-ES
+
+• El tiempo en Inicio: activa el widget y ve la temperatura, las próximas horas y la mínima y máxima donde estás, con las previsiones de Apple Tiempo. Un toque abre la app Tiempo.
+• Ajustes → Widgets: elige qué ver en Inicio, Tiempo y Panel. Mientras no actives ninguno, un consejo animado en Inicio te lo recuerda; puedes apagarlo con «No mostrar más».
+• Viajes: el detalle del viaje, con hoteles, vuelos, restaurantes y actividades, ahora está traducido a los cuatro idiomas, igual que la edad de los niños.
+
+## fr-FR
+
+• La météo sur l'Accueil : activez le widget et voyez la température, les prochaines heures et les min et max du jour là où vous êtes, avec les prévisions d'Apple Météo. Un toucher ouvre l'app Météo.
+• Réglages → Widgets : choisissez ce qui s'affiche sur l'Accueil, Météo et Tableau de bord. Tant que vous n'en activez aucun, un conseil animé sur l'Accueil vous le rappelle ; vous pouvez le désactiver avec « Ne plus afficher ».
+• Voyages : le détail du voyage, avec hôtels, vols, restaurants et activités, est désormais traduit dans les quatre langues, comme l'âge des enfants.
