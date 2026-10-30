@@ -1,90 +1,24 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
-    "Il documento condiviso non è stato letto: Lavoro è incluso nei piani Pro e Max." : {
+    "Il foglio si salva sempre in Lavoro. I periodi con «Aggiungi al calendario» acceso diventano eventi «giornata intera», visibili a tutta la famiglia. Scorri per togliere un periodo." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The shared document wasn't read: Work is included in the Pro and Max plans."
+            "value" : "The sheet is always saved in Work. Periods with “Add to calendar” on become all-day events, visible to the whole family. Swipe to remove a period."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "El documento compartido no se ha leído: Trabajo está incluido en los planes Pro y Max."
+            "value" : "La hoja siempre se guarda en Trabajo. Los periodos con «Añadir al calendario» activado se convierten en eventos de «día completo», visibles para toda la familia. Desliza para quitar un periodo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le document partagé n'a pas été lu : Travail est inclus dans les forfaits Pro et Max."
-          }
-        }
-      }
-    },
-    "Documento pronto da leggere" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Document ready to read"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Documento listo para leer"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Document prêt à lire"
-          }
-        }
-      }
-    },
-    "Leggi il documento" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Read the document"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leer el documento"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lire le document"
-          }
-        }
-      }
-    },
-    "Ogni pagina letta costa un messaggio AI." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Each page read costs one AI message."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada página leída cuesta un mensaje de IA."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chaque page lue coûte un message IA."
+            "value" : "La fiche est toujours enregistrée dans Travail. Les périodes avec « Ajouter au calendrier » activé deviennent des événements « journée entière », visibles par toute la famille. Fais glisser pour retirer une période."
           }
         }
       }
@@ -24002,6 +23936,28 @@
         }
       }
     },
+    "Documento pronto da leggere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document ready to read"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documento listo para leer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document prêt à lire"
+          }
+        }
+      }
+    },
     "Documento smistato" : {
       "comment" : "Assistant document import toast",
       "localizations" : {
@@ -34422,6 +34378,29 @@
         }
       }
     },
+    "Il documento condiviso non è stato letto: Lavoro è incluso nei piani Pro e Max." : {
+      "comment" : "Shared file dropped, Work locked",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The shared document wasn't read: Work is included in the Pro and Max plans."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El documento compartido no se ha leído: Trabajo está incluido en los planes Pro y Max."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le document partagé n'a pas été lu : Travail est inclus dans les forfaits Pro et Max."
+          }
+        }
+      }
+    },
     "Il documento è troppo lungo per essere un elenco di turni." : {
       "comment" : "Pharmacies: document too long",
       "localizations" : {
@@ -41670,6 +41649,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lois et changements qui touchent les familles"
+          }
+        }
+      }
+    },
+    "Leggi il documento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read the document"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer el documento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lire le document"
           }
         }
       }
@@ -52815,6 +52816,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chaque actualité avec sa source, et pas de remplissage : s'il n'y a rien de nouveau, l'édition est plus courte."
+          }
+        }
+      }
+    },
+    "Ogni pagina letta costa un messaggio AI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each page read costs one AI message."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada página leída cuesta un mensaje de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque page lue coûte un message IA."
           }
         }
       }

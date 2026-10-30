@@ -1219,12 +1219,12 @@ struct AgentMemoryBookBuilder {
                 .filter { ($0.endDay ?? .distantPast) >= today }
                 .sorted { ($0.startDay ?? .distantPast) < ($1.startDay ?? .distantPast) }
             if !leave.isEmpty {
-                lines.append("### Ferie e permessi programmati (anche nel calendario di famiglia)")
+                lines.append("### Ferie e permessi programmati (con 📅 = anche nel calendario di famiglia)")
                 for p in leave.prefix(30) {
                     guard let a = p.startDay else { continue }
                     let b = p.endDay ?? a
                     let range = b > a ? "dal \(fmtDate(a)) al \(fmtDate(b))" : fmtDate(a)
-                    lines.append("- \(p.label.isEmpty ? "Ferie" : p.label): \(range)")
+                    lines.append("- \(p.label.isEmpty ? "Ferie" : p.label): \(range)\(p.inCalendar ? " 📅" : "")")
                 }
             }
         }

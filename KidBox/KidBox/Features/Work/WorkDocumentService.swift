@@ -116,6 +116,8 @@ enum WorkDocumentService {
             fields.leavePeriods = fields.leavePeriods
                 .filter { $0.startDay != nil }
                 .sorted { ($0.startDay ?? .distantPast) < ($1.startDay ?? .distantPast) }
+            // In bozza ogni periodo parte con «Aggiungi al calendario» acceso: lo spegne chi non lo vuole.
+            for i in fields.leavePeriods.indices { fields.leavePeriods[i].inCalendar = true }
             guard !fields.leavePeriods.isEmpty else { throw AnalyzeError.notAWorkDocument }
         }
         let ref = WorkFields.parseDay(raw.referenceDate)

@@ -633,7 +633,7 @@ struct WorkHomeView: View {
     private func createLeaveEvents(_ periods: [WorkLeavePeriod], ownerName: String) -> [String] {
         let cal = Calendar.current
         var ids: [String] = []
-        for p in periods {
+        for p in periods where p.inCalendar {
             guard let first = p.startDay else { continue }
             let start = cal.startOfDay(for: first)
             let lastDay = cal.startOfDay(for: max(p.endDay ?? first, first))
@@ -763,17 +763,18 @@ private struct WorkConfirmSheet: View {
                                 TextField("Tipo (ferie, permesso…)", text: $p.label)
                                 DatePicker("Dal", selection: day($p.start), displayedComponents: .date)
                                 DatePicker("Al", selection: day($p.end), in: (WorkFields.parseDay(p.start) ?? .distantPast)..., displayedComponents: .date)
+                                Toggle("Aggiungi al calendario", isOn: $p.inCalendar)
                             }
                         }
                         .onDelete { draft.fields.leavePeriods.remove(atOffsets: $0) }
                         Button {
                             let today = WorkFields.formatDay(Date())
-                            draft.fields.leavePeriods.append(WorkLeavePeriod(start: today, end: today, label: String(localized: "Ferie")))
+                            draft.fields.leavePeriods.append(WorkLeavePeriod(start: today, end: today, label: String(localized: "Ferie"), inCalendar: true))
                         } label: { Label("Aggiungi un periodo", systemImage: "plus.circle") }
                     } header: {
                         Text("Periodi")
                     } footer: {
-                        Text("Ogni periodo diventa un evento «giornata intera» nel calendario, visibile a tutta la famiglia. Scorri per togliere un periodo.")
+                        Text("Il foglio si salva sempre in Lavoro. I periodi con «Aggiungi al calendario» acceso diventano eventi «giornata intera», visibili a tutta la famiglia. Scorri per togliere un periodo.")
                     }
                 } else if draft.kind == WorkRecordKind.payslip {
                     Section("Busta paga") {
@@ -889,6 +890,9 @@ private struct WorkRecordDetailView: View {
                                     Text(p.label.isEmpty ? String(localized: "Ferie") : p.label).foregroundStyle(.secondary)
                                     Spacer()
                                     Text(WorkHomeView.period(p)).multilineTextAlignment(.trailing)
+                                    if p.inCalendar {
+                                        Image(systemName: "calendar").font(.caption).foregroundStyle(.secondary)
+                                    }
                                 }
                             }
                         }

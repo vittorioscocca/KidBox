@@ -160,11 +160,14 @@ struct WorkLeavePeriod: Codable, Equatable, Identifiable {
     var end: String
     /// «Ferie», «Permesso», «ROL»…
     var label: String
+    /// L'utente ha scelto di metterlo nel calendario di famiglia (e l'evento
+    /// esiste). In bozza parte acceso; nei documenti salvati prima è spento.
+    var inCalendar: Bool = false
 
-    private enum CodingKeys: String, CodingKey { case start, end, label }
+    private enum CodingKeys: String, CodingKey { case start, end, label, inCalendar }
 
-    init(start: String, end: String, label: String) {
-        self.start = start; self.end = end; self.label = label
+    init(start: String, end: String, label: String, inCalendar: Bool = false) {
+        self.start = start; self.end = end; self.label = label; self.inCalendar = inCalendar
     }
 
     init(from decoder: Decoder) throws {
@@ -174,6 +177,7 @@ struct WorkLeavePeriod: Codable, Equatable, Identifiable {
         start = s
         end = e.isEmpty ? s : e
         label = (try? c.decodeIfPresent(String.self, forKey: .label)) ?? ""
+        inCalendar = ((try? c.decodeIfPresent(Bool.self, forKey: .inCalendar)) ?? nil) ?? false
     }
 
     var startDay: Date? { WorkFields.parseDay(start) }
