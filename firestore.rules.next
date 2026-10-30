@@ -533,6 +533,42 @@ service cloud.firestore {
       }
       // END next:memoryFacts
 
+      // ── Lavoro (buste paga e contratti) ───────────────────
+      // La scheda è di chi l'ha creata: `workProfiles/{uid}` ha per id l'uid del
+      // proprietario, e `visibilityMemberIds` è l'elenco autorevole degli adulti
+      // con cui la condivide (vuoto = solo lui; il client lo svuota tornando
+      // privato). Escluse dal wildcard più sotto: le rules sono in OR e senza
+      // l'esclusione ogni membro leggerebbe e scriverebbe buste paga altrui.
+      // I documenti (`workRecords`) seguono la scheda del loro `ownerUid`; il
+      // client li elenca sempre con `where ownerUid ==`, e le schede con
+      // `array-contains` sul proprio uid (una LIST non filtra).
+      function workProfileSharedWith(familyId, ownerUid) {
+        let path = /databases/$(database)/documents/families/$(familyId)/workProfiles/$(ownerUid);
+        return exists(path) && request.auth.uid in get(path).data.get('visibilityMemberIds', []);
+      }
+      match /workProfiles/{ownerId} {
+        allow read: if isMemberOrOwner(familyId)
+          && (ownerId == request.auth.uid
+            || request.auth.uid in resource.data.get('visibilityMemberIds', []));
+        allow create, update: if isMemberOrOwner(familyId)
+          && ownerId == request.auth.uid
+          && request.resource.data.get('ownerUid', '') == request.auth.uid
+          && request.resource.data.get('visibilityScope', 'private') in ['private', 'members'];
+        allow delete: if isMemberOrOwner(familyId) && ownerId == request.auth.uid;
+      }
+      match /workRecords/{recordId} {
+        allow read: if isMemberOrOwner(familyId)
+          && (resource.data.get('ownerUid', '') == request.auth.uid
+            || workProfileSharedWith(familyId, resource.data.get('ownerUid', '-')));
+        allow create: if isMemberOrOwner(familyId)
+          && request.resource.data.get('ownerUid', '') == request.auth.uid;
+        allow update: if isMemberOrOwner(familyId)
+          && resource.data.get('ownerUid', '') == request.auth.uid
+          && request.resource.data.get('ownerUid', '') == request.auth.uid;
+        allow delete: if isMemberOrOwner(familyId)
+          && resource.data.get('ownerUid', '') == request.auth.uid;
+      }
+
       // Il wildcard delle sottocollezioni: `{coll}` è il nome della prima
       // sottocollezione, `{subpath=**}` (che combacia anche con zero segmenti)
       // tutto ciò che sta più in fondo.
@@ -552,7 +588,9 @@ service cloud.firestore {
         // `memberKeyBackups` è escluso: ha una regola sua, più stretta, e le
         // rules in OR la renderebbero inutile.
         allow read: if isMemberOrOwner(familyId)
-          && coll != 'memberKeyBackups';
+          && coll != 'memberKeyBackups'
+          && coll != 'workProfiles'
+          && coll != 'workRecords';
         // `requests` ha una regola sua (sopra): il client la crea e la ritira,
         // il resto lo scrive il server.
         // `calendarFeeds` lo scrive solo la function `saveCalendarFeed`: URL
@@ -570,6 +608,8 @@ service cloud.firestore {
           && coll != 'memberKeyBackups'
           && coll != 'calendarFeeds'
           && coll != 'requests'
+          && coll != 'workProfiles'
+          && coll != 'workRecords'
           // BEGIN next:memoryFacts-excl
           && coll != 'memoryFacts'
           // END next:memoryFacts-excl

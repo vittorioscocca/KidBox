@@ -833,6 +833,84 @@ async function check(nome, promessa) {
   await check("chat AI (oggi): un altro utente NON la legge",
       assertFails(env.authenticatedContext(ALTRO).firestore().doc(chatPath).get()));
 
+  // ── LAVORO (busta paga e contratti) ─────────────────
+  //
+  // `families/{familyId}/workProfiles/{uid}` (id = uid del proprietario) e
+  // `workRecords/{id}`: la scheda è di chi l'ha creata e la vede un altro
+  // adulto solo se compare in `visibilityMemberIds`. Il wildcard di famiglia
+  // dava a ogni membro lettura e scrittura su ogni sottocollezione: senza
+  // l'esclusione `workProfiles`/`workRecords` sarebbero state aperte a tutti.
+  console.log("\n── LAVORO ─────────────────────────────────────────");
+  const TERZO = "membro3";
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc(`families/${FAM}/members/${TERZO}`)
+        .set({uid: TERZO, role: "parent", isDeleted: false});
+  });
+  const dbTerzo = env.authenticatedContext(TERZO).firestore();
+  const dbFuori = env.authenticatedContext(ALTRO).firestore();
+  const profPath = (uid) => `families/${FAM}/workProfiles/${uid}`;
+  const recPath = (id) => `families/${FAM}/workRecords/${id}`;
+  const profilo = (uid, extra = {}) => ({
+    ownerUid: uid, createdBy: uid, visibilityScope: "private", visibilityMemberIds: [],
+    employerEnc: "QUJD", createdAt: new Date(), updatedAt: new Date(), ...extra,
+  });
+  const record = (uid, extra = {}) => ({
+    ownerUid: uid, createdBy: uid, kind: "payslip", referenceDate: new Date(),
+    fieldsEnc: "QUJD", createdAt: new Date(), updatedAt: new Date(), ...extra,
+  });
+  await check("lavoro: il proprietario crea la propria scheda",
+      assertSucceeds(db.doc(profPath(UID)).set(profilo(UID))));
+  await check("lavoro: il proprietario crea un documento",
+      assertSucceeds(db.doc(recPath("w1")).set(record(UID))));
+  await check("lavoro: il proprietario legge scheda e documento",
+      assertSucceeds(Promise.all([db.doc(profPath(UID)).get(), db.doc(recPath("w1")).get()])));
+  await check("lavoro: scheda privata, un altro membro NON la legge",
+      assertFails(dbMembro.doc(profPath(UID)).get()));
+  await check("lavoro: scheda privata, un altro membro NON legge i documenti",
+      assertFails(dbMembro.doc(recPath("w1")).get()));
+  await check("lavoro: un altro membro NON elenca i documenti dell'altro (LIST vincolata)",
+      assertFails(dbMembro.collection(`families/${FAM}/workRecords`).where("ownerUid", "==", UID).get()));
+  await check("lavoro: un altro membro NON elenca le schede senza filtro (LIST)",
+      assertFails(dbMembro.collection(`families/${FAM}/workProfiles`).get()));
+  await check("lavoro: un estraneo NON legge",
+      assertFails(dbFuori.doc(profPath(UID)).get()));
+  await check("attacco: un altro membro NON scrive nella scheda altrui",
+      assertFails(dbMembro.doc(profPath(UID)).set(profilo(UID, {employerEnc: "ZZZ"}))));
+  await check("attacco: un altro membro NON crea documenti a nome altrui",
+      assertFails(dbMembro.doc(recPath("w2")).set(record(UID))));
+  await check("attacco: un altro membro NON cancella un documento altrui",
+      assertFails(dbMembro.doc(recPath("w1")).delete()));
+  await check("attacco: NON si crea una scheda a nome di un altro (id diverso dall'uid)",
+      assertFails(dbMembro.doc(profPath(UID + "x")).set(profilo(MEMBRO))));
+  await check("attacco: NON si apre la scheda a tutta la famiglia",
+      assertFails(db.doc(profPath(UID)).set(profilo(UID, {visibilityScope: "family"}))));
+  await check("lavoro: si condivide con un solo adulto",
+      assertSucceeds(db.doc(profPath(UID)).set(
+          profilo(UID, {visibilityScope: "members", visibilityMemberIds: [MEMBRO]}))));
+  await check("lavoro: l'adulto scelto legge la scheda",
+      assertSucceeds(dbMembro.doc(profPath(UID)).get()));
+  await check("lavoro: l'adulto scelto legge i documenti",
+      assertSucceeds(dbMembro.doc(recPath("w1")).get()));
+  await check("lavoro: l'adulto scelto elenca i documenti (LIST vincolata)",
+      assertSucceeds(dbMembro.collection(`families/${FAM}/workRecords`).where("ownerUid", "==", UID).get()));
+  await check("lavoro: l'adulto scelto trova la scheda con array-contains",
+      assertSucceeds(dbMembro.collection(`families/${FAM}/workProfiles`)
+          .where("visibilityMemberIds", "array-contains", MEMBRO).get()));
+  await check("lavoro: l'adulto scelto NON modifica i documenti",
+      assertFails(dbMembro.doc(recPath("w1")).set(record(UID, {fieldsEnc: "ZZZ"}))));
+  await check("lavoro: l'adulto scelto NON cancella i documenti",
+      assertFails(dbMembro.doc(recPath("w1")).delete()));
+  await check("lavoro: un terzo membro (non scelto) NON legge",
+      assertFails(dbTerzo.doc(recPath("w1")).get()));
+  await check("lavoro: il proprietario torna privato",
+      assertSucceeds(db.doc(profPath(UID)).set(profilo(UID))));
+  await check("lavoro: tornato privato, l'adulto di prima NON legge più",
+      assertFails(dbMembro.doc(recPath("w1")).get()));
+  await check("lavoro: il proprietario cancella un proprio documento",
+      assertSucceeds(db.doc(recPath("w1")).delete()));
+  await check("lavoro: un membro crea e legge il proprio",
+      assertSucceeds(dbMembro.doc(profPath(MEMBRO)).set(profilo(MEMBRO))));
+
   const envChat = await initializeTestEnvironment({
     projectId: PROJECT_ID + "-next",
     firestore: {rules: RULES_NEXT, host: "127.0.0.1", port: 8080},
