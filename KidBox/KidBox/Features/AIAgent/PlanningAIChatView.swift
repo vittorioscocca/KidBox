@@ -141,7 +141,9 @@ struct PlanningAIChatView: View {
         guard let path = coordinator.pendingShareAssistantFilePath, !path.isEmpty else { return }
         coordinator.pendingShareAssistantFilePath = nil
         let url = URL(fileURLWithPath: path)
-        await vm.importDocument(fileURL: url)
+        let name = coordinator.pendingShareAssistantFileName
+        coordinator.pendingShareAssistantFileName = nil
+        await vm.importDocument(fileURL: url, displayName: name)
         try? FileManager.default.removeItem(at: url)
     }
 
@@ -1162,12 +1164,14 @@ private struct PlanningAIChatInnerView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(
-                KBTheme.background(colorScheme)
-                    .ignoresSafeArea(edges: .bottom)
-                    .shadow(color: KBTheme.shadow(colorScheme), radius: 8, y: -2)
-            )
         }
+        // Lo sfondo copre tutta l'area (anteprima dell'allegato, chip, quota):
+        // solo sotto la riga del campo la chat scorreva in trasparenza.
+        .background(
+            KBTheme.background(colorScheme)
+                .ignoresSafeArea(edges: .bottom)
+                .shadow(color: KBTheme.shadow(colorScheme), radius: 8, y: -2)
+        )
     }
     
     /// Il documento scelto, pronto nel campo di testo: parte solo con l'invio.

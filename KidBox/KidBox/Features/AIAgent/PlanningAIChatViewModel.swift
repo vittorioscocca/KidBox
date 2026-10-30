@@ -664,14 +664,14 @@ struct AssistantQuota: Equatable {
 extension PlanningAIChatViewModel {
 
     /// File scelto da File (PDF o immagine).
-    func importDocument(fileURL: URL) async {
+    func importDocument(fileURL: URL, displayName: String? = nil) async {
         let ok = fileURL.startAccessingSecurityScopedResource()
         defer { if ok { fileURL.stopAccessingSecurityScopedResource() } }
         guard let data = try? Data(contentsOf: fileURL), !data.isEmpty else {
             errorMessage = NSLocalizedString("Impossibile leggere il file.", comment: "Assistant document import")
             return
         }
-        let name = fileURL.lastPathComponent
+        let name = displayName.flatMap { $0.isEmpty ? nil : $0 } ?? fileURL.lastPathComponent
         await stageImported(data: data, fileName: name, mimeType: Self.mimeType(forExtension: fileURL.pathExtension))
     }
 

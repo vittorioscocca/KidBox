@@ -191,6 +191,8 @@ final class AppCoordinator: ObservableObject {
     /// Path locale (App Group) di un PDF o una foto condivisi verso l'assistente.
     /// Lo consuma `PlanningAIChatView`, che lo legge come il «+» della chat.
     @Published var pendingShareAssistantFilePath: String? = nil
+    /// Nome originale del file (la copia nell'App Group si chiama `share_<UUID>_…`).
+    var pendingShareAssistantFileName: String?
     @Published var globalBannerMessage: String? = nil
 
     /// Testo dello spinner mostrato mentre si aspetta che la risorsa di una
@@ -1078,6 +1080,7 @@ final class AppCoordinator: ObservableObject {
                 KBLog.sync.kbError("handleIncomingShare assistant: filePath empty — abort")
                 return
             }
+            pendingShareAssistantFileName = data["sharedFileName"]
             pendingShareAssistantFilePath = filePath
             let alreadyInStack = path.contains { if case .askExpert = $0 { return true }; return false }
             if !alreadyInStack { navigate(to: .askExpert) }
