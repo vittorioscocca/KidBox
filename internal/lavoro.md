@@ -13,6 +13,12 @@ Il wildcard di famiglia dà lettura e scrittura a ogni membro su ogni sottocolle
 - Un errore di permessi dei listener di Lavoro **non** passa da `handleFamilyAccessLost` (espellerebbe dalla famiglia: vedi `/rules-change`, trappola 1).
 - Limite onesto: il `KBDocument` con il file sta in `families/{fid}/documents`, leggibile ai membri dal wildcard; è nascosto dalla visibilità (`private`) e cifrato con la chiave di famiglia, ma **non** negato da una regola. Chiudere la cosa chiede una regola su `documents` per il tag `work:`.
 
+## Foglio ferie
+`kind = leavePlan`: `fields.leavePeriods` (start, end, label) letti dal PDF; alla conferma ogni periodo crea un `KBCalendarEvent` tutto-il-giorno con visibilità **famiglia** (fine = 23:59:59 dell'ultimo giorno, come il resto del calendario). Gli id degli eventi stanno in `fields.eventIds`: eliminando il documento si cancellano anche gli eventi. Caricarlo due volte duplica gli eventi.
+
+## Il file segue la scheda
+Il `KBDocument` allegato nasce con la visibilità della scheda e `WorkAttachmentService.syncVisibility` la riallinea a ogni cambio di condivisione: senza, chi riceve la scheda vedrebbe il documento ma non potrebbe aprirlo.
+
 ## Gating (tre presidi)
 - Server: `askAI` rifiuta il purpose `workDoc` se `quota.period === "lifetime"` (mai il bonus Free).
 - Service: `AIService.strictlyPaidPurposes` con `currentPlan != .free`.

@@ -45,7 +45,9 @@ final class WorkAttachmentService {
 
     /// Carica il file e ritorna l'id del `KBDocument` (privato).
     func upload(data: Data, fileName: String, mimeType: String, title: String,
-                ownerUid: String, familyId: String, modelContext: ModelContext) -> String? {
+                ownerUid: String, familyId: String, modelContext: ModelContext,
+                visibilityScope: String = KBVisibilityScope.onlyCreator,
+                visibilityMemberIds: [String] = []) -> String? {
         let uid = Auth.auth().currentUser?.uid ?? ownerUid
         let now = Date()
         let docId = UUID().uuidString
@@ -64,7 +66,7 @@ final class WorkAttachmentService {
             title: title, fileName: fileName, mimeType: mimeType, fileSize: Int64(data.count),
             storagePath: storagePath, downloadURL: nil,
             notes: WorkAttachmentTag.make(ownerUid),
-            visibilityScope: KBVisibilityScope.onlyCreator, visibilityMemberIds: [],
+            visibilityScope: visibilityScope, visibilityMemberIds: visibilityMemberIds,
             createdBy: uid, updatedBy: uid, createdAt: now, updatedAt: now, isDeleted: false
         )
         doc.localPath = localRelPath
@@ -101,6 +103,26 @@ final class WorkAttachmentService {
             }
         }
         return docId
+    }
+
+    /// I file seguono la scheda: condivisa con alcuni adulti, il file la segue
+    /// (altrimenti chi riceve la scheda vedrebbe il documento ma non potrebbe
+    /// aprirlo); tornata privata, torna privato anche il file.
+    func syncVisibility(ownerUid: String, familyId: String, sharedWith ids: [String], modelContext: ModelContext) {
+        let tag = WorkAttachmentTag.make(ownerUid)
+        let fid = familyId
+        let docs = (try? modelContext.fetch(FetchDescriptor<KBDocument>(
+            predicate: #Predicate { $0.familyId == fid && !$0.isDeleted }))) ?? []
+        let scope = ids.isEmpty ? KBVisibilityScope.onlyCreator : KBVisibilityScope.members
+        for doc in docs where doc.notes == tag {
+            doc.visibilityScope = scope
+            doc.visibilityMemberIds = ids
+            doc.updatedAt = Date()
+            doc.syncState = .pendingUpsert
+            SyncCenter.shared.enqueueDocumentUpsert(documentId: doc.id, familyId: familyId, modelContext: modelContext)
+        }
+        try? modelContext.save()
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
 
     func delete(documentId: String, familyId: String, modelContext: ModelContext) {

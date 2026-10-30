@@ -83,6 +83,16 @@ struct WorkHomeView: View {
         ownerRecords.first { $0.isContract }.flatMap { r in fields(r).map { (r, $0) } }
     }
 
+    /// I periodi dei fogli ferie, da oggi in poi.
+    private var upcomingLeave: [WorkLeavePeriod] {
+        let today = Calendar.current.startOfDay(for: Date())
+        return ownerRecords.filter { $0.isLeavePlan }
+            .compactMap { fields($0) }
+            .flatMap(\.leavePeriods)
+            .filter { ($0.endDay ?? .distantPast) >= today }
+            .sorted { ($0.startDay ?? .distantPast) < ($1.startDay ?? .distantPast) }
+    }
+
     var body: some View {
         Group {
             if !isPaid {
@@ -287,7 +297,19 @@ struct WorkHomeView: View {
                 row("Preavviso", f.noticePeriod.isEmpty ? nil : f.noticePeriod)
             }
         }
-        if latestPayslip == nil && latestContract == nil {
+        if !upcomingLeave.isEmpty {
+            card(title: String(localized: "Ferie programmate")) {
+                ForEach(upcomingLeave.prefix(6)) { p in
+                    HStack {
+                        Text(p.label.isEmpty ? String(localized: "Ferie") : p.label)
+                            .font(.subheadline).foregroundStyle(.secondary)
+                        Spacer()
+                        Text(Self.period(p)).font(.subheadline.weight(.semibold))
+                    }
+                }
+            }
+        }
+        if latestPayslip == nil && latestContract == nil && upcomingLeave.isEmpty {
             VStack(spacing: 8) {
                 Image(systemName: "doc.text.magnifyingglass").font(.largeTitle).foregroundStyle(.secondary)
                 Text(LocalizedStringKey(isMine ? "Carica una busta paga o un contratto" : "Nessun documento"))
@@ -327,7 +349,7 @@ struct WorkHomeView: View {
 
     @ViewBuilder
     private var askChips: some View {
-        if latestPayslip != nil || latestContract != nil {
+        if latestPayslip != nil || latestContract != nil || !upcomingLeave.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Chiedi all'assistente").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -352,6 +374,9 @@ struct WorkHomeView: View {
             q += [String(localized: "Quante ferie e permessi mi restano?"),
                   String(localized: "Quanto ho pagato di tasse finora?")]
         }
+        if !upcomingLeave.isEmpty {
+            q.append(String(localized: "Quando sono in ferie?"))
+        }
         if latestContract != nil {
             q += [String(localized: "Quando scade il mio contratto?"),
                   String(localized: "Qual è il mio lordo annuo?")]
@@ -374,7 +399,7 @@ struct WorkHomeView: View {
                 ForEach(ownerRecords, id: \.id) { r in
                     Button { detailRecord = r } label: {
                         HStack(spacing: 12) {
-                            Image(systemName: r.isPayslip ? "banknote" : "doc.text")
+                            Image(systemName: r.isPayslip ? "banknote" : (r.isLeavePlan ? "calendar" : "doc.text"))
                                 .frame(width: 34, height: 34)
                                 .background(Circle().fill(tint.opacity(0.12)))
                                 .foregroundStyle(tint)
@@ -383,6 +408,9 @@ struct WorkHomeView: View {
                                 Text(Self.date(r.referenceDate)).font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
+                            if r.attachmentDocumentId != nil {
+                                Image(systemName: "paperclip").font(.caption).foregroundStyle(.secondary)
+                            }
                             Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
                         }
                         .padding(12)
@@ -396,6 +424,7 @@ struct WorkHomeView: View {
 
     private func title(of r: KBWorkRecord) -> String {
         if let f = fields(r), !f.title.isEmpty { return f.title }
+        if r.isLeavePlan { return String(localized: "Piano ferie") }
         return r.isPayslip ? String(localized: "Busta paga") : String(localized: "Contratto")
     }
 
@@ -451,7 +480,7 @@ struct WorkHomeView: View {
             draft = WorkDraft(kind: result.kind, fields: result.fields, referenceDate: result.referenceDate,
                               data: data, fileName: fileName, mimeType: mime)
         } catch WorkDocumentService.AnalyzeError.notAWorkDocument {
-            errorMessage = String(localized: "Non sembra una busta paga né un contratto di lavoro.")
+            errorMessage = String(localized: "Non sembra una busta paga, un contratto né un foglio ferie.")
         } catch WorkDocumentService.AnalyzeError.unreadable {
             errorMessage = String(localized: "Si leggono solo PDF e immagini.")
         } catch WorkDocumentService.AnalyzeError.badResponse {
@@ -487,10 +516,23 @@ struct WorkHomeView: View {
             errorMessage = String(localized: "Non riesco a cifrare il documento: la chiave di famiglia non è disponibile.")
             return
         }
+        var fields = fields
+        if d.kind == WorkRecordKind.leavePlan {
+            fields.eventIds = createLeaveEvents(fields.leavePeriods, ownerName: displayName)
+        }
+        do {
+            try WorkRecordCrypto.seal(fields, into: record, userId: me)
+        } catch {
+            errorMessage = String(localized: "Non riesco a cifrare il documento: la chiave di famiglia non è disponibile.")
+            return
+        }
         record.attachmentDocumentId = WorkAttachmentService.shared.upload(
             data: d.data, fileName: d.fileName, mimeType: d.mimeType,
             title: fields.title.isEmpty ? d.fileName : fields.title,
-            ownerUid: me, familyId: familyId, modelContext: modelContext
+            ownerUid: me, familyId: familyId, modelContext: modelContext,
+            visibilityScope: profile.visibilityScope == KBVisibilityScope.members && !profile.visibilityMemberIds.isEmpty
+                ? KBVisibilityScope.members : KBVisibilityScope.onlyCreator,
+            visibilityMemberIds: profile.visibilityScope == KBVisibilityScope.members ? profile.visibilityMemberIds : []
         )
         record.syncState = .pendingUpsert
         modelContext.insert(record)
@@ -507,7 +549,44 @@ struct WorkHomeView: View {
         draft = nil
     }
 
+    /// Un evento «giornata intera» per periodo, visibile a tutta la famiglia
+    /// (il calendario chiude i tutto-il-giorno alle 23:59:59 dell'ultimo giorno).
+    private func createLeaveEvents(_ periods: [WorkLeavePeriod], ownerName: String) -> [String] {
+        let cal = Calendar.current
+        var ids: [String] = []
+        for p in periods {
+            guard let first = p.startDay else { continue }
+            let start = cal.startOfDay(for: first)
+            let lastDay = cal.startOfDay(for: max(p.endDay ?? first, first))
+            guard let next = cal.date(byAdding: .day, value: 1, to: lastDay) else { continue }
+            let label = p.label.trimmingCharacters(in: .whitespacesAndNewlines)
+            let title = "\(label.isEmpty ? String(localized: "Ferie") : label) · \(ownerName)"
+            let event = KBCalendarEvent(
+                familyId: familyId, childId: nil, title: title,
+                startDate: start, endDate: next.addingTimeInterval(-1), isAllDay: true,
+                visibilityScope: KBVisibilityScope.family,
+                updatedBy: me, createdBy: me
+            )
+            event.syncState = .pendingUpsert
+            modelContext.insert(event)
+            SyncCenter.shared.enqueueCalendarUpsert(eventId: event.id, familyId: familyId, modelContext: modelContext)
+            ids.append(event.id)
+        }
+        return ids
+    }
+
     private func delete(_ r: KBWorkRecord) {
+        // Gli eventi creati dal foglio ferie se ne vanno con lui.
+        if r.isLeavePlan, let f = fields(r) {
+            for eid in f.eventIds {
+                guard let ev = try? modelContext.fetch(FetchDescriptor<KBCalendarEvent>(predicate: #Predicate { $0.id == eid })).first else { continue }
+                ev.isDeleted = true
+                ev.updatedAt = Date()
+                ev.updatedBy = me
+                SyncCenter.shared.enqueueCalendarDelete(eventId: eid, familyId: familyId, modelContext: modelContext)
+                modelContext.delete(ev)
+            }
+        }
         if let docId = r.attachmentDocumentId {
             WorkAttachmentService.shared.delete(documentId: docId, familyId: familyId, modelContext: modelContext)
         }
@@ -530,9 +609,19 @@ struct WorkHomeView: View {
         try? modelContext.save()
         SyncCenter.shared.enqueueWorkProfileUpsert(ownerUid: me, familyId: familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        WorkAttachmentService.shared.syncVisibility(ownerUid: me, familyId: familyId,
+                                                    sharedWith: p.visibilityMemberIds, modelContext: modelContext)
     }
 
     // MARK: - Formati
+
+    static func kindTitle(_ kind: String) -> LocalizedStringKey {
+        switch kind {
+        case WorkRecordKind.payslip: return "Busta paga"
+        case WorkRecordKind.leavePlan: return "Piano ferie"
+        default: return "Contratto"
+        }
+    }
 
     static func euro(_ v: Double) -> String { v.formatted(.currency(code: "EUR")) }
     static func days(_ v: Double) -> String {
@@ -542,6 +631,11 @@ struct WorkHomeView: View {
         String(format: String(localized: "%@ ore"), v.formatted(.number.precision(.fractionLength(0...2))))
     }
     static func date(_ d: Date) -> String { d.formatted(date: .abbreviated, time: .omitted) }
+    static func period(_ p: WorkLeavePeriod) -> String {
+        guard let s = p.startDay else { return "" }
+        guard let e = p.endDay, e > s else { return date(s) }
+        return "\(date(s)) – \(date(e))"
+    }
 }
 
 // MARK: - Bozza e conferma
@@ -575,7 +669,26 @@ private struct WorkConfirmSheet: View {
                     TextField("Datore di lavoro", text: $draft.fields.employer)
                     DatePicker("Data di riferimento", selection: $draft.referenceDate, displayedComponents: .date)
                 }
-                if draft.kind == WorkRecordKind.payslip {
+                if draft.kind == WorkRecordKind.leavePlan {
+                    Section {
+                        ForEach($draft.fields.leavePeriods) { $p in
+                            VStack(alignment: .leading, spacing: 6) {
+                                TextField("Tipo (ferie, permesso…)", text: $p.label)
+                                DatePicker("Dal", selection: day($p.start), displayedComponents: .date)
+                                DatePicker("Al", selection: day($p.end), in: (WorkFields.parseDay(p.start) ?? .distantPast)..., displayedComponents: .date)
+                            }
+                        }
+                        .onDelete { draft.fields.leavePeriods.remove(atOffsets: $0) }
+                        Button {
+                            let today = WorkFields.formatDay(Date())
+                            draft.fields.leavePeriods.append(WorkLeavePeriod(start: today, end: today, label: String(localized: "Ferie")))
+                        } label: { Label("Aggiungi un periodo", systemImage: "plus.circle") }
+                    } header: {
+                        Text("Periodi")
+                    } footer: {
+                        Text("Ogni periodo diventa un evento «giornata intera» nel calendario, visibile a tutta la famiglia. Scorri per togliere un periodo.")
+                    }
+                } else if draft.kind == WorkRecordKind.payslip {
                     Section("Busta paga") {
                         TextField("Mese di competenza", text: $draft.fields.period)
                         num("Lordo (€)", $draft.fields.gross)
@@ -610,7 +723,7 @@ private struct WorkConfirmSheet: View {
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle(LocalizedStringKey(draft.kind == WorkRecordKind.payslip ? "Busta paga" : "Contratto"))
+            .navigationTitle(WorkHomeView.kindTitle(draft.kind))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Annulla") { dismiss() } }
@@ -619,6 +732,11 @@ private struct WorkConfirmSheet: View {
                 }
             }
         }
+    }
+
+    private func day(_ value: Binding<String>) -> Binding<Date> {
+        Binding(get: { WorkFields.parseDay(value.wrappedValue) ?? Date() },
+                set: { value.wrappedValue = WorkFields.formatDay($0) })
     }
 
     private func num(_ label: LocalizedStringKey, _ value: Binding<Double?>) -> some View {
@@ -664,11 +782,29 @@ private struct WorkRecordDetailView: View {
     var body: some View {
         NavigationStack {
             List {
+                if record.attachmentDocumentId != nil {
+                    Section {
+                        Button { openFile() } label: { Label("Apri il file originale", systemImage: "doc.richtext") }
+                    } footer: {
+                        Text("Il documento resta qui, nella scheda Lavoro.")
+                    }
+                }
                 if let f = fields {
                     Section {
                         line("Titolo", f.title)
                         line("Datore di lavoro", f.employer)
                         line("Mese di competenza", f.period)
+                    }
+                    if !f.leavePeriods.isEmpty {
+                        Section("Periodi") {
+                            ForEach(f.leavePeriods) { p in
+                                HStack {
+                                    Text(p.label.isEmpty ? String(localized: "Ferie") : p.label).foregroundStyle(.secondary)
+                                    Spacer()
+                                    Text(WorkHomeView.period(p)).multilineTextAlignment(.trailing)
+                                }
+                            }
+                        }
                     }
                     Section {
                         line("Lordo", f.gross.map(WorkHomeView.euro))
@@ -694,11 +830,6 @@ private struct WorkRecordDetailView: View {
                     Text("Non riesco ad aprire i valori: la chiave di famiglia non è disponibile su questo dispositivo.")
                         .foregroundStyle(.secondary)
                 }
-                if record.attachmentDocumentId != nil {
-                    Section {
-                        Button { openFile() } label: { Label("Apri il file originale", systemImage: "doc.richtext") }
-                    }
-                }
                 if let errorMessage { Section { Text(errorMessage).foregroundStyle(.red).font(.footnote) } }
                 if canEdit {
                     Section {
@@ -708,7 +839,7 @@ private struct WorkRecordDetailView: View {
                     }
                 }
             }
-            .navigationTitle(LocalizedStringKey(record.isPayslip ? "Busta paga" : "Contratto"))
+            .navigationTitle(WorkHomeView.kindTitle(record.kind))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Chiudi") { dismiss() } } }
             .confirmationDialog("Eliminare questo documento?", isPresented: $confirmDelete, titleVisibility: .visible) {

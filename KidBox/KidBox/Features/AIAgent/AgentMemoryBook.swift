@@ -1212,9 +1212,24 @@ struct AgentMemoryBookBuilder {
                 }
                 if !f.notes.isEmpty { lines.append("Note: \(clip(f.notes, 200))") }
             }
+            let today = Calendar.current.startOfDay(for: now)
+            let leave = mine.filter { $0.isLeavePlan }
+                .compactMap { r in WorkRecordCrypto.open(r, userId: s.uid) }
+                .flatMap(\.leavePeriods)
+                .filter { ($0.endDay ?? .distantPast) >= today }
+                .sorted { ($0.startDay ?? .distantPast) < ($1.startDay ?? .distantPast) }
+            if !leave.isEmpty {
+                lines.append("### Ferie e permessi programmati (anche nel calendario di famiglia)")
+                for p in leave.prefix(30) {
+                    guard let a = p.startDay else { continue }
+                    let b = p.endDay ?? a
+                    let range = b > a ? "dal \(fmtDate(a)) al \(fmtDate(b))" : fmtDate(a)
+                    lines.append("- \(p.label.isEmpty ? "Ferie" : p.label): \(range)")
+                }
+            }
         }
         guard lines.count > 2 else { return nil }
-        return AgentMemoryFile(name: "lavoro.md", title: "Lavoro", summary: "\(s.workRecords.count) documenti di lavoro (buste paga, contratti)", body: lines.joined(separator: "\n"))
+        return AgentMemoryFile(name: "lavoro.md", title: "Lavoro", summary: "\(s.workRecords.count) documenti di lavoro (buste paga, contratti, fogli ferie)", body: lines.joined(separator: "\n"))
     }
 
     private func workPayslipLines(_ f: WorkFields) -> [String] {

@@ -139,6 +139,7 @@ final class KBWorkRecord {
 
     var isPayslip: Bool { kind == WorkRecordKind.payslip }
     var isContract: Bool { kind == WorkRecordKind.contract }
+    var isLeavePlan: Bool { kind == WorkRecordKind.leavePlan }
 }
 
 extension KBWorkRecord: HasFamilyId {}
@@ -146,6 +147,37 @@ extension KBWorkRecord: HasFamilyId {}
 enum WorkRecordKind {
     static let payslip = "payslip"
     static let contract = "contract"
+    /// Foglio delle ferie e dei permessi programmati: ogni periodo diventa un
+    /// evento di calendario visibile a tutta la famiglia.
+    static let leavePlan = "leavePlan"
+}
+
+/// Un periodo di assenza letto dal foglio ferie. Date come `yyyy-MM-dd`;
+/// un solo giorno = inizio e fine uguali.
+struct WorkLeavePeriod: Codable, Equatable, Identifiable {
+    var id = UUID()
+    var start: String
+    var end: String
+    /// «Ferie», «Permesso», «ROL»…
+    var label: String
+
+    private enum CodingKeys: String, CodingKey { case start, end, label }
+
+    init(start: String, end: String, label: String) {
+        self.start = start; self.end = end; self.label = label
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let s = String(((try? c.decodeIfPresent(String.self, forKey: .start)) ?? "").prefix(10))
+        let e = String(((try? c.decodeIfPresent(String.self, forKey: .end)) ?? "").prefix(10))
+        start = s
+        end = e.isEmpty ? s : e
+        label = (try? c.decodeIfPresent(String.self, forKey: .label)) ?? ""
+    }
+
+    var startDay: Date? { WorkFields.parseDay(start) }
+    var endDay: Date? { WorkFields.parseDay(end) ?? startDay }
 }
 
 // MARK: - Valori estratti
@@ -186,6 +218,12 @@ struct WorkFields: Codable, Equatable {
 
     var notes: String = ""
 
+    // Foglio ferie
+    var leavePeriods: [WorkLeavePeriod] = []
+    /// Eventi di calendario creati dal foglio: servono a toglierli se il
+    /// documento viene eliminato.
+    var eventIds: [String] = []
+
     init() {}
 
     /// Decodifica tollerante: la risposta del modello può omettere campi o
@@ -216,6 +254,8 @@ struct WorkFields: Codable, Equatable {
         grossAnnual = num(.grossAnnual); level = text(.level); noticePeriod = text(.noticePeriod)
         vacationDaysPerYear = num(.vacationDaysPerYear)
         notes = text(.notes)
+        leavePeriods = ((try? c.decodeIfPresent([WorkLeavePeriod].self, forKey: .leavePeriods)) ?? nil) ?? []
+        eventIds = ((try? c.decodeIfPresent([String].self, forKey: .eventIds)) ?? nil) ?? []
     }
 
     private enum Key: String, CodingKey {
@@ -223,6 +263,7 @@ struct WorkFields: Codable, Equatable {
         case vacationAccrued, vacationTaken, vacationRemaining
         case permitHoursAccrued, permitHoursRemaining, tfr
         case contractType, startDate, endDate, grossAnnual, level, noticePeriod, vacationDaysPerYear, notes
+        case leavePeriods, eventIds
     }
 
     static func parseDay(_ s: String?) -> Date? {
