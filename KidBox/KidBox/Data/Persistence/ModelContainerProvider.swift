@@ -164,6 +164,8 @@ enum ModelContainerProvider {
             KBWalletTicket.self,
             KBLoyaltyCard.self,
             KBPaymentCard.self,
+            KBWorkProfile.self,
+            KBWorkRecord.self,
             PasswordEntry.self,
             PasswordGroup.self,
             KBPet.self,

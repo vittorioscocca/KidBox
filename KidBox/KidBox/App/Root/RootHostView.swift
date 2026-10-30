@@ -755,6 +755,7 @@ struct RootHostView: View {
             SyncCenter.shared.stopWalletRealtime()
             SyncCenter.shared.stopLoyaltyCardsRealtime()
             SyncCenter.shared.stopPaymentCardsRealtime()
+            SyncCenter.shared.stopWorkRealtime()
             SyncCenter.shared.stopPasswordsRealtime()
             SyncCenter.shared.stopPetsRealtime()
             SyncCenter.shared.stopPetEventsRealtime()
@@ -837,6 +838,11 @@ struct RootHostView: View {
         )
 
         SyncCenter.shared.startPaymentCardsRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+
+        SyncCenter.shared.startWorkRealtime(
             familyId: familyId,
             modelContext: modelContext
         )

@@ -25,6 +25,8 @@ enum SyncEntityType: String {
     case walletTicket
     case loyaltyCard
     case paymentCard
+    case workProfile
+    case workRecord
     case passwordEntry = "passwordEntry"
     case passwordGroup = "passwordGroup"
     case pet = "pet"

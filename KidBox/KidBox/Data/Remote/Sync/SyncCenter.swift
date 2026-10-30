@@ -164,6 +164,12 @@ final class SyncCenter: ObservableObject {
     let loyaltyCardPhotoStore = LoyaltyCardPhotoStore()
     var paymentCardListener: ListenerRegistration?
     let paymentCardRemote = PaymentCardRemoteStore()
+    // Lavoro: la propria scheda, quelle condivise con me, e un ascolto dei
+    // documenti per ogni proprietario visibile (vedi `SyncCenter+Work`).
+    var workOwnProfileListener: ListenerRegistration?
+    var workSharedProfilesListener: ListenerRegistration?
+    var workRecordListeners: [String: ListenerRegistration] = [:]
+    let workRemote = WorkRemoteStore()
     /// Foto cifrate delle carte di pagamento: cleanup alla cancellazione.
     let paymentCardPhotoStore = PaymentCardPhotoStore()
     let passwordRemote = PasswordRemoteStore()
@@ -438,6 +444,7 @@ final class SyncCenter: ObservableObject {
         stopWalletRealtime()
         stopLoyaltyCardsRealtime()
         stopPaymentCardsRealtime()
+        stopWorkRealtime()
         stopPasswordsRealtime()
         stopHousePaymentsRealtime()
         stopTripsRealtime()
@@ -1160,6 +1167,12 @@ final class SyncCenter: ObservableObject {
 
             case SyncEntityType.paymentCard.rawValue:
                 try await processPaymentCard(op: op, modelContext: modelContext)
+
+            case SyncEntityType.workProfile.rawValue:
+                try await processWorkProfile(op: op, modelContext: modelContext)
+
+            case SyncEntityType.workRecord.rawValue:
+                try await processWorkRecord(op: op, modelContext: modelContext)
 
             case SyncEntityType.passwordEntry.rawValue:
                 try await processPasswordEntry(op: op, modelContext: modelContext)

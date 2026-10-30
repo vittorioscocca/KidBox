@@ -54,6 +54,8 @@ enum LocalDataWiper {
             // Leaf entities
             try delete(KBDocument.self, familyId: fid, context: context)
             try delete(KBPaymentCard.self, familyId: fid, context: context)
+            try delete(KBWorkRecord.self, familyId: fid, context: context)
+            try delete(KBWorkProfile.self, familyId: fid, context: context)
             try delete(KBDocumentCategory.self, familyId: fid, context: context)
             
             try delete(KBRoutineCheck.self, familyId: fid, context: context)
@@ -138,6 +140,8 @@ enum LocalDataWiper {
         do {
             try deleteAll(KBDocument.self, context: context)
             try deleteAll(KBPaymentCard.self, context: context)
+            try deleteAll(KBWorkRecord.self, context: context)
+            try deleteAll(KBWorkProfile.self, context: context)
             try deleteAll(KBDocumentCategory.self, context: context)
             
             try deleteAll(KBRoutineCheck.self, context: context)
