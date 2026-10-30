@@ -257,7 +257,7 @@ final class TravelPlanningViewModel: ObservableObject {
         guard canGenerate else { return }
         await KBSubscriptionManager.shared.loadPlan()
         guard KBSubscriptionManager.shared.isAIAccessible else {
-            generationError = "Piano Pro o Max richiesto. Controlla l'abbonamento Apple o il campo planOverride (pro/max) su Firebase per questa famiglia."
+            generationError = "Hai finito i messaggi AI gratuiti. Passa a Pro o Max per continuare a pianificare con l'AI."
             return
         }
         guard AISettings.shared.isEnabled else {
@@ -265,12 +265,21 @@ final class TravelPlanningViewModel: ObservableObject {
             return
         }
 
+        var isBonusQuota = false
         if let usage = try? await aiService.fetchUsage() {
             usageToday = usage.usageToday
             dailyLimit = usage.dailyLimit
+            isBonusQuota = usage.period == .lifetime
         }
 
         let messageCost = TravelPlanningCountdown.messageCost(plannedDayCount: tripDayCount)
+        if dailyLimit > 0, usageToday + messageCost > dailyLimit, isBonusQuota {
+            // Bonus gratuito: niente «riprova domani» (non si rinnova) e niente
+            // inviti ai piani finché ne resta una parte.
+            let remaining = max(0, dailyLimit - usageToday)
+            generationError = "Questo viaggio di \(tripDayCount) giorni richiede \(messageCost) messaggi AI, ma ti restano \(remaining) messaggi gratuiti. Accorcia il viaggio."
+            return
+        }
         if dailyLimit > 0, usageToday + messageCost > dailyLimit {
             generationError = "Questo viaggio di \(tripDayCount) giorni richiede \(messageCost) messaggi AI (\(usageToday)/\(dailyLimit) usati oggi). Accorcia il viaggio o riprova domani."
             return
