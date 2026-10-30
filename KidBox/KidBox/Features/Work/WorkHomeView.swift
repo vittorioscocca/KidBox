@@ -10,11 +10,9 @@
 
 import SwiftUI
 import SwiftData
-import PhotosUI
 import PDFKit
 import QuickLook
 import UniformTypeIdentifiers
-import VisionKit
 import FirebaseAuth
 
 struct WorkHomeView: View {
@@ -37,10 +35,12 @@ struct WorkHomeView: View {
     @State private var shareScope = KBVisibilityScope.onlyCreator
     @State private var shareMembers = Set<String>()
 
-    @State private var showDocScanner = false
-    @State private var showPhotoPicker = false
+    // Il «+» è il foglio di sempre (come in Salute): fotocamera, libreria, file, Documenti di KidBox.
+    @State private var showSourceSheet = false
+    @State private var showCamera = false
+    @State private var showGallery = false
     @State private var showFileImporter = false
-    @State private var photoItem: PhotosPickerItem?
+    @State private var showKidBoxPicker = false
     @State private var isAnalyzing = false
     @State private var errorMessage: String?
     @State private var draft: WorkDraft?
@@ -175,25 +175,24 @@ struct WorkHomeView: View {
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
             }
         }
-        .fullScreenCover(isPresented: $showDocScanner) {
-            WalletDocumentScannerView(
-                onFinish: { pages in
-                    showDocScanner = false
-                    Task { await importScan(pages: pages) }
-                },
-                onCancel: { showDocScanner = false }
+        .sheet(isPresented: $showSourceSheet) {
+            AttachmentSourcePickerSheet(
+                tint: tint,
+                onCamera:   { pick { showCamera = true } },
+                onGallery:  { pick { showGallery = true } },
+                onDocument: { pick { showFileImporter = true } },
+                onKidBoxDocument: { pick { showKidBoxPicker = true } }
             )
-            .ignoresSafeArea()
         }
-        .photosPicker(isPresented: $showPhotoPicker, selection: $photoItem, matching: .images)
-        .onChange(of: photoItem) { _, item in
-            guard let item else { return }
-            photoItem = nil
-            Task {
-                if let data = try? await item.loadTransferable(type: Data.self),
-                   let jpeg = UIImage(data: data)?.jpegData(compressionQuality: 0.85) {
-                    await analyze(data: jpeg, fileName: Self.stampedName(String(localized: "Foto"), "jpg"), mime: "image/jpeg")
-                }
+        .sheet(isPresented: $showCamera) {
+            ImagePickerView(sourceType: .camera) { image in analyzeImage(image) }
+        }
+        .sheet(isPresented: $showGallery) {
+            ImagePickerView(sourceType: .photoLibrary) { image in analyzeImage(image) }
+        }
+        .sheet(isPresented: $showKidBoxPicker) {
+            KidBoxDocumentPickerSheet(familyId: familyId) { url in
+                Task { await importFile(url) }
             }
         }
         .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.pdf, .image], allowsMultipleSelection: false) { result in
@@ -431,15 +430,24 @@ struct WorkHomeView: View {
     // MARK: - Aggiunta
 
     private var addMenu: some View {
-        Menu {
-            Button { showDocScanner = true } label: { Label("Scansiona documento", systemImage: "doc.viewfinder") }
-                .disabled(!VNDocumentCameraViewController.isSupported)
-            Button { showPhotoPicker = true } label: { Label("Foto", systemImage: "photo.on.rectangle") }
-            Button { showFileImporter = true } label: { Label("File", systemImage: "folder") }
-        } label: {
-            Image(systemName: "plus")
+        Button { showSourceSheet = true } label: { Image(systemName: "plus") }
+            .disabled(isAnalyzing)
+            .accessibilityLabel(Text("Carica un documento"))
+    }
+
+    /// Chiude il foglio delle sorgenti e apre la sorgente scelta: due sheet
+    /// consecutivi chiedono una pausa.
+    private func pick(_ open: @escaping () -> Void) {
+        showSourceSheet = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: open)
+    }
+
+    private func analyzeImage(_ image: UIImage) {
+        guard let jpeg = image.jpegData(compressionQuality: 0.85) else {
+            errorMessage = String(localized: "Impossibile leggere il file.")
+            return
         }
-        .disabled(isAnalyzing)
+        Task { await analyze(data: jpeg, fileName: Self.stampedName(String(localized: "Foto"), "jpg"), mime: "image/jpeg") }
     }
 
     private static func stampedName(_ base: String, _ ext: String) -> String {
@@ -456,17 +464,6 @@ struct WorkHomeView: View {
         }
         let isPDF = url.pathExtension.lowercased() == "pdf"
         await analyze(data: data, fileName: url.lastPathComponent, mime: isPDF ? "application/pdf" : "image/jpeg")
-    }
-
-    private func importScan(pages: [UIImage]) async {
-        guard let first = pages.first else { return }
-        let pdf = UIGraphicsPDFRenderer(bounds: CGRect(origin: .zero, size: first.size)).pdfData { ctx in
-            for page in pages {
-                ctx.beginPage(withBounds: CGRect(origin: .zero, size: page.size), pageInfo: [:])
-                page.draw(in: CGRect(origin: .zero, size: page.size))
-            }
-        }
-        await analyze(data: pdf, fileName: Self.stampedName(String(localized: "Scansione"), "pdf"), mime: "application/pdf")
     }
 
     private func analyze(data: Data, fileName: String, mime: String) async {
