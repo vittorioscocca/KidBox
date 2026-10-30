@@ -2445,6 +2445,15 @@ function isMealPlanAskAI(data) {
 }
 
 /**
+ * Lettura di una busta paga o di un contratto (scheda Lavoro): solo Pro e Max.
+ * @param {object} data body della callable
+ * @return {boolean}
+ */
+function isWorkDocAskAI(data) {
+  return data?.purpose === "workDoc";
+}
+
+/**
  * Generazione del piano fitness: Sonnet + max_tokens esteso, output JSON.
  * @param {object} data body della callable
  * @return {boolean}
@@ -2487,6 +2496,7 @@ function askAISurface(clinicalRecord, mealPlan, purpose) {
   if (mealPlan) return "mealPlan";
   if (isFitnessPlanAskAI({purpose}) || isFitnessAssistAskAI({purpose})) return purpose;
   if (isFamilyAgentAskAI({purpose})) return purpose;
+  if (isWorkDocAskAI({purpose})) return purpose;
   return "chat";
 }
 
@@ -2502,6 +2512,7 @@ function askAIPurposeEcho(clinicalRecord, mealPlan, purpose) {
   if (mealPlan) return "mealPlan";
   if (isFitnessPlanAskAI({purpose}) || isFitnessAssistAskAI({purpose})) return purpose;
   if (isFamilyAgentAskAI({purpose})) return purpose;
+  if (isWorkDocAskAI({purpose})) return purpose;
   return undefined;
 }
 
@@ -3230,6 +3241,13 @@ exports.askAI = onCall(
       await assertFamilyMember(uid, familyId);
 
       const quota = await resolveAIQuota(uid, familyId);
+      // Buste paga e contratti: solo Pro e Max, mai il bonus Free (period
+      // «lifetime» è solo dei Free). Prima del conteggio: il tentativo non
+      // consuma nulla.
+      if (isWorkDocAskAI({purpose}) && quota.period === "lifetime") {
+        throw new HttpsError("permission-denied",
+            "La scheda Lavoro è inclusa nei piani Pro e Max.", {reason: "plan"});
+      }
       // Piano alimentare e fitness (con le chiamate di contorno): aperti ai Free
       // finché dura il bonus una tantum, chiusi quando è finito.
       if (mealPlan) {
@@ -5668,6 +5686,9 @@ const FAMILY_SUBCOLLECTIONS = [
   // Carte di pagamento: campi cifrati, ma restavano orfani come i backup
   // delle chiavi se non comparivano qui.
   "paymentCards",
+  // Lavoro: schede e documenti di busta paga/contratto (cifrati).
+  "workProfiles",
+  "workRecords",
   // ── Notizie (accensione, luogo e lingua della famiglia) ────────
   "news",
   // ── Zone di arrivo ─────────────────────────────────────────────
