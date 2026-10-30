@@ -344,10 +344,10 @@ final class AIService {
         }
 
         if let purpose, Self.paidOnlyPurposes.contains(purpose) {
-            // Allinea il piano con Firestore prima del gate: `isAIAccessible`
-            // non basta, lascerebbe passare un Free col bonus ancora intatto.
+            // Aperte ai Free finché dura il bonus una tantum, chiuse a bonus
+            // esaurito: `isAIAccessible` dice esattamente questo.
             await KBSubscriptionManager.shared.loadPlan()
-            guard KBSubscriptionManager.shared.currentPlan != .free else {
+            guard KBSubscriptionManager.shared.isAIAccessible else {
                 KBLog.ai.kbInfo("sendMessages blocked: purpose=\(purpose) requires a paid plan")
                 throw AIServiceError.rateLimitReached(
                     NSLocalizedString(
@@ -578,9 +578,8 @@ final class AIService {
     func generateTravelPlan(_ request: TravelPlanRequest, familyId: String) async throws -> TravelPlanResponse {
         // Allinea il piano con Firestore (planOverride / families.plan) prima del gate client.
         await KBSubscriptionManager.shared.loadPlan()
-        // Feature dei soli piani a pagamento (il server rifiuta comunque i Free):
-        // `isAIAccessible` da solo lascerebbe passare un Free col bonus intatto.
-        guard KBSubscriptionManager.shared.currentPlan != .free else {
+        // Aperto ai Free finché dura il bonus una tantum (il server decide comunque).
+        guard KBSubscriptionManager.shared.isAIAccessible else {
             KBLog.ai.kbInfo("generateTravelPlan blocked: travel planner requires a paid plan")
             throw AIServiceError.rateLimitReached(
                 "Il Pianificatore Viaggi è incluso nei piani Pro e Max. Passa a Pro per pianificare il viaggio con l'AI."

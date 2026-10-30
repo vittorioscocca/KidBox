@@ -113,7 +113,7 @@ enum MealPlanGenerator {
     ) async throws -> (document: MealPlanDocument, usage: MealPlanAIUsageInfo) {
 
         // Feature dei soli piani a pagamento (il server rifiuta comunque i Free).
-        guard KBSubscriptionManager.shared.currentPlan != .free else {
+        guard KBSubscriptionManager.shared.isAIAccessible else {
             throw MealPlanAIError.planNotIncluded
         }
         guard payload.hasWeight, payload.hasHeight else {

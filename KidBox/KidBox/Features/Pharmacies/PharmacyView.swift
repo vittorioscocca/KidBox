@@ -95,11 +95,11 @@ struct PharmacyView: View {
         familyStore.familyId == familyId ? familyStore.settings : NewsFamilySettings()
     }
     private var place: NewsPlace { family.effectivePlace }
-    private var loadKey: String { "\(familyId)|\(place.label)|\(subscriptionManager.currentPlan == .free)" }
+    private var loadKey: String { "\(familyId)|\(place.label)|\(!subscriptionManager.isAIAccessible)" }
 
     var body: some View {
         Group {
-            if subscriptionManager.currentPlan == .free {
+            if !subscriptionManager.isAIAccessible {
                 lockedView
             } else {
                 content
@@ -126,11 +126,11 @@ struct PharmacyView: View {
         }
         .task(id: familyId) { familyStore.bind(familyId: familyId) }
         .task(id: loadKey) {
-            guard subscriptionManager.currentPlan != .free, familyStore.familyId == familyId, familyStore.isLoaded else { return }
+            guard subscriptionManager.isAIAccessible, familyStore.familyId == familyId, familyStore.isLoaded else { return }
             await vm.load(familyId: familyId, place: place)
         }
         .refreshable {
-            guard subscriptionManager.currentPlan != .free else { return }
+            guard subscriptionManager.isAIAccessible else { return }
             await vm.load(familyId: familyId, place: place)
         }
     }

@@ -136,10 +136,10 @@ final class NewsService {
     /// Free col bonus intatto (la trappola di /gating-pro).
     private func ensurePaidPlan() async throws {
         let manager = KBSubscriptionManager.shared
-        if manager.currentPlan == .free {
+        if !manager.isAIAccessible {
             await manager.loadPlan()
         }
-        if manager.currentPlan == .free { throw NewsServiceError.planRequired }
+        if !manager.isAIAccessible { throw NewsServiceError.planRequired }
     }
 
     // MARK: - Lettura

@@ -53,7 +53,7 @@ struct NewsView: View {
 
     var body: some View {
         Group {
-            if subscriptionManager.currentPlan == .free {
+            if !subscriptionManager.isAIAccessible {
                 NewsLockedView {
                     if subscriptionManager.isFamilyOwner {
                         showUpgrade = true
@@ -84,7 +84,7 @@ struct NewsView: View {
         .toolbar {
             // Le salvate restano di chi le ha salvate anche tornando al Free:
             // l'elenco non costa niente.
-            if subscriptionManager.currentPlan != .free || !savedStore.items.isEmpty {
+            if subscriptionManager.isAIAccessible || !savedStore.items.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         coordinator.navigate(to: .newsSaved)
@@ -139,7 +139,7 @@ struct NewsView: View {
         .task { savedStore.bind() }
         .task(id: familyId) { familyStore.bind(familyId: familyId) }
         .task(id: loadKey) {
-            guard subscriptionManager.currentPlan != .free, familyLoaded, family.enabled else { return }
+            guard subscriptionManager.isAIAccessible, familyLoaded, family.enabled else { return }
             await vm.load(familyId: familyId, family: family, prefs: prefs, key: loadKey)
             await vm.loadSavedOffers(familyId: familyId, family: family, prefs: prefs)
         }

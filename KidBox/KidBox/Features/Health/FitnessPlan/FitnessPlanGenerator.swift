@@ -149,7 +149,7 @@ enum FitnessPlanGenerator {
 
         // Feature dei soli piani a pagamento: il gate vero è lato server, questo
         // evita di bruciare una chiamata e dà subito il messaggio giusto.
-        guard KBSubscriptionManager.shared.currentPlan != .free else {
+        guard KBSubscriptionManager.shared.isAIAccessible else {
             throw FitnessPlanAIError.planNotIncluded
         }
         guard input.isComplete else {
@@ -219,7 +219,7 @@ enum FitnessPlanGenerator {
         sessionId: String,
         newDate: Date
     ) async throws -> RescheduleOutcome {
-        guard KBSubscriptionManager.shared.currentPlan != .free else {
+        guard KBSubscriptionManager.shared.isAIAccessible else {
             throw FitnessPlanAIError.planNotIncluded
         }
         guard let session = plan.session(id: sessionId) else {
@@ -287,7 +287,7 @@ enum FitnessPlanGenerator {
         plan: FitnessPlanDocument,
         report: FitnessWeeklyReport
     ) async throws -> (proposal: FitnessAdjustmentProposal, usage: FitnessPlanAIUsageInfo) {
-        guard KBSubscriptionManager.shared.currentPlan != .free else {
+        guard KBSubscriptionManager.shared.isAIAccessible else {
             throw FitnessPlanAIError.planNotIncluded
         }
         let nextWeekIndex = report.weekIndex + 1

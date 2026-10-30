@@ -64,7 +64,7 @@ struct MealPlanView: View {
     private var member: KBFamilyMember? { members.first }
     private var subjectName: String { child?.name ?? member?.displayName ?? "Profilo" }
     private var snapshot: KBHealthImportSnapshot? { KBHealthLinkStore.load(childId: childId) }
-    private var isPaidPlan: Bool { subscriptionManager.currentPlan != .free }
+    private var isPaidPlan: Bool { subscriptionManager.isAIAccessible }
 
     private var activeTreatments: [KBTreatment] {
         let today = Calendar.current.startOfDay(for: Date())
