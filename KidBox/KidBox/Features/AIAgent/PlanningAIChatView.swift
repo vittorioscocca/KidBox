@@ -145,6 +145,17 @@ struct PlanningAIChatView: View {
         try? FileManager.default.removeItem(at: url)
     }
 
+    /// Assistente bloccato sul piano: il file condiviso non verrebbe letto mai,
+    /// e comparirebbe a sorpresa allo sblocco. Si toglie e lo si dice.
+    private func discardSharedFileIfLocked() {
+        guard let path = coordinator.pendingShareAssistantFilePath, !path.isEmpty else { return }
+        coordinator.pendingShareAssistantFilePath = nil
+        try? FileManager.default.removeItem(atPath: path)
+        coordinator.globalBannerMessage = NSLocalizedString(
+            "Il documento condiviso non è stato letto: l'assistente non è disponibile sul tuo piano.",
+            comment: "Shared file dropped, assistant locked")
+    }
+
     // MARK: - AI locked view (piano Free)
 
     private var aiLockedView: some View {
@@ -183,6 +194,10 @@ struct PlanningAIChatView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             AppAnalytics.aiPaywallShown(context: "planning_chat_locked")
+            discardSharedFileIfLocked()
+        }
+        .onChange(of: coordinator.pendingShareAssistantFilePath) { _, _ in
+            discardSharedFileIfLocked()
         }
     }
 }

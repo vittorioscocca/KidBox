@@ -1,6 +1,28 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
+    "Il documento condiviso non è stato letto: l'assistente non è disponibile sul tuo piano." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The shared document wasn't read: the assistant isn't available on your plan."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El documento compartido no se ha leído: el asistente no está disponible en tu plan."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le document partagé n'a pas été lu : l'assistant n'est pas disponible avec ton forfait."
+          }
+        }
+      }
+    },
     "" : {
 
     },

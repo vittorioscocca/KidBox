@@ -154,15 +154,15 @@ extension KBShareDestination {
     
     var label: String {
         switch self {
-        case .chat:             return "Chat famiglia"
-        case .document:         return "Documenti"
-        case .todo:             return "To-Do"
-        case .grocery:          return "Lista spesa"
-        case .event:            return "Evento"
-        case .note:             return "Note"
-        case .encryptedMedia:   return "Foto e video"
-        case .wallet:           return "Wallet"
-        case .assistant:        return "Assistente AI"
+        case .chat:             return String(localized: "Chat famiglia")
+        case .document:         return String(localized: "Documenti")
+        case .todo:             return String(localized: "To-Do")
+        case .grocery:          return String(localized: "Lista spesa")
+        case .event:            return String(localized: "Evento")
+        case .note:             return String(localized: "Note")
+        case .encryptedMedia:   return String(localized: "Foto e video")
+        case .wallet:           return String(localized: "Wallet")
+        case .assistant:        return String(localized: "Assistente AI")
         }
     }
     

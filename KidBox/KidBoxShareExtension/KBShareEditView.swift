@@ -492,15 +492,15 @@ struct KBShareEditView: View {
     
     private func messageForDeferredBanner(_ destination: KBShareDestination) -> String {
         switch destination {
-        case .chat:           return "Apri KidBox per completare l'invio in chat."
-        case .todo:           return "Apri KidBox per completare la creazione del to-do."
-        case .event:          return "Apri KidBox per completare la creazione dell'evento."
-        case .grocery:        return "Apri KidBox per completare l'aggiunta alla lista spesa."
-        case .document:       return "Apri KidBox per completare il salvataggio del documento."
-        case .note:           return "Apri KidBox per completare la nota."
-        case .encryptedMedia: return "Apri KidBox per completare il salvataggio in Foto e video."
-        case .wallet:         return "Apri KidBox per completare l'import nel Wallet."
-        case .assistant:      return "Apri KidBox per far leggere il documento all'assistente."
+        case .chat:           return String(localized: "Apri KidBox per completare l'invio in chat.")
+        case .todo:           return String(localized: "Apri KidBox per completare la creazione del to-do.")
+        case .event:          return String(localized: "Apri KidBox per completare la creazione dell'evento.")
+        case .grocery:        return String(localized: "Apri KidBox per completare l'aggiunta alla lista spesa.")
+        case .document:       return String(localized: "Apri KidBox per completare il salvataggio del documento.")
+        case .note:           return String(localized: "Apri KidBox per completare la nota.")
+        case .encryptedMedia: return String(localized: "Apri KidBox per completare il salvataggio in Foto e video.")
+        case .wallet:         return String(localized: "Apri KidBox per completare l'import nel Wallet.")
+        case .assistant:      return String(localized: "Apri KidBox per far leggere il documento all'assistente.")
         }
     }
     
@@ -707,15 +707,15 @@ struct KBShareEditView: View {
     
     private var confirmLabel: String {
         switch destination {
-        case .chat:             return "Invia in chat"
-        case .document:         return "Salva nei documenti"
-        case .todo:             return "Crea to-do"
-        case .grocery:          return "Aggiungi alla spesa"
-        case .event:            return "Crea evento"
-        case .note:             return "Crea nota"
-        case .encryptedMedia:   return "Salva in Foto e video"
-        case .wallet:           return "Salva nel Wallet"
-        case .assistant:        return "Invia all'assistente"
+        case .chat:             return String(localized: "Invia in chat")
+        case .document:         return String(localized: "Salva nei documenti")
+        case .todo:             return String(localized: "Crea to-do")
+        case .grocery:          return String(localized: "Aggiungi alla spesa")
+        case .event:            return String(localized: "Crea evento")
+        case .note:             return String(localized: "Crea nota")
+        case .encryptedMedia:   return String(localized: "Salva in Foto e video")
+        case .wallet:           return String(localized: "Salva nel Wallet")
+        case .assistant:        return String(localized: "Invia all'assistente")
         }
     }
     
@@ -793,7 +793,7 @@ struct KBShareEditView: View {
                 .replacingOccurrences(of: " ,", with: ",")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
         }
-        if cleanedTitle.isEmpty { cleanedTitle = "Nuovo evento" }
+        if cleanedTitle.isEmpty { cleanedTitle = String(localized: "Nuovo evento") }
         return ParsedEventShare(title: cleanedTitle, notes: trimmed, detectedDate: detectedDate)
     }
     
@@ -938,7 +938,7 @@ struct KBShareEditView: View {
         } catch {
             log("sendToDestination ERROR: \(error.localizedDescription)")
             isSending = false
-            errorMessage = "Errore: \(error.localizedDescription)"
+            errorMessage = String(localized: "Errore: \(error.localizedDescription)")
         }
     }
     
@@ -1339,11 +1339,11 @@ enum ShareError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingFamilyId:
-            return "Apri KidBox almeno una volta per configurare la famiglia."
+            return String(localized: "Apri KidBox almeno una volta per configurare la famiglia.")
         case .missingFile:
-            return "Impossibile leggere il file selezionato."
+            return String(localized: "Impossibile leggere il file selezionato.")
         case .videoTooLarge(let sizeMB):
-            return "Il video è troppo grande (\(sizeMB) MB). Il limite massimo è 200 MB."
+            return String(localized: "Il video è troppo grande (\(sizeMB) MB). Il limite massimo è 200 MB.")
         }
     }
 }
