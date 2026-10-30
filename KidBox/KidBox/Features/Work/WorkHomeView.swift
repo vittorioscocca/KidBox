@@ -243,7 +243,8 @@ struct WorkHomeView: View {
             }
         }
         .sheet(item: $detailRecord) { r in
-            WorkRecordDetailView(record: r, fields: fields(r), canEdit: r.ownerUid == me) {
+            WorkRecordDetailView(record: r, fields: fields(r), canEdit: r.ownerUid == me,
+                                 onEdit: { startEdit(r) }) {
                 delete(r)
             }
         }
@@ -590,7 +591,50 @@ struct WorkHomeView: View {
         return p
     }
 
+    /// Modifica di un documento già salvato: stessi campi della conferma; i
+    /// periodi del foglio ferie spostano, creano o revocano i loro eventi.
+    private func applyEdit(recordId: String, base: WorkFields?, fields newFields: WorkFields, referenceDate: Date) {
+        let rid = recordId
+        guard let record = try? modelContext.fetch(FetchDescriptor<KBWorkRecord>(predicate: #Predicate { $0.id == rid })).first,
+              record.ownerUid == me else { return }
+        let old = base ?? fields(record)
+        var fields = newFields
+        if record.isLeavePlan {
+            reconcileLeaveEvents(old: old, new: &fields, ownerName: myDisplayName)
+            if let first = fields.leavePeriods.compactMap(\.startDay).min() { record.referenceDate = first }
+        } else {
+            record.referenceDate = referenceDate
+        }
+        do {
+            try WorkRecordCrypto.seal(fields, into: record, userId: me)
+        } catch {
+            errorMessage = String(localized: "Non riesco a cifrare il documento: la chiave di famiglia non è disponibile.")
+            return
+        }
+        record.updatedAt = Date()
+        record.updatedBy = me
+        record.updatedByName = myDisplayName
+        record.syncState = .pendingUpsert
+        try? modelContext.save()
+        SyncCenter.shared.enqueueWorkRecordUpsert(recordId: record.id, familyId: familyId, modelContext: modelContext)
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        draft = nil
+    }
+
+    private func startEdit(_ r: KBWorkRecord) {
+        guard let f = fields(r) else { return }
+        detailRecord = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            draft = WorkDraft(kind: r.kind, fields: f, referenceDate: r.referenceDate,
+                              data: Data(), fileName: "", mimeType: "", recordId: r.id, base: f)
+        }
+    }
+
     private func save(draft d: WorkDraft, fields: WorkFields, referenceDate: Date) {
+        if let rid = d.recordId {
+            applyEdit(recordId: rid, base: d.base, fields: fields, referenceDate: referenceDate)
+            return
+        }
         guard !me.isEmpty else { return }
         let profile = ensureProfile()
         let displayName = myDisplayName
@@ -605,7 +649,8 @@ struct WorkHomeView: View {
         }
         var fields = fields
         if d.kind == WorkRecordKind.leavePlan {
-            fields.eventIds = createLeaveEvents(fields.leavePeriods, ownerName: displayName)
+            createLeaveEvents(&fields.leavePeriods, ownerName: displayName)
+            fields.eventIds = fields.leavePeriods.compactMap(\.eventId)
         }
         do {
             try WorkRecordCrypto.seal(fields, into: record, userId: me)
@@ -638,28 +683,88 @@ struct WorkHomeView: View {
 
     /// Un evento «giornata intera» per periodo, visibile a tutta la famiglia
     /// (il calendario chiude i tutto-il-giorno alle 23:59:59 dell'ultimo giorno).
-    private func createLeaveEvents(_ periods: [WorkLeavePeriod], ownerName: String) -> [String] {
-        let cal = Calendar.current
-        var ids: [String] = []
-        for p in periods where p.inCalendar {
-            guard let first = p.startDay else { continue }
-            let start = cal.startOfDay(for: first)
-            let lastDay = cal.startOfDay(for: max(p.endDay ?? first, first))
-            guard let next = cal.date(byAdding: .day, value: 1, to: lastDay) else { continue }
-            let label = p.label.trimmingCharacters(in: .whitespacesAndNewlines)
-            let title = "\(label.isEmpty ? String(localized: "Ferie") : label) · \(ownerName)"
+    private func createLeaveEvents(_ periods: inout [WorkLeavePeriod], ownerName: String) {
+        for i in periods.indices where periods[i].inCalendar && periods[i].eventId == nil {
+            guard let (start, end) = Self.eventSpan(periods[i]) else { continue }
             let event = KBCalendarEvent(
-                familyId: familyId, childId: nil, title: title,
-                startDate: start, endDate: next.addingTimeInterval(-1), isAllDay: true,
+                familyId: familyId, childId: nil, title: Self.eventTitle(periods[i], ownerName: ownerName),
+                startDate: start, endDate: end, isAllDay: true,
                 visibilityScope: KBVisibilityScope.family,
                 updatedBy: me, createdBy: me
             )
             event.syncState = .pendingUpsert
             modelContext.insert(event)
             SyncCenter.shared.enqueueCalendarUpsert(eventId: event.id, familyId: familyId, modelContext: modelContext)
-            ids.append(event.id)
+            periods[i].eventId = event.id
         }
-        return ids
+    }
+
+    private static func eventTitle(_ p: WorkLeavePeriod, ownerName: String) -> String {
+        let label = p.label.trimmingCharacters(in: .whitespacesAndNewlines)
+        return "\(label.isEmpty ? String(localized: "Ferie") : label) · \(ownerName)"
+    }
+
+    /// Il calendario chiude i tutto-il-giorno alle 23:59:59 dell'ultimo giorno.
+    private static func eventSpan(_ p: WorkLeavePeriod) -> (Date, Date)? {
+        let cal = Calendar.current
+        guard let first = p.startDay else { return nil }
+        let start = cal.startOfDay(for: first)
+        let lastDay = cal.startOfDay(for: max(p.endDay ?? first, first))
+        guard let next = cal.date(byAdding: .day, value: 1, to: lastDay) else { return nil }
+        return (start, next.addingTimeInterval(-1))
+    }
+
+    private func calendarEvent(_ id: String) -> KBCalendarEvent? {
+        try? modelContext.fetch(FetchDescriptor<KBCalendarEvent>(predicate: #Predicate { $0.id == id })).first
+    }
+
+    private func removeCalendarEvent(_ id: String) {
+        guard let ev = calendarEvent(id) else { return }
+        ev.isDeleted = true
+        ev.updatedAt = Date()
+        ev.updatedBy = me
+        SyncCenter.shared.enqueueCalendarDelete(eventId: id, familyId: familyId, modelContext: modelContext)
+        modelContext.delete(ev)
+    }
+
+    /// Dopo una modifica: un periodo acceso e già in calendario si sposta, uno
+    /// acceso e nuovo si crea, uno spento o tolto si revoca dal calendario.
+    private func reconcileLeaveEvents(old: WorkFields?, new fields: inout WorkFields, ownerName: String) {
+        let oldPeriods = old?.leavePeriods ?? []
+        // Le ferie salvate prima che ogni periodo ricordasse il suo evento:
+        // gli id stanno in `eventIds`, nello stesso ordine dei periodi.
+        var legacy: [String: String] = [:]
+        if let old, old.eventIds.count == oldPeriods.count, oldPeriods.allSatisfy({ $0.eventId == nil }) {
+            for (p, eid) in zip(oldPeriods, old.eventIds) { legacy[p.id.uuidString] = eid }
+        }
+        func eventId(of p: WorkLeavePeriod) -> String? { p.eventId ?? legacy[p.id.uuidString] }
+
+        let keptIds = Set(fields.leavePeriods.map(\.id))
+        for p in oldPeriods where !keptIds.contains(p.id) {
+            if let eid = eventId(of: p) { removeCalendarEvent(eid) }
+        }
+        for i in fields.leavePeriods.indices {
+            if fields.leavePeriods[i].eventId == nil { fields.leavePeriods[i].eventId = eventId(of: fields.leavePeriods[i]) }
+            let p = fields.leavePeriods[i]
+            if p.inCalendar {
+                if let eid = p.eventId, let ev = calendarEvent(eid), let (s, e) = Self.eventSpan(p) {
+                    ev.title = Self.eventTitle(p, ownerName: ownerName)
+                    ev.startDate = s
+                    ev.endDate = e
+                    ev.updatedAt = Date()
+                    ev.updatedBy = me
+                    ev.syncState = .pendingUpsert
+                    SyncCenter.shared.enqueueCalendarUpsert(eventId: eid, familyId: familyId, modelContext: modelContext)
+                } else {
+                    fields.leavePeriods[i].eventId = nil   // l'evento non c'è più: si ricrea
+                }
+            } else if let eid = p.eventId {
+                removeCalendarEvent(eid)
+                fields.leavePeriods[i].eventId = nil
+            }
+        }
+        createLeaveEvents(&fields.leavePeriods, ownerName: ownerName)
+        fields.eventIds = fields.leavePeriods.compactMap(\.eventId)
     }
 
     private func delete(_ r: KBWorkRecord) {
@@ -743,6 +848,10 @@ struct WorkDraft: Identifiable {
     let data: Data
     let fileName: String
     let mimeType: String
+    /// Valorizzato = modifica di un documento già salvato (nessun nuovo file).
+    var recordId: String? = nil
+    /// I campi com'erano prima della modifica (stessi id dei periodi della bozza).
+    var base: WorkFields? = nil
 }
 
 /// La scheda di conferma: i valori letti, correggibili prima di salvarli.
@@ -782,7 +891,9 @@ private struct WorkConfirmSheet: View {
                     } header: {
                         Text("Periodi")
                     } footer: {
-                        Text("Il foglio si salva sempre in Lavoro. I periodi con «Aggiungi al calendario» acceso diventano eventi «giornata intera», visibili a tutta la famiglia. Scorri per togliere un periodo.")
+                        Text(draft.recordId != nil
+                             ? LocalizedStringKey("Cambia le date o spegni «Aggiungi al calendario» per togliere un periodo dal calendario di famiglia. Scorri per eliminare un periodo.")
+                             : LocalizedStringKey("Il foglio si salva sempre in Lavoro. I periodi con «Aggiungi al calendario» acceso diventano eventi «giornata intera», visibili a tutta la famiglia. Scorri per togliere un periodo."))
                     }
                 } else if draft.kind == WorkRecordKind.payslip {
                     Section("Busta paga") {
@@ -869,6 +980,7 @@ private struct WorkRecordDetailView: View {
     let record: KBWorkRecord
     let fields: WorkFields?
     let canEdit: Bool
+    let onEdit: () -> Void
     let onDelete: () -> Void
 
     @State private var previewURL: URL?
@@ -940,7 +1052,12 @@ private struct WorkRecordDetailView: View {
             }
             .navigationTitle(WorkHomeView.kindTitle(record.kind))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Chiudi") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Chiudi") { dismiss() } }
+                if canEdit && fields != nil {
+                    ToolbarItem(placement: .confirmationAction) { Button("Modifica") { onEdit() } }
+                }
+            }
             .confirmationDialog("Eliminare questo documento?", isPresented: $confirmDelete, titleVisibility: .visible) {
                 Button("Elimina", role: .destructive) { onDelete() }
                 Button("Annulla", role: .cancel) {}

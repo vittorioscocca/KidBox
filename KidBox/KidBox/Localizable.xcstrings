@@ -1,6 +1,28 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
+    "Cambia le date o spegni «Aggiungi al calendario» per togliere un periodo dal calendario di famiglia. Scorri per eliminare un periodo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change the dates or turn off “Add to calendar” to remove a period from the family calendar. Swipe to delete a period."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambia las fechas o desactiva «Añadir al calendario» para quitar un periodo del calendario familiar. Desliza para eliminar un periodo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change les dates ou désactive « Ajouter au calendrier » pour retirer une période du calendrier de famille. Fais glisser pour supprimer une période."
+          }
+        }
+      }
+    },
     "Permesso (PAR)" : {
       "localizations" : {
         "en" : {
