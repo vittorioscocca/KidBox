@@ -621,8 +621,40 @@ struct WorkHomeView: View {
         draft = nil
     }
 
+    /// I fogli salvati prima che ogni periodo ricordasse il suo evento: lo si
+    /// ritrova dalle date (prima fra gli eventi del documento, poi fra i tutto-
+    /// il-giorno creati da me con il titolo «… · nome»), così l'interruttore
+    /// mostra il vero stato e si può revocare.
+    private func linkLegacyEvents(_ input: WorkFields) -> WorkFields {
+        var f = input
+        let cal = Calendar.current
+        let mine = me
+        let fid = familyId
+        let candidates = ((try? modelContext.fetch(FetchDescriptor<KBCalendarEvent>(
+            predicate: #Predicate { $0.familyId == fid && $0.isAllDay && !$0.isDeleted && $0.createdBy == mine }))) ?? [])
+        var claimed = Set(f.leavePeriods.compactMap(\.eventId))
+        func match(_ p: WorkLeavePeriod, in pool: [KBCalendarEvent]) -> KBCalendarEvent? {
+            guard let (s, e) = Self.eventSpan(p) else { return nil }
+            return pool.first { ev in
+                !claimed.contains(ev.id)
+                    && cal.isDate(ev.startDate, inSameDayAs: s) && cal.isDate(ev.endDate, inSameDayAs: e)
+            }
+        }
+        let own = candidates.filter { f.eventIds.contains($0.id) }
+        let named = candidates.filter { $0.title.contains(" · ") }
+        for i in f.leavePeriods.indices where f.leavePeriods[i].eventId == nil {
+            if let ev = match(f.leavePeriods[i], in: own) ?? match(f.leavePeriods[i], in: named) {
+                f.leavePeriods[i].eventId = ev.id
+                f.leavePeriods[i].inCalendar = true
+                claimed.insert(ev.id)
+            }
+        }
+        return f
+    }
+
     private func startEdit(_ r: KBWorkRecord) {
-        guard let f = fields(r) else { return }
+        guard let raw = fields(r) else { return }
+        let f = linkLegacyEvents(raw)
         detailRecord = nil
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             draft = WorkDraft(kind: r.kind, fields: f, referenceDate: r.referenceDate,
@@ -700,8 +732,7 @@ struct WorkHomeView: View {
     }
 
     private static func eventTitle(_ p: WorkLeavePeriod, ownerName: String) -> String {
-        let label = p.label.trimmingCharacters(in: .whitespacesAndNewlines)
-        return "\(label.isEmpty ? String(localized: "Ferie") : label) · \(ownerName)"
+        return "\(WorkLeavePeriod.cleanLabel(p.label)) · \(ownerName)"
     }
 
     /// Il calendario chiude i tutto-il-giorno alle 23:59:59 dell'ultimo giorno.
@@ -731,13 +762,7 @@ struct WorkHomeView: View {
     /// acceso e nuovo si crea, uno spento o tolto si revoca dal calendario.
     private func reconcileLeaveEvents(old: WorkFields?, new fields: inout WorkFields, ownerName: String) {
         let oldPeriods = old?.leavePeriods ?? []
-        // Le ferie salvate prima che ogni periodo ricordasse il suo evento:
-        // gli id stanno in `eventIds`, nello stesso ordine dei periodi.
-        var legacy: [String: String] = [:]
-        if let old, old.eventIds.count == oldPeriods.count, oldPeriods.allSatisfy({ $0.eventId == nil }) {
-            for (p, eid) in zip(oldPeriods, old.eventIds) { legacy[p.id.uuidString] = eid }
-        }
-        func eventId(of p: WorkLeavePeriod) -> String? { p.eventId ?? legacy[p.id.uuidString] }
+        func eventId(of p: WorkLeavePeriod) -> String? { p.eventId }
 
         let keptIds = Set(fields.leavePeriods.map(\.id))
         for p in oldPeriods where !keptIds.contains(p.id) {

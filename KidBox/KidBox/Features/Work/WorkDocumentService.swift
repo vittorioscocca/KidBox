@@ -86,25 +86,13 @@ enum WorkDocumentService {
       raggruppa i giorni consecutivi in un solo periodo (start = primo giorno, end = ultimo), un giorno solo ha \
       start = end. Non aggiungere giorni non segnati, non includere festivi o weekend che non sono indicati. \
       Se manca l'anno, usa quello più probabile dal contesto del documento. "label" è il tipo di assenza come \
-      scritto ma in italiano esteso: una sigla va sciolta (PAR o ROL → «Permesso (PAR)» / «Permesso (ROL)», \
+      scritto ma in italiano esteso: una sigla va sciolta (PAR → «Ferie», ROL → «Permesso (ROL)», \
       FER → «Ferie», MAL → «Malattia»); mai una sigla da sola. "referenceDate" è l'inizio del primo periodo; "title" es. «Ferie 2026».
     - Non dare giudizi né consigli: estrai solo ciò che è scritto.
     """
 
     // MARK: - Parse
 
-    /// Le sigle dei fogli ferie, sciolte (il modello a volte le lascia come sono).
-    private static func normalizedLeaveLabel(_ raw: String) -> String {
-        let t = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        switch t.lowercased() {
-        case "": return String(localized: "Ferie")
-        case "par": return String(localized: "Permesso (PAR)")
-        case "rol": return String(localized: "Permesso (ROL)")
-        case "fer", "f": return String(localized: "Ferie")
-        case "mal", "m": return String(localized: "Malattia")
-        default: return t.prefix(1).uppercased() + t.dropFirst()
-        }
-    }
 
     private static func parse(_ reply: String) throws -> Result {
         var text = reply.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -133,7 +121,7 @@ enum WorkDocumentService {
             // In bozza ogni periodo parte con «Aggiungi al calendario» acceso: lo spegne chi non lo vuole.
             for i in fields.leavePeriods.indices {
                 fields.leavePeriods[i].inCalendar = true
-                fields.leavePeriods[i].label = normalizedLeaveLabel(fields.leavePeriods[i].label)
+                fields.leavePeriods[i].label = WorkLeavePeriod.cleanLabel(fields.leavePeriods[i].label)
             }
             guard !fields.leavePeriods.isEmpty else { throw AnalyzeError.notAWorkDocument }
         }

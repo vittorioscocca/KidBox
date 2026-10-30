@@ -184,6 +184,18 @@ struct WorkLeavePeriod: Codable, Equatable, Identifiable {
         eventId = ((try? c.decodeIfPresent(String.self, forKey: .eventId)) ?? nil).flatMap { $0.isEmpty ? nil : $0 }
     }
 
+    /// Il nome del periodo come finisce nel calendario: «Ferie» per le ferie
+    /// (anche la sigla PAR del foglio), mai una sigla da sola.
+    static func cleanLabel(_ raw: String) -> String {
+        let t = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        switch t.lowercased() {
+        case "", "par", "fer", "f", "ferie": return String(localized: "Ferie")
+        case "rol": return String(localized: "Permesso (ROL)")
+        case "mal", "m": return String(localized: "Malattia")
+        default: return t.prefix(1).uppercased() + t.dropFirst()
+        }
+    }
+
     var startDay: Date? { WorkFields.parseDay(start) }
     var endDay: Date? { WorkFields.parseDay(end) ?? startDay }
 }
