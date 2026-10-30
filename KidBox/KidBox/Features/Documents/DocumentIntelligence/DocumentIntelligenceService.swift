@@ -125,7 +125,8 @@ enum DocumentIntelligenceService {
 
     // MARK: - Rendering
 
-    private static func renderImages(data: Data, mimeType: String) -> [Data] {
+    /// Anche per la scheda Lavoro (`WorkDocumentService`): stesse pagine, stesso costo.
+    static func renderImages(data: Data, mimeType: String) -> [Data] {
         if mimeType.hasPrefix("image/") {
             if let img = UIImage(data: data), let jpeg = downscaledJPEG(img) {
                 return [jpeg]

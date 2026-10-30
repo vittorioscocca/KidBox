@@ -161,6 +161,10 @@ final class AIService {
     private static let paidOnlyPurposes: Set<String> = [
         "mealPlan", "fitnessPlan", "fitnessAdjust", "fitnessCopilot",
     ]
+
+    /// Purpose chiusi ai Free **anche col bonus intatto**: `isAIAccessible` non
+    /// dice il piano, quindi qui si guarda `currentPlan` (vedi `/gating-pro`).
+    private static let strictlyPaidPurposes: Set<String> = ["workDoc"]
     
     private init() {
         KBLog.ai.kbDebug("AIService initialized region=europe-west1")
@@ -353,6 +357,19 @@ final class AIService {
                     NSLocalizedString(
                         "Questa funzione AI è inclusa nei piani Pro e Max. Passa a Pro per usarla.",
                         comment: "Paid-only AI purpose blocked"
+                    )
+                )
+            }
+        }
+
+        if let purpose, Self.strictlyPaidPurposes.contains(purpose) {
+            await KBSubscriptionManager.shared.loadPlan()
+            guard KBSubscriptionManager.shared.currentPlan != .free else {
+                KBLog.ai.kbInfo("sendMessages blocked: purpose=\(purpose) requires Pro or Max")
+                throw AIServiceError.rateLimitReached(
+                    NSLocalizedString(
+                        "La scheda Lavoro è inclusa nei piani Pro e Max.",
+                        comment: "Work card blocked on Free"
                     )
                 )
             }

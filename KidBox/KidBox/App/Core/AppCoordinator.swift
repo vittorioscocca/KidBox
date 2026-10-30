@@ -908,6 +908,9 @@ final class AppCoordinator: ObservableObject {
         case .pharmacies(let familyId):
             PharmacyView(familyId: familyId)
 
+        case .workHome(let familyId):
+            WorkHomeView(familyId: familyId)
+
         case .petsHome(let familyId):
             PetsHomeView(familyId: familyId)
         case .petDetail(let familyId, let petId):

@@ -186,6 +186,45 @@ struct WorkFields: Codable, Equatable {
 
     var notes: String = ""
 
+    init() {}
+
+    /// Decodifica tollerante: la risposta del modello può omettere campi o
+    /// mandare un importo come testo («1.234,56»).
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: Key.self)
+        func text(_ k: Key) -> String { (try? c.decodeIfPresent(String.self, forKey: k)) ?? "" }
+        func day(_ k: Key) -> String? {
+            guard let s = try? c.decodeIfPresent(String.self, forKey: k), !s.isEmpty else { return nil }
+            return String(s.prefix(10))
+        }
+        func num(_ k: Key) -> Double? {
+            if let d = try? c.decodeIfPresent(Double.self, forKey: k) { return d }
+            guard let s = try? c.decodeIfPresent(String.self, forKey: k) else { return nil }
+            let cleaned = s.replacingOccurrences(of: "€", with: "").replacingOccurrences(of: " ", with: "")
+            let normalized = cleaned.contains(",")
+                ? cleaned.replacingOccurrences(of: ".", with: "").replacingOccurrences(of: ",", with: ".")
+                : cleaned
+            return Double(normalized)
+        }
+        title = text(.title); employer = text(.employer); period = text(.period)
+        gross = num(.gross); net = num(.net); taxes = num(.taxes); contributions = num(.contributions)
+        vacationAccrued = num(.vacationAccrued); vacationTaken = num(.vacationTaken)
+        vacationRemaining = num(.vacationRemaining)
+        permitHoursAccrued = num(.permitHoursAccrued); permitHoursRemaining = num(.permitHoursRemaining)
+        tfr = num(.tfr)
+        contractType = text(.contractType); startDate = day(.startDate); endDate = day(.endDate)
+        grossAnnual = num(.grossAnnual); level = text(.level); noticePeriod = text(.noticePeriod)
+        vacationDaysPerYear = num(.vacationDaysPerYear)
+        notes = text(.notes)
+    }
+
+    private enum Key: String, CodingKey {
+        case title, employer, period, gross, net, taxes, contributions
+        case vacationAccrued, vacationTaken, vacationRemaining
+        case permitHoursAccrued, permitHoursRemaining, tfr
+        case contractType, startDate, endDate, grossAnnual, level, noticePeriod, vacationDaysPerYear, notes
+    }
+
     static func parseDay(_ s: String?) -> Date? {
         guard let s, !s.isEmpty else { return nil }
         let f = DateFormatter()
