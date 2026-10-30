@@ -343,7 +343,7 @@ function millis(t) {
 /**
  * Costruisce le function con gli helper di `index.js` (appartenenza, quota,
  * contatore AI), così quota e piano hanno una copia sola.
- * @param {{assertFamilyMember: Function, resolveAIQuota: Function, checkAndIncrementAIUsage: Function, refundAIUsage: Function}} deps
+ * @param {{assertFamilyMember: Function, resolveAIQuota: Function, assertFreeBonusLeft: Function, checkAndIncrementAIUsage: Function, refundAIUsage: Function}} deps
  * @return {object}
  */
 function build(deps) {
@@ -351,8 +351,8 @@ function build(deps) {
 
   /**
    * Il cancello comune alle due callable: login, famiglia, piano, interruttore.
-   * Il piano si legge dalla quota: `lifetime` è il Free, e il Free non ha le
-   * Notizie (trappola di /gating-pro: `isAIAccessible` non è il piano).
+   * Il Free le ha finché dura il bonus una tantum di messaggi AI (quota
+   * `lifetime`), poi si chiudono (`assertFreeBonusLeft`).
    * @param {object} request
    * @return {Promise<{uid: string, familyId: string, quota: object, cfg: typeof DEFAULTS}>}
    */
@@ -367,13 +367,8 @@ function build(deps) {
     }
     await deps.assertFamilyMember(uid, familyId);
     const quota = await deps.resolveAIQuota(uid, familyId);
-    if (quota.period === "lifetime") {
-      throw new HttpsError(
-          "permission-denied",
-          "Le Notizie sono incluse nei piani Pro e Max. Passa a Pro per riceverle.",
-          {reason: "plan"},
-      );
-    }
+    await deps.assertFreeBonusLeft(familyId, uid, quota,
+        "Hai finito i messaggi AI gratuiti. Le Notizie sono incluse nei piani Pro e Max.");
     return {uid, familyId, quota, cfg};
   }
 

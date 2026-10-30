@@ -2679,6 +2679,28 @@ async function resolveAIQuota(uid, familyId = null) {
   }
 }
 
+/**
+ * Free: le funzioni riservate a Pro/Max sono aperte finché dura il bonus
+ * una tantum e si chiudono quando finisce. Vale anche per le letture che non
+ * scalano (Notizie già pagate, Farmacie in cache): a bonus esaurito tutto si
+ * chiude. Pro, Max e prova non sono toccati.
+ * @param {string} familyId
+ * @param {string} uid
+ * @param {{period: string, limit: number}} quota
+ * @param {string} message
+ * @param {object} [details]
+ * @return {Promise<void>}
+ */
+async function assertFreeBonusLeft(familyId, uid, quota, message, details = {reason: "plan"}) {
+  if (quota.period !== "lifetime") return;
+  const {familyRef, userRef} = proTrial.aiUsageRefs(admin.firestore(), familyId, uid, "lifetime", aiTodayKey());
+  const [fam, usr] = await Promise.all([familyRef.get(), userRef ? userRef.get() : null]);
+  const used = Math.max(fam.exists ? (fam.data().count || 0) : 0, usr && usr.exists ? (usr.data().count || 0) : 0);
+  if (quota.limit <= 0 || used >= quota.limit) {
+    throw new HttpsError("permission-denied", message, details);
+  }
+}
+
 /** Caratteri payload (system + messages) considerati 1 messaggio sul contatore giornaliero. */
 const AI_STANDARD_PAYLOAD_CHARS = 50000;
 /** Limite assoluto anti-abuso / errori API (oltre questo si rifiuta la richiesta). */
@@ -3208,22 +3230,15 @@ exports.askAI = onCall(
       await assertFamilyMember(uid, familyId);
 
       const quota = await resolveAIQuota(uid, familyId);
-      // Il piano alimentare è una feature dei soli piani a pagamento: su Free la
-      // quota è `lifetime` (bonus una tantum), quindi la usiamo come discriminante.
-      if (mealPlan && quota.period === "lifetime") {
-        throw new HttpsError(
-            "permission-denied",
-            "Il Piano Alimentare è incluso nei piani Pro e Max. Passa a Pro per generarlo.",
-        );
+      // Piano alimentare e fitness (con le chiamate di contorno): aperti ai Free
+      // finché dura il bonus una tantum, chiusi quando è finito.
+      if (mealPlan) {
+        await assertFreeBonusLeft(familyId, uid, quota,
+            "Hai finito i messaggi AI gratuiti. Il Piano Alimentare è incluso nei piani Pro e Max.");
       }
-      // Stesso discriminante per il Piano Fitness e per tutte le sue chiamate
-      // di contorno: spostamento seduta, adeguamento settimanale e copilota
-      // lavorano su un piano che i Free non possono avere.
-      if ((fitnessPlan || fitnessAssist) && quota.period === "lifetime") {
-        throw new HttpsError(
-            "permission-denied",
-            "Il Piano Fitness è incluso nei piani Pro e Max. Passa a Pro per generarlo.",
-        );
+      if (fitnessPlan || fitnessAssist) {
+        await assertFreeBonusLeft(familyId, uid, quota,
+            "Hai finito i messaggi AI gratuiti. Il Piano Fitness è incluso nei piani Pro e Max.");
       }
       const usageCount = await checkAndIncrementAIUsage(familyId, uid, quota, messageUnits);
 
@@ -3884,15 +3899,9 @@ exports.generateTravelPlan = onCall(
       await assertFamilyMember(uid, familyId);
 
       const quota = await resolveAIQuota(uid, familyId);
-      // Il pianificatore viaggi è una feature dei soli piani a pagamento: su Free la
-      // quota è `lifetime` (bonus una tantum), quindi la usiamo come discriminante —
-      // stesso criterio del Piano Alimentare in askAI.
-      if (quota.period === "lifetime") {
-        throw new HttpsError(
-            "permission-denied",
-            "Il Pianificatore Viaggi è incluso nei piani Pro e Max. Passa a Pro per generare un itinerario.",
-        );
-      }
+      // Aperto ai Free finché dura il bonus una tantum, chiuso quando è finito.
+      await assertFreeBonusLeft(familyId, uid, quota,
+          "Hai finito i messaggi AI gratuiti. Il Pianificatore Viaggi è incluso nei piani Pro e Max.");
       const plannedDayCount = plannedDayCountFromWizard(wizardData);
       const travelMessageCost = travelMessageCostForPlannedDays(plannedDayCount);
       const usageCount = await checkAndIncrementAIUsage(
@@ -8686,6 +8695,7 @@ exports.delegateUnassignedTodos = familyRequests.delegateUnassignedTodos;
 const news = require("./news").build({
   assertFamilyMember,
   resolveAIQuota,
+  assertFreeBonusLeft,
   checkAndIncrementAIUsage,
   refundAIUsage,
 });
@@ -8700,6 +8710,7 @@ exports.prepareNewsEditions = news.prepareNewsEditions;
 const pharmacies = require("./pharmacies").build({
   assertFamilyMember,
   resolveAIQuota,
+  assertFreeBonusLeft,
   checkAndIncrementAIUsage,
   refundAIUsage,
 });

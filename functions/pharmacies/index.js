@@ -292,7 +292,7 @@ async function generateRule(o) {
 // ── Il modulo ────────────────────────────────────────────────────────────────
 
 /**
- * @param {{assertFamilyMember: Function, resolveAIQuota: Function, checkAndIncrementAIUsage: Function, refundAIUsage: Function}} deps
+ * @param {{assertFamilyMember: Function, resolveAIQuota: Function, assertFreeBonusLeft: Function, checkAndIncrementAIUsage: Function, refundAIUsage: Function}} deps
  * @return {object}
  */
 function build(deps) {
@@ -319,9 +319,9 @@ function build(deps) {
   }
 
   /**
-   * Login, famiglia, interruttore e piano: il Free non ha le farmacie di turno
-   * (trappola di /gating-pro: `isAIAccessible` non è il piano, qui si guarda
-   * la quota `lifetime`).
+   * Login, famiglia, interruttore e piano: il Free ha le farmacie di turno
+   * finché dura il bonus una tantum di messaggi AI, poi si chiudono
+   * (`assertFreeBonusLeft`).
    * @param {object} request
    * @return {Promise<{uid: string, familyId: string, quota: object, cfg: typeof DEFAULTS}>}
    */
@@ -334,9 +334,8 @@ function build(deps) {
     if (!cfg.enabled) throw new HttpsError("failed-precondition", "Le farmacie di turno sono sospese.", {reason: "pharmacies-disabled"});
     await deps.assertFamilyMember(uid, familyId);
     const quota = await deps.resolveAIQuota(uid, familyId);
-    if (quota.period === "lifetime") {
-      throw new HttpsError("permission-denied", "Le farmacie di turno sono incluse nei piani Pro e Max.", {reason: "plan"});
-    }
+    await deps.assertFreeBonusLeft(familyId, uid, quota,
+        "Hai finito i messaggi AI gratuiti. Le farmacie di turno sono incluse nei piani Pro e Max.");
     return {uid, familyId, quota, cfg};
   }
 
