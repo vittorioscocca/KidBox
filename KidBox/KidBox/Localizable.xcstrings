@@ -1,24 +1,68 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
-    "Il foglio si salva sempre in Lavoro. I periodi con «Aggiungi al calendario» acceso diventano eventi «giornata intera», visibili a tutta la famiglia. Scorri per togliere un periodo." : {
+    "Permesso (PAR)" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The sheet is always saved in Work. Periods with “Add to calendar” on become all-day events, visible to the whole family. Swipe to remove a period."
+            "value" : "Time off (PAR)"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La hoja siempre se guarda en Trabajo. Los periodos con «Añadir al calendario» activado se convierten en eventos de «día completo», visibles para toda la familia. Desliza para quitar un periodo."
+            "value" : "Permiso (PAR)"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La fiche est toujours enregistrée dans Travail. Les périodes avec « Ajouter au calendrier » activé deviennent des événements « journée entière », visibles par toute la famille. Fais glisser pour retirer une période."
+            "value" : "Permission (PAR)"
+          }
+        }
+      }
+    },
+    "Permesso (ROL)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time off (ROL)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permiso (ROL)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permission (ROL)"
+          }
+        }
+      }
+    },
+    "Malattia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sick leave"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baja por enfermedad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maladie"
           }
         }
       }
@@ -34513,6 +34557,28 @@
         }
       }
     },
+    "Il foglio si salva sempre in Lavoro. I periodi con «Aggiungi al calendario» acceso diventano eventi «giornata intera», visibili a tutta la famiglia. Scorri per togliere un periodo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The sheet is always saved in Work. Periods with “Add to calendar” on become all-day events, visible to the whole family. Swipe to remove a period."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La hoja siempre se guarda en Trabajo. Los periodos con «Añadir al calendario» activado se convierten en eventos de «día completo», visibles para toda la familia. Desliza para quitar un periodo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La fiche est toujours enregistrée dans Travail. Les périodes avec « Ajouter au calendrier » activé deviennent des événements « journée entière », visibles par toute la famille. Fais glisser pour retirer une période."
+          }
+        }
+      }
+    },
     "Il link contiene la chiave: chi lo riceve può entrare. Resta nella chat o nella posta finché non viene usato. Vale 7 giorni, una volta sola, e puoi annullarlo qui sotto." : {
       "localizations" : {
         "en" : {
@@ -52843,6 +52909,7 @@
       }
     },
     "Ogni periodo diventa un evento «giornata intera» nel calendario, visibile a tutta la famiglia. Scorri per togliere un periodo." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

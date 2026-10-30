@@ -64,6 +64,14 @@ struct WorkHomeView: View {
         return [me] + others
     }
 
+    /// Il mio nome vero (per i titoli degli eventi e per chi vede la scheda):
+    /// `name(of:)` dice «Io», che negli eventi degli altri non ha senso.
+    private var myDisplayName: String {
+        if let n = members.first(where: { $0.userId == me })?.displayName?.trimmingCharacters(in: .whitespacesAndNewlines), !n.isEmpty { return n }
+        if let n = Auth.auth().currentUser?.displayName?.trimmingCharacters(in: .whitespacesAndNewlines), !n.isEmpty { return n }
+        return String(localized: "Io")
+    }
+
     private func name(of uid: String) -> String {
         if uid == me { return String(localized: "Io") }
         return members.first { $0.userId == uid }?.displayName ?? String(localized: "Un familiare")
@@ -574,7 +582,7 @@ struct WorkHomeView: View {
     @discardableResult
     private func ensureProfile() -> KBWorkProfile {
         if let p = myProfile { return p }
-        let p = KBWorkProfile(ownerUid: me, familyId: familyId, ownerName: name(of: me))
+        let p = KBWorkProfile(ownerUid: me, familyId: familyId, ownerName: myDisplayName)
         modelContext.insert(p)
         try? modelContext.save()
         SyncCenter.shared.enqueueWorkProfileUpsert(ownerUid: me, familyId: familyId, modelContext: modelContext)
@@ -585,7 +593,7 @@ struct WorkHomeView: View {
     private func save(draft d: WorkDraft, fields: WorkFields, referenceDate: Date) {
         guard !me.isEmpty else { return }
         let profile = ensureProfile()
-        let displayName = name(of: me)
+        let displayName = myDisplayName
 
         let record = KBWorkRecord(familyId: familyId, ownerUid: me, ownerName: displayName,
                                   kind: d.kind, referenceDate: referenceDate)
