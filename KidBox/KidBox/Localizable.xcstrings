@@ -1,24 +1,24 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
-    "Il documento condiviso non è stato letto: l'assistente non è disponibile sul tuo piano." : {
+    "Rimuovi allegato" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The shared document wasn't read: the assistant isn't available on your plan."
+            "value" : "Remove attachment"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "El documento compartido no se ha leído: el asistente no está disponible en tu plan."
+            "value" : "Quitar adjunto"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le document partagé n'a pas été lu : l'assistant n'est pas disponible avec ton forfait."
+            "value" : "Retirer la pièce jointe"
           }
         }
       }
@@ -73,50 +73,6 @@
     },
     " Meteo" : {
 
-    },
-    "Acqua e luce" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Water and power"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Agua y luz"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eau et électricité"
-          }
-        }
-      }
-    },
-    "Interruzioni, razionamenti ed emergenze di acqua ed elettricità nella tua zona" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Outages, rationing and emergencies for water and electricity in your area"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cortes, restricciones y emergencias de agua y electricidad en tu zona"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coupures, restrictions et urgences d'eau et d'électricité près de chez vous"
-          }
-        }
-      }
     },
     "–" : {
       "localizations" : {
@@ -5663,6 +5619,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Eau"
+          }
+        }
+      }
+    },
+    "Acqua e luce" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Water and power"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agua y luz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eau et électricité"
           }
         }
       }
@@ -33670,6 +33648,29 @@
         }
       }
     },
+    "Il documento condiviso non è stato letto: l'assistente non è disponibile sul tuo piano." : {
+      "comment" : "Shared file dropped, assistant locked",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The shared document wasn't read: the assistant isn't available on your plan."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El documento compartido no se ha leído: el asistente no está disponible en tu plan."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le document partagé n'a pas été lu : l'assistant n'est pas disponible avec ton forfait."
+          }
+        }
+      }
+    },
     "Il documento è troppo lungo per essere un elenco di turni." : {
       "comment" : "Pharmacies: document too long",
       "localizations" : {
@@ -36910,6 +36911,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Interrompus"
+          }
+        }
+      }
+    },
+    "Interruzioni, razionamenti ed emergenze di acqua ed elettricità nella tua zona" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outages, rationing and emergencies for water and electricity in your area"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cortes, restricciones y emergencias de agua y electricidad en tu zona"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coupures, restrictions et urgences d'eau et d'électricité près de chez vous"
           }
         }
       }

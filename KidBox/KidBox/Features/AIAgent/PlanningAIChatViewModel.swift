@@ -1,3 +1,4 @@
+import PDFKit
 //
 //  PlanningAIChatViewModel.swift
 //  KidBox
@@ -50,6 +51,9 @@ final class PlanningAIChatViewModel: ObservableObject {
     /// Documento caricato col «+»: in lettura, poi la scheda di conferma.
     @Published private(set) var isAnalyzingDocument = false
     @Published var docIntelPayload: DocIntelPayload?
+    /// Documento scelto (scanner, foto, file, condivisione) e non ancora letto:
+    /// resta nel campo di testo finché l'utente non preme invio.
+    @Published private(set) var attachment: StagedAttachment?
 
     /// Ultimo snapshot letto: serve alle card d'azione della view.
     @Published private(set) var snapshot: AgentMemorySnapshot?
@@ -187,6 +191,10 @@ final class PlanningAIChatViewModel: ObservableObject {
     // MARK: - Send
 
     func send() async {
+        if attachment != nil {
+            await analyzeStagedAttachment()
+            return
+        }
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !isLoading, contextPrepared, conversation != nil else { return }
         inputText = ""
@@ -664,7 +672,7 @@ extension PlanningAIChatViewModel {
             return
         }
         let name = fileURL.lastPathComponent
-        await analyzeImported(data: data, fileName: name, mimeType: Self.mimeType(forExtension: fileURL.pathExtension))
+        await stageImported(data: data, fileName: name, mimeType: Self.mimeType(forExtension: fileURL.pathExtension))
     }
 
     /// Foto dalla libreria.
@@ -673,7 +681,7 @@ extension PlanningAIChatViewModel {
             errorMessage = NSLocalizedString("Impossibile leggere il file.", comment: "Assistant document import")
             return
         }
-        await analyzeImported(data: jpeg, fileName: Self.fileName(base: NSLocalizedString("Foto", comment: "Imported file name"), ext: "jpg"), mimeType: "image/jpeg")
+        await stageImported(data: jpeg, fileName: Self.fileName(base: NSLocalizedString("Foto", comment: "Imported file name"), ext: "jpg"), mimeType: "image/jpeg")
     }
 
     /// Pagine dallo scanner di documenti: un PDF solo.
@@ -686,7 +694,7 @@ extension PlanningAIChatViewModel {
                 page.draw(in: CGRect(origin: .zero, size: page.size))
             }
         }
-        await analyzeImported(data: pdf, fileName: Self.fileName(base: NSLocalizedString("Scansione", comment: "Imported file name"), ext: "pdf"), mimeType: "application/pdf")
+        await stageImported(data: pdf, fileName: Self.fileName(base: NSLocalizedString("Scansione", comment: "Imported file name"), ext: "pdf"), mimeType: "application/pdf")
     }
 
     /// Chiusa la scheda: se qualcosa è stato creato resta traccia nella
@@ -711,8 +719,10 @@ extension PlanningAIChatViewModel {
         actionExecutionSummary = NSLocalizedString("Documento smistato", comment: "Assistant document import toast")
     }
 
-    private func analyzeImported(data: Data, fileName: String, mimeType: String) async {
-        guard !isAnalyzingDocument, !isLoading else { return }
+    /// Mette il documento nel campo di testo, pronto per l'invio: la lettura
+    /// (e il messaggio AI che costa) parte solo quando l'utente preme invio.
+    private func stageImported(data: Data, fileName: String, mimeType: String) async {
+        guard !isAnalyzingDocument else { return }
         errorMessage = nil
 
         // Copia privata: i file di File valgono solo finché dura lo scope, e
@@ -727,6 +737,34 @@ extension PlanningAIChatViewModel {
             errorMessage = NSLocalizedString("Impossibile leggere il file.", comment: "Assistant document import")
             return
         }
+        discardAttachment()
+        attachment = StagedAttachment(
+            fileURL: fileURL, fileName: fileName, mimeType: mimeType,
+            thumbnail: StagedAttachment.makeThumbnail(data: data, mimeType: mimeType)
+        )
+    }
+
+    /// La X sull'anteprima.
+    func discardAttachment() {
+        if let file = attachment?.fileURL {
+            try? FileManager.default.removeItem(at: file.deletingLastPathComponent())
+        }
+        attachment = nil
+    }
+
+    private func analyzeStagedAttachment() async {
+        guard let staged = attachment, !isAnalyzingDocument, !isLoading else { return }
+        errorMessage = nil
+        let fileURL = staged.fileURL
+        let fileName = staged.fileName
+        let mimeType = staged.mimeType
+        let dir = fileURL.deletingLastPathComponent()
+        guard let data = try? Data(contentsOf: fileURL) else {
+            errorMessage = NSLocalizedString("Impossibile leggere il file.", comment: "Assistant document import")
+            discardAttachment()
+            return
+        }
+        attachment = nil
 
         let refs = DocumentIntelligenceService.familyRefs(familyId: familyId, modelContext: modelContext)
         isAnalyzingDocument = true
@@ -776,5 +814,22 @@ extension PlanningAIChatViewModel {
         case "heic": return "image/heic"
         default: return "application/octet-stream"
         }
+    }
+}
+
+
+/// Documento in attesa nel campo di testo dell'assistente.
+struct StagedAttachment {
+    let fileURL: URL
+    let fileName: String
+    let mimeType: String
+    let thumbnail: UIImage?
+
+    static func makeThumbnail(data: Data, mimeType: String) -> UIImage? {
+        let size = CGSize(width: 160, height: 160)
+        if mimeType == "application/pdf" {
+            return PDFDocument(data: data)?.page(at: 0)?.thumbnail(of: size, for: .cropBox)
+        }
+        return UIImage(data: data)?.preparingThumbnail(of: size)
     }
 }

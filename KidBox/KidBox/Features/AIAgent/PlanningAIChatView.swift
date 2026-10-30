@@ -1120,6 +1120,12 @@ private struct PlanningAIChatInnerView: View {
                     .padding(.bottom, 4)
             }
             
+            if let attachment = vm.attachment {
+                attachmentPreview(attachment)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+            }
+
             HStack(alignment: .bottom, spacing: 10) {
                 attachMenu
 
@@ -1142,7 +1148,7 @@ private struct PlanningAIChatInnerView: View {
                 } label: {
                     ZStack {
                         Circle()
-                            .fill(vm.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.isLoading
+                            .fill((vm.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && vm.attachment == nil) || vm.isLoading
                                   ? KBTheme.aiFabOrange.opacity(0.3) : KBTheme.aiFabOrange)
                             .frame(width: 38, height: 38)
                         Image(systemName: "arrow.up")
@@ -1150,7 +1156,7 @@ private struct PlanningAIChatInnerView: View {
                             .foregroundStyle(.white)
                     }
                 }
-                .disabled(vm.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.isLoading)
+                .disabled((vm.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && vm.attachment == nil) || vm.isLoading)
                 .animation(.easeInOut(duration: 0.15), value: vm.inputText)
                 .padding(.bottom, 2)
             }
@@ -1164,6 +1170,39 @@ private struct PlanningAIChatInnerView: View {
         }
     }
     
+    /// Il documento scelto, pronto nel campo di testo: parte solo con l'invio.
+    private func attachmentPreview(_ attachment: StagedAttachment) -> some View {
+        HStack {
+            ZStack(alignment: .topTrailing) {
+                Group {
+                    if let thumb = attachment.thumbnail {
+                        Image(uiImage: thumb).resizable().scaledToFill()
+                    } else {
+                        Image(systemName: "doc.fill").font(.title).foregroundStyle(.secondary)
+                    }
+                }
+                .frame(width: 72, height: 72)
+                .background(KBTheme.inputBackground(colorScheme))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                Button {
+                    vm.discardAttachment()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 22))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, Color.black.opacity(0.75))
+                }
+                .offset(x: 6, y: -6)
+                .accessibilityLabel(Text("Rimuovi allegato"))
+            }
+            Text(attachment.fileName)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+            Spacer()
+        }
+    }
+
     /// Messaggi usati sul periodo della quota, come nella vecchia chat Salute;
     /// il mese si aggiunge quando si avvicina il tetto.
     private func quotaCounter(_ quota: AssistantQuota) -> some View {
