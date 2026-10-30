@@ -641,7 +641,7 @@ struct WorkHomeView: View {
             }
         }
         let own = candidates.filter { f.eventIds.contains($0.id) }
-        let named = candidates.filter { $0.title.contains(" · ") }
+        let named = candidates.filter { $0.title.contains(" · ") || $0.title.contains(" - ") }
         for i in f.leavePeriods.indices where f.leavePeriods[i].eventId == nil {
             if let ev = match(f.leavePeriods[i], in: own) ?? match(f.leavePeriods[i], in: named) {
                 f.leavePeriods[i].eventId = ev.id
@@ -732,7 +732,7 @@ struct WorkHomeView: View {
     }
 
     private static func eventTitle(_ p: WorkLeavePeriod, ownerName: String) -> String {
-        return "\(WorkLeavePeriod.cleanLabel(p.label)) · \(ownerName)"
+        return "\(WorkLeavePeriod.cleanLabel(p.label)) - \(ownerName)"
     }
 
     /// Il calendario chiude i tutto-il-giorno alle 23:59:59 dell'ultimo giorno.
