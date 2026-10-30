@@ -500,6 +500,7 @@ struct KBShareEditView: View {
         case .note:           return "Apri KidBox per completare la nota."
         case .encryptedMedia: return "Apri KidBox per completare il salvataggio in Foto e video."
         case .wallet:         return "Apri KidBox per completare l'import nel Wallet."
+        case .assistant:      return "Apri KidBox per far leggere il documento all'assistente."
         }
     }
     
@@ -690,6 +691,15 @@ struct KBShareEditView: View {
             }
             .padding(14)
             .background(Color.indigo.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+
+        case .assistant:
+            HStack(spacing: 12) {
+                Image(systemName: "sparkles").foregroundStyle(.purple)
+                Text("L'assistente legge il documento, capisce cos'è e lo smista nella sezione giusta. Ogni pagina letta costa un messaggio AI.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            .padding(14)
+            .background(Color.purple.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
         }
     }
     
@@ -705,6 +715,7 @@ struct KBShareEditView: View {
         case .note:             return "Crea nota"
         case .encryptedMedia:   return "Salva in Foto e video"
         case .wallet:           return "Salva nel Wallet"
+        case .assistant:        return "Invia all'assistente"
         }
     }
     
@@ -892,6 +903,13 @@ struct KBShareEditView: View {
                 saveToAppGroup()
                 result = .deferredToMainApp(
                     urlString: "kidbox://share?destination=wallet",
+                    showBanner: false
+                )
+
+            case .assistant:
+                saveToAppGroup()
+                result = .deferredToMainApp(
+                    urlString: "kidbox://share?destination=assistant",
                     showBanner: false
                 )
             }

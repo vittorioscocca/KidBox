@@ -187,6 +187,10 @@ final class AppCoordinator: ObservableObject {
     @Published var pendingShareWalletPDFPath: String? = nil
     /// Titolo o filename suggerito per il ticket Wallet importato dalla share extension.
     @Published var pendingShareWalletTitle: String? = nil
+
+    /// Path locale (App Group) di un PDF o una foto condivisi verso l'assistente.
+    /// Lo consuma `PlanningAIChatView`, che lo legge come il «+» della chat.
+    @Published var pendingShareAssistantFilePath: String? = nil
     @Published var globalBannerMessage: String? = nil
 
     /// Testo dello spinner mostrato mentre si aspetta che la risorsa di una
@@ -1068,6 +1072,16 @@ final class AppCoordinator: ObservableObject {
             }
             if !alreadyInStack { navigate(to: .walletHome(familyId: familyId)) }
             KBLog.sync.kbInfo("handleIncomingShare wallet: alreadyInStack=\(alreadyInStack) familyId=\(familyId) path=\(filePath)")
+
+        case "assistant":
+            guard !filePath.isEmpty else {
+                KBLog.sync.kbError("handleIncomingShare assistant: filePath empty — abort")
+                return
+            }
+            pendingShareAssistantFilePath = filePath
+            let alreadyInStack = path.contains { if case .askExpert = $0 { return true }; return false }
+            if !alreadyInStack { navigate(to: .askExpert) }
+            KBLog.sync.kbInfo("handleIncomingShare assistant: alreadyInStack=\(alreadyInStack) path=\(filePath)")
 
         case "encryptedMedia":
             let familyId: String

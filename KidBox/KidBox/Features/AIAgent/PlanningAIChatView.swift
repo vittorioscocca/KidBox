@@ -91,6 +91,11 @@ struct PlanningAIChatView: View {
         // è già apparsa (cold start da notifica), il task DEVE ripartire per
         // creare il ViewModel — con il solo `familyId` non si ri-eseguiva mai
         // e la chat restava sullo spinner.
+        // Assistente già aperto quando arriva il file condiviso.
+        .onChange(of: coordinator.pendingShareAssistantFilePath) { _, newValue in
+            guard focus == nil, let vm, newValue != nil else { return }
+            Task { await consumeSharedFileIfAny(into: vm) }
+        }
         .task(id: "\(familyId)|\(subscriptionManager.currentPlan.rawValue)") {
             guard subscriptionManager.isAIAccessible else { return }
             guard !familyId.isEmpty else { return }
@@ -109,6 +114,7 @@ struct PlanningAIChatView: View {
             }
             await Task.yield()
             await newVM.loadOrCreateConversation()
+            if focus == nil { await consumeSharedFileIfAny(into: newVM) }
 
             // Il briefing e gli insight sono della Home: aperto da Salute
             // l'assistente non li mette davanti alla domanda sulla persona.
@@ -126,6 +132,17 @@ struct PlanningAIChatView: View {
                 newVM.injectInitialAssistantMessageIfNeeded(seed, force: forceInject)
             }
         }
+    }
+
+    /// PDF o foto condivisi dallo share sheet («Assistente AI»): stessa strada
+    /// del «+» della chat, lettura e scheda di conferma. Il file arriva dall'App
+    /// Group; dopo la lettura ne resta una copia privata, l'originale si toglie.
+    private func consumeSharedFileIfAny(into vm: PlanningAIChatViewModel) async {
+        guard let path = coordinator.pendingShareAssistantFilePath, !path.isEmpty else { return }
+        coordinator.pendingShareAssistantFilePath = nil
+        let url = URL(fileURLWithPath: path)
+        await vm.importDocument(fileURL: url)
+        try? FileManager.default.removeItem(at: url)
     }
 
     // MARK: - AI locked view (piano Free)

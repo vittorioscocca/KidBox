@@ -19,7 +19,7 @@ import FoundationModels
 // MARK: - Destinazioni
 
 public enum KBShareDestination: String, CaseIterable, Identifiable, Sendable {
-    case chat, document, todo, grocery, event, note, encryptedMedia, wallet
+    case chat, document, todo, grocery, event, note, encryptedMedia, wallet, assistant
     public var id: Self { self }
 }
 

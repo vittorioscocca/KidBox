@@ -44,7 +44,7 @@ extension KBSharePayload {
             
         case .image:
             // Foto → chat + Foto e video crittografati
-            return [.chat, .encryptedMedia]
+            return [.chat, .encryptedMedia, .assistant]
             
         case .text(let t):
             let lines = t.components(separatedBy: "\n")
@@ -75,12 +75,16 @@ extension KBSharePayload {
         let ext = url.pathExtension.lowercased()
         let isVideo = ["mp4", "mov", "m4v", "m4p", "3gp", "avi", "mkv"].contains(ext)
         let isPhoto = ["jpg", "jpeg", "png", "heic", "heif", "gif", "webp"].contains(ext)
-        if isVideo || isPhoto {
+        if isVideo {
             return [.chat, .encryptedMedia]
+        }
+        if isPhoto {
+            // L'assistente legge PDF e immagini (non GIF animate né video).
+            return [.chat, .encryptedMedia] + (ext == "gif" ? [] : [.assistant])
         }
         if ext == "pdf" {
             // I PDF tipicamente sono biglietti / ricevute → mostriamo anche Wallet.
-            return [.chat, .document, .wallet]
+            return [.chat, .document, .wallet, .assistant]
         }
         return [.chat, .document]
     }
@@ -158,6 +162,7 @@ extension KBShareDestination {
         case .note:             return "Note"
         case .encryptedMedia:   return "Foto e video"
         case .wallet:           return "Wallet"
+        case .assistant:        return "Assistente AI"
         }
     }
     
@@ -171,6 +176,7 @@ extension KBShareDestination {
         case .note:             return "note.text"
         case .encryptedMedia:   return "photo.stack.fill"
         case .wallet:           return "ticket.fill"
+        case .assistant:        return "sparkles"
         }
     }
     
@@ -184,6 +190,7 @@ extension KBShareDestination {
         case .note:             return .yellow
         case .encryptedMedia:   return .cyan
         case .wallet:           return .indigo
+        case .assistant:        return .purple
         }
     }
     
