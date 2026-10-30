@@ -290,7 +290,7 @@ struct WorkHomeView: View {
         if latestPayslip == nil && latestContract == nil {
             VStack(spacing: 8) {
                 Image(systemName: "doc.text.magnifyingglass").font(.largeTitle).foregroundStyle(.secondary)
-                Text(isMine ? "Carica una busta paga o un contratto" : "Nessun documento")
+                Text(LocalizedStringKey(isMine ? "Carica una busta paga o un contratto" : "Nessun documento"))
                     .font(.headline)
                 if isMine {
                     Text("L'assistente li legge una volta sola, poi puoi chiedergli ferie, permessi, tasse e scadenze.")
@@ -610,7 +610,7 @@ private struct WorkConfirmSheet: View {
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle(draft.kind == WorkRecordKind.payslip ? "Busta paga" : "Contratto")
+            .navigationTitle(LocalizedStringKey(draft.kind == WorkRecordKind.payslip ? "Busta paga" : "Contratto"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Annulla") { dismiss() } }
@@ -708,7 +708,7 @@ private struct WorkRecordDetailView: View {
                     }
                 }
             }
-            .navigationTitle(record.isPayslip ? "Busta paga" : "Contratto")
+            .navigationTitle(LocalizedStringKey(record.isPayslip ? "Busta paga" : "Contratto"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Chiudi") { dismiss() } } }
             .confirmationDialog("Eliminare questo documento?", isPresented: $confirmDelete, titleVisibility: .visible) {
