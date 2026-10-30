@@ -56,8 +56,8 @@ Una cosa grande al giorno, la mattina. Il ritmo deciso dalle età, pause program
 """,
         },
         "en": {
-            "title": "Planning a trip itinerary with children: the right pace, day by day",
-            "desc": "Three museums a day works for adults, not for a six-year-old. How to build a travel itinerary that accounts for ages, breaks and the unexpected.",
+            "title": "Trip itinerary with kids: a day-by-day plan they help choose",
+            "desc": "Three museums a day works for adults, not for a six-year-old. Build a family itinerary at the children's pace, let each child pick one activity, and leave room for breaks and the unexpected.",
             "body": """
 The most common mistake when travelling with children is planning the itinerary as if travelling alone, then cutting bits out along the way. The result is days chopped in half, tired kids and parents frustrated about everything they "didn't manage to see".
 

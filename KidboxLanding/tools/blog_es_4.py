@@ -289,8 +289,8 @@ La logística sigue a la relación. El otro padre se entera por ti, la informaci
 """,
     },
     "comunicazione-tra-genitori-separati": {
-        "title": "Hablar con tu expareja sobre los hijos: escribir mensajes que no acaben en pelea",
-        "desc": "Un mensaje equivocado sobre la hora de la entrega puede convertirse en tres días de discusión. Una estructura sencilla para mensajes breves, claros y neutros, con ejemplos de antes y después.",
+        "title": "Cómo hablar con tu ex sobre los hijos sin discutir (con ejemplos)",
+        "desc": "Un mensaje equivocado sobre la hora de la entrega puede convertirse en tres días de discusión. Cómo escribir a tu expareja mensajes breves, claros y neutros, con ejemplos de antes y después.",
         "body": """
 Después de una separación, la mayor parte del conflicto entre padres no viene de las grandes decisiones: viene de los mensajes de cada día. Una hora cambiada, una petición mal formulada, una frase que el otro lee como una acusación. Y un mensaje, una vez escrito, se queda, y se relee.
 

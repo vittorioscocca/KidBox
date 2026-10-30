@@ -451,8 +451,8 @@ Pendant une semaine, chaque fois que vous balayez une notification sans rien fai
 """,
     },
     "calendario-genitori-separati": {
-        "title": "Le calendrier de la coparentalité : rester coordonnés sans se disputer",
-        "desc": "Alternance de garde, activités des enfants, passages de relais : comment construire un calendrier partagé entre deux maisons qui sort la logistique des disputes.",
+        "title": "Calendrier de coparentalité : comment éviter les conflits entre parents",
+        "desc": "Alternance de garde, activités des enfants, passages de relais : comment construire entre deux maisons un calendrier partagé qui évite les conflits et sort la logistique des disputes.",
         "body": """
 La plupart des conflits entre parents séparés ne viennent pas de grands désaccords éducatifs. Ils viennent de la logistique : « je n'étais pas au courant du spectacle », « je croyais que c'était ton week-end », « personne ne m'a parlé du rendez-vous médical ». Chacune de ces phrases est une dispute qu'un calendrier partagé aurait évitée.
 

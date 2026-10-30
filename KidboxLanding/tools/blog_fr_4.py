@@ -289,8 +289,8 @@ La logistique suit la relation. L'autre parent l'apprend par vous, les informati
 """,
     },
     "comunicazione-tra-genitori-separati": {
-        "title": "Parler des enfants avec son ex : écrire des messages qui ne déclenchent pas de dispute",
-        "desc": "Un mauvais message sur l'heure du passage de relais peut devenir trois jours de dispute. Une structure simple pour des messages courts, clairs et neutres, avec des exemples avant et après.",
+        "title": "Communiquer avec son ex pour les enfants : des messages sans dispute",
+        "desc": "Un mauvais message sur l'heure du passage de relais peut devenir trois jours de dispute. Comment écrire à son ex des messages courts, clairs et neutres, avec des exemples avant et après.",
         "body": """
 Après une séparation, l'essentiel du conflit entre parents ne vient pas des grandes décisions : il vient des messages du quotidien. Un horaire changé, une demande mal formulée, une phrase que l'autre lit comme une accusation. Et un message, une fois écrit, reste, et se relit.
 

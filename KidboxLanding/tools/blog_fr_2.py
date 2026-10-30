@@ -3,8 +3,8 @@
 
 FR = {
     "app-per-genitori-separati-cosa-serve": {
-        "title": "Applis de coparentalité : les 7 choses indispensables (et les 3 qui comptent peu)",
-        "desc": "Avant de choisir une appli pour parents séparés, une liste honnête : ce qui fait la différence au quotidien et ce qui relève du marketing.",
+        "title": "Quelle appli de coparentalité choisir ? 7 critères qui comptent vraiment",
+        "desc": "Calendrier de garde, documents des enfants, dépenses partagées : ce qu'une appli pour parents séparés doit faire au quotidien, et ce qui relève du marketing. Une liste honnête avant de choisir.",
         "body": """
 Il existe beaucoup d'« applis de coparentalité », et sur leurs pages de présentation elles se ressemblent toutes. Au quotidien pourtant, la différence entre une appli que les deux parents utilisent vraiment et une appli abandonnée au bout d'un mois tient à quelques détails concrets. Voici la liste que nous utiliserions.
 
