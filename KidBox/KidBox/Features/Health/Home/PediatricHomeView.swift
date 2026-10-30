@@ -297,14 +297,6 @@ struct PediatricHomeView: View {
                         coordinator.navigate(to: .pediatricFitnessPlan(familyId: familyId, childId: childId))
                     }
                     moduleCard(
-                        title: "Farmacie di turno",
-                        subtitle: "Aperte vicino a te",
-                        systemImage: "cross.case.fill",
-                        tint: Color(red: 0.2, green: 0.66, blue: 0.5)
-                    ) {
-                        coordinator.navigate(to: .pharmacies(familyId: familyId))
-                    }
-                    moduleCard(
                         title: "Storico Salute",
                         subtitle: "\(timelineEvents.count) eventi",
                         systemImage: "timeline.selection",
