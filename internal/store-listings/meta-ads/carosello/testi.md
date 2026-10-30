@@ -73,3 +73,17 @@ Testo principale:
 | 3 | es/03-todo | Tareas para cada uno | Tareas asignadas, con recordatorios |
 | 4 | es/04-spese | Los gastos de casa, por fin claros | Quién gastó qué, mes a mes |
 | 5 | es/05-assistant | Un asistente que conoce a tu familia | Plan Pro · prueba gratis 14 días |
+
+## ES — variante video «acordarte de todo» (30/10/2026)
+
+Nel gruppo ES il video «¿Quién recoge a Marco?» non è mai partito (12 impression): Meta ha scelto subito il carosello. Variante con il gancio del carico mentale, lo stesso tema del carosello che funziona («Mil cosas que recordar»). Video `video/out/kidbox-acordarte-de-todo-es.mp4` (uguale al video ES, cambia solo il titolo dei primi 3,6 s), copertina `video/out/copertina-acordarte-es.jpg`.
+Nome inserzione: `Video ES - acordarte de todo` · gruppo `ES - Lead sito` · invito all'azione Descargar · stesso URL e parametri.
+
+Testo principale:
+
+    ¿Siempre te toca a ti acordarte de todo? Quién recoge a Marco, la cartilla de vacunación, lo que falta en la compra…
+
+    Con KidBox preguntas a la familia y quien está libre responde «Me encargo yo»: la tarea queda asignada. Calendario, tareas, compra y documentos compartidos. Gratis en iPhone, Android y web.
+
+Titolo: Deja de ser el único recordatorio de la familia
+Descrizione: Gratis para toda la familia
