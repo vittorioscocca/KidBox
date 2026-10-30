@@ -92,9 +92,9 @@ struct KBShareSheet: View {
                 
                 // .chat va sempre in prima posizione
                 var finalDests = aiDests
-                // Manteniamo Wallet e Assistente quando il payload di default lo propone (es. PDF),
+                // Manteniamo Wallet, Assistente e Lavoro quando il payload di default lo propone (es. PDF),
                 // anche se la classificazione AI restituisce solo `.document`.
-                for defaultDest in payload.defaultDestinations where defaultDest == .wallet || defaultDest == .assistant {
+                for defaultDest in payload.defaultDestinations where defaultDest == .wallet || defaultDest == .assistant || defaultDest == .work {
                     if !finalDests.contains(defaultDest) {
                         finalDests.append(defaultDest)
                     }

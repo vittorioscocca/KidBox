@@ -43,6 +43,7 @@ struct WorkHomeView: View {
     @State private var showKidBoxPicker = false
     @State private var isAnalyzing = false
     @State private var errorMessage: String?
+    @State private var staged: WorkStaged?
     @State private var draft: WorkDraft?
     @State private var detailRecord: KBWorkRecord?
 
@@ -108,7 +109,35 @@ struct WorkHomeView: View {
             UpgradeSheetView(triggerFeature: "work_lock")
                 .environmentObject(KBSubscriptionManager.shared)
         }
-        .onAppear { AppAnalytics.screenView(name: "lavoro") }
+        .onAppear {
+            AppAnalytics.screenView(name: "lavoro")
+            consumeSharedFile()
+        }
+        .onChange(of: coordinator.pendingShareWorkFilePath) { _, _ in consumeSharedFile() }
+    }
+
+    /// File arrivato dal foglio di condivisione: in attesa nella scheda, non
+    /// letto. Sul Free la scheda è chiusa: il file si scarta e lo si dice.
+    private func consumeSharedFile() {
+        guard let path = coordinator.pendingShareWorkFilePath, !path.isEmpty else { return }
+        coordinator.pendingShareWorkFilePath = nil
+        let name = coordinator.pendingShareWorkFileName
+        coordinator.pendingShareWorkFileName = nil
+        defer { try? FileManager.default.removeItem(atPath: path) }
+        guard isPaid else {
+            coordinator.globalBannerMessage = NSLocalizedString(
+                "Il documento condiviso non è stato letto: Lavoro è incluso nei piani Pro e Max.",
+                comment: "Shared file dropped, Work locked")
+            return
+        }
+        let url = URL(fileURLWithPath: path)
+        guard let data = try? Data(contentsOf: url), !data.isEmpty else {
+            errorMessage = String(localized: "Impossibile leggere il file.")
+            return
+        }
+        let fileName = (name?.isEmpty == false ? name! : url.lastPathComponent)
+        let isPDF = (fileName as NSString).pathExtension.lowercased() == "pdf"
+        stage(data: data, fileName: fileName, mime: isPDF ? "application/pdf" : "image/jpeg")
     }
 
     // MARK: - Free
@@ -150,6 +179,7 @@ struct WorkHomeView: View {
             VStack(alignment: .leading, spacing: 16) {
                 if owners.count > 1 { ownerChips }
                 if isMine { sharingRow }
+                if let staged, isMine { stagedCard(staged) }
                 summary
                 if isMine { askChips }
                 recordsList
@@ -447,7 +477,7 @@ struct WorkHomeView: View {
             errorMessage = String(localized: "Impossibile leggere il file.")
             return
         }
-        Task { await analyze(data: jpeg, fileName: Self.stampedName(String(localized: "Foto"), "jpg"), mime: "image/jpeg") }
+        stage(data: jpeg, fileName: Self.stampedName(String(localized: "Foto"), "jpg"), mime: "image/jpeg")
     }
 
     private static func stampedName(_ base: String, _ ext: String) -> String {
@@ -463,17 +493,69 @@ struct WorkHomeView: View {
             return
         }
         let isPDF = url.pathExtension.lowercased() == "pdf"
-        await analyze(data: data, fileName: url.lastPathComponent, mime: isPDF ? "application/pdf" : "image/jpeg")
+        stage(data: data, fileName: url.lastPathComponent, mime: isPDF ? "application/pdf" : "image/jpeg")
     }
 
-    private func analyze(data: Data, fileName: String, mime: String) async {
-        guard !isAnalyzing else { return }
+    /// Il documento scelto resta in attesa nella scheda: la lettura (e il
+    /// messaggio AI che costa) parte solo con «Leggi il documento».
+    private func stage(data: Data, fileName: String, mime: String) {
+        errorMessage = nil
+        staged = WorkStaged(data: data, fileName: fileName, mime: mime,
+                            thumbnail: StagedAttachment.makeThumbnail(data: data, mimeType: mime))
+    }
+
+    private func stagedCard(_ s: WorkStaged) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                ZStack(alignment: .topTrailing) {
+                    Group {
+                        if let t = s.thumbnail { Image(uiImage: t).resizable().scaledToFill() }
+                        else { Image(systemName: "doc.fill").font(.title).foregroundStyle(.secondary) }
+                    }
+                    .frame(width: 72, height: 72)
+                    .background(KBTheme.background(colorScheme))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    Button { staged = nil } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 22))
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, Color.black.opacity(0.75))
+                    }
+                    .offset(x: 6, y: -6)
+                    .accessibilityLabel(Text("Rimuovi allegato"))
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Documento pronto da leggere").font(.subheadline.weight(.bold))
+                    Text(s.fileName).font(.footnote).foregroundStyle(.secondary).lineLimit(2)
+                }
+                Spacer()
+            }
+            Button { Task { await readStaged() } } label: {
+                Text("Leggi il documento")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(tint))
+            }
+            .disabled(isAnalyzing)
+            Text("Ogni pagina letta costa un messaggio AI.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 14).fill(KBTheme.inputBackground(colorScheme)))
+    }
+
+    private func readStaged() async {
+        guard let s = staged, !isAnalyzing else { return }
         errorMessage = nil
         isAnalyzing = true
         defer { isAnalyzing = false }
+        let data = s.data, fileName = s.fileName, mime = s.mime
         do {
             let result = try await WorkDocumentService.analyze(data: data, fileName: fileName, mimeType: mime)
             AppAnalytics.aiMessageSent(agentType: "lavoro", plan: KBSubscriptionManager.shared.currentPlan.rawValue)
+            staged = nil
             draft = WorkDraft(kind: result.kind, fields: result.fields, referenceDate: result.referenceDate,
                               data: data, fileName: fileName, mimeType: mime)
         } catch WorkDocumentService.AnalyzeError.notAWorkDocument {
@@ -636,6 +718,14 @@ struct WorkHomeView: View {
 }
 
 // MARK: - Bozza e conferma
+
+/// Documento scelto o condiviso e non ancora letto.
+struct WorkStaged {
+    let data: Data
+    let fileName: String
+    let mime: String
+    let thumbnail: UIImage?
+}
 
 struct WorkDraft: Identifiable {
     let id = UUID()

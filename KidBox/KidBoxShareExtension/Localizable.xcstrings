@@ -1,1282 +1,1376 @@
 {
-  "sourceLanguage": "it",
-  "strings": {
-    "Invia a…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Send to…"
+  "sourceLanguage" : "it",
+  "strings" : {
+    "Lavoro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Envoyer vers…"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trabajo"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enviar a…"
-          }
-        }
-      }
-    },
-    "Condividi su KidBox": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Share to KidBox"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Partager sur KidBox"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Compartir en KidBox"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Travail"
           }
         }
       }
     },
-    "Annulla": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancel"
+    "Apri KidBox per aggiungere il documento a Lavoro." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open KidBox to add the document to Work."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Annuler"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre KidBox para añadir el documento a Trabajo."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancelar"
-          }
-        }
-      }
-    },
-    "Chat famiglia": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Family chat"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chat de famille"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chat de familia"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre KidBox pour ajouter le document à Travail."
           }
         }
       }
     },
-    "Documenti": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Documents"
+    "Il documento va nella tua scheda Lavoro (busta paga, contratto, foglio ferie). La lettura parte solo quando la chiedi, dentro KidBox: ogni pagina letta costa un messaggio AI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The document goes into your Work card (payslip, contract, leave sheet). It is read only when you ask, inside KidBox: each page read costs one AI message."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Documents"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El documento va a tu ficha de Trabajo (nómina, contrato, hoja de vacaciones). Solo se lee cuando lo pides, dentro de KidBox: cada página leída cuesta un mensaje de IA."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Documentos"
-          }
-        }
-      }
-    },
-    "To-Do": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-Do"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-Do"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tareas"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le document va dans ta fiche Travail (fiche de paie, contrat, planning de congés). Il n'est lu que lorsque tu le demandes, dans KidBox : chaque page lue coûte un message IA."
           }
         }
       }
     },
-    "Lista spesa": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shopping list"
+    "Invia a Lavoro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send to Work"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Liste de courses"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar a Trabajo"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lista de la compra"
-          }
-        }
-      }
-    },
-    "Evento": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Event"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Événement"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Evento"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer à Travail"
           }
         }
       }
     },
-    "Note": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notes"
+    "Aggiungi alla lista spesa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to the shopping list"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notes"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir a la lista de la compra"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notas"
-          }
-        }
-      }
-    },
-    "Foto e video": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Photos and videos"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Photos et vidéos"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fotos y vídeos"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter à la liste de courses"
           }
         }
       }
     },
-    "Wallet": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wallet"
+    "Aggiungi alla spesa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to shopping list"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wallet"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir a la compra"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wallet"
-          }
-        }
-      }
-    },
-    "Assistente AI": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI assistant"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Assistant IA"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Asistente IA"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter aux courses"
           }
         }
       }
     },
-    "Modifica il messaggio…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edit the message…"
+    "Annulla" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Modifier le message…"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edita el mensaje…"
-          }
-        }
-      }
-    },
-    "Invio in corso…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sending…"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Envoi en cours…"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enviando…"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuler"
           }
         }
       }
     },
-    "Invia in chat": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Send to chat"
+    "Apple Intelligence" : {
+
+    },
+    "Apri KidBox" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open KidBox"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Envoyer dans le chat"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir KidBox"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enviar al chat"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir KidBox"
           }
         }
       }
     },
-    "Link": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Link"
+    "Apri KidBox almeno una volta per configurare la famiglia." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open KidBox at least once to set up your family."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lien"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre KidBox al menos una vez para configurar tu familia."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enlace"
-          }
-        }
-      }
-    },
-    "Video pronto": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Video ready"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vidéo prête"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vídeo listo"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre KidBox au moins une fois pour configurer ta famille."
           }
         }
       }
     },
-    "Quasi fatto": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Almost done"
+    "Apri KidBox per completare il salvataggio del documento." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open KidBox to finish saving the document."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Presque terminé"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre KidBox para terminar de guardar el documento."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Casi listo"
-          }
-        }
-      }
-    },
-    "Apri KidBox": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open KidBox"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvrir KidBox"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abrir KidBox"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre KidBox pour terminer l'enregistrement du document."
           }
         }
       }
     },
-    "Apri KidBox per completare l'invio in chat.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open KidBox to finish sending to the chat."
+    "Apri KidBox per completare il salvataggio in Foto e video." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open KidBox to finish saving to Photos and videos."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvre KidBox pour terminer l'envoi dans le chat."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre KidBox para terminar de guardar en Fotos y vídeos."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre KidBox para terminar el envío al chat."
-          }
-        }
-      }
-    },
-    "Apri KidBox per completare la creazione del to-do.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open KidBox to finish creating the to-do."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvre KidBox pour terminer la création de la tâche."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre KidBox para terminar de crear la tarea."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre KidBox pour terminer l'enregistrement dans Photos et vidéos."
           }
         }
       }
     },
-    "Apri KidBox per completare la creazione dell'evento.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open KidBox to finish creating the event."
+    "Apri KidBox per completare l'aggiunta alla lista spesa." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open KidBox to finish adding to the shopping list."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvre KidBox pour terminer la création de l'événement."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre KidBox para terminar de añadir a la lista de la compra."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre KidBox para terminar de crear el evento."
-          }
-        }
-      }
-    },
-    "Apri KidBox per completare l'aggiunta alla lista spesa.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open KidBox to finish adding to the shopping list."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvre KidBox pour terminer l'ajout à la liste de courses."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre KidBox para terminar de añadir a la lista de la compra."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre KidBox pour terminer l'ajout à la liste de courses."
           }
         }
       }
     },
-    "Apri KidBox per completare il salvataggio del documento.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open KidBox to finish saving the document."
+    "Apri KidBox per completare l'import nel Wallet." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open KidBox to finish importing into the Wallet."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvre KidBox pour terminer l'enregistrement du document."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre KidBox para terminar de importar en el Wallet."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre KidBox para terminar de guardar el documento."
-          }
-        }
-      }
-    },
-    "Apri KidBox per completare la nota.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open KidBox to finish the note."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvre KidBox pour terminer la note."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre KidBox para terminar la nota."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre KidBox pour terminer l'import dans le Wallet."
           }
         }
       }
     },
-    "Apri KidBox per completare il salvataggio in Foto e video.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open KidBox to finish saving to Photos and videos."
+    "Apri KidBox per completare l'invio in chat." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open KidBox to finish sending to the chat."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvre KidBox pour terminer l'enregistrement dans Photos et vidéos."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre KidBox para terminar el envío al chat."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre KidBox para terminar de guardar en Fotos y vídeos."
-          }
-        }
-      }
-    },
-    "Apri KidBox per completare l'import nel Wallet.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open KidBox to finish importing into the Wallet."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvre KidBox pour terminer l'import dans le Wallet."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre KidBox para terminar de importar en el Wallet."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre KidBox pour terminer l'envoi dans le chat."
           }
         }
       }
     },
-    "Apri KidBox per far leggere il documento all'assistente.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open KidBox to have the assistant read the document."
+    "Apri KidBox per completare la creazione del to-do." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open KidBox to finish creating the to-do."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvre KidBox pour que l'assistant lise le document."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre KidBox para terminar de crear la tarea."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre KidBox para que el asistente lea el documento."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre KidBox pour terminer la création de la tâche."
           }
         }
       }
     },
-    "Es. Comprare latte": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "E.g. Buy milk"
+    "Apri KidBox per completare la creazione dell'evento." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open KidBox to finish creating the event."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ex. Acheter du lait"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre KidBox para terminar de crear el evento."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ej. Comprar leche"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre KidBox pour terminer la création de l'événement."
           }
         }
       }
     },
-    "Es. Latte, pane, uova": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "E.g. Milk, bread, eggs"
+    "Apri KidBox per completare la nota." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open KidBox to finish the note."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ex. Lait, pain, œufs"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre KidBox para terminar la nota."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ej. Leche, pan, huevos"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre KidBox pour terminer la note."
           }
         }
       }
     },
-    "Es. Visita pediatra": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "E.g. Pediatrician visit"
+    "Apri KidBox per far leggere il documento all'assistente." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open KidBox to have the assistant read the document."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ex. Visite chez le pédiatre"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre KidBox para que el asistente lea el documento."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ej. Visita al pediatra"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre KidBox pour que l'assistant lise le document."
           }
         }
       }
     },
-    "Es. Referti agosto 2025": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "E.g. August 2025 reports"
+    "Assistente AI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI assistant"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ex. Comptes rendus août 2025"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asistente IA"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ej. Informes agosto 2025"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistant IA"
           }
         }
       }
     },
-    "Titolo": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Title"
+    "Chat famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Family chat"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Titre"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat de familia"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Título"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat de famille"
           }
         }
       }
     },
-    "Ogni riga diventerà un articolo separato": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Each line will become a separate item"
+    "Condividi su KidBox" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share to KidBox"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chaque ligne deviendra un article distinct"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir en KidBox"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cada línea será un artículo distinto"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partager sur KidBox"
           }
         }
       }
     },
-    "Titolo del to-do": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do title"
+    "Contenuto condiviso" : {
+
+    },
+    "Crea evento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create event"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Titre de la tâche"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear evento"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Título de la tarea"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créer l'événement"
           }
         }
       }
     },
-    "Titolo evento": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Event title"
+    "Crea nota" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create note"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Titre de l'événement"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear nota"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Título del evento"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créer la note"
           }
         }
       }
     },
-    "Note aggiuntive": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Additional notes"
+    "Crea to-do" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create to-do"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notes supplémentaires"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear tarea"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notas adicionales"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créer la tâche"
           }
         }
       }
     },
-    "Titolo nota": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Note title"
+    "Documenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documents"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Titre de la note"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documentos"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Título de la nota"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documents"
           }
         }
       }
     },
-    "Testo": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Text"
+    "Errore: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error: %@"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Texte"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error: %@"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Texto"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erreur : %@"
           }
         }
       }
     },
-    "Titolo documento": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Document title"
+    "Es. Comprare latte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g. Buy milk"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Titre du document"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ej. Comprar leche"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Título del documento"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ex. Acheter du lait"
           }
         }
       }
     },
-    "Aggiungi alla lista spesa": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add to the shopping list"
+    "Es. Latte, pane, uova" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g. Milk, bread, eggs"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajouter à la liste de courses"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ej. Leche, pan, huevos"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Añadir a la lista de la compra"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ex. Lait, pain, œufs"
           }
         }
       }
     },
-    "Il file verrà salvato nella sezione Documenti.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The file will be saved in the Documents section."
+    "Es. Referti agosto 2025" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g. August 2025 reports"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le fichier sera enregistré dans la section Documents."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ej. Informes agosto 2025"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El archivo se guardará en la sección Documentos."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ex. Comptes rendus août 2025"
           }
         }
       }
     },
-    "Il file verrà cifrato e salvato in Foto e video della famiglia.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The file will be encrypted and saved in the family's Photos and videos."
+    "Es. Visita pediatra" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g. Pediatrician visit"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le fichier sera chiffré et enregistré dans Photos et vidéos de la famille."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ej. Visita al pediatra"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El archivo se cifrará y se guardará en Fotos y vídeos de la familia."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ex. Visite chez le pédiatre"
           }
         }
       }
     },
-    "Il PDF verrà importato nel Wallet di KidBox.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The PDF will be imported into the KidBox Wallet."
+    "Evento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Event"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le PDF sera importé dans le Wallet de KidBox."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Evento"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El PDF se importará en el Wallet de KidBox."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Événement"
           }
         }
       }
     },
-    "L'assistente legge il documento, capisce cos'è e lo smista nella sezione giusta. Ogni pagina letta costa un messaggio AI.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The assistant reads the document, works out what it is and files it in the right section. Each page read costs one AI message."
+    "Foto e video" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos and videos"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "L'assistant lit le document, comprend ce que c'est et le range dans la bonne section. Chaque page lue coûte un message IA."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotos y vídeos"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El asistente lee el documento, entiende qué es y lo guarda en la sección correcta. Cada página leída cuesta un mensaje de IA."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos et vidéos"
           }
         }
       }
     },
-    "Salva nei documenti": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save to documents"
+    "Il file verrà cifrato e salvato in Foto e video della famiglia." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The file will be encrypted and saved in the family's Photos and videos."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enregistrer dans les documents"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El archivo se cifrará y se guardará en Fotos y vídeos de la familia."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Guardar en documentos"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le fichier sera chiffré et enregistré dans Photos et vidéos de la famille."
           }
         }
       }
     },
-    "Crea to-do": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Create to-do"
+    "Il file verrà salvato nella sezione Documenti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The file will be saved in the Documents section."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Créer la tâche"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El archivo se guardará en la sección Documentos."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Crear tarea"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le fichier sera enregistré dans la section Documents."
           }
         }
       }
     },
-    "Aggiungi alla spesa": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add to shopping list"
+    "Il PDF verrà importato nel Wallet di KidBox." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The PDF will be imported into the KidBox Wallet."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajouter aux courses"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El PDF se importará en el Wallet de KidBox."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Añadir a la compra"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le PDF sera importé dans le Wallet de KidBox."
           }
         }
       }
     },
-    "Crea evento": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Create event"
+    "Il video è troppo grande (%lld MB). Il limite massimo è 200 MB." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The video is too large (%lld MB). The maximum is 200 MB."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Créer l'événement"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El vídeo es demasiado grande (%lld MB). El límite es 200 MB."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Crear evento"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La vidéo est trop volumineuse (%lld Mo). La limite est de 200 Mo."
           }
         }
       }
     },
-    "Crea nota": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Create note"
+    "Impossibile leggere il file selezionato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't read the selected file."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Créer la note"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo leer el archivo seleccionado."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Crear nota"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de lire le fichier sélectionné."
           }
         }
       }
     },
-    "Salva in Foto e video": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save to Photos and videos"
+    "Invia a…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send to…"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enregistrer dans Photos et vidéos"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar a…"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Guardar en Fotos y vídeos"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer vers…"
           }
         }
       }
     },
-    "Salva nel Wallet": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save to Wallet"
+    "Invia all'assistente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send to the assistant"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enregistrer dans le Wallet"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar al asistente"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Guardar en el Wallet"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer à l'assistant"
           }
         }
       }
     },
-    "Invia all'assistente": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Send to the assistant"
+    "Invia in chat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send to chat"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Envoyer à l'assistant"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar al chat"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enviar al asistente"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer dans le chat"
           }
         }
       }
     },
-    "Nuovo evento": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New event"
+    "Invio in corso…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sending…"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nouvel événement"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviando…"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nuevo evento"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoi en cours…"
           }
         }
       }
     },
-    "Errore: %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Error: %@"
+    "L'assistente legge il documento, capisce cos'è e lo smista nella sezione giusta. Ogni pagina letta costa un messaggio AI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The assistant reads the document, works out what it is and files it in the right section. Each page read costs one AI message."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erreur : %@"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El asistente lee el documento, entiende qué es y lo guarda en la sección correcta. Cada página leída cuesta un mensaje de IA."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Error: %@"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'assistant lit le document, comprend ce que c'est et le range dans la bonne section. Chaque page lue coûte un message IA."
           }
         }
       }
     },
-    "Apri KidBox almeno una volta per configurare la famiglia.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open KidBox at least once to set up your family."
+    "Link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvre KidBox au moins une fois pour configurer ta famille."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enlace"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre KidBox al menos una vez para configurar tu familia."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lien"
           }
         }
       }
     },
-    "Impossibile leggere il file selezionato.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't read the selected file."
+    "Lista spesa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shopping list"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Impossible de lire le fichier sélectionné."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista de la compra"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se pudo leer el archivo seleccionado."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste de courses"
           }
         }
       }
     },
-    "Il video è troppo grande (%lld MB). Il limite massimo è 200 MB.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The video is too large (%lld MB). The maximum is 200 MB."
+    "Modifica il messaggio…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit the message…"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La vidéo est trop volumineuse (%lld Mo). La limite est de 200 Mo."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edita el mensaje…"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El vídeo es demasiado grande (%lld MB). El límite es 200 MB."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier le message…"
+          }
+        }
+      }
+    },
+    "Note" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes"
+          }
+        }
+      }
+    },
+    "Note aggiuntive" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Additional notes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notas adicionales"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes supplémentaires"
+          }
+        }
+      }
+    },
+    "Nuovo evento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New event"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo evento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvel événement"
+          }
+        }
+      }
+    },
+    "Ogni riga diventerà un articolo separato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each line will become a separate item"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada línea será un artículo distinto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque ligne deviendra un article distinct"
+          }
+        }
+      }
+    },
+    "Quasi fatto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Almost done"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casi listo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Presque terminé"
+          }
+        }
+      }
+    },
+    "Salva in Foto e video" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to Photos and videos"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar en Fotos y vídeos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer dans Photos et vidéos"
+          }
+        }
+      }
+    },
+    "Salva nei documenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to documents"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar en documentos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer dans les documents"
+          }
+        }
+      }
+    },
+    "Salva nel Wallet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to Wallet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar en el Wallet"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer dans le Wallet"
+          }
+        }
+      }
+    },
+    "Testo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Texto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Texte"
+          }
+        }
+      }
+    },
+    "Titolo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Título"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titre"
+          }
+        }
+      }
+    },
+    "Titolo del to-do" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do title"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Título de la tarea"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titre de la tâche"
+          }
+        }
+      }
+    },
+    "Titolo documento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document title"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Título del documento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titre du document"
+          }
+        }
+      }
+    },
+    "Titolo evento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Event title"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Título del evento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titre de l'événement"
+          }
+        }
+      }
+    },
+    "Titolo nota" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note title"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Título de la nota"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titre de la note"
+          }
+        }
+      }
+    },
+    "To-Do" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-Do"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tareas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-Do"
+          }
+        }
+      }
+    },
+    "Video pronto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video ready"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vídeo listo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vidéo prête"
+          }
+        }
+      }
+    },
+    "Wallet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

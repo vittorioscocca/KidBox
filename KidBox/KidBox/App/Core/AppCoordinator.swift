@@ -193,6 +193,11 @@ final class AppCoordinator: ObservableObject {
     @Published var pendingShareAssistantFilePath: String? = nil
     /// Nome originale del file (la copia nell'App Group si chiama `share_<UUID>_…`).
     var pendingShareAssistantFileName: String?
+
+    /// PDF o foto condivisi verso Lavoro: li mette in attesa `WorkHomeView`,
+    /// che li legge solo quando l'utente lo chiede. Nome originale a parte.
+    @Published var pendingShareWorkFilePath: String? = nil
+    var pendingShareWorkFileName: String?
     @Published var globalBannerMessage: String? = nil
 
     /// Testo dello spinner mostrato mentre si aspetta che la risorsa di una
@@ -1088,6 +1093,29 @@ final class AppCoordinator: ObservableObject {
             let alreadyInStack = path.contains { if case .askExpert = $0 { return true }; return false }
             if !alreadyInStack { navigate(to: .askExpert) }
             KBLog.sync.kbInfo("handleIncomingShare assistant: alreadyInStack=\(alreadyInStack) path=\(filePath)")
+
+        case "work":
+            let familyId: String
+            if let fid = activeFamilyId {
+                familyId = fid
+            } else if let fid = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.string(forKey: "activeFamilyId"), !fid.isEmpty {
+                familyId = fid
+            } else {
+                KBLog.sync.kbError("handleIncomingShare work: activeFamilyId nil — abort")
+                return
+            }
+            guard !filePath.isEmpty else {
+                KBLog.sync.kbError("handleIncomingShare work: filePath empty — abort")
+                return
+            }
+            pendingShareWorkFileName = data["sharedFileName"]
+            pendingShareWorkFilePath = filePath
+            let alreadyInStack = path.contains {
+                if case .workHome(let fid) = $0 { return fid == familyId }
+                return false
+            }
+            if !alreadyInStack { navigate(to: .workHome(familyId: familyId)) }
+            KBLog.sync.kbInfo("handleIncomingShare work: alreadyInStack=\(alreadyInStack) path=\(filePath)")
 
         case "encryptedMedia":
             let familyId: String

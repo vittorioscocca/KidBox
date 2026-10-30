@@ -501,6 +501,7 @@ struct KBShareEditView: View {
         case .encryptedMedia: return String(localized: "Apri KidBox per completare il salvataggio in Foto e video.")
         case .wallet:         return String(localized: "Apri KidBox per completare l'import nel Wallet.")
         case .assistant:      return String(localized: "Apri KidBox per far leggere il documento all'assistente.")
+        case .work:           return String(localized: "Apri KidBox per aggiungere il documento a Lavoro.")
         }
     }
     
@@ -700,6 +701,15 @@ struct KBShareEditView: View {
             }
             .padding(14)
             .background(Color.purple.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+
+        case .work:
+            HStack(spacing: 12) {
+                Image(systemName: "briefcase.fill").foregroundStyle(Color(red: 0.25, green: 0.45, blue: 0.75))
+                Text("Il documento va nella tua scheda Lavoro (busta paga, contratto, foglio ferie). La lettura parte solo quando la chiedi, dentro KidBox: ogni pagina letta costa un messaggio AI.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            .padding(14)
+            .background(Color(red: 0.25, green: 0.45, blue: 0.75).opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
         }
     }
     
@@ -716,6 +726,7 @@ struct KBShareEditView: View {
         case .encryptedMedia:   return String(localized: "Salva in Foto e video")
         case .wallet:           return String(localized: "Salva nel Wallet")
         case .assistant:        return String(localized: "Invia all'assistente")
+        case .work:             return String(localized: "Invia a Lavoro")
         }
     }
     
@@ -910,6 +921,13 @@ struct KBShareEditView: View {
                 saveToAppGroup()
                 result = .deferredToMainApp(
                     urlString: "kidbox://share?destination=assistant",
+                    showBanner: false
+                )
+
+            case .work:
+                saveToAppGroup()
+                result = .deferredToMainApp(
+                    urlString: "kidbox://share?destination=work",
                     showBanner: false
                 )
             }

@@ -1,266 +1,90 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
-    "Ferie programmate" : {
+    "Il documento condiviso non è stato letto: Lavoro è incluso nei piani Pro e Max." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Planned leave"
+            "value" : "The shared document wasn't read: Work is included in the Pro and Max plans."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vacaciones programadas"
+            "value" : "El documento compartido no se ha leído: Trabajo está incluido en los planes Pro y Max."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Congés prévus"
+            "value" : "Le document partagé n'a pas été lu : Travail est inclus dans les forfaits Pro et Max."
           }
         }
       }
     },
-    "Ferie" : {
+    "Documento pronto da leggere" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Leave"
+            "value" : "Document ready to read"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vacaciones"
+            "value" : "Documento listo para leer"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Congés"
+            "value" : "Document prêt à lire"
           }
         }
       }
     },
-    "Piano ferie" : {
+    "Leggi il documento" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Leave plan"
+            "value" : "Read the document"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Plan de vacaciones"
+            "value" : "Leer el documento"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Planning des congés"
+            "value" : "Lire le document"
           }
         }
       }
     },
-    "Quando sono in ferie?" : {
+    "Ogni pagina letta costa un messaggio AI." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "When am I on leave?"
+            "value" : "Each page read costs one AI message."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Cuándo estoy de vacaciones?"
+            "value" : "Cada página leída cuesta un mensaje de IA."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quand suis-je en congé ?"
-          }
-        }
-      }
-    },
-    "Non sembra una busta paga, un contratto né un foglio ferie." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This doesn't look like a payslip, a contract or a leave sheet."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No parece una nómina, un contrato ni una hoja de vacaciones."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cela ne ressemble ni à une fiche de paie, ni à un contrat, ni à un planning de congés."
-          }
-        }
-      }
-    },
-    "Periodi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Periods"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Periodos"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Périodes"
-          }
-        }
-      }
-    },
-    "Tipo (ferie, permesso…)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Type (leave, time off…)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tipo (vacaciones, permiso…)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Type (congés, permission…)"
-          }
-        }
-      }
-    },
-    "Dal" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "From"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Del"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Du"
-          }
-        }
-      }
-    },
-    "Al" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "To"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Al"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Au"
-          }
-        }
-      }
-    },
-    "Aggiungi un periodo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add a period"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir un periodo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter une période"
-          }
-        }
-      }
-    },
-    "Ogni periodo diventa un evento «giornata intera» nel calendario, visibile a tutta la famiglia. Scorri per togliere un periodo." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Each period becomes an all-day event in the calendar, visible to the whole family. Swipe to remove a period."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada periodo se convierte en un evento de «día completo» en el calendario, visible para toda la familia. Desliza para quitar un periodo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chaque période devient un événement « journée entière » dans le calendrier, visible par toute la famille. Fais glisser pour retirer une période."
-          }
-        }
-      }
-    },
-    "Il documento resta qui, nella scheda Lavoro." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The document stays here, in the Work card."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El documento se queda aquí, en la ficha de Trabajo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le document reste ici, dans la fiche Travail."
+            "value" : "Chaque page lue coûte un message IA."
           }
         }
       }
@@ -7791,6 +7615,28 @@
         }
       }
     },
+    "Aggiungi un periodo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a period"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir un periodo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter une période"
+          }
+        }
+      }
+    },
     "Aggiungi una bolletta in Casa o qualcosa alla lista della spesa: le offerte partono da lì." : {
       "comment" : "News: offers need bills or grocery",
       "localizations" : {
@@ -8283,6 +8129,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aidez-nous à améliorer KidBox"
+          }
+        }
+      }
+    },
+    "Al" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Au"
           }
         }
       }
@@ -22054,6 +21922,28 @@
         }
       }
     },
+    "Dal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Del"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du"
+          }
+        }
+      }
+    },
     "Dal %@" : {
       "comment" : "News: start date badge",
       "localizations" : {
@@ -30056,6 +29946,28 @@
         }
       }
     },
+    "Ferie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vacaciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Congés"
+          }
+        }
+      }
+    },
     "Ferie annue" : {
       "localizations" : {
         "en" : {
@@ -30206,6 +30118,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Congés acquis (jours)"
+          }
+        }
+      }
+    },
+    "Ferie programmate" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planned leave"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vacaciones programadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Congés prévus"
           }
         }
       }
@@ -34507,6 +34441,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le document est trop long pour être une liste de gardes."
+          }
+        }
+      }
+    },
+    "Il documento resta qui, nella scheda Lavoro." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The document stays here, in the Work card."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El documento se queda aquí, en la ficha de Trabajo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le document reste ici, dans la fiche Travail."
           }
         }
       }
@@ -49563,6 +49519,7 @@
       }
     },
     "Non sembra una busta paga né un contratto di lavoro." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -49580,6 +49537,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cela ne ressemble ni à une fiche de paie ni à un contrat de travail."
+          }
+        }
+      }
+    },
+    "Non sembra una busta paga, un contratto né un foglio ferie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This doesn't look like a payslip, a contract or a leave sheet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No parece una nómina, un contrato ni una hoja de vacaciones."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cela ne ressemble ni à une fiche de paie, ni à un contrat, ni à un planning de congés."
           }
         }
       }
@@ -52840,6 +52819,28 @@
         }
       }
     },
+    "Ogni periodo diventa un evento «giornata intera» nel calendario, visibile a tutta la famiglia. Scorri per togliere un periodo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each period becomes an all-day event in the calendar, visible to the whole family. Swipe to remove a period."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada periodo se convierte en un evento de «día completo» en el calendario, visible para toda la familia. Desliza para quitar un periodo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque période devient un événement « journée entière » dans le calendrier, visible par toute la famille. Fais glisser pour retirer une période."
+          }
+        }
+      }
+    },
     "Ogni piano include un numero di messaggi AI al giorno per famiglia, condivisi tra tutti i membri. Il contatore si azzera a mezzanotte." : {
       "localizations" : {
         "en" : {
@@ -55501,6 +55502,28 @@
         }
       }
     },
+    "Periodi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Periods"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Periodos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Périodes"
+          }
+        }
+      }
+    },
     "Periodicità" : {
       "localizations" : {
         "en" : {
@@ -56339,6 +56362,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plan terminé · mois %d"
+          }
+        }
+      }
+    },
+    "Piano ferie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan de vacaciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planning des congés"
           }
         }
       }
@@ -59870,6 +59915,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quand mon contrat se termine-t-il ?"
+          }
+        }
+      }
+    },
+    "Quando sono in ferie?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When am I on leave?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cuándo estoy de vacaciones?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand suis-je en congé ?"
           }
         }
       }
@@ -72182,6 +72249,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Type"
+          }
+        }
+      }
+    },
+    "Tipo (ferie, permesso…)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type (leave, time off…)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tipo (vacaciones, permiso…)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type (congés, permission…)"
           }
         }
       }

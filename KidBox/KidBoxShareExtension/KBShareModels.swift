@@ -44,7 +44,7 @@ extension KBSharePayload {
             
         case .image:
             // Foto → chat + Foto e video crittografati
-            return [.chat, .encryptedMedia, .assistant]
+            return [.chat, .encryptedMedia, .assistant, .work]
             
         case .text(let t):
             let lines = t.components(separatedBy: "\n")
@@ -80,11 +80,11 @@ extension KBSharePayload {
         }
         if isPhoto {
             // L'assistente legge PDF e immagini (non GIF animate né video).
-            return [.chat, .encryptedMedia] + (ext == "gif" ? [] : [.assistant])
+            return [.chat, .encryptedMedia] + (ext == "gif" ? [] : [.assistant, .work])
         }
         if ext == "pdf" {
             // I PDF tipicamente sono biglietti / ricevute → mostriamo anche Wallet.
-            return [.chat, .document, .wallet, .assistant]
+            return [.chat, .document, .wallet, .assistant, .work]
         }
         return [.chat, .document]
     }
@@ -163,6 +163,7 @@ extension KBShareDestination {
         case .encryptedMedia:   return String(localized: "Foto e video")
         case .wallet:           return String(localized: "Wallet")
         case .assistant:        return String(localized: "Assistente AI")
+        case .work:             return String(localized: "Lavoro")
         }
     }
     
@@ -177,6 +178,7 @@ extension KBShareDestination {
         case .encryptedMedia:   return "photo.stack.fill"
         case .wallet:           return "ticket.fill"
         case .assistant:        return "sparkles"
+        case .work:             return "briefcase.fill"
         }
     }
     
@@ -191,6 +193,7 @@ extension KBShareDestination {
         case .encryptedMedia:   return .cyan
         case .wallet:           return .indigo
         case .assistant:        return .purple
+        case .work:             return Color(red: 0.25, green: 0.45, blue: 0.75)
         }
     }
     
