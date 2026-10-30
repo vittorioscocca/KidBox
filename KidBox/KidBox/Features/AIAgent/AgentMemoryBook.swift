@@ -150,6 +150,9 @@ struct AgentMemorySnapshot {
     let housePayments: [KBHousePayment]
     let vehicles: [KBVehicle]
     let vehicleEvents: [KBVehicleEvent]
+    /// Lavoro: solo le schede che chi chiede può vedere (la sua e quelle condivise con lui).
+    let workProfiles: [KBWorkProfile]
+    let workRecords: [KBWorkRecord]
     let trips: [KBTrip]
     let tripLegs: [KBTripLeg]
     let tripDays: [KBTripDayPlan]
@@ -181,6 +184,8 @@ struct AgentMemorySnapshot {
             .filter { !$0.isDeleted }
         let documentCategories = fetch(FetchDescriptor<KBDocumentCategory>(predicate: #Predicate { $0.familyId == fid }))
             .filter { !$0.isDeleted }
+        let workProfiles = fetch(FetchDescriptor<KBWorkProfile>(predicate: #Predicate { $0.familyId == fid }))
+            .filter { !$0.isDeleted && $0.isVisible(to: uid) }
         let facts = FamilyMemoryService.shared.fetchFacts(for: familyId, modelContext: modelContext).map(\.content)
 
         return AgentMemorySnapshot(
@@ -239,6 +244,9 @@ struct AgentMemorySnapshot {
                 .filter { !$0.isDeleted },
             vehicleEvents: fetch(FetchDescriptor<KBVehicleEvent>(predicate: #Predicate { $0.familyId == fid }))
                 .filter { !$0.isDeleted },
+            workProfiles: workProfiles,
+            workRecords: fetch(FetchDescriptor<KBWorkRecord>(predicate: #Predicate { $0.familyId == fid }))
+                .filter { r in !r.isDeleted && workProfiles.contains { $0.id == r.ownerUid } },
             trips: fetch(FetchDescriptor<KBTrip>(predicate: #Predicate { $0.familyId == fid })),
             tripLegs: fetch(FetchDescriptor<KBTripLeg>(predicate: #Predicate { $0.familyId == fid })),
             tripDays: fetch(FetchDescriptor<KBTripDayPlan>(predicate: #Predicate { $0.familyId == fid })),
@@ -401,6 +409,7 @@ struct AgentMemoryBookBuilder {
         if let f = walletFile() { files.append(f) }
         if let f = homeFile(docAllowance: docAllowance) { files.append(f) }
         if let f = vehiclesFile(docAllowance: docAllowance) { files.append(f) }
+        if let f = workFile() { files.append(f) }
         if let f = petsFile(docAllowance: docAllowance) { files.append(f) }
         if let f = tripsFile() { files.append(f) }
         if let f = chatFile() { files.append(f) }
@@ -1127,6 +1136,113 @@ struct AgentMemoryBookBuilder {
         return AgentMemoryFile(name: "veicoli.md", title: "Veicoli", summary: "\(s.vehicles.count) veicoli, \(s.vehicleEvents.count) interventi", body: lines.joined(separator: "\n"))
     }
 
+    // MARK: lavoro.md
+
+    /// Buste paga e contratti già letti dall'AI, per persona. Solo schede che
+    /// chi chiede può vedere: il quaderno nasce sul suo dispositivo e le
+    /// altre non entrano nello snapshot.
+    private func workFile() -> AgentMemoryFile? {
+        guard !s.workRecords.isEmpty else { return nil }
+        var lines = [
+            "# Lavoro",
+            "Valori letti da buste paga e contratti. Se un valore non c'è, non c'era nel documento: dillo, non stimarlo. " +
+            "Non dare consulenza fiscale o legale: riporta i numeri e, se serve, suggerisci il consulente del lavoro o il sindacato.",
+        ]
+        let owners = s.workProfiles.sorted { a, _ in a.id == s.uid }
+        for p in owners {
+            let mine = s.workRecords.filter { $0.ownerUid == p.id }
+            guard !mine.isEmpty else { continue }
+            let who = p.id == s.uid ? "\(s.memberName(p.id) ?? "Io") (chi chiede)" : (s.memberName(p.id) ?? "Un familiare")
+            lines.append("\n## \(who)")
+            let employer = WorkRecordCrypto.openEmployer(p, userId: s.uid)
+            if !employer.isEmpty { lines.append("Datore di lavoro: \(employer)") }
+
+            let payslips: [(KBWorkRecord, WorkFields)] = mine.filter { $0.isPayslip }
+                .sorted { $0.referenceDate > $1.referenceDate }
+                .compactMap { r in WorkRecordCrypto.open(r, userId: s.uid).map { (r, $0) } }
+            if let (r, f) = payslips.first {
+                lines.append("### Ultima busta paga: \(f.period.isEmpty ? fmtDate(r.referenceDate) : f.period)")
+                lines += workPayslipLines(f)
+                if payslips.count > 1 {
+                    let prev = payslips[1].1
+                    var diff: [String] = []
+                    if let a = f.net, let b = prev.net { diff.append("netto \(workSigned(a - b)) €") }
+                    if let a = f.gross, let b = prev.gross { diff.append("lordo \(workSigned(a - b)) €") }
+                    if let a = f.vacationRemaining, let b = prev.vacationRemaining { diff.append("ferie residue \(workSigned(a - b)) giorni") }
+                    if !diff.isEmpty {
+                        lines.append("- Rispetto alla busta precedente (\(prev.period.isEmpty ? payslips[1].1.title : prev.period)): \(diff.joined(separator: ", "))")
+                    }
+                }
+                let year = Calendar.current.component(.year, from: now)
+                let thisYear = payslips.filter { Calendar.current.component(.year, from: $0.0.referenceDate) == year }
+                let taxes = thisYear.compactMap { $0.1.taxes }
+                if !taxes.isEmpty {
+                    lines.append("- Imposte \(year): \(workMoney(taxes.reduce(0, +))) sommando le \(taxes.count) buste paga caricate (non necessariamente tutto l'anno)")
+                }
+                if payslips.count > 1 {
+                    lines.append("### Storico buste paga (più recenti prima)")
+                    for (r, f) in payslips.prefix(12) {
+                        var parts: [String] = []
+                        if let v = f.gross { parts.append("lordo \(workMoney(v))") }
+                        if let v = f.net { parts.append("netto \(workMoney(v))") }
+                        if let v = f.taxes { parts.append("imposte \(workMoney(v))") }
+                        if let v = f.vacationRemaining { parts.append("ferie residue \(workNum(v)) g") }
+                        if let v = f.permitHoursRemaining { parts.append("permessi residui \(workNum(v)) h") }
+                        lines.append("- \(f.period.isEmpty ? fmtDate(r.referenceDate) : f.period): \(parts.joined(separator: " · "))")
+                    }
+                }
+            }
+            let contracts = mine.filter { $0.isContract }
+                .sorted { $0.referenceDate > $1.referenceDate }
+                .compactMap { r in WorkRecordCrypto.open(r, userId: s.uid).map { (r, $0) } }
+            for (r, f) in contracts.prefix(3) {
+                lines.append("### Contratto\(f.title.isEmpty ? "" : ": \(f.title)") (dal \(fmtDate(WorkFields.parseDay(f.startDate) ?? r.referenceDate)))")
+                var facts: [String] = []
+                if !f.contractType.isEmpty { facts.append(f.contractType) }
+                if !f.level.isEmpty { facts.append("livello/CCNL \(f.level)") }
+                if let v = f.grossAnnual { facts.append("RAL \(workMoney(v))") }
+                if let v = f.vacationDaysPerYear { facts.append("\(workNum(v)) giorni di ferie l'anno") }
+                if !f.noticePeriod.isEmpty { facts.append("preavviso \(f.noticePeriod)") }
+                if !facts.isEmpty { lines.append(facts.joined(separator: " · ")) }
+                if let end = WorkFields.parseDay(f.endDate) {
+                    let left = Calendar.current.dateComponents([.day], from: now, to: end).day ?? 0
+                    lines.append("- Scadenza: \(fmtDate(end))\(left < 0 ? " ⚠️ PASSATA" : " (tra \(left) giorni)")")
+                } else if f.contractType.lowercased().contains("indeterm") {
+                    lines.append("- Scadenza: nessuna (tempo indeterminato)")
+                }
+                if !f.notes.isEmpty { lines.append("Note: \(clip(f.notes, 200))") }
+            }
+        }
+        guard lines.count > 2 else { return nil }
+        return AgentMemoryFile(name: "lavoro.md", title: "Lavoro", summary: "\(s.workRecords.count) documenti di lavoro (buste paga, contratti)", body: lines.joined(separator: "\n"))
+    }
+
+    private func workPayslipLines(_ f: WorkFields) -> [String] {
+        var out: [String] = []
+        var money: [String] = []
+        if let v = f.gross { money.append("lordo \(workMoney(v))") }
+        if let v = f.net { money.append("netto \(workMoney(v))") }
+        if let v = f.taxes { money.append("imposte trattenute \(workMoney(v))") }
+        if let v = f.contributions { money.append("contributi \(workMoney(v))") }
+        if let v = f.tfr { money.append("TFR \(workMoney(v))") }
+        if !money.isEmpty { out.append("- " + money.joined(separator: " · ")) }
+        var vac: [String] = []
+        if let v = f.vacationAccrued { vac.append("maturate \(workNum(v))") }
+        if let v = f.vacationTaken { vac.append("godute \(workNum(v))") }
+        if let v = f.vacationRemaining { vac.append("residue \(workNum(v))") }
+        if !vac.isEmpty { out.append("- Ferie (giorni): " + vac.joined(separator: ", ")) }
+        var per: [String] = []
+        if let v = f.permitHoursAccrued { per.append("maturati \(workNum(v))") }
+        if let v = f.permitHoursRemaining { per.append("residui \(workNum(v))") }
+        if !per.isEmpty { out.append("- Permessi (ore): " + per.joined(separator: ", ")) }
+        if !f.notes.isEmpty { out.append("Note: \(clip(f.notes, 200))") }
+        return out
+    }
+
+    private func workNum(_ v: Double) -> String { v.formatted(.number.precision(.fractionLength(0...2)).locale(kbDeviceLocale())) }
+    private func workMoney(_ v: Double) -> String { v.formatted(.currency(code: "EUR").locale(kbDeviceLocale())) }
+    private func workSigned(_ v: Double) -> String { (v >= 0 ? "+" : "") + workNum(v) }
+
     // MARK: animali.md
 
     private func petsFile(docAllowance: [String: Int]?) -> AgentMemoryFile? {
@@ -1266,7 +1382,7 @@ enum AgentPrompt {
         return """
         Sei l'assistente di KidBox della famiglia \(familyName). KidBox è l'app in cui la famiglia tiene \
         calendario, to-do, lista della spesa, note, spese, documenti, salute, wallet, casa, veicoli, \
-        animali e viaggi.
+        animali, viaggi e, per ogni adulto, buste paga e contratti di lavoro.
         Qui sotto c'è la tua memoria: una scheda per ogni sezione dell'app, aggiornata adesso, con un indice in cima.
 
         COME RISPONDI
@@ -1278,6 +1394,9 @@ enum AgentPrompt {
         non fare diagnosi e non cambiare terapie: quando la questione è clinica, dopo aver risposto ricorda di sentire il medico.
         - Pianificazione: aiuta a trovare spazi liberi e a non dimenticare scadenze; quando proponi un evento o un to-do \
         indica titolo, data/ora e chi se ne occupa.
+        - Lavoro (buste paga e contratti): rispondi con i valori della scheda («ferie residue», «permessi», «imposte», «lordo», «scadenza») \
+        e dì da quale busta paga o contratto vengono. Ogni adulto vede solo la propria scheda e quelle che altri hanno condiviso con lui: \
+        non parlare di dati di lavoro di una persona che non compare nelle schede. Niente consulenza fiscale o legale.
         - Le password non sono nella tua memoria: se te le chiedono, rimanda alla sezione Password dell'app.
         \(AgentLinks.promptRule)
         - Date: oggi è \(promptDay(now)), domani è \(promptDay(tomorrow)). Prima di dire «domani», «dopodomani» o un giorno \
