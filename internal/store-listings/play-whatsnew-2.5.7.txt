@@ -1,0 +1,24 @@
+<it-IT>
+• Nuova famiglia: alla fine della configurazione metti subito un impegno, la spesa o un documento. Chi inviterai lo troverà già lì.
+• Lavoro (Pro e Max): buste paga, contratti e foglio ferie letti dall'AI, ferie nel calendario, scheda privata o condivisa con un adulto.
+• Condividi un PDF o una foto con KidBox e scegli «Assistente AI»: lo legge e lo mette al posto giusto.
+• Piano Free: con i 5 messaggi AI di benvenuto provi anche Viaggi, piani, Notizie e Farmacie di turno.
+</it-IT>
+<en-US>
+• New family: at the end of setup add an event, some shopping or a document straight away. Whoever you invite will find it there.
+• Work (Pro and Max): payslips, contracts and leave sheets read by AI, holidays in the calendar, a private tab or shared with an adult.
+• Share a PDF or a photo with KidBox and choose "AI assistant": it reads it and puts it in the right place.
+• Free plan: with the 5 welcome AI messages you can also try Trips, plans, News and Duty pharmacies.
+</en-US>
+<fr-FR>
+• Nouvelle famille : à la fin de la configuration, ajoutez un rendez-vous, des courses ou un document. Vos invités le trouveront déjà là.
+• Travail (Pro et Max) : bulletins de paie, contrats et congés lus par l'IA, congés dans le calendrier, fiche privée ou partagée avec un adulte.
+• Partagez un PDF ou une photo avec KidBox et choisissez « Assistant IA » : il le lit et le range au bon endroit.
+• Forfait Free : avec les 5 messages IA de bienvenue, essayez aussi Voyages, plans, Actualités et Pharmacies de garde.
+</fr-FR>
+<es-ES>
+• Nueva familia: al final de la configuración añade ya un compromiso, la compra o un documento. Quien invites lo encontrará ahí.
+• Trabajo (Pro y Max): nóminas, contratos y hoja de vacaciones leídos por la IA, vacaciones en el calendario, ficha privada o compartida con un adulto.
+• Comparte un PDF o una foto con KidBox y elige «Asistente IA»: lo lee y lo pone en su sitio.
+• Plan Free: con los 5 mensajes de IA de bienvenida pruebas también Viajes, planes, Noticias y Farmacias de guardia.
+</es-ES>
