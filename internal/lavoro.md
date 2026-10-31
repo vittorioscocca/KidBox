@@ -25,5 +25,8 @@ Il `KBDocument` allegato nasce con la visibilità della scheda e `WorkAttachment
 - View: `WorkHomeView` mostra l'invito ai piani sui Free.
 Il listino (`config/plans`, console admin) non cita ancora Lavoro: `/piani`.
 
+## Android e web (31/10/2026)
+Stesso schema Firestore e stesso JSON `WorkFields`: un documento letto da un client si apre sugli altri. Android: Room 52 (`kb_work_profiles` con chiave composta familyId+ownerUid, `kb_work_records`), `WorkRepository` con i tre listener vincolati (upsert da `snap.documents`, rimozioni dal delta), `strictly paid` in `AIService` (`CurrentPlanStore.plan`, mai `aiAccessBlocked`), listener avviati con la Home. Web: `services/work.js` (render pagine con pdf.js, `askAI` con blocchi immagine), `uploadDocument` accetta la visibilità, `Documenti` filtra con `isVisibleTo`.
+
 ## Cosa manca
 Android e web; link `apri:lavoro` (richiede `Kind` in `AgentLinks` e `KBSearchIndex`); lettura dal «+» dell'assistente; modifica di un documento già salvato (oggi si elimina e si ricarica).
