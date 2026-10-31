@@ -60,17 +60,17 @@
     .chip{font-size:.88rem;font-weight:650;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--border)}
 
     /* Telefono disegnato */
-    .phone{width:280px;max-width:100%;margin:0 auto;background:var(--bezel);border-radius:44px;padding:11px;box-shadow:var(--shadow-lg)}
-    .screen{background:var(--bg);border-radius:34px;overflow:hidden;min-height:520px;padding:18px 14px}
+    .phone{width:270px;max-width:100%;aspect-ratio:9/19;margin:0 auto;background:var(--bezel);border-radius:44px;padding:10px;box-shadow:var(--shadow-lg)}
+    .screen{background:var(--bg);border-radius:34px;overflow:hidden;height:100%;padding:16px 12px}
     .scr-title{text-align:center;font-weight:750;font-size:.95rem;margin:8px 0 14px}
-    .day{font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:14px 4px 6px}
-    .ev{display:flex;gap:10px;align-items:center;background:var(--surface);border-radius:14px;padding:10px 12px;margin-bottom:8px;box-shadow:var(--shadow)}
+    .day{font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:10px 4px 5px}
+    .ev{display:flex;gap:9px;align-items:center;background:var(--surface);border-radius:13px;padding:8px 10px;margin-bottom:6px;box-shadow:var(--shadow)}
     .ev .bar{width:4px;align-self:stretch;border-radius:4px;background:var(--pitch)}
     .ev.home .bar{background:var(--violet)}
-    .ev b{display:block;font-size:.86rem;font-weight:700}
-    .ev span{font-size:.74rem;color:var(--muted)}
+    .ev b{display:block;font-size:.82rem;font-weight:700;white-space:nowrap}
+    .ev span{font-size:.7rem;color:var(--muted);white-space:nowrap}
     .ev .src{margin-left:auto;font-size:.62rem;font-weight:800;color:var(--pitch);background:color-mix(in srgb,var(--pitch) 12%,transparent);padding:3px 7px;border-radius:999px;white-space:nowrap}
-    .req{background:var(--surface);border-radius:16px;padding:12px;margin-top:14px;box-shadow:var(--shadow);border:1.5px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+    .req{background:var(--surface);border-radius:16px;padding:11px;margin-top:12px;box-shadow:var(--shadow);border:1.5px solid color-mix(in srgb,var(--accent) 40%,transparent)}
     .req .q{font-size:.86rem;font-weight:750}
     .req .who{font-size:.72rem;color:var(--muted);margin:3px 0 10px}
     .req .btns{display:flex;gap:6px}
@@ -155,12 +155,10 @@
         <div class="screen">
           <div class="scr-title">Calendario</div>
           <div class="day">Martedì</div>
-          <div class="ev"><i class="bar"></i><div><b>Allenamento Pulcini</b><span>17:30 · Campo comunale</span></div><em class="src">Squadra</em></div>
           <div class="ev home"><i class="bar"></i><div><b>Dentista Marco</b><span>15:00</span></div></div>
-          <div class="day">Giovedì</div>
-          <div class="ev"><i class="bar"></i><div><b>Allenamento Pulcini</b><span>17:30 · Campo comunale</span></div><em class="src">Squadra</em></div>
+          <div class="ev"><i class="bar"></i><div><b>Allenamento</b><span>17:30 · Campo comunale</span></div><em class="src">Squadra</em></div>
           <div class="day">Sabato</div>
-          <div class="ev"><i class="bar"></i><div><b>Partita in trasferta</b><span>Ritrovo 9:15 · Fuori casa</span></div><em class="src">Squadra</em></div>
+          <div class="ev"><i class="bar"></i><div><b>Partita</b><span>Ritrovo 9:15 · Fuori casa</span></div><em class="src">Squadra</em></div>
           <div class="req">
             <div class="q">Chi porta Marco alla partita?</div>
             <div class="who">Chiesto da Giulia a Luca · sabato 9:15</div>
