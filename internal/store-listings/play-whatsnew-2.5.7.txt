@@ -11,8 +11,8 @@
 • Free plan: with the 5 welcome AI messages you can also try Trips, plans, News and Duty pharmacies.
 </en-US>
 <fr-FR>
-• Nouvelle famille : à la fin de la configuration, ajoutez un rendez-vous, des courses ou un document. Vos invités le trouveront déjà là.
-• Travail (Pro et Max) : bulletins de paie, contrats et congés lus par l'IA, congés dans le calendrier, fiche privée ou partagée avec un adulte.
+• Nouvelle famille : en fin de configuration, ajoutez un rendez-vous, des courses ou un document. Vos invités le trouveront là.
+• Travail (Pro et Max) : bulletins de paie, contrats et congés lus par l'IA, congés dans le calendrier, fiche privée ou partagée.
 • Partagez un PDF ou une photo avec KidBox et choisissez « Assistant IA » : il le lit et le range au bon endroit.
 • Forfait Free : avec les 5 messages IA de bienvenue, essayez aussi Voyages, plans, Actualités et Pharmacies de garde.
 </fr-FR>
