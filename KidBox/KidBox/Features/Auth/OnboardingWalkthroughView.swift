@@ -9,6 +9,8 @@
 //              In fondo, «Ho un invito» porta al percorso .join (QR).
 //  Pagina 1 — Invita il partner (percorso .create) oppure scansione QR
 //              (percorso .join).
+//  Pagina 2 — Solo nel percorso .create: il primo contenuto (un impegno, la
+//              spesa o un documento), vedi OnboardingFirstContentCard.
 //
 //  Con un invito da Universal Link (`PendingFamilyInvite`) il wizard è una
 //  pagina sola: la conferma d'invito, che chiede il nome ed entra.
@@ -111,14 +113,22 @@ struct OnboardingWalkthroughView: View {
         : .white
     }
 
-    // Pagine: 0 setup (nome + famiglia) · 1 invito (crea) o QR (join).
-    // Percorso `.linkJoin`: una pagina sola, la conferma d'invito.
-    private var totalPages: Int { familyPath == .linkJoin ? 1 : 2 }
+    // Pagine: 0 setup (nome + famiglia) · 1 invito (crea) o QR (join) ·
+    // 2 primo contenuto (solo crea). Percorso `.linkJoin`: una pagina sola,
+    // la conferma d'invito. Chi entra in una famiglia ci trova già qualcosa.
+    private var totalPages: Int {
+        switch familyPath {
+        case .linkJoin: return 1
+        case .join:     return 2
+        case .create:   return 3
+        }
+    }
 
     private var isLinkJoinPage: Bool { familyPath == .linkJoin }
     private var isSetupPage: Bool { currentPage == 0 && familyPath != .linkJoin }
     private var isJoinPage: Bool { currentPage == 1 && familyPath == .join }
     private var isInvitePage: Bool { currentPage == 1 && familyPath == .create }
+    private var isFirstContentPage: Bool { currentPage == 2 && familyPath == .create }
     private var isLastPage: Bool { currentPage == totalPages - 1 }
 
     // Una volta creata la famiglia (o completato un join) non si torna più
@@ -136,6 +146,7 @@ struct OnboardingWalkthroughView: View {
         case (_, .linkJoin): return "link_invite_confirm"
         case (0, _):         return "setup"
         case (1, .join):     return "join_family"
+        case (2, _):         return "first_content"
         default:             return "invite"
         }
     }
@@ -269,6 +280,21 @@ struct OnboardingWalkthroughView: View {
                         .opacity(textOpacity)
                         .offset(y: textOffset)
 
+                    } else if isFirstContentPage {
+                        OnboardingFirstContentCard(
+                            cardBackground:  cardBackground,
+                            accentColor:     currentAccent,
+                            iconColor:       currentIconColor,
+                            onSaveEvent:     { title, start in saveFirstEvent(title: title, start: start) },
+                            onSaveGrocery:   { names in saveFirstGroceries(names) },
+                            onOpenDocuments: { finishFirstContent(.document) },
+                            onSkip:          { finishFirstContent(nil) },
+                            onFinished:      { closeWizard() }
+                        )
+                        .padding(.horizontal, 24)
+                        .opacity(textOpacity)
+                        .offset(y: textOffset)
+
                     } else if isInvitePage {
                         InviteOnboardingCard(
                             cardBackground: cardBackground,
@@ -293,7 +319,7 @@ struct OnboardingWalkthroughView: View {
                 if isInvitePage {
                     // I pulsanti sono nella barra fissa (safeAreaInset qui sotto).
                     Spacer().frame(height: 16)
-                } else if isJoinPage || isLinkJoinPage {
+                } else if isJoinPage || isLinkJoinPage || isFirstContentPage {
                     // Queste pagine hanno i loro pulsanti dentro la card.
                     Spacer()
                         .frame(height: 56)
@@ -486,12 +512,93 @@ struct OnboardingWalkthroughView: View {
 
     // MARK: - Navigation
 
-    /// Chiusura della pagina invito, comune a «Ho inviato il link» e «Farlo dopo».
+    /// Chiusura della pagina invito, comune a «Ho inviato il link» e «Farlo
+    /// dopo»: si passa al primo contenuto invece che alla Home vuota.
     private func finishInvitePage() {
+        advancePage()
+    }
+
+    private func closeWizard() {
         withAnimation(.easeInOut(duration: 0.3)) {
             bgOpacity = 0; textOpacity = 0; iconOpacity = 0; ctaScale = 0.88
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { onFinish() }
+    }
+
+    // MARK: - Primo contenuto
+
+    /// Stessa scrittura dell'assistente (`PlanningActionExecutor`): riga in
+    /// SwiftData e sincronizzazione in coda. Il `content_created` su Firestore
+    /// lo scrive il trigger del server alla creazione del documento, ed è la
+    /// misura della scommessa 13.
+    private func saveFirstEvent(title: String, start: Date) -> Bool {
+        guard let familyId = createdFamilyId, let uid = Auth.auth().currentUser?.uid,
+              !title.isEmpty else { return false }
+        let now = Date()
+        let event = KBCalendarEvent(
+            familyId: familyId,
+            title: title,
+            startDate: start,
+            endDate: start.addingTimeInterval(3600),
+            createdAt: now,
+            updatedAt: now,
+            updatedBy: uid,
+            createdBy: uid
+        )
+        event.syncState = .pendingUpsert
+        modelContext.insert(event)
+        SyncCenter.shared.enqueueCalendarUpsert(eventId: event.id, familyId: familyId, modelContext: modelContext)
+        logFirstContent(.event, contentType: "calendar")
+        return true
+    }
+
+    private func saveFirstGroceries(_ names: [String]) -> Bool {
+        guard let familyId = createdFamilyId, let uid = Auth.auth().currentUser?.uid,
+              !names.isEmpty else { return false }
+        let now = Date()
+        var seen = Set<String>()
+        for name in names where seen.insert(name.lowercased()).inserted {
+            let item = KBGroceryItem(
+                familyId: familyId,
+                name: name,
+                category: nil,
+                createdAt: now,
+                updatedAt: now,
+                updatedBy: uid,
+                createdBy: uid
+            )
+            item.syncState = .pendingUpsert
+            modelContext.insert(item)
+            SyncCenter.shared.enqueueGroceryUpsert(itemId: item.id, familyId: familyId, modelContext: modelContext)
+        }
+        logFirstContent(.grocery, contentType: "grocery")
+        return true
+    }
+
+    private func logFirstContent(_ choice: OnboardingFirstContentChoice, contentType: String) {
+        AppAnalytics.onboardingStepCompleted(stepName: "first_content_\(choice.rawValue)")
+        // Non `contentCreated`: aprirebbe subito «Per ora lo vedi solo tu»,
+        // un secondo invito a pochi secondi dalla pagina invito.
+        AppAnalytics.contentCreatedInOnboarding(type: contentType)
+        Task { await KBAnalytics.shared.logOnboarding(action: "first_content", step: choice.rawValue) }
+    }
+
+    /// «Lo faccio dopo» (`choice` nil) o «Apri Documenti»: il wizard chiude
+    /// subito; per il documento la Home apre Documenti appena c'è.
+    private func finishFirstContent(_ choice: OnboardingFirstContentChoice?) {
+        if let choice {
+            AppAnalytics.onboardingStepCompleted(stepName: "first_content_\(choice.rawValue)")
+            Task { await KBAnalytics.shared.logOnboarding(action: "first_content", step: choice.rawValue) }
+        } else {
+            AppAnalytics.onboardingFirstContentSkipped()
+            Task { await KBAnalytics.shared.logOnboarding(action: "first_content", step: "skipped") }
+        }
+        closeWizard()
+        if choice == .document {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                coordinator.navigate(to: .documentsHome)
+            }
+        }
     }
 
     private func handleCTA() {

@@ -103,6 +103,18 @@ enum AppAnalytics {
         FirstContentInvitePrompt.noteContentCreated(type: type)
     }
 
+    /// Il primo contenuto creato dall'ultima pagina del wizard. Stesso evento
+    /// GA4 di `contentCreated`, ma senza il foglio d'invito contestuale (la
+    /// pagina invito è appena passata) e senza la richiesta di recensione.
+    static func contentCreatedInOnboarding(type: String) {
+        Analytics.logEvent("content_created", parameters: ["content_type": type, "source": "onboarding"])
+    }
+
+    /// «Lo faccio dopo» sulla pagina del primo contenuto.
+    static func onboardingFirstContentSkipped() {
+        Analytics.logEvent("onboarding_first_content_skipped", parameters: nil)
+    }
+
     // MARK: - Foglio d'invito contestuale (FirstContentInvitePrompt)
 
     /// `trigger` dice quale occasione l'ha aperto (oggi solo `first_content`).

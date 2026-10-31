@@ -1,6 +1,29 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
+    "Aggiungi alla spesa" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to groceries"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir a la compra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter aux courses"
+          }
+        }
+      }
+    },
     "Aggiungi un impegno o qualcosa da comprare: ci vuole un minuto, e chi inviterai lo troverà già lì." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20,6 +43,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajoutez un rendez-vous ou un article à acheter : ça prend une minute, et la personne que vous inviterez le trouvera déjà là."
+          }
+        }
+      }
+    },
+    "Apri Documenti" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Documents"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Documentos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir Documents"
           }
         }
       }
@@ -46,6 +92,29 @@
         }
       }
     },
+    "Carta d'identità, tessera sanitaria, una ricevuta" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID card, health card, a receipt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DNI, tarjeta sanitaria, un recibo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carte d'identité, carte Vitale, un reçu"
+          }
+        }
+      }
+    },
     "Comincia dalla settimana che arriva" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -65,6 +134,190 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Commencez par la semaine qui vient"
+          }
+        }
+      }
+    },
+    "Cosa mettiamo per primo?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What shall we add first?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué añadimos primero?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Par quoi on commence ?"
+          }
+        }
+      }
+    },
+    "Es. Pediatra di Marco" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g. Marco's check-up"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ej. Pediatra de Marco"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ex. Pédiatre de Marco"
+          }
+        }
+      }
+    },
+    "Es. latte, pane, uova" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g. milk, bread, eggs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ej. leche, pan, huevos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ex. lait, pain, œufs"
+          }
+        }
+      }
+    },
+    "La spesa" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Groceries"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La compra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les courses"
+          }
+        }
+      }
+    },
+    "Le prime cose da comprare" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The first things to buy"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las primeras cosas que comprar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les premières choses à acheter"
+          }
+        }
+      }
+    },
+    "Lo faccio dopo →" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I'll do it later →"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo hago después →"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je le ferai plus tard →"
+          }
+        }
+      }
+    },
+    "Lo trovi nel calendario." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You'll find it in the calendar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo encontrarás en el calendario."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous le trouverez dans le calendrier."
+          }
+        }
+      }
+    },
+    "Lo trovi nella lista della spesa." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You'll find it in the grocery list."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo encontrarás en la lista de la compra."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous le trouverez dans la liste de courses."
           }
         }
       }
@@ -185,6 +438,121 @@
     },
     " Meteo" : {
 
+    },
+    "Si apre Documenti: scegli un file, una foto o scansiona un foglio. Resta cifrato, lo vede solo la tua famiglia." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documents will open: pick a file or a photo, or scan a page. It stays encrypted and only your family can see it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se abre Documentos: elige un archivo, una foto o escanea una hoja. Queda cifrado, solo lo ve tu familia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documents va s'ouvrir : choisissez un fichier, une photo ou scannez une feuille. Il reste chiffré, seule votre famille le voit."
+          }
+        }
+      }
+    },
+    "Un documento" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A document"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un documento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un document"
+          }
+        }
+      }
+    },
+    "Un impegno" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una cita"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un rendez-vous"
+          }
+        }
+      }
+    },
+    "Una cosa vera di questa settimana: chi inviterai la troverà già qui." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something real from this week: whoever you invite will find it here already."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algo real de esta semana: quien invites lo encontrará ya aquí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une vraie chose de cette semaine : la personne que vous inviterez la trouvera déjà ici."
+          }
+        }
+      }
+    },
+    "Una visita, lo sport, un compleanno" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A check-up, a sports class, a birthday"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una visita, el deporte, un cumpleaños"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une visite, le sport, un anniversaire"
+          }
+        }
+      }
     },
     "–" : {
       "localizations" : {
