@@ -1,6 +1,29 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
+    "Aggiungi un impegno o qualcosa da comprare: ci vuole un minuto, e chi inviterai lo troverà già lì." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a plan or something to buy: it takes a minute, and whoever you invite will find it already there."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade una cita o algo que comprar: es un minuto, y quien invites lo encontrará ya ahí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez un rendez-vous ou un article à acheter : ça prend une minute, et la personne que vous inviterez le trouvera déjà là."
+          }
+        }
+      }
+    },
     "Cambia le date o spegni «Aggiungi al calendario» per togliere un periodo dal calendario di famiglia. Scorri per eliminare un periodo." : {
       "localizations" : {
         "en" : {
@@ -19,6 +42,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Change les dates ou désactive « Ajouter au calendrier » pour retirer une période du calendrier de famille. Fais glisser pour supprimer une période."
+          }
+        }
+      }
+    },
+    "Comincia dalla settimana che arriva" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start with the week ahead"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empieza por la semana que viene"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commencez par la semaine qui vient"
           }
         }
       }

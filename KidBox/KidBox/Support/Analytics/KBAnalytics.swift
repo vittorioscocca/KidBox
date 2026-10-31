@@ -136,7 +136,8 @@ actor KBAnalytics {
     /// buio, e l'unico segnale di ritorno sarebbe la disattivazione dei
     /// permessi — che è irreversibile e arriva quando è troppo tardi.
     ///
-    /// - Parameter name: `nudge_scheduled`, `nudge_opened` o `nudge_dismissed`.
+    /// - Parameter name: `nudge_scheduled`, `nudge_tapped` (tap sulla notifica),
+    ///   `nudge_opened` («Vai» nel foglio) o `nudge_dismissed`.
     func logNudge(name: String, campaignId: String) {
         guard let uid = Self.currentUid(), let familyId = Self.currentFamilyId() else { return }
         Task {

@@ -514,6 +514,11 @@ struct KidBoxApp: App {
 
                         case .nudge(let campaignId, let title, let body, let destination):
                             KBLog.navigation.kbInfo("Deep link -> nudge campaignId=\(campaignId)")
+                            // Il tap sulla notifica, a sé: `nudge_opened` è il
+                            // pulsante del foglio, e da solo non diceva se la
+                            // notifica fosse mai arrivata. Qui la sessione è
+                            // pronta, nel gestore della notifica non ancora.
+                            KBAnalytics.shared.logNudge(name: "nudge_tapped", campaignId: campaignId)
                             // Stessa sheet del broadcast, con in più la
                             // destinazione: il tap sul pulsante primario
                             // naviga, "Non ora" no.

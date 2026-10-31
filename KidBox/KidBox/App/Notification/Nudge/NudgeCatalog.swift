@@ -21,8 +21,13 @@
 import Foundation
 
 /// Aree di prodotto su cui si può misurare "non l'ha mai usata".
+///
+/// `content` è l'eccezione: vale "in famiglia non c'è ancora niente", né
+/// eventi né to-do né spesa né documenti né note né foto. Un client vecchio
+/// che la riceve da remoto la scarta (`try?`) e perde la condizione: va usata
+/// da `config/nudges` solo quando le versioni senza questo caso sono sparite.
 enum NudgeFeature: String, Codable {
-    case documents, wallet, health, ai, chat, calendar
+    case documents, wallet, health, ai, chat, calendar, content
 }
 
 /// Dove porta il pulsante primario della notifica.
@@ -199,6 +204,12 @@ struct NudgeConfig: Codable, Equatable {
 
     /// La sequenza decisa a prodotto:
     ///
+    /// 0. **Primo contenuto** — per chi ha creato la famiglia e non ci ha messo
+    ///    niente. Al 31/10/2026 è il 60% delle famiglie nuove, e 8 su 10 non
+    ///    riaprono l'app dopo il primo giorno: questa notifica, programmata
+    ///    prima che escano, è l'unica cosa che li raggiunge ancora. Una volta
+    ///    sola, il giorno dopo; l'invito viene dopo il cooldown.
+    ///
     /// 1. **Invito in famiglia** — la priorità. Da solo, KidBox è un archivio
     ///    personale: il valore esiste solo quando c'è più di una persona. Parte
     ///    il giorno dopo l'installazione e insiste per due settimane, poi
@@ -216,6 +227,17 @@ struct NudgeConfig: Codable, Equatable {
         quietHoursStart: 21,
         quietHoursEnd: 9,
         campaigns: [
+            NudgeCampaign(
+                id: "first_content",
+                order: -1,
+                firstDelayDays: 1,
+                maxFires: 1,
+                requires: NudgeRequirements(familyMembersMax: 1, featureUnused: .content),
+                title: "Comincia dalla settimana che arriva",
+                body: "Aggiungi un impegno o qualcosa da comprare: ci vuole un "
+                    + "minuto, e chi inviterai lo troverà già lì.",
+                destination: .calendar
+            ),
             NudgeCampaign(
                 id: "family_invite",
                 order: 0,

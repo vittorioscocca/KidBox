@@ -142,6 +142,16 @@ final class NudgeEngine {
                 $0.familyId == familyId && $0.isDeleted == false
             }) == 0 { unused.insert(.calendar) }
 
+            // Niente di niente: le cose che una famiglia mette per prime.
+            // Documenti e calendario sono già contati sopra.
+            if unused.contains(.documents), unused.contains(.calendar),
+               count(KBTodoItem.self, #Predicate { $0.familyId == familyId && $0.isDeleted == false }) == 0,
+               count(KBGroceryItem.self, #Predicate { $0.familyId == familyId && $0.isDeleted == false }) == 0,
+               count(KBNote.self, #Predicate { $0.familyId == familyId && $0.isDeleted == false }) == 0,
+               count(KBFamilyPhoto.self, #Predicate { $0.familyId == familyId && $0.isDeleted == false }) == 0 {
+                unused.insert(.content)
+            }
+
             // L'AI non ha `isDeleted`: la conversazione o c'è o non c'è.
             if count(KBAIConversation.self, #Predicate {
                 $0.familyId == familyId
@@ -218,7 +228,12 @@ final class NudgeEngine {
         if let maxMembers = r.familyMembersMax, signals.familyMembers > maxMembers { return false }
         if let minMembers = r.familyMembersMin, signals.familyMembers < minMembers { return false }
         if let feature = r.featureUnused, !signals.unusedFeatures.contains(feature) { return false }
-        if isCoveredByChecklist(campaign) { return false }
+        // Solo per chi ha già qualcuno in famiglia: a chi è da solo la
+        // checklist non basta, perché 8 su 10 escono il primo giorno e non la
+        // rivedono più (31/10/2026). Col filtro anche per loro la coda restava
+        // vuota proprio quando se ne andavano: `family_invite` raggiungeva 15
+        // utenti in tre mesi su ~250 famiglie da un membro.
+        if signals.familyMembers > 1, isCoveredByChecklist(campaign) { return false }
         return true
     }
 
