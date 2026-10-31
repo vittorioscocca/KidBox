@@ -1,0 +1,39 @@
+# Novità iOS 2.4.6 — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 31/10/2026 sulle modifiche dopo la 2.4.5: primo contenuto nell'onboarding (scommessa 13, in prima riga), scheda Lavoro, documenti all'assistente dalla condivisione, allegato nel campo di testo, funzioni Pro provabili col bonus Free.
+
+## it
+
+• Nuova famiglia, primo passo vero: alla fine della configurazione scegli cosa mettere per primo, un impegno della settimana, le prime cose della spesa o un documento. Chi inviterai lo troverà già lì. Se preferisci, «Lo faccio dopo».
+• Lavoro (Pro e Max): una scheda per ogni adulto con buste paga, contratti e foglio ferie. KidBox li legge e salva netto, lordo, ferie e permessi residui, TFR, tipo di contratto e scadenze; prima di salvare correggi tutto. Le ferie diventano eventi del calendario di famiglia, se vuoi. La scheda è privata, e puoi condividerla con un altro adulto. L'assistente risponde anche su questi dati.
+• Dalla condivisione all'assistente: da Mail, File o Foto condividi un PDF o una foto con KidBox e scegli «Assistente AI», che lo legge e lo mette al posto giusto. C'è anche la destinazione «Lavoro».
+• Il documento che alleghi all'assistente resta nel campo di testo con l'anteprima: puoi aggiungere una domanda o toglierlo con la X, e viene letto solo quando invii.
+• Piano Free: finché hai i 5 messaggi AI di benvenuto puoi provare anche Viaggi, Piano Alimentare, Piano Fitness, Notizie e Farmacie di turno.
+• Farmacie di turno ora stanno in Home e non più anche in Salute.
+
+## en-GB
+
+• New family, a real first step: at the end of setup choose what to add first, something on this week, the first shopping items or a document. Whoever you invite will find it already there. If you prefer, "I'll do it later".
+• Work (Pro and Max): a tab for each adult with payslips, contracts and leave sheets. KidBox reads them and saves net and gross pay, remaining holiday and leave hours, severance (TFR), contract type and dates; you can correct everything before saving. Holidays can become events in the family calendar, if you like. The tab is private, and you can share it with another adult. The assistant can answer questions on this data too.
+• From the share sheet to the assistant: from Mail, Files or Photos share a PDF or a photo with KidBox and choose "AI assistant", which reads it and puts it in the right place. There is also a "Work" destination.
+• The document you attach for the assistant stays in the text field with a preview: you can add a question or remove it with the X, and it is only read when you send.
+• Free plan: while you still have the 5 welcome AI messages you can also try Trips, Meal Plan, Fitness Plan, News and Duty pharmacies.
+• Duty pharmacies are now on Home only, no longer also in Health.
+
+## es-ES
+
+• Nueva familia, un primer paso de verdad: al final de la configuración eliges qué añadir primero, un compromiso de esta semana, lo primero de la compra o un documento. Quien invites lo encontrará ya ahí. Si lo prefieres, «Lo hago luego».
+• Trabajo (Pro y Max): una ficha para cada adulto con nóminas, contratos y hoja de vacaciones. KidBox los lee y guarda neto, bruto, vacaciones y permisos pendientes, finiquito (TFR), tipo de contrato y fechas; antes de guardar puedes corregirlo todo. Las vacaciones pueden pasar al calendario de la familia, si quieres. La ficha es privada y puedes compartirla con otro adulto. El asistente también responde sobre estos datos.
+• Del menú compartir al asistente: desde Mail, Archivos o Fotos comparte un PDF o una foto con KidBox y elige «Asistente IA», que lo lee y lo pone en su sitio. También está el destino «Trabajo».
+• El documento que adjuntas al asistente se queda en el campo de texto con la vista previa: puedes añadir una pregunta o quitarlo con la X, y solo se lee cuando envías.
+• Plan Free: mientras te queden los 5 mensajes de IA de bienvenida puedes probar también Viajes, Plan de comidas, Plan de fitness, Noticias y Farmacias de guardia.
+• Las Farmacias de guardia ahora están solo en Inicio, ya no también en Salud.
+
+## fr-FR
+
+• Nouvelle famille, un vrai premier pas : à la fin de la configuration, choisissez ce que vous ajoutez en premier, un rendez-vous de la semaine, les premières courses ou un document. Ceux que vous inviterez le trouveront déjà là. Si vous préférez, « Je le ferai plus tard ».
+• Travail (Pro et Max) : une fiche pour chaque adulte avec bulletins de paie, contrats et planning de congés. KidBox les lit et enregistre salaire net et brut, congés et heures de permission restants, indemnité de fin de contrat (TFR), type de contrat et dates ; vous pouvez tout corriger avant d'enregistrer. Les congés peuvent devenir des événements du calendrier familial, si vous le souhaitez. La fiche est privée, et vous pouvez la partager avec un autre adulte. L'assistant répond aussi sur ces données.
+• Du menu de partage à l'assistant : depuis Mail, Fichiers ou Photos, partagez un PDF ou une photo avec KidBox et choisissez « Assistant IA », qui le lit et le range au bon endroit. Il y a aussi la destination « Travail ».
+• Le document joint pour l'assistant reste dans le champ de texte avec un aperçu : vous pouvez ajouter une question ou le retirer avec la X, et il n'est lu qu'à l'envoi.
+• Forfait Free : tant qu'il vous reste les 5 messages IA de bienvenue, vous pouvez aussi essayer Voyages, Plan alimentaire, Plan fitness, Actualités et Pharmacies de garde.
+• Les Pharmacies de garde sont désormais uniquement sur l'Accueil, et plus dans Santé.
