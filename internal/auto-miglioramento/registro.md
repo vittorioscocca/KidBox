@@ -97,6 +97,25 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
   - (b) o (c) smentita → troppo invadenti: il default passa al riepilogo serale prima di qualunque altro lavoro.
 - **Se smentita**: un genitore che non ha preso un to-do lo sapeva già (le regole segnalano cose ovvie), oppure il momento dell'avviso è sbagliato.
 
+### 13. L'onboarding finisce con un primo contenuto vero
+- **Perché** (lettura del 31/10/2026, 96 famiglie vere nate dal 21/09): 59 non hanno mai messo niente e 48 di queste non riaprono l'app dopo il primo giorno; nessuna è mai arrivata a 2+ membri. Delle 37 con contenuto, 12 sono cresciute. La checklist «Per iniziare» la vedono (45 delle 59 ferme) ma non la seguono (14 tocchi, nessun contenuto dopo). Tutto si decide nella prima sessione.
+- **Cambio** (da costruire, iOS e Android insieme): l'ultima pagina del wizard non porta in una Home vuota ma propone tre gesti — **un impegno** (calendario), **la spesa**, **un documento** — ciascuno con un editor ridotto che si chiude in una schermata; «Lo faccio dopo» resta visibile e non viene nascosto. Niente contenuti d'esempio: deve essere una cosa dell'utente.
+- **Base**: famiglie con un `content_created` entro 24 ore dalla nascita. 21/09–25/10: **21 su 75 (28%)**; 26/10–30/10, con la campagna Meta «Lead» attuale: **12 su 21 (57%)**. Il confronto vale con la seconda, stesso traffico.
+- **Previsione**: nelle famiglie vere nate nei 14 giorni dopo che **entrambe** le versioni sono in vendita, quelle con un contenuto entro 24 ore sono **≥ 70%**. Secondaria, non decide il verdetto: famiglie con 2+ membri a 14 giorni dalla nascita sopra il 14% della coorte del 26/10.
+- **Misura**: `analyticsEvents` `content_created` (primo per `familyId`) contro `families.createdAt`, esclusi `config/internalUsers`; ricetta del 31/10 (`base24.js` in scratchpad, da portare in `scripts/` se la scommessa parte).
+- **Data**: 14 giorni dopo l'uscita della seconda delle due release; scrivere qui la data vera quando l'utente pubblica.
+- **Non misurabile se**: meno di 30 famiglie nella finestra, la campagna Meta cambia pubblico o si ferma a metà, o la scommessa 14 esce nella stessa release senza poterle separare (la 14 agisce dopo le 24 ore, quindi si separano: va controllato).
+- **Se smentita** (sotto il 70%): chi si ferma non manca di una spinta ma di un bisogno immediato, e un passo in più all'onboarding non lo crea. Allora le interviste alle famiglie ferme vengono prima di qualunque altra modifica al percorso.
+
+### 14. Il promemoria del giorno dopo riporta dentro le famiglie vuote
+- **Cambio**: iOS `98d7e42b`, Android `3ad1697` (31/10/2026, non ancora pubblicati). Alle famiglie da un membro la checklist non sopprime più i promemoria (prima `family_invite` arrivava a 15 utenti in tre mesi su ~250 famiglie sole); nuova campagna `first_content` il giorno dopo l'installazione, una volta, verso il calendario; evento `nudge_tapped` al tocco sulla notifica.
+- **Base**: famiglie vuote a 24 ore che mettono il primo contenuto fra la 24ª e la 72ª ora: **1 su 54** fra il 21/09 e il 30/10 (`content_created`).
+- **Previsione**: dopo l'uscita, fra le famiglie vere ancora vuote a 24 ore, **≥ 10%** crea il primo contenuto entro 72 ore. Solo circa metà ha il permesso delle notifiche (21 su 44 famiglie ferme al 31/10), quindi 10% vuol dire che un promemoria consegnato su cinque funziona.
+- **Misura**: come la 13, finestra 24–72 ore; in più `nudge_tapped` con `campaignId: first_content` (per utenti unici) per sapere se il ritorno passa dalla notifica.
+- **Data**: 21 giorni dopo l'uscita della seconda delle due release.
+- **Non misurabile se**: meno di 20 famiglie vuote a 24 ore nella finestra.
+- **Se smentita**: chi esce il primo giorno non torna nemmeno se glielo si chiede, e l'unico punto su cui lavorare è la prima sessione (scommessa 13).
+
 ## Chiuse
 
 ### 10. Campagna Google per app, solo Android, ottimizzata su «famiglia creata»
