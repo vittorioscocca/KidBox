@@ -21,6 +21,7 @@ import DocumentViewer from "../components/DocumentViewer";
 import Modal from "../components/Modal";
 import "./Documenti.css";
 import { useOpenParam } from "../hooks/useOpenParam";
+import { isVisibleTo } from "../visibility";
 
 /** Da una sola immagine si eredita il nome; da più si dice quante sono. */
 function defaultPdfNameFor(images) {
@@ -120,10 +121,21 @@ export default function Documenti() {
     );
     return onSnapshot(
       q,
-      (snap) => setDocuments(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      (snap) =>
+        setDocuments(
+          snap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            // I documenti privati (Lavoro) li vede solo chi li ha caricati o chi è stato scelto.
+            .filter((d) =>
+              isVisibleTo(
+                { visibilityScope: d.visibilityScope, visibilityMemberIds: d.visibilityMemberIds, createdBy: d.createdBy || d.updatedBy },
+                user?.uid
+              )
+            )
+        ),
       (err) => setError(err.message)
     );
-  }, [currentFamilyId]);
+  }, [currentFamilyId, user?.uid]);
 
   const searching = search.trim().length > 0;
 

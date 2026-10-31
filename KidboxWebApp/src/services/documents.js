@@ -70,6 +70,9 @@ export async function uploadDocument({
   /** Soggetto sanitario dell'allegato (visite, esami, cure): i client nativi lo
    *  scrivono e la cartella clinica lo usa per filtrare i referti. */
   childId,
+  /** Visibilità del documento (default: tutta la famiglia). Lavoro lo carica privato o condiviso con la scheda. */
+  visibilityScope = "family",
+  visibilityMemberIds = [],
   onProgress,
 }) {
   const key = await loadFamilyKey({ familyId, userId });
@@ -112,8 +115,8 @@ export async function uploadDocument({
     createdAt: serverTimestamp(),
     updatedBy: userId,
     updatedAt: serverTimestamp(),
-    visibilityScope: "family",
-    visibilityMemberIds: [],
+    visibilityScope,
+    visibilityMemberIds: visibilityScope === "members" ? visibilityMemberIds : [],
   };
   if (categoryId) data.categoryId = categoryId;
   if (notes) data.notes = notes;
@@ -293,3 +296,17 @@ export async function shareDocuments({ familyId, userId, documents: docs }) {
 }
 
 export { deleteObject };
+
+/** Cambia la visibilità di un documento (Lavoro: il file segue la scheda). */
+export async function updateDocumentVisibility({ familyId, userId, documentId, visibilityScope, visibilityMemberIds }) {
+  await setDoc(
+    doc(documentsCol(familyId), documentId),
+    {
+      visibilityScope,
+      visibilityMemberIds: visibilityScope === "members" ? visibilityMemberIds : [],
+      updatedBy: userId,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+}

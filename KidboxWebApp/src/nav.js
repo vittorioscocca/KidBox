@@ -15,6 +15,7 @@ export const NAV_SECTIONS = [
   { key: "animali", label: "Animali domestici", icon: "🐾", path: "/animali" },
   { key: "casa", label: "Casa", icon: "🏡", path: "/casa" },
   { key: "garage", label: "Garage", icon: "🚗", path: "/garage" },
+  { key: "lavoro", label: "Lavoro", icon: "💼", path: "/lavoro" },
   { key: "viaggi", label: "Viaggi", icon: "🧳", path: "/viaggi" },
 ];
 

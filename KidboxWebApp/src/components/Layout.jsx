@@ -31,6 +31,7 @@ const SCREENS = {
   "/animali": { screen: "animali", feature: "pets" },
   "/casa": { screen: "casa", feature: "home_vehicles" },
   "/garage": { screen: "garage", feature: "home_vehicles" },
+  "/lavoro": { screen: "lavoro", feature: "work" },
   "/viaggi": { screen: "viaggi", feature: "travel" },
 };
 

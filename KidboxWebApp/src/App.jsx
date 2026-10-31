@@ -24,6 +24,7 @@ import Wallet from "./pages/Wallet";
 import Animali from "./pages/Animali";
 import Casa from "./pages/Casa";
 import Garage from "./pages/Garage";
+import Work from "./pages/Work";
 import Viaggi from "./pages/Viaggi";
 import Assistente from "./pages/Assistente";
 import Impostazioni from "./pages/Impostazioni";
@@ -337,6 +338,7 @@ function AuthedApp() {
             <Route path="/animali" element={<Animali />} />
             <Route path="/casa" element={<Casa />} />
             <Route path="/garage" element={<Garage />} />
+            <Route path="/lavoro" element={<Work />} />
             <Route path="/viaggi" element={<Viaggi />} />
             <Route path="/assistente" element={<Assistente />} />
             {/* Il Profilo è confluito in Impostazioni: i vecchi link continuano a funzionare. */}
@@ -347,7 +349,7 @@ function AuthedApp() {
             <Route path="/chat" element={<Chat />} />
             <Route path="/todo" element={<TodoPage />} />
             <Route path="/salute" element={<Salute />} />
-            {NAV_SECTIONS.filter((s) => !s.exact && s.path !== "/calendario" && s.path !== "/todo" && s.path !== "/note" && s.path !== "/documenti" && s.path !== "/spesa" && s.path !== "/foto" && s.path !== "/spese" && s.path !== "/posizione" && s.path !== "/password" && s.path !== "/wallet" && s.path !== "/animali" && s.path !== "/casa" && s.path !== "/garage" && s.path !== "/viaggi" && s.path !== "/assistente" && s.path !== "/chat" && s.path !== "/salute").map((s) => (
+            {NAV_SECTIONS.filter((s) => !s.exact && s.path !== "/calendario" && s.path !== "/todo" && s.path !== "/note" && s.path !== "/documenti" && s.path !== "/spesa" && s.path !== "/foto" && s.path !== "/spese" && s.path !== "/posizione" && s.path !== "/password" && s.path !== "/wallet" && s.path !== "/animali" && s.path !== "/casa" && s.path !== "/garage" && s.path !== "/lavoro" && s.path !== "/viaggi" && s.path !== "/assistente" && s.path !== "/chat" && s.path !== "/salute").map((s) => (
               <Route key={s.key} path={s.path} element={<Placeholder title={s.label} />} />
             ))}
             {ACCOUNT_SECTIONS.filter((s) => s.path !== "/account/profilo" && s.path !== "/account/impostazioni" && s.path !== "/account/family").map((s) => (

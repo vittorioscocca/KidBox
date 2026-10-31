@@ -21,6 +21,7 @@ import { noteHtmlToText } from "./noteHtml";
 import { buildHealthContext, responseLanguageName } from "./healthContext";
 import { loadFamilyHealth } from "./health";
 import { listenGarage } from "./vehicles";
+import { loadWorkSnapshot, parseDay as parseWorkDay, WORK_KIND } from "./work";
 import { listenPets } from "./pets";
 import { listenHome } from "./homeItems";
 import { listenTripContent, listenTrips } from "./trips";
@@ -155,7 +156,7 @@ export async function loadMemorySnapshot({ familyId, userId, familyName, members
 
   const [
     events, todos, todoLists, groceries, expenses, notes, chat, documents, folders,
-    health, garage, petsData, home, trips, wallet, walletDocs, facts, familyKey,
+    health, garage, petsData, home, trips, wallet, walletDocs, facts, familyKey, work,
   ] = await Promise.all([
     readCollection(familyId, "calendarEvents"),
     readCollection(familyId, "todos"),
@@ -175,6 +176,8 @@ export async function loadMemorySnapshot({ familyId, userId, familyName, members
     once(listenWalletDocuments, { familyId, userId }),
     loadFacts(familyId),
     loadFamilyKey({ familyId, userId }).catch(() => null),
+    // Lavoro: solo la scheda di chi chiede e quelle condivise con lui (query vincolate).
+    loadWorkSnapshot({ familyId, userId }).catch(() => ({ profiles: [], records: [] })),
   ]);
 
   const now = Date.now();
@@ -277,6 +280,7 @@ export async function loadMemorySnapshot({ familyId, userId, familyName, members
     walletTickets: wallet?.tickets || [],
     loyaltyCards: wallet?.cards || [],
     walletDocuments: walletDocs || [],
+    work,
     facts: facts.map((f) => f.content),
   };
 }
@@ -764,6 +768,106 @@ export function buildMemoryBook(s, { allowance = null, appendix = null, locale =
     add("wallet.md", "Wallet", `${s.walletTickets.length} biglietti, ${s.walletDocuments.length} documenti d'identità, ${s.loyaltyCards.length} carte fedeltà`, lines);
   }
 
+  // lavoro.md — buste paga, contratti e fogli ferie già letti dall'AI, per persona.
+  // Solo schede che chi chiede può vedere: le altre non entrano nello snapshot.
+  if (s.work?.records?.length) {
+    const num = (v) => Number(v).toLocaleString("it-IT", { maximumFractionDigits: 2 });
+    const money = (v) => `${num(v)} €`;
+    const signed = (v) => `${v >= 0 ? "+" : ""}${num(v)}`;
+    const dayText = (d) => fmtDate(d.getTime());
+    const lines = [
+      "# Lavoro",
+      "Valori letti da buste paga, contratti e fogli ferie. Se un valore non c'è, non c'era nel documento: dillo, non stimarlo. Non dare consulenza fiscale o legale: riporta i numeri e, se serve, suggerisci il consulente del lavoro o il sindacato.",
+    ];
+    const owners = [...s.work.profiles].sort((a, b) => (a.ownerUid === s.userId ? -1 : 0) - (b.ownerUid === s.userId ? -1 : 0));
+    owners.forEach((p) => {
+      const mine = s.work.records.filter((r) => r.ownerUid === p.ownerUid && r.fields);
+      if (!mine.length) return;
+      const who = p.ownerUid === s.userId ? `${memberName(p.ownerUid) || "Io"} (chi chiede)` : memberName(p.ownerUid) || "Un familiare";
+      lines.push(`\n## ${who}`);
+      if (p.employer) lines.push(`Datore di lavoro: ${p.employer}`);
+      const payslips = mine.filter((r) => r.kind === WORK_KIND.PAYSLIP).sort((a, b) => b.referenceDate - a.referenceDate);
+      if (payslips.length) {
+        const f = payslips[0].fields;
+        lines.push(`### Ultima busta paga: ${f.period || fmtDate(payslips[0].referenceDate)}`);
+        const m = [];
+        if (f.gross != null) m.push(`lordo ${money(f.gross)}`);
+        if (f.net != null) m.push(`netto ${money(f.net)}`);
+        if (f.taxes != null) m.push(`imposte trattenute ${money(f.taxes)}`);
+        if (f.contributions != null) m.push(`contributi ${money(f.contributions)}`);
+        if (f.tfr != null) m.push(`TFR ${money(f.tfr)}`);
+        if (m.length) lines.push(`- ${m.join(" · ")}`);
+        const vac = [];
+        if (f.vacationAccrued != null) vac.push(`maturate ${num(f.vacationAccrued)}`);
+        if (f.vacationTaken != null) vac.push(`godute ${num(f.vacationTaken)}`);
+        if (f.vacationRemaining != null) vac.push(`residue ${num(f.vacationRemaining)}`);
+        if (vac.length) lines.push(`- Ferie (giorni): ${vac.join(", ")}`);
+        const per = [];
+        if (f.permitHoursAccrued != null) per.push(`maturati ${num(f.permitHoursAccrued)}`);
+        if (f.permitHoursRemaining != null) per.push(`residui ${num(f.permitHoursRemaining)}`);
+        if (per.length) lines.push(`- Permessi (ore): ${per.join(", ")}`);
+        if (f.notes) lines.push(`Note: ${clip(f.notes, 200)}`);
+        if (payslips.length > 1) {
+          const prev = payslips[1].fields;
+          const diff = [];
+          if (f.net != null && prev.net != null) diff.push(`netto ${signed(f.net - prev.net)} €`);
+          if (f.gross != null && prev.gross != null) diff.push(`lordo ${signed(f.gross - prev.gross)} €`);
+          if (f.vacationRemaining != null && prev.vacationRemaining != null) diff.push(`ferie residue ${signed(f.vacationRemaining - prev.vacationRemaining)} giorni`);
+          if (diff.length) lines.push(`- Rispetto alla busta precedente (${prev.period || prev.title}): ${diff.join(", ")}`);
+        }
+        const year = new Date(now).getFullYear();
+        const taxes = payslips.filter((r) => new Date(r.referenceDate).getFullYear() === year && r.fields.taxes != null).map((r) => r.fields.taxes);
+        if (taxes.length) lines.push(`- Imposte ${year}: ${money(taxes.reduce((a, b) => a + b, 0))} sommando le ${taxes.length} buste paga caricate (non necessariamente tutto l'anno)`);
+        if (payslips.length > 1) {
+          lines.push("### Storico buste paga (più recenti prima)");
+          payslips.slice(0, 12).forEach((r) => {
+            const ff = r.fields;
+            const parts = [];
+            if (ff.gross != null) parts.push(`lordo ${money(ff.gross)}`);
+            if (ff.net != null) parts.push(`netto ${money(ff.net)}`);
+            if (ff.taxes != null) parts.push(`imposte ${money(ff.taxes)}`);
+            if (ff.vacationRemaining != null) parts.push(`ferie residue ${num(ff.vacationRemaining)} g`);
+            if (ff.permitHoursRemaining != null) parts.push(`permessi residui ${num(ff.permitHoursRemaining)} h`);
+            lines.push(`- ${ff.period || fmtDate(r.referenceDate)}: ${parts.join(" · ")}`);
+          });
+        }
+      }
+      mine.filter((r) => r.kind === WORK_KIND.CONTRACT).sort((a, b) => b.referenceDate - a.referenceDate).slice(0, 3).forEach((r) => {
+        const f = r.fields;
+        const start = parseWorkDay(f.startDate);
+        lines.push(`### Contratto${f.title ? `: ${f.title}` : ""} (dal ${start ? dayText(start) : fmtDate(r.referenceDate)})`);
+        const facts = [];
+        if (f.contractType) facts.push(f.contractType);
+        if (f.level) facts.push(`livello/CCNL ${f.level}`);
+        if (f.grossAnnual != null) facts.push(`RAL ${money(f.grossAnnual)}`);
+        if (f.vacationDaysPerYear != null) facts.push(`${num(f.vacationDaysPerYear)} giorni di ferie l'anno`);
+        if (f.noticePeriod) facts.push(`preavviso ${f.noticePeriod}`);
+        if (facts.length) lines.push(facts.join(" · "));
+        const end = parseWorkDay(f.endDate);
+        if (end) {
+          const left = Math.round((end.getTime() - now) / DAY);
+          lines.push(`- Scadenza: ${dayText(end)}${left < 0 ? " ⚠️ PASSATA" : ` (tra ${left} giorni)`}`);
+        } else if (f.contractType.toLowerCase().includes("indeterm")) {
+          lines.push("- Scadenza: nessuna (tempo indeterminato)");
+        }
+        if (f.notes) lines.push(`Note: ${clip(f.notes, 200)}`);
+      });
+      const today = new Date(now); today.setHours(0, 0, 0, 0);
+      const leave = mine.filter((r) => r.kind === WORK_KIND.LEAVE_PLAN).flatMap((r) => r.fields.leavePeriods)
+        .filter((l) => (parseWorkDay(l.end) || parseWorkDay(l.start) || new Date(0)) >= today)
+        .sort((a, b) => parseWorkDay(a.start) - parseWorkDay(b.start));
+      if (leave.length) {
+        lines.push("### Ferie e permessi programmati (con 📅 = anche nel calendario di famiglia)");
+        leave.slice(0, 30).forEach((l) => {
+          const a = parseWorkDay(l.start); const b = parseWorkDay(l.end) || a;
+          if (!a) return;
+          lines.push(`- ${l.label || "Ferie"}: ${b > a ? `dal ${dayText(a)} al ${dayText(b)}` : dayText(a)}${l.inCalendar ? " 📅" : ""}`);
+        });
+      }
+    });
+    if (lines.length > 2) add("lavoro.md", "Lavoro", `${s.work.records.length} documenti di lavoro (buste paga, contratti, fogli ferie)`, lines);
+  }
+
   // casa.md
   if (s.homeItems.length || s.housePayments.length) {
     const lines = ["# Casa"];
@@ -953,7 +1057,7 @@ export function agentRules(familyName, locale, now = new Date()) {
   const day = (d) => new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "long" }).format(d);
   const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   return [
-    `Sei l'assistente di KidBox della famiglia ${familyName}. KidBox è l'app in cui la famiglia tiene calendario, to-do, lista della spesa, note, spese, documenti, salute, wallet, casa, veicoli, animali e viaggi.`,
+    `Sei l'assistente di KidBox della famiglia ${familyName}. KidBox è l'app in cui la famiglia tiene calendario, to-do, lista della spesa, note, spese, documenti, salute, wallet, casa, veicoli, animali, viaggi e, per ogni adulto, buste paga e contratti di lavoro.`,
     "Qui sotto c'è la tua memoria: una scheda per ogni sezione dell'app, aggiornata adesso, con un indice in cima.",
     "",
     "COME RISPONDI",
@@ -962,6 +1066,7 @@ export function agentRules(familyName, locale, now = new Date()) {
     "- Se l'indice o una scheda dice che un testo è accorciato o non incluso e la domanda riguarda proprio quello, dillo e suggerisci di ripetere la domanda con la massima accuratezza.",
     "- Salute: linguaggio semplice, adatto a un genitore. Puoi spiegare referti, valori, cure, vaccini e visite; non fare diagnosi e non cambiare terapie: quando la questione è clinica, dopo aver risposto ricorda di sentire il medico.",
     "- Pianificazione: aiuta a trovare spazi liberi e a non dimenticare scadenze; quando proponi un evento o un to-do indica titolo, data/ora e chi se ne occupa.",
+    "- Lavoro (buste paga e contratti): rispondi con i valori della scheda («ferie residue», «permessi», «imposte», «lordo», «scadenza») e dì da quale busta paga o contratto vengono. Ogni adulto vede solo la propria scheda e quelle che altri hanno condiviso con lui: non parlare di dati di lavoro di una persona che non compare nelle schede. Niente consulenza fiscale o legale.",
     "- Le password non sono nella tua memoria: se te le chiedono, rimanda alla sezione Password dell'app.",
     AGENT_LINK_RULE,
     `- Date: oggi è ${day(now)}, domani è ${day(tomorrow)}. Prima di dire «domani», «dopodomani» o un giorno della settimana controlla la data scritta nelle schede: non contare a memoria.`,

@@ -1,0 +1,60 @@
+/* Lavoro. Riusa `pw-*` per intestazione e pulsanti, e `modal-*` per le schede. */
+.wk-page { display: flex; flex-direction: column; gap: 14px; }
+
+.wk-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.wk-chip {
+  padding: 8px 14px; border-radius: 999px; border: none; cursor: pointer; font-family: inherit;
+  background: color-mix(in srgb, var(--bg) 92%, var(--text) 8%); color: var(--text); font-weight: 500;
+}
+.wk-chip.active { background: #4073bf; color: #fff; }
+
+.wk-card {
+  display: flex; flex-direction: column; gap: 10px; padding: 14px;
+  border-radius: 14px; background: color-mix(in srgb, var(--bg) 94%, var(--text) 6%);
+}
+.wk-card-title { font-size: 0.95rem; }
+.wk-row { display: flex; justify-content: space-between; gap: 12px; font-size: 0.92rem; }
+.wk-row span { color: var(--muted); }
+
+.wk-row-card {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; width: 100%;
+  border: none; border-radius: 14px; cursor: pointer; text-align: left; font-family: inherit;
+  background: color-mix(in srgb, var(--bg) 94%, var(--text) 6%); color: var(--text);
+}
+.wk-row-card:hover { background: var(--border); }
+.wk-row-icon {
+  width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, #4073bf 14%, transparent);
+}
+.wk-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.wk-row-text strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wk-row-text small { color: var(--muted); }
+
+.wk-list { display: flex; flex-direction: column; gap: 8px; }
+.wk-list h2 { font-size: 0.85rem; color: var(--muted); margin: 6px 0 0; }
+
+.wk-staged { display: flex; align-items: center; gap: 12px; }
+.wk-staged-icon {
+  width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; background: color-mix(in srgb, var(--bg) 82%, var(--text) 18%);
+}
+.wk-staged-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.wk-staged-text small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wk-wide { width: 100%; }
+.wk-hint { color: var(--muted); font-size: 0.8rem; margin: 0; }
+
+.wk-locked, .wk-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 36px 20px;
+}
+.wk-locked-icon { font-size: 2.4rem; }
+.wk-empty small { color: var(--muted); }
+
+.wk-field { display: flex; flex-direction: column; gap: 4px; }
+.wk-field span { font-size: 0.8rem; color: var(--muted); }
+.wk-check { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; }
+.wk-period {
+  display: flex; flex-direction: column; gap: 4px; padding: 12px; margin-bottom: 10px;
+  border-radius: 12px; background: color-mix(in srgb, var(--bg) 94%, var(--text) 6%);
+}
+.wk-confirm { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.wk-danger { color: #d33; }
