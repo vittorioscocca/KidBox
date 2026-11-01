@@ -158,6 +158,11 @@ async function buildDaily(dateStr) {
   // Join famiglia del giorno (evento persistente, fuori dal DAU).
   let membersJoined = 0;
   const grownFamilies = new Set();
+  // Coppie "familyId:uid" che hanno CREATO contenuto nel giorno. Servono al
+  // funnel: una famiglia con 2 membri dove ha creato solo uno non è ancora
+  // condivisa davvero. Stesso ruolo di `uids`: unire le finestre senza
+  // riscansionare i grezzi, che scadono a 90gg.
+  const creatorPairs = new Set();
 
   let internalSkipped = 0;
   for (const doc of snap.docs) {
@@ -186,6 +191,9 @@ async function buildDaily(dateStr) {
 
     if (e.uid) activeUids.add(e.uid);
     if (e.familyId) activeFamilies.add(e.familyId);
+    if (e.name === "content_created" && e.uid && e.familyId) {
+      creatorPairs.add(`${e.familyId}:${e.uid}`);
+    }
     if (e.uid && e.familyId) {
       if (!membersByFamily.has(e.familyId)) {
         membersByFamily.set(e.familyId, new Set());
@@ -252,24 +260,32 @@ async function buildDaily(dateStr) {
     // 90gg scadono. Sono la ragione per cui WAU/MAU restano calcolabili.
     uids: Array.from(activeUids),
     familyIds: Array.from(activeFamilies),
+    creators: Array.from(creatorPairs),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 }
 
 /**
- * Unisce le finestre rolling leggendo i rollup già scritti.
+ * Rollup dei 27 giorni precedenti (idx 0 = ieri), una sola lettura per giorno.
  * @param {string} dateStr ultimo giorno della finestra
- * @param {Object} daily rollup del giorno appena calcolato
- * @return {Promise<Object>} wau/mau/waf/maf
+ * @return {Promise<Array>} snapshot, anche di documenti assenti
  */
-async function buildWindows(dateStr, daily) {
+async function previousRollups(dateStr) {
   const db = admin.firestore();
-  const ids = [];
-  for (let i = 1; i < MAU_DAYS; i++) ids.push(addDays(dateStr, -i));
+  const refs = [];
+  for (let i = 1; i < MAU_DAYS; i++) {
+    refs.push(db.collection(METRICS_COLLECTION).doc(addDays(dateStr, -i)));
+  }
+  return refs.length ? db.getAll(...refs) : [];
+}
 
-  const refs = ids.map((d) => db.collection(METRICS_COLLECTION).doc(d));
-  const snaps = refs.length ? await db.getAll(...refs) : [];
-
+/**
+ * Unisce le finestre rolling leggendo i rollup già scritti.
+ * @param {Object} daily rollup del giorno appena calcolato
+ * @param {Array} snaps rollup precedenti (vedi previousRollups)
+ * @return {Object} wau/mau/waf/maf
+ */
+function buildWindows(daily, snaps) {
   const wauU = new Set(daily.uids);
   const wauF = new Set(daily.familyIds);
   const mauU = new Set(daily.uids);
@@ -301,14 +317,107 @@ async function buildWindows(dateStr, daily) {
 }
 
 /**
+ * Funnel delle famiglie: foto del momento in cui gira, non del giorno scelto.
+ * Una famiglia è «condivisa davvero» quando ha 2+ membri E almeno 2 membri
+ * diversi hanno creato contenuto negli ultimi 28 giorni. Gli account di test
+ * non contano come membri. Costo: una lettura per famiglia e per membro,
+ * perciò si calcola solo per l'ultimo giorno di un giro, non a ogni backfill.
+ * `creatorDays` dice quanti giorni della finestra hanno il dato `creators`:
+ * prima del primo rollup nuovo lo zero è «non misurato», non «nessuno crea».
+ * @param {Object} daily rollup del giorno
+ * @param {Array} snaps rollup precedenti
+ * @param {Set<string>} internal uid di test
+ * @return {Promise<Object>} funnel
+ */
+async function buildFamilyFunnel(daily, snaps, internal) {
+  const db = admin.firestore();
+  const [famSnap, memSnap] = await Promise.all([
+    db.collection("families").select().get(),
+    db.collectionGroup("members").select().get(),
+  ]);
+
+  // familyId → [{uid, joined}] ; createTime del documento membro = ingresso.
+  const members = new Map();
+  for (const m of memSnap.docs) {
+    const fam = m.ref.parent.parent;
+    if (!fam || fam.parent.id !== "families") continue;
+    if (internal.has(m.id)) continue;
+    if (!members.has(fam.id)) members.set(fam.id, []);
+    members.get(fam.id).push({uid: m.id, joined: m.createTime.toMillis()});
+  }
+
+  const creators = new Map(); // familyId → Set<uid>
+  let creatorDays = 0;
+  const addPairs = (pairs) => {
+    for (const p of pairs || []) {
+      const i = p.indexOf(":");
+      const f = p.slice(0, i);
+      if (!creators.has(f)) creators.set(f, new Set());
+      creators.get(f).add(p.slice(i + 1));
+    }
+  };
+  if (daily.creators) creatorDays += 1;
+  addPairs(daily.creators);
+  for (const snap of snaps) {
+    if (!snap.exists || !snap.data().creators) continue;
+    creatorDays += 1;
+    addPairs(snap.data().creators);
+  }
+
+  const out = {
+    families: 0, withMembers: 0, multi: 0,
+    multiCreators0: 0, multiCreators1: 0, multiCreators2: 0,
+    toSecond: {sameDay: 0, within7d: 0, over7d: 0}, medianDaysToSecond: null,
+    creatorDays, computedAt: new Date().toISOString(),
+  };
+  const gaps = [];
+  for (const f of famSnap.docs) {
+    const list = members.get(f.id) || [];
+    out.families += 1;
+    if (list.length >= 1) out.withMembers += 1;
+    if (list.length < 2) continue;
+    out.multi += 1;
+    const uids = new Set(list.map((m) => m.uid));
+    let n = 0;
+    for (const u of creators.get(f.id) || []) if (uids.has(u)) n += 1;
+    out[`multiCreators${Math.min(n, 2)}`] += 1;
+
+    const joined = list.map((m) => m.joined).sort((a, b) => a - b);
+    const days = (joined[1] - joined[0]) / 86400000;
+    gaps.push(days);
+    if (days < 1) out.toSecond.sameDay += 1;
+    else if (days <= 7) out.toSecond.within7d += 1;
+    else out.toSecond.over7d += 1;
+  }
+  if (gaps.length) {
+    gaps.sort((a, b) => a - b);
+    const mid = Math.floor(gaps.length / 2);
+    const med = gaps.length % 2 ? gaps[mid] : (gaps[mid - 1] + gaps[mid]) / 2;
+    out.medianDaysToSecond = +med.toFixed(1);
+  }
+  return out;
+}
+
+/**
  * Calcola e scrive il rollup di un giorno.
  * @param {string} dateStr giorno locale "YYYY-MM-DD"
+ * @param {{funnel: ?boolean}} [opts] funnel: calcola anche il funnel famiglie
  * @return {Promise<Object>} il rollup scritto
  */
-async function rollupDay(dateStr) {
+async function rollupDay(dateStr, opts = {}) {
   const daily = await buildDaily(dateStr);
-  const windows = await buildWindows(dateStr, daily);
+  const snaps = await previousRollups(dateStr);
+  const windows = buildWindows(daily, snaps);
   const out = {...daily, ...windows};
+  if (opts.funnel) {
+    try {
+      out.funnel = await buildFamilyFunnel(daily, snaps, await internalUids());
+    } catch (e) {
+      logger.error("analyticsRollup: funnel famiglie fallito", {
+        error: e.message,
+      });
+    }
+  }
 
   await admin.firestore()
       .collection(METRICS_COLLECTION).doc(dateStr)
@@ -332,7 +441,7 @@ exports.analyticsRollupDaily = onSchedule(
     },
     async () => {
       const yesterday = addDays(localDateStr(new Date()), -1);
-      await rollupDay(yesterday);
+      await rollupDay(yesterday, {funnel: true});
     },
 );
 
@@ -362,7 +471,7 @@ exports.runAnalyticsRollup = onCall(
       const results = [];
       for (let i = days - 1; i >= 0; i--) {
         const d = addDays(from, -i);
-        const out = await rollupDay(d);
+        const out = await rollupDay(d, {funnel: i === 0});
         results.push({date: d, dau: out.dau, daf: out.daf, wau: out.wau,
           mau: out.mau, eventsScanned: out.eventsScanned});
       }
@@ -371,6 +480,7 @@ exports.runAnalyticsRollup = onCall(
 );
 
 module.exports.rollupDay = rollupDay;
+module.exports.buildFamilyFunnel = buildFamilyFunnel;
 module.exports.addDays = addDays;
 module.exports.localDateStr = localDateStr;
 module.exports.localMidnight = localMidnight;

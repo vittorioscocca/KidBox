@@ -1467,6 +1467,7 @@ async function loadActiveUsers() {
 
     renderTrendChart(days);
     renderFeatureTable(days);
+    renderSharedFunnel(days);
 
   } catch(e) {
     console.error(e);
@@ -1502,6 +1503,33 @@ function renderTrendChart(days) {
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${grid}${lines}${ticks}</svg><div class="small" style="margin-top:6px">${legend}</div>`;
 }
 
+// Funnel calcolato dal server (analyticsRollup.buildFamilyFunnel): una famiglia
+// è condivisa davvero quando 2+ membri DIVERSI hanno creato contenuto in 28
+// giorni. Conta i membri veri (account di test esclusi), non l'attività di
+// login come il funnel sotto. Prende il rollup più recente che lo contiene.
+function renderSharedFunnel(days) {
+  const el = document.getElementById('shared-funnel');
+  if (!el) return;
+  const src = days.find(d => d.funnel);
+  if (!src) { el.innerHTML = '<div class="dim small">Nessun dato: usa ↻ Ricalcola</div>'; return; }
+  const f = src.funnel;
+  document.getElementById('shared-sub').textContent = `· calcolato ${new Date(f.computedAt).toLocaleString('it-IT')}`;
+  const measured = f.creatorDays >= 7;
+  const w = (n, base) => base > 0 ? Math.round(n / base * 100) : 0;
+  const step = (lbl, n, base, color) => `<div class="funnel-step"><div class="funnel-step-label">${lbl}</div><div class="funnel-step-val">${n}</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${w(n, base)}%;background:${color}"></div></div><div class="funnel-step-pct">${w(n, base)}%</div></div>`;
+  const shared = f.multiCreators2, base = f.families;
+  const t = f.toSecond;
+  const warn = measured ? '' : `<div class="small" style="color:var(--color-orange);margin-bottom:8px">Il dato «chi crea» copre solo ${f.creatorDays} giorni su 28: i passi 3 e 4 sono per difetto. Ricalcola 28 giorni per riempire lo storico.</div>`;
+  el.innerHTML = warn + `<div class="funnel-steps">
+    ${step('Famiglie', f.families, base, '#6c8ebf')}
+    ${step('Con 1+ membro', f.withMembers, base, '#5a9e7a')}
+    ${step('Con 2+ membri', f.multi, base, '#e0a040')}
+    ${step('2+ membri che creano', shared, base, '#c0504d')}
+  </div>
+  <div class="small" style="margin-top:10px">Con 2+ membri: <b>${f.multiCreators2}</b> con 2+ che creano · <b>${f.multiCreators1}</b> dove crea uno solo · <b>${f.multiCreators0}</b> dove non crea nessuno.</div>
+  <div class="small" style="margin-top:6px">Dalla famiglia al secondo membro: mediana <b>${f.medianDaysToSecond ?? '—'}</b> giorni · stesso giorno ${t.sameDay} · entro 7 giorni ${t.within7d} · oltre ${t.over7d}.</div>`;
+}
+
 // Somma di byFeature sui rollup: dove si crea, si legge, si usa l'AI. Chi non
 // compare non è stato usato in 28 giorni (o non emette ancora l'evento).
 function renderFeatureTable(days) {
@@ -1524,7 +1552,7 @@ function renderFeatureTable(days) {
 }
 
 // Ricalcola oggi + ieri. Idempotente: riscrive gli stessi documenti.
-window.runRollup = async function(btn) {
+window.runRollup = async function(btn, nDays = 2) {
   const orig = btn.textContent;
   btn.disabled = true; btn.textContent = '…';
   try {
@@ -1535,11 +1563,11 @@ window.runRollup = async function(btn) {
     const res = await fetch(`https://europe-west1-${cfg.projectId}.cloudfunctions.net/runAnalyticsRollup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ data: { days: 2 } })
+      body: JSON.stringify({ data: { days: nDays } })
     });
     const json = await res.json();
     if (json.error) throw new Error(json.error.message || 'Errore sconosciuto');
-    const lines = json.result.days.map(d => `${d.date}  DAU ${d.dau}  ·  ${d.eventsScanned} eventi`).join('\n');
+    const lines = json.result.days.slice(-5).map(d => `${d.date}  DAU ${d.dau}  ·  ${d.eventsScanned} eventi`).join('\n');
     btn.textContent = '✓';
     await loadActiveUsers();
     alert('Rollup ricalcolato:\n\n' + lines);
@@ -2939,6 +2967,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         👥 Utenti attivi <span class="sub" id="au-window">—</span>
         <button class="btn-info" onclick="document.getElementById('au-info-modal').style.display='flex'" title="Cosa significano questi indici">i</button>
         <button class="btn-sm btn-accent" onclick="runRollup(this)" style="margin-left:10px" title="Ricalcola i rollup di oggi e ieri">↻ Ricalcola</button>
+        <button class="btn-sm" onclick="if(confirm('Ricalcola gli ultimi 28 giorni dai grezzi? Serve per riempire lo storico dopo un cambio di definizione.')) runRollup(this, 28)" title="Ricalcola 28 giorni (backfill)">↻ 28 gg</button>
       </div>
       <div class="grid-4">
         <div class="card">
@@ -3003,6 +3032,10 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
           <div class="tcard-hdr">Uso per funzione <span class="sub">(28 giorni, senza account di test)</span></div>
           <div class="tbl-scroll" id="feat-table"><div class="dim small" style="padding:12px 16px">Caricamento…</div></div>
         </div>
+      </div>
+      <div class="tcard" style="margin-top:12px">
+        <div class="tcard-hdr">Famiglie condivise davvero <span class="sub" id="shared-sub"></span></div>
+        <div id="shared-funnel" style="padding:12px 16px"><div class="dim small">Caricamento…</div></div>
       </div>
 
       <!-- TABELLA FAMIGLIE -->
