@@ -1530,6 +1530,80 @@ function renderSharedFunnel(days) {
   <div class="small" style="margin-top:6px">Dalla famiglia al secondo membro: mediana <b>${f.medianDaysToSecond ?? '—'}</b> giorni · stesso giorno ${t.sameDay} · entro 7 giorni ${t.within7d} · oltre ${t.over7d}.</div>`;
 }
 
+// Retention a coorte. Coorte = settimana (lun-dom, Europe/Rome) di iscrizione
+// su Auth; cella W+k = quota della coorte con almeno un'azione di valore nella
+// settimana W+k, letta dai `uids` dei rollup. Si calcola a richiesta perché
+// legge 14 settimane di rollup (98 point read). Le celle fuori dalla copertura
+// dei rollup o in una settimana non ancora chiusa restano «·»: non sono zero.
+// Gli account di test (config/internalUsers) escono dalle coorti.
+function weekStart(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
+}
+function addDaysStr(dateStr, n) {
+  const d = new Date(dateStr + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+function computeRetention(users, rollups, internal, today) {
+  const weekUids = {};               // weekStart -> Set(uid attivi)
+  let coverageStart = null;
+  for (const r of rollups) {
+    if (!coverageStart || r.id < coverageStart) coverageStart = r.id;
+    const w = weekStart(r.id);
+    (weekUids[w] = weekUids[w] || new Set());
+    (r.uids || []).forEach(u => weekUids[w].add(u));
+  }
+  const cohorts = {};
+  for (const u of users) {
+    if (!u.createdAt || internal.has(u.uid)) continue;
+    const w = weekStart(u.createdAt.toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' }));
+    (cohorts[w] = cohorts[w] || []).push(u.uid);
+  }
+  const thisWeek = weekStart(today);
+  const lags = [0, 1, 2, 4, 8];
+  return Object.keys(cohorts).sort().reverse().slice(0, 10).map(w => {
+    const cells = lags.map(k => {
+      const ws = addDaysStr(w, 7 * k);
+      // settimana chiusa (k=0 è quella d'iscrizione: la prendiamo anche se in corso)
+      if (k > 0 && ws >= thisWeek) return null;
+      // copertura piena: il primo rollup deve precedere l'inizio della settimana
+      if (!coverageStart || coverageStart > ws) return null;
+      const act = weekUids[ws] || new Set();
+      return cohorts[w].filter(u => act.has(u)).length;
+    });
+    return { week: w, size: cohorts[w].length, lags, cells };
+  });
+}
+window.loadRetention = async function(btn) {
+  const el = document.getElementById('retention-table');
+  const orig = btn.textContent; btn.disabled = true; btn.textContent = '…';
+  try {
+    if (!_allUsersRows.length) throw new Error('Elenco utenti non ancora caricato');
+    const ids = lastNDates(98);
+    const [snaps, intSnap] = await Promise.all([
+      Promise.all(ids.map(id => getDoc(doc(db, 'metrics', id)))),
+      getDoc(doc(db, 'config', 'internalUsers')).catch(() => null),
+    ]);
+    const rollups = snaps.filter(x => x.exists()).map(x => ({ id: x.id, ...x.data() }));
+    const internal = new Set((intSnap && intSnap.exists() && intSnap.data().uids) || []);
+    const today = ids[0];
+    const rows = computeRetention(_allUsersRows, rollups, internal, today);
+    if (!rows.length) { el.innerHTML = '<div class="dim small">Nessun utente con data di iscrizione</div>'; return; }
+    const cell = (n, size) => n == null ? '<td class="dim">·</td>'
+      : `<td title="${n} su ${size}">${size ? Math.round(n / size * 100) : 0}%</td>`;
+    el.innerHTML = `<div class="tbl-scroll"><table><thead><tr><th>Settimana</th><th>Iscritti</th><th>W0</th><th>+1</th><th>+2</th><th>+4</th><th>+8</th></tr></thead><tbody>${
+      rows.map(r => `<tr><td>${r.week.slice(5)}</td><td>${r.size}</td>${r.cells.map(n => cell(n, r.size)).join('')}</tr>`).join('')
+    }</tbody></table></div>
+    <div class="small dim" style="margin-top:8px">${rollups.length} giorni di rollup letti (dal ${rollups.map(r => r.id).sort()[0] || '—'}). «·» = settimana non ancora chiusa o prima del primo rollup, non zero. Passa il mouse sulla cella per il conteggio.</div>`;
+  } catch (e) {
+    el.innerHTML = `<div class="dim small">Errore: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+};
+
 // Somma di byFeature sui rollup: dove si crea, si legge, si usa l'AI. Chi non
 // compare non è stato usato in 28 giorni (o non emette ancora l'evento).
 function renderFeatureTable(days) {
@@ -3036,6 +3110,13 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       <div class="tcard" style="margin-top:12px">
         <div class="tcard-hdr">Famiglie condivise davvero <span class="sub" id="shared-sub"></span></div>
         <div id="shared-funnel" style="padding:12px 16px"><div class="dim small">Caricamento…</div></div>
+      </div>
+
+      <div class="tcard" style="margin-top:12px">
+        <div class="tcard-hdr">Retention a coorte <span class="sub">(iscritti per settimana, ancora attivi dopo N settimane)</span>
+          <button class="btn-sm btn-accent" onclick="loadRetention(this)" style="margin-left:10px" title="Legge fino a 14 settimane di rollup (98 letture)">Calcola</button>
+        </div>
+        <div id="retention-table" style="padding:12px 16px"><div class="dim small">Premi «Calcola». Attivo = almeno un'azione di valore nella settimana, come il DAU.</div></div>
       </div>
 
       <!-- TABELLA FAMIGLIE -->
