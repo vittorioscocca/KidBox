@@ -82,6 +82,7 @@ SLUGS = {
     "zone-di-arrivo-scuola-e-casa":        {"en": "arrival-zones-school-and-home"},
     "primo-tragitto-da-solo-del-figlio":   {"en": "childs-first-walk-to-school-alone"},
     "posizione-in-coppia-e-privacy":       {"en": "location-sharing-as-a-couple"},
+    "busta-paga-come-leggerla":            {"en": "how-to-read-your-payslip"},
     # ── Pasti e spesa ────────────────────────────────────────────────────
     "lista-della-spesa-condivisa":         {"en": "shared-grocery-list",                    "es": "lista-de-la-compra-compartida",           "fr": "liste-de-courses-partagee"},
     "menu-della-settimana-in-famiglia":    {"en": "family-weekly-menu",                     "es": "menu-semanal-en-familia",                 "fr": "menu-de-la-semaine-en-famille"},

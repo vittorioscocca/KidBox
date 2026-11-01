@@ -84,6 +84,11 @@
         "type": 301
       },
       {
+        "source": "/en/blog/busta-paga-come-leggerla",
+        "destination": "/en/blog/how-to-read-your-payslip",
+        "type": 301
+      },
+      {
         "source": "/en/blog/calendario-di-affido",
         "destination": "/en/blog/shared-custody-schedules",
         "type": 301

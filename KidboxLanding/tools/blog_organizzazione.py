@@ -2240,4 +2240,177 @@ Sharing location as a couple can be very convenient, if it's the sharer's choice
 """,
         },
     },
+    {
+        "slug": "busta-paga-come-leggerla",
+        "category": "organizzazione-familiare", "date": "2026-11-01",
+        "tools": ["documenti", "assistente-ai", "calendario"], "related": ["documenti-di-famiglia-in-ordine", "budget-di-casa-spese-condivise", "orari-dopo-scuola-genitori-che-lavorano"],
+        "it": {
+            "title": "Come leggere la busta paga: le voci che contano e come non perdere ferie e permessi",
+            "desc": "Lordo, netto, trattenute, ferie e permessi residui, TFR: cosa guardare ogni mese nella busta paga, cosa controllare nel contratto e come pianificare le ferie della famiglia senza scoprire a dicembre che ne avevi di più.",
+            "body": """
+La busta paga arriva ogni mese, e quasi tutti guardano una cosa sola: il netto. Il resto, quattro colonne di sigle e codici, finisce in una cartella o in un'email che non si riapre. Eppure lì dentro ci sono informazioni che in una famiglia servono davvero: quante ferie restano prima dell'estate, quante ore di permesso si possono usare per una visita o un colloquio a scuola, se il conguaglio di fine anno ha cambiato qualcosa.
+
+Questo articolo spiega come orientarsi, non sostituisce un consulente. Le regole precise dipendono dal contratto collettivo (CCNL) applicato e cambiano nel tempo: per un dubbio sulla vostra busta paga fanno fede l'ufficio del personale, un patronato, un CAF o un consulente del lavoro.
+
+## Le tre parti della busta paga
+
+Quasi tutti i cedolini, anche con grafiche diverse, hanno tre blocchi:
+
+- **l'intestazione**: azienda, dipendente, periodo di paga, contratto applicato, livello, data di assunzione
+- **il corpo**: le voci che compongono la retribuzione e quelle che la riducono
+- **il piede**: totali, netto in busta, e i contatori di ferie, permessi e TFR
+
+Il piede è la parte che si legge meno e quella che serve di più.
+
+## Dal lordo al netto
+
+Il **lordo** è la somma di tutto quello che spetta nel mese: paga base, contingenza o elementi aggiuntivi previsti dal contratto, scatti di anzianità, straordinari, eventuali indennità.
+
+Dal lordo si tolgono le **trattenute**:
+
+- i **contributi previdenziali** a carico del dipendente, che vanno all'INPS
+- l'**IRPEF**, l'imposta sul reddito, con eventuali addizionali regionali e comunali
+- le **detrazioni** che riducono l'imposta, per esempio per lavoro dipendente o per familiari a carico
+
+Quello che resta è il **netto in busta**. Se il netto di un mese è diverso dal solito, la risposta è quasi sempre in una di queste voci: uno straordinario, una trattenuta di addizionali, un conguaglio.
+
+## Ferie e permessi: i numeri da guardare
+
+Nel piede della busta paga ci sono, di solito, tre colonne per ferie e permessi:
+
+- **maturate**: quelle accumulate finora
+- **godute**: quelle già usate
+- **residue**: quelle che restano
+
+Le **ferie** si contano in giorni o in ore, a seconda del contratto. In Italia la legge garantisce almeno quattro settimane di ferie all'anno, di cui almeno due da godere nell'anno in cui maturano e le altre entro i diciotto mesi successivi: il contratto collettivo può prevederne di più.
+
+I **permessi** (spesso indicati come ROL, riduzione dell'orario di lavoro, o ex festività) si contano in ore. Sono quelli che servono per le cose della famiglia che cadono in orario di lavoro: una visita pediatrica, un colloquio con gli insegnanti, il giorno in cui la scuola chiude prima.
+
+> Il numero da tenere d'occhio è il residuo. Le ferie non godute nei tempi previsti si possono perdere o creare problemi con l'azienda, e un residuo alto a novembre è il segnale che vanno pianificate.
+
+## TFR, tredicesima e conguaglio
+
+- il **TFR**, trattamento di fine rapporto, è la quota che matura ogni mese e si riceve quando il rapporto finisce, o va al fondo pensione se lo si è scelto. In busta paga si vede quanto è maturato
+- la **tredicesima**, e dove il contratto la prevede la **quattordicesima**, arrivano in mesi precisi: sapere quando aiuta a pianificare le spese grosse
+- il **conguaglio fiscale**, di solito a fine anno o alla fine del rapporto, ricalcola le imposte dell'anno: può alzare o abbassare il netto di quel mese
+
+## Il contratto: le cose da sapere a memoria
+
+Il contratto di lavoro si firma una volta e poi si dimentica. Alcune informazioni però servono spesso:
+
+- **tipo di contratto**: tempo indeterminato, determinato con la sua scadenza, part-time con le ore
+- **CCNL e livello**: decidono paga minima, ferie, permessi e preavviso
+- **periodo di preavviso**: quanto prima bisogna avvisare in caso di dimissioni
+- **giorni di ferie all'anno** previsti dal contratto
+
+Tenerlo insieme alle buste paga, nello stesso posto, evita di cercarlo proprio quando serve.
+
+## Pianificare le ferie in famiglia
+
+Le ferie di due genitori che lavorano sono un pezzo di organizzazione familiare: chi copre la chiusura della scuola a Natale, chi prende la settimana di settembre prima che riapra, quando si fa la vacanza insieme. Funziona meglio se:
+
+- si guardano **i residui di tutti e due** prima di decidere
+- i periodi approvati vanno **subito nel calendario di famiglia**, così chi organizza nonni, centri estivi o babysitter li vede
+- i **permessi a ore** si tengono per gli imprevisti dei figli, invece di consumarli tutti a inizio anno
+
+Ne parliamo anche in [orari del dopo scuola quando i genitori lavorano](/blog/orari-dopo-scuola-genitori-che-lavorano).
+
+## La scheda Lavoro di KidBox
+
+Nei piani Pro e Max, KidBox ha una scheda **Lavoro** per ogni adulto della famiglia. Carichi la busta paga, il contratto o il foglio ferie, in PDF o in foto, e l'AI ne legge i valori: netto e lordo, ferie e permessi residui, TFR, tipo di contratto, livello e scadenze. Prima di salvare puoi correggere tutto.
+
+Il foglio ferie diventa, se vuoi, una serie di eventi nel [calendario](/strumenti/calendario) di famiglia, periodo per periodo. E all'[assistente](/strumenti/assistente-ai) puoi chiedere «quante ferie mi restano?» o «quanto ho preso di netto a settembre?».
+
+La scheda è **privata**: la vede solo chi l'ha creata, finché non decide di condividerla con un altro adulto della famiglia. I valori sono cifrati con la chiave di famiglia, e il file originale resta nei [documenti](/strumenti/documenti). Per leggere un documento, il suo contenuto viene inviato al servizio AI che KidBox usa, come descritto nell'informativa privacy, e solo quando lo scegli tu.
+
+## In sintesi
+
+Del netto si accorgono tutti. Le cose che servono alla famiglia stanno nel piede della busta paga: ferie e permessi residui, TFR, e i mesi in cui arrivano tredicesima e conguaglio. Guardarli ogni mese, tenere il contratto accanto alle buste paga e mettere le ferie approvate nel calendario di famiglia evita di scoprire a dicembre che se ne avevano di più, o di meno.
+""",
+        },
+        "en": {
+            "title": "How to read your payslip: the lines that matter and how not to lose holiday",
+            "desc": "Gross, net, deductions, remaining holiday and leave, severance: what to check on your payslip every month, what to know about your contract, and how to plan the family's holidays without discovering in December you had more left.",
+            "body": """
+Your payslip arrives every month, and most people look at one thing: the net pay. The rest, columns of codes and abbreviations, ends up in a folder or an email that never gets opened again. Yet it holds information a family really uses: how much holiday is left before summer, how many hours of leave are available for a doctor's visit or a parents' evening, whether the year-end adjustment changed anything.
+
+This article is a guide to finding your way around, not professional advice. Payslips, tax and leave rules vary by country and by employment contract, and they change over time: for questions about your own payslip, ask your HR or payroll office or an employment adviser. Where the examples are specific, they refer to Italy.
+
+## The three parts of a payslip
+
+Almost every payslip, whatever its layout, has three blocks:
+
+- **the header**: employer, employee, pay period, contract and grade, start date
+- **the body**: the items that make up your pay and those that reduce it
+- **the footer**: totals, net pay, and the counters for holiday, leave and severance pay
+
+The footer is the part people read least and need most.
+
+## From gross to net
+
+**Gross pay** is everything you're owed for the month: basic pay, allowances set by your contract, seniority increments, overtime.
+
+From gross pay come the **deductions**:
+
+- **social security contributions** paid by the employee
+- **income tax**, sometimes with regional or local surcharges
+- **tax credits or allowances** that reduce the tax, for example for dependants
+
+What's left is your **net pay**. If one month's net pay looks different, the answer is almost always in one of these lines: overtime, a tax surcharge, a year-end adjustment.
+
+## Holiday and leave: the numbers to watch
+
+The footer usually has three columns for holiday and leave:
+
+- **accrued**: built up so far
+- **taken**: already used
+- **remaining**: what's left
+
+**Holiday** is counted in days or hours, depending on your contract. In Italy, for example, the law guarantees at least four weeks a year, at least two of them to be taken in the year they accrue; your contract may give you more. Other countries have their own minimums and carry-over rules.
+
+**Leave hours** (in Italy often shown as ROL or ex festività) are the ones that cover family things during working hours: a paediatrician's appointment, a meeting with teachers, the day school closes early.
+
+> The number to watch is the remaining balance. Holiday not taken within the allowed time can be lost, and a high balance in November is the signal to plan it.
+
+## Severance pay, extra months and year-end adjustments
+
+- **severance pay** (TFR in Italy) builds up every month and is paid when the job ends, or goes to a pension fund if you chose that. The payslip shows how much has accrued
+- **extra monthly payments**, where your contract provides them, arrive in specific months: knowing when helps you plan big expenses
+- the **year-end tax adjustment** recalculates the year's tax and can raise or lower that month's net pay
+
+## Your contract: what to know by heart
+
+An employment contract gets signed once and then forgotten. But some details come up often:
+
+- **contract type**: permanent, fixed-term with its end date, part-time with its hours
+- **collective agreement and grade**: they set minimum pay, holiday, leave and notice
+- **notice period**: how far ahead you must tell your employer if you resign
+- **holiday days per year** under your contract
+
+Keeping it with your payslips, in the same place, saves searching for it exactly when you need it.
+
+## Planning holidays as a family
+
+Two working parents' holidays are part of family organisation: who covers the school's Christmas closure, who takes the week before school starts, when you go away together. It works better if you:
+
+- look at **both parents' remaining balances** before deciding
+- put approved periods **straight into the family calendar**, so whoever arranges grandparents, holiday clubs or babysitters can see them
+- keep **leave hours** for the children's surprises, instead of using them all early in the year
+
+More on this in [after-school hours when both parents work](/en/blog/orari-dopo-scuola-genitori-che-lavorano).
+
+## KidBox's Work tab
+
+In the Pro and Max plans, KidBox has a **Work** tab for each adult in the family. Upload a payslip, a contract or a leave sheet, as a PDF or a photo, and the AI reads its values: net and gross pay, remaining holiday and leave, severance pay, contract type, grade and dates. You can correct everything before saving.
+
+The leave sheet can become events in the family [calendar](/en/tools/calendario), period by period, if you want. And you can ask the [assistant](/en/tools/assistente-ai) "how much holiday do I have left?" or "what was my net pay in September?".
+
+The tab is **private**: only the person who created it sees it, until they choose to share it with another adult in the family. The values are encrypted with the family key, and the original file stays in [documents](/en/tools/documenti). To read a document, its content is sent to the AI service KidBox uses, as described in the privacy policy, and only when you choose.
+
+## In short
+
+Everyone notices the net pay. What the family needs is in the footer: remaining holiday and leave, severance pay, and the months when extra payments and tax adjustments arrive. Checking them every month, keeping the contract next to your payslips and putting approved holidays in the family calendar saves you discovering in December that you had more left, or less.
+""",
+        },
+    },
 ]
