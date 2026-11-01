@@ -1078,6 +1078,65 @@ function renderFunnelSection(rows) {
   </div>`;
 }
 
+// Coorti per settimana di nascita (lun-dom, Europe/Rome): quante famiglie
+// trovano un secondo membro e dopo quanti giorni. Le famiglie con un account di
+// test dentro restano fuori. L'ultima settimana è incompleta e le coorti
+// recenti maturano ancora: non leggerle come un calo.
+function renderCohorts(rows) {
+  const el = document.getElementById('section-cohorts');
+  if (!el) return;
+  const byWeek = {};
+  rows.filter(r => !r.internal && r.createdAtMs).forEach(r => {
+    const w = weekStart(new Date(r.createdAtMs).toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' }));
+    const c = (byWeek[w] = byWeek[w] || { families: 0, grown: 0, days: [] });
+    c.families++;
+    if (r.totalMembers >= 2) {
+      c.grown++;
+      const second = [...r.joins].sort((a, b) => a - b)[1];
+      if (second) c.days.push(Math.max(0, (second - r.createdAtMs) / 86400000));
+    }
+  });
+  const thisWeek = weekStart(new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' }));
+  const weeks = Object.keys(byWeek).sort().reverse().slice(0, 10);
+  if (!weeks.length) { el.innerHTML = '<div class="tcard"><div class="dim small" style="padding:12px 16px">Nessuna famiglia con data di creazione</div></div>'; return; }
+  const body = weeks.map(w => {
+    const c = byWeek[w], ds = c.days.sort((a, b) => a - b);
+    const med = ds.length ? ds[Math.floor(ds.length / 2)].toFixed(1) : '—';
+    const pct = c.families ? Math.round(c.grown / c.families * 100) : 0;
+    return `<tr><td>${w.slice(5)}${w >= thisWeek ? ' <span class="dim">(in corso)</span>' : ''}</td><td>${c.families}</td><td>${c.grown}</td><td><div class="funnel-bar-wrap" style="min-width:90px"><div class="funnel-bar" style="width:${pct}%;background:#5a9e7a"></div></div></td><td>${pct}%</td><td>${med}</td></tr>`;
+  }).join('');
+  el.innerHTML = `<div class="tcard"><div class="tbl-scroll"><table><thead><tr><th>Settimana dal</th><th>Nate</th><th>Con 2+ membri</th><th></th><th>Tasso</th><th>Giorni al 2° (mediana)</th></tr></thead><tbody>${body}</tbody></table></div>
+  <div class="small dim" style="padding:8px 16px">È la stella polare per coorte: separa l'effetto di invito e onboarding dal rumore del giorno. Le coorti recenti maturano ancora, la settimana in corso è incompleta. Senza le famiglie con account di test.</div></div>`;
+}
+
+// Contatore nostro della landing (senza cookie): aperture, restati 10 secondi e
+// tap sullo store per sorgente, ultimi 7 giorni chiusi. Un giorno senza documento
+// vale zero (nessun ping). Doc: functions/landingTraffic.js.
+async function loadLanding() {
+  const el = document.getElementById('section-landing');
+  if (!el) return;
+  try {
+    const ids = lastNDates(8).slice(1);              // ieri … 7 giorni fa
+    const snaps = await Promise.all(ids.map(id => getDoc(doc(db, 'landingTraffic', id))));
+    const days = snaps.filter(x => x.exists()).map(x => x.data());
+    const SRC = { meta: 'Meta (Instagram/Facebook)', google: 'Google', direct: 'diretto', referral: 'altri siti', other: 'altro' };
+    const sum = (k) => days.reduce((a, d) => a + (d[k] || 0), 0);
+    const rows = Object.keys(SRC).map(k => ({ k, v: sum('view_src_' + k), e: sum('engaged_src_' + k), s: sum('store_src_' + k) }))
+      .filter(r => r.v || r.s).sort((a, b) => b.v - a.v);
+    document.getElementById('landing-sub').textContent = `· ${ids[ids.length - 1].slice(5)} → ${ids[0].slice(5)} · ${days.length} giorni con dati`;
+    if (!rows.length) { el.innerHTML = '<div class="tcard"><div class="dim small" style="padding:12px 16px">Nessuna apertura registrata negli ultimi 7 giorni</div></div>'; return; }
+    const pc = (n, d) => d ? Math.round(n / d * 100) + '%' : '—';
+    const tv = sum('view'), te = sum('engaged');
+    const ts = sum('store_ios') + sum('store_android') + sum('store_web');
+    const tr = rows.map(r => `<tr><td>${SRC[r.k]}</td><td>${fmtNum(r.v)}</td><td>${fmtNum(r.e)} <span class="dim">${pc(r.e, r.v)}</span></td><td>${fmtNum(r.s)}</td><td>${pc(r.s, r.v)}</td></tr>`).join('');
+    el.innerHTML = `<div class="tcard"><div class="tbl-scroll"><table><thead><tr><th>Sorgente</th><th>Aperture</th><th>Restati 10 s</th><th>Tap store</th><th>Store ÷ aperture</th></tr></thead><tbody>${tr}
+    <tr><td><b>Totale</b></td><td><b>${fmtNum(tv)}</b></td><td><b>${fmtNum(te)}</b> <span class="dim">${pc(te, tv)}</span></td><td><b>${fmtNum(ts)}</b> <span class="dim">iOS ${sum('store_ios')} · Android ${sum('store_android')} · web ${sum('store_web')}</span></td><td>${pc(ts, tv)}</td></tr></tbody></table></div>
+    <div class="small dim" style="padding:8px 16px">Conta le aperture di pagina, non le persone: si confronta con le «landing viste» di Meta, non con gli utenti di GA4.</div></div>`;
+  } catch (e) {
+    el.innerHTML = `<div class="tcard"><div class="dim small" style="padding:12px 16px">Errore: ${e.message}</div></div>`;
+  }
+}
+
 // Ultimo contatto con Auth (login o rinnovo token, vedi `getAuthUsersData`):
 // relativo finché è recente, poi la data.
 function fmtLastActive(d) {
@@ -1099,10 +1158,12 @@ function renderUsersTable(rows) {
   const filtered = applyTimeFilter(rows, 'createdAt');
 
   // ── aggiorna stat card coerenti con la vista filtrata ──
-  setVal('stat-users', fmtNum(filtered.length));
+  const real = filtered.filter(u => !u.internal);
+  setVal('stat-users', fmtNum(real.length));
+  setVal('stat-users-sub', filtered.length > real.length ? `profili su Firestore · senza ${filtered.length - real.length} account di test` : 'profili su Firestore');
   setVal('users-table-count', `(${filtered.length})`);
   let ios=0, android=0;
-  filtered.forEach(u => { if(u.platform==='ios') ios++; else if(u.platform==='android') android++; });
+  real.forEach(u => { if(u.platform==='ios') ios++; else if(u.platform==='android') android++; });
   setVal('stat-platform-ios',     fmtNum(ios));
   setVal('stat-platform-android', fmtNum(android));
 
@@ -1166,6 +1227,7 @@ async function loadAll() {
     renderUsersTable(_allUsersRows);
     await loadAICosts();
     await loadActiveUsers();
+    await loadLanding();
     updateTotalCost();
     setStatus('Aggiornato', true);
   } catch(e) {
@@ -1179,8 +1241,15 @@ let _usersCache = [];
 let _allUsersRows = [];
 let _platformByUid = {};
 let _familyByUid = {};
+// Account di test (config/internalUsers): fuori dai totali, come nei report e
+// nel rollup. Documento illeggibile = nessuna esclusione, la console non si ferma.
+let _internalUids = new Set();
 async function loadUsers() {
   try {
+    try {
+      const idoc = await getDoc(doc(db, 'config', 'internalUsers'));
+      _internalUids = new Set(idoc.exists() && Array.isArray(idoc.data().uids) ? idoc.data().uids : []);
+    } catch { _internalUids = new Set(); }
     const [snap, authResult] = await Promise.all([
       getDocs(collection(db,'users')),
       httpsCallable(functions, 'getAuthUsersData')({}).catch(() => ({ data: { users: [] } })),
@@ -1199,6 +1268,7 @@ async function loadUsers() {
                     || u.displayName || auth.displayName || '—';
       return {
         uid: d.id,
+        internal: _internalUids.has(d.id),
         email,
         name,
         platform: p || '',
@@ -1243,7 +1313,8 @@ async function loadFamilies() {
       // Prova Pro (functions/proTrial.js): `plan` dice pro ma nessuno paga.
       const trial = plan === 'pro' && d.planSource === 'trial';
       const planLabel = trial ? 'pro · prova' : plan;
-      let storageBytes=0, aiMonth=0, ownerEmail='—', iosCount=0, androidCount=0, totalMemberCount=0, activeCount14d=0;
+      let storageBytes=0, aiMonth=0, ownerEmail='—', iosCount=0, androidCount=0, totalMemberCount=0, activeCount14d=0, hasInternal=false;
+      const joins = [];
       try { const sd=await getDoc(doc(db,'families',fid,'stats','storage')); if(sd.exists()) storageBytes=sd.data().usedBytes||0; } catch {}
       // legge messaggi AI del mese corrente (non giornaliero)
       try { const ad=await getDoc(doc(db,'ai_costs',mk,'families',fid)); if(ad.exists()) aiMonth=ad.data().calls||0; } catch {}
@@ -1254,6 +1325,9 @@ async function loadFamilies() {
         membSnap.forEach(m => {
           const md = m.data();
           totalMemberCount++;
+          if (_internalUids.has(m.id)) hasInternal = true;
+          const jt = (md.joinedAt || md.createdAt)?.toDate?.();
+          if (jt) joins.push(jt.getTime());
           if (md.role === 'owner' || md.role === 'admin') ownerUid = m.id;
           _familyByUid[m.id] = fid;
           const p = _platformByUid[m.id];
@@ -1278,7 +1352,7 @@ async function loadFamilies() {
         }
       } catch {}
       const fname = d.name || '—';
-      return { fid, fname, plan, trial, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: fdoc.data().updatedAt?.toDate(), totalMembers: totalMemberCount, activeMembers14d: activeCount14d };
+      return { fid, fname, plan, trial, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: fdoc.data().updatedAt?.toDate(), totalMembers: totalMemberCount, activeMembers14d: activeCount14d, createdAtMs: d.createdAt?.toDate?.().getTime() || 0, joins, internal: hasInternal };
     }));
     rows.push(...res);
   }
@@ -1300,7 +1374,8 @@ async function loadFamilies() {
 
   _familyRows = rows;
   renderFamiliesTable(rows);
-  renderFunnelSection(rows);
+  renderFunnelSection(rows.filter(r => !r.internal));
+  renderCohorts(rows);
   updateSortHeaders();
 
   // bars storage — mostra nome famiglia
@@ -2724,7 +2799,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         <div class="card">
           <div class="card-lbl">Utenti registrati</div>
           <div class="card-val c-blue" id="stat-users">—</div>
-          <div class="card-sub">profili su Firestore</div>
+          <div class="card-sub" id="stat-users-sub">profili su Firestore</div>
         </div>
         <div class="card">
           <div class="card-lbl">Famiglie</div>
@@ -3158,6 +3233,12 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       <div id="section-funnel-anchor"></div>
       <div class="sec-title" style="margin-top:32px">📉 Funnel attivazione</div>
       <div id="section-funnel"></div>
+
+      <div class="sec-title" style="margin-top:32px">🌱 Coorti: famiglie che trovano un secondo membro</div>
+      <div id="section-cohorts"></div>
+
+      <div class="sec-title" style="margin-top:32px">🌐 Landing: chi arriva e cosa fa <span class="sub" id="landing-sub"></span></div>
+      <div id="section-landing"></div>
       <div style="height:32px"></div>
 
       <!-- TABELLA UTENTI -->
