@@ -1047,13 +1047,13 @@ function renderFunnelSection(rows) {
         <div class="funnel-step-label">Con 2+ membri</div>
         <div class="funnel-step-val">${multi}</div>
         ${bar(multi, total, '#e0a040')}
-        <div class="funnel-step-pct">${pct(multi)}%</div>
+        <div class="funnel-step-pct">${pct(multi)}% <span style="color:var(--color-dim);font-weight:400">· ${withFamily > 0 ? Math.round(multi/withFamily*100) : 0}% del passo prima</span></div>
       </div>
       <div class="funnel-step">
         <div class="funnel-step-label">2+ attivi (14 gg)</div>
         <div class="funnel-step-val">${active2}</div>
         ${bar(active2, total, '#c0504d')}
-        <div class="funnel-step-pct">${pct(active2)}%</div>
+        <div class="funnel-step-pct">${pct(active2)}% <span style="color:var(--color-dim);font-weight:400">· ${multi > 0 ? Math.round(active2/multi*100) : 0}% del passo prima</span></div>
       </div>
     </div>
   </div>
@@ -1465,10 +1465,62 @@ async function loadActiveUsers() {
         </div>`).join('')
       : '<div class="dim small">Nessuna azione registrata</div>';
 
+    renderTrendChart(days);
+    renderFeatureTable(days);
+
   } catch(e) {
     console.error(e);
     empty('Errore: ' + e.message);
   }
+}
+
+// Linee DAU / famiglie attive / WAU su 28 giorni, SVG inline con i colori del
+// tema. I giorni senza rollup restano buchi, non zeri: la linea si interrompe.
+function renderTrendChart(days) {
+  const el = document.getElementById('trend-chart');
+  if (!el) return;
+  const asc = [...days].reverse();
+  if (asc.length < 2) { el.innerHTML = '<div class="dim small">Servono almeno 2 giorni di rollup</div>'; return; }
+  const series = [
+    ['DAU', 'dau', 'var(--color-blue)'],
+    ['Famiglie attive', 'daf', 'var(--color-orange)'],
+    ['WAU', 'wau', 'var(--color-purple)'],
+  ];
+  const W = 420, H = 150, PL = 28, PB = 18, PT = 8;
+  const max = Math.max(1, ...asc.flatMap(d => series.map(([, k]) => d[k] || 0)));
+  const x = i => PL + (asc.length === 1 ? 0 : i * (W - PL - 6) / (asc.length - 1));
+  const y = v => PT + (H - PT - PB) * (1 - v / max);
+  const lines = series.map(([, k, c]) => {
+    const pts = asc.map((d, i) => d[k] == null ? null : [x(i), y(d[k])]);
+    let path = '', pen = false;
+    pts.forEach(p => { if (!p) { pen = false; return; } path += (pen ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); pen = true; });
+    return `<path d="${path}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>`;
+  }).join('');
+  const grid = [0, .5, 1].map(f => `<line x1="${PL}" x2="${W-6}" y1="${y(max*f)}" y2="${y(max*f)}" stroke="var(--color-brd)"/><text x="${PL-4}" y="${y(max*f)+3}" text-anchor="end" font-size="9" fill="var(--color-dim)">${Math.round(max*f)}</text>`).join('');
+  const ticks = [0, Math.floor((asc.length-1)/2), asc.length-1].map(i => `<text x="${x(i)}" y="${H-4}" text-anchor="middle" font-size="9" fill="var(--color-dim)">${asc[i].id.slice(5)}</text>`).join('');
+  const legend = series.map(([n,,c]) => `<span style="margin-right:12px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${c};margin-right:4px"></span>${n}</span>`).join('');
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${grid}${lines}${ticks}</svg><div class="small" style="margin-top:6px">${legend}</div>`;
+}
+
+// Somma di byFeature sui rollup: dove si crea, si legge, si usa l'AI. Chi non
+// compare non è stato usato in 28 giorni (o non emette ancora l'evento).
+function renderFeatureTable(days) {
+  const el = document.getElementById('feat-table');
+  if (!el) return;
+  const tot = {};
+  days.forEach(d => Object.entries(d.byFeature || {}).forEach(([f, v]) => {
+    const t = tot[f] || (tot[f] = { created: 0, updated: 0, completed: 0, retrieved: 0, ai: 0, giorni: 0 });
+    ['created','updated','completed','retrieved','ai'].forEach(k => t[k] += v[k] || 0);
+    t.giorni += 1;
+  }));
+  const rows = Object.entries(tot)
+    .map(([f, t]) => [f, t, t.created + t.updated + t.completed + t.retrieved + t.ai])
+    .filter(r => r[2] > 0).sort((a, b) => b[2] - a[2]);
+  if (!rows.length) { el.innerHTML = '<div class="dim small" style="padding:12px 16px">Nessuna azione registrata</div>'; return; }
+  const n = v => v ? fmtNum(v) : '<span class="dim">·</span>';
+  el.innerHTML = `<table><thead><tr><th>Funzione</th><th>Creati</th><th>Aggiorn.</th><th>Compl.</th><th>Letture</th><th>AI</th><th>Giorni</th></tr></thead><tbody>${
+    rows.map(([f, t]) => `<tr><td>${f}</td><td>${n(t.created)}</td><td>${n(t.updated)}</td><td>${n(t.completed)}</td><td>${n(t.retrieved)}</td><td>${n(t.ai)}</td><td>${t.giorni}</td></tr>`).join('')
+  }</tbody></table>`;
 }
 
 // Ricalcola oggi + ieri. Idempotente: riscrive gli stessi documenti.
@@ -2940,6 +2992,16 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         <div class="tcard">
           <div class="tcard-hdr">Azioni per feature <span class="sub">(ultimo rollup)</span></div>
           <div class="bars-wrap" id="bars-feat"><div class="dim small">Caricamento…</div></div>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-top:12px">
+        <div class="tcard">
+          <div class="tcard-hdr">Andamento <span class="sub">(28 giorni)</span></div>
+          <div id="trend-chart" style="padding:12px 16px"><div class="dim small">Caricamento…</div></div>
+        </div>
+        <div class="tcard">
+          <div class="tcard-hdr">Uso per funzione <span class="sub">(28 giorni, senza account di test)</span></div>
+          <div class="tbl-scroll" id="feat-table"><div class="dim small" style="padding:12px 16px">Caricamento…</div></div>
         </div>
       </div>
 
