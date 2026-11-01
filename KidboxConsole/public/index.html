@@ -1137,6 +1137,65 @@ async function loadLanding() {
   }
 }
 
+// ── Report scaricabile ────────────────────────────────────────────────────────
+// Legge la pagina com'è ORA (stessi numeri, stesso filtro Periodo) e la scrive in
+// Markdown. Solo le sezioni di numeri: le tabelle lunghe con email (famiglie,
+// utenti, ticket) e i moduli di azione (piani, listino, notifiche) restano fuori.
+const REPORT_SECTIONS = /Utenti & Famiglie|AI —|Storage & Costi|Utenti attivi|Funnel attivazione|Coorti|Landing/;
+function reportClean(t) { return (t || '').replace(/\s+/g, ' ').replace(/[↕▲▼]/g, '').trim(); }
+function reportText(el) {
+  const c = el.cloneNode(true);
+  c.querySelectorAll('button').forEach(b => b.remove());
+  return reportClean(c.textContent);
+}
+function reportTable(t) {
+  const head = [...t.querySelectorAll('thead th')].map(th => reportClean(th.innerText));
+  const rows = [...t.querySelectorAll('tbody tr')].slice(0, 200)
+    .map(tr => [...tr.children].map(td => reportClean(td.innerText).replace(/\|/g, '/')));
+  if (!head.length || !rows.length) return '';
+  return '\n| ' + head.join(' | ') + ' |\n|' + head.map(() => '---').join('|') + '|\n' +
+    rows.map(r => '| ' + r.join(' | ') + ' |').join('\n') + '\n';
+}
+function reportMd(el) {
+  if (el.nodeType === 3) return '';
+  if (!el.matches || el.matches('svg,canvas,button,script,style,input,select')) return '';
+  if (el.tagName === 'TABLE') return reportTable(el);
+  if (el.querySelector(':scope > .card-lbl')) {
+    const q = (c) => reportClean(el.querySelector(c)?.innerText);
+    return `- **${q('.card-lbl')}**: ${q('.card-val')}${q('.card-sub') ? ' — ' + q('.card-sub') : ''}\n`;
+  }
+  if (el.classList.contains('bar-row')) return `- ${reportClean(el.querySelector('.bar-lbl')?.innerText)}: ${reportClean(el.querySelector('.bar-val')?.innerText)}\n`;
+  if (el.classList.contains('funnel-step')) return `- ${reportClean(el.querySelector('.funnel-step-label')?.innerText)}: ${reportClean(el.querySelector('.funnel-step-val')?.innerText)} (${reportClean(el.querySelector('.funnel-step-pct')?.innerText)})\n`;
+  if (el.classList.contains('tcard-hdr')) return `\n### ${reportText(el)}\n`;
+  if (!el.children.length) { const t = reportClean(el.innerText); return t ? t + '\n' : ''; }
+  return [...el.children].map(reportMd).join('');
+}
+window.downloadReport = function() {
+  const main = document.querySelector('.main');
+  if (!main) return;
+  const now = new Date();
+  const day = now.toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
+  const badge = document.getElementById('filter-active-badge');
+  const filter = badge && badge.style.display !== 'none' ? reportClean(badge.innerText) : 'Tutto';
+  let out = `# KidBox · Report console\n\nGenerato ${now.toLocaleString('it-IT', { timeZone: 'Europe/Rome' })} · ultimo aggiornamento dati: ${reportClean(document.getElementById('last-upd')?.innerText)} · mese ${reportClean(document.getElementById('month-badge')?.innerText)} · periodo: ${filter}\n\nSolo aggregati. Account di test esclusi dove indicato. «—» = dato non caricato o non misurato.\n`;
+  let on = false;
+  for (const node of main.children) {
+    if (node.classList.contains('sec-title')) {
+      const title = reportText(node);
+      on = REPORT_SECTIONS.test(title);
+      if (on) out += `\n## ${title}\n`;
+      continue;
+    }
+    if (on) out += reportMd(node);
+  }
+  out = out.replace(/\n{3,}/g, '\n\n');
+  const url = URL.createObjectURL(new Blob([out], { type: 'text/markdown;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = `kidbox-console-${day}.md`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+};
+
 // Ultimo contatto con Auth (login o rinnovo token, vedi `getAuthUsersData`):
 // relativo finché è recente, poi la data.
 function fmtLastActive(d) {
@@ -2765,6 +2824,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       </div>
       <div class="topbar-right">
         <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--color-dim)">🐛<span class="ticket-badge" id="ticket-badge"></span></span>
+        <button class="btn-sm" onclick="downloadReport()" title="Scarica in Markdown le sezioni di numeri che vedi ora">⬇ Report</button>
         <button class="btn-sm" id="btn-reset-all" onclick="resetStorageAll(this)">↺ Reset Storage</button>
         <button class="btn-sm btn-accent" id="btn-refresh">↻ Aggiorna</button>
       </div>
