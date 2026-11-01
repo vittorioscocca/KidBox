@@ -378,6 +378,9 @@ def build_tool(lang, tool, images):
         "@context": "https://schema.org", "@type": "FAQPage",
         "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in T["faq"]],
     }
+    # Senza la voce sul web (es. le farmacie di turno) il link alla web app porterebbe a niente.
+    open_link = (f'<a class="t-open" href="https://app.kidboxapp.com" target="_blank" rel="noopener">{L["open"]} ↗</a>'
+                 if tool.get("web", True) else "")
     import json
     body = f"""
 <div class="crumbs"><a href="{prefix}{L['src']}">{L['home']}</a><span>/</span><a href="./">{L['tools']}</a><span>/</span><span class="cur">{html.escape(T['title'])}</span></div>
@@ -387,7 +390,7 @@ def build_tool(lang, tool, images):
   <div>
     <h1>{html.escape(T['title'])}</h1>
     <p class="t-lead">{html.escape(T['lead'])}</p>
-    <div class="t-meta">{badge}<a class="t-open" href="https://app.kidboxapp.com" target="_blank" rel="noopener">{L['open']} ↗</a></div>
+    <div class="t-meta">{badge}{open_link}</div>
   </div>
 </div>
 {shots}

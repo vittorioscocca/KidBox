@@ -115,6 +115,21 @@ ES = {
             ("¿Quién puede ver mis documentos?", "Solo los miembros de la familia. Los archivos se cifran con la clave de la familia, que los servidores no tienen."),
         ],
     },
+    "lavoro": {
+        "title": "Trabajo: nóminas, contratos y vacaciones",
+        "short": "Una ficha para cada adulto con nóminas, contratos y hoja de vacaciones leídos por la IA: neto, vacaciones y permisos pendientes, finiquito y fechas, privada hasta que la compartes.",
+        "lead": "Subes la nómina en PDF o en foto y KidBox guarda los números que importan: cuántas vacaciones quedan, cuántas horas de permiso, cuándo termina el contrato. Y las vacaciones aprobadas pasan al calendario familiar.",
+        "steps": [
+            ("Sube el documento", "Nómina, contrato u hoja de vacaciones, en PDF o en foto; en iPhone y Android también desde el menú compartir de Mail o WhatsApp. La lectura empieza solo cuando tocas «Leer el documento»."),
+            ("Revisa y guarda", "La IA lee bruto, neto, impuestos, cotizaciones, vacaciones, permisos, finiquito, tipo de contrato y fechas. Corrige lo necesario antes de guardar, y también después con «Editar»."),
+            ("Usa los datos", "Las vacaciones pueden pasar a ser eventos del calendario familiar, periodo por periodo. Y al asistente le preguntas «¿cuántas vacaciones me quedan?»."),
+        ],
+        "faq": [
+            ("¿Quién ve mi nómina?", "Solo tú. La ficha es privada hasta que decides compartirla con otro adulto de la familia, que entonces ve los valores y los archivos."),
+            ("¿Cuánto cuesta leer un documento?", "Cada página leída usa un mensaje de IA, hasta tres por documento. Trabajo está en los planes Pro y Max."),
+            ("¿El asistente da consejos sobre el contrato?", "Responde con tus datos (vacaciones, permisos, neto, fecha de fin) pero no hace asesoría: para una duda sobre el contrato o la nómina, consulta a recursos humanos o a un asesor laboral."),
+        ],
+    },
     "password": {
         "title": "Contraseñas de la familia con autocompletado",
         "short": "El wifi, el portal del colegio, la cuenta del abuelo: credenciales familiares o personales, cifradas, con autocompletado y control de seguridad.",
@@ -173,6 +188,21 @@ ES = {
             ("¿Los datos de salud están cifrados?", "Sí: los informes y adjuntos se cifran con la clave de la familia, y las fichas clínicas solo las pueden leer los miembros."),
             ("¿Qué llega de Apple Health / Health Connect?", "Pasos, frecuencia cardíaca, tensión arterial, SpO₂, calorías activas, entrenamientos y distancia, solo si das permiso."),
             ("¿Qué añade el plan Pro?", "Planes de alimentación y de ejercicio generados por IA a medida del perfil, reservados a Pro y Max, y mensajes de IA cada día para el resumen del historial de salud, que en el Free solo se puede probar con los 5 mensajes únicos."),
+        ],
+    },
+    "farmacie-di-turno": {
+        "title": "Farmacias de guardia cerca de ti",
+        "short": "La farmacia de guardia de tu municipio italiano, leída de la fuente oficial (Federfarma, el colegio de farmacéuticos, la autoridad sanitaria o el ayuntamiento), con llamada e indicaciones en un toque.",
+        "lead": "De noche o en domingo, con un hijo con fiebre, no hace falta buscar en varias webs: KidBox encuentra la página oficial de guardias de tu municipio, la lee y te muestra quién está abierto.",
+        "steps": [
+            ("Elige el municipio", "Es el mismo de Noticias: lo configuras una vez y vale para toda la familia."),
+            ("KidBox encuentra la fuente", "La IA busca la página oficial de guardias y aprende a leerla, aunque sea un PDF o una imagen. A partir de ahí se actualiza sola cada pocas horas."),
+            ("Llama o ve", "De cada farmacia ves el servicio (nocturno, de tarde, festivo) y la dirección, con botones para llamar o abrir las indicaciones."),
+        ],
+        "faq": [
+            ("¿De dónde salen las guardias?", "Solo de fuentes oficiales. Debajo de las guardias ves siempre la fuente y la hora de la última actualización."),
+            ("¿Y si no encuentra mi municipio?", "Puedes indicar tú la web que publica las guardias: tiene prioridad y vale solo para tu familia. Si la página cambia y ya no se puede leer, KidBox oculta las guardias y deja el enlace a la fuente, en lugar de mostrar datos antiguos."),
+            ("¿Hace falta el plan Pro?", "Sí, las farmacias de guardia están en los planes Pro y Max. Las encuentras en Inicio en iPhone y Android; en la web todavía no. El servicio cubre los municipios italianos."),
         ],
     },
     "casa": {
@@ -392,6 +422,21 @@ FR = {
             ("Qui peut voir mes documents ?", "Uniquement les membres de la famille. Les fichiers sont chiffrés avec la clé de la famille, que les serveurs n'ont pas."),
         ],
     },
+    "lavoro": {
+        "title": "Travail : bulletins de paie, contrats et congés",
+        "short": "Une fiche par adulte avec bulletins de paie, contrats et planning de congés lus par l'IA : net, congés et permissions restants, indemnité de fin de contrat et dates, privée jusqu'à ce que vous la partagiez.",
+        "lead": "Vous ajoutez votre bulletin de paie en PDF ou en photo et KidBox garde les chiffres utiles : combien de congés il reste, combien d'heures de permission, quand finit le contrat. Et les congés approuvés vont dans le calendrier familial.",
+        "steps": [
+            ("Ajoutez le document", "Bulletin de paie, contrat ou planning de congés, en PDF ou en photo ; sur iPhone et Android aussi depuis le menu de partage de Mail ou WhatsApp. La lecture ne démarre que lorsque vous touchez « Lire le document »."),
+            ("Vérifiez et enregistrez", "L'IA lit le brut, le net, les impôts, les cotisations, les congés, les permissions, l'indemnité de fin de contrat, le type de contrat et les dates. Corrigez ce qu'il faut avant d'enregistrer, et ensuite avec « Modifier »."),
+            ("Servez-vous des données", "Les congés peuvent devenir des événements du calendrier familial, période par période. Et vous pouvez demander à l'assistant « combien de congés me reste-t-il ? »."),
+        ],
+        "faq": [
+            ("Qui voit mon bulletin de paie ?", "Vous seul. La fiche est privée jusqu'à ce que vous décidiez de la partager avec un autre adulte de la famille, qui voit alors les valeurs et les fichiers."),
+            ("Combien coûte la lecture d'un document ?", "Chaque page lue utilise un message IA, jusqu'à trois par document. Travail est dans les offres Pro et Max."),
+            ("L'assistant donne-t-il des conseils sur le contrat ?", "Il répond avec vos données (congés, permissions, net, date de fin) mais ne fait pas de conseil : pour une question sur votre contrat ou votre bulletin de paie, adressez-vous aux ressources humaines ou à un conseiller en droit du travail."),
+        ],
+    },
     "password": {
         "title": "Mots de passe de la famille avec remplissage automatique",
         "short": "Le wifi, le portail de l'école, le compte de papi : identifiants familiaux ou personnels, chiffrés, avec remplissage automatique et contrôle de sécurité.",
@@ -450,6 +495,21 @@ FR = {
             ("Les données de santé sont-elles chiffrées ?", "Oui : comptes rendus et pièces jointes sont chiffrés avec la clé de la famille, et les fiches cliniques ne sont lisibles que par les membres."),
             ("Qu'est-ce qui arrive d'Apple Health / Health Connect ?", "Pas, fréquence cardiaque, tension artérielle, SpO₂, calories actives, entraînements et distance, seulement si vous l'autorisez."),
             ("Qu'apporte l'offre Pro ?", "Des plans alimentaires et d'entraînement générés par l'IA selon le profil, réservés à Pro et Max, et des messages IA chaque jour pour la synthèse de l'historique de santé, que Free ne peut qu'essayer avec ses 5 messages uniques."),
+        ],
+    },
+    "farmacie-di-turno": {
+        "title": "Pharmacies de garde près de chez vous",
+        "short": "La pharmacie de garde de votre commune italienne, lue sur la source officielle (Federfarma, l'ordre des pharmaciens, l'autorité sanitaire ou la mairie), avec appel et itinéraire d'un toucher.",
+        "lead": "La nuit ou le dimanche, avec un enfant qui a de la fièvre, inutile de chercher sur plusieurs sites : KidBox trouve la page officielle des gardes de votre commune, la lit et vous montre qui est ouvert.",
+        "steps": [
+            ("Choisissez la commune", "C'est la même que pour les Actualités : vous la réglez une fois et elle vaut pour toute la famille."),
+            ("KidBox trouve la source", "L'IA cherche la page officielle des gardes et apprend à la lire, même quand c'est un PDF ou une image. Ensuite elle se met à jour seule toutes les quelques heures."),
+            ("Appelez ou allez-y", "Pour chaque pharmacie, vous voyez le service (nuit, après-midi, jours fériés) et l'adresse, avec des boutons pour appeler ou ouvrir l'itinéraire."),
+        ],
+        "faq": [
+            ("D'où viennent les gardes ?", "Uniquement de sources officielles. Sous les gardes, vous voyez toujours la source et l'heure de la dernière mise à jour."),
+            ("Et s'il ne trouve pas ma commune ?", "Vous pouvez indiquer vous-même le site qui publie les gardes : il est prioritaire et ne vaut que pour votre famille. Si la page change et ne peut plus être lue, KidBox masque les gardes et laisse le lien vers la source, plutôt que d'afficher des données périmées."),
+            ("Faut-il l'offre Pro ?", "Oui, les pharmacies de garde sont dans les offres Pro et Max. Vous les trouvez sur l'Accueil sur iPhone et Android ; pas encore sur le web. Le service couvre les communes italiennes."),
         ],
     },
     "casa": {

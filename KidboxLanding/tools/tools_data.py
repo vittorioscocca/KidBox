@@ -269,6 +269,41 @@ TOOLS = [
         },
     },
     {
+        "slug": "lavoro",
+        "icon": "💼", "tint": "amber", "shots": None, "plan": "pro",
+        "related": ["documenti", "calendario", "assistente-ai"],
+        "it": {
+            "title": "Lavoro: busta paga, contratto e ferie",
+            "short": "Una scheda per ogni adulto con buste paga, contratti e foglio ferie letti dall'AI: netto, ferie e permessi residui, TFR e scadenze, privata finché non la condividi.",
+            "lead": "Carichi la busta paga in PDF o in foto e KidBox ne tiene i numeri che servono: quante ferie restano, quante ore di permesso, quando scade il contratto. E le ferie approvate finiscono nel calendario di famiglia.",
+            "steps": [
+                ("Carica il documento", "Busta paga, contratto o foglio ferie, in PDF o in foto; su iPhone e Android anche dalla condivisione di Mail o WhatsApp. La lettura parte solo quando tocchi «Leggi il documento»."),
+                ("Controlla e salva", "L'AI legge lordo, netto, imposte, contributi, ferie, permessi, TFR, tipo di contratto e scadenze. Correggi quello che serve prima di salvare, e anche dopo con «Modifica»."),
+                ("Usa i dati", "Le ferie diventano, se vuoi, eventi del calendario di famiglia, periodo per periodo. E all'assistente chiedi «quante ferie mi restano?»."),
+            ],
+            "faq": [
+                ("Chi vede la mia busta paga?", "Solo tu. La scheda è privata finché non decidi di condividerla con un altro adulto della famiglia, che allora vede i valori e i file."),
+                ("Quanto costa leggere un documento?", "Ogni pagina letta usa un messaggio AI, fino a tre per documento. Lavoro è nei piani Pro e Max."),
+                ("L'assistente dà consigli sul contratto?", "Risponde con i tuoi dati (ferie, permessi, netto, scadenza) ma non fa consulenza: per un dubbio sul contratto o sulla busta paga servono l'ufficio del personale, un patronato o un consulente del lavoro."),
+            ],
+        },
+        "en": {
+            "title": "Work: payslips, contracts and holidays",
+            "short": "A tab for each adult with payslips, contracts and leave sheets read by AI: net pay, remaining holiday and leave, severance pay and dates, private until you share it.",
+            "lead": "Upload your payslip as a PDF or a photo and KidBox keeps the numbers that matter: how much holiday is left, how many leave hours, when the contract ends. And approved holidays go into the family calendar.",
+            "steps": [
+                ("Upload the document", "Payslip, contract or leave sheet, as a PDF or a photo; on iPhone and Android also from the share sheet in Mail or WhatsApp. Reading only starts when you tap “Read the document”."),
+                ("Check and save", "The AI reads gross and net pay, tax, contributions, holiday, leave, severance pay, contract type and dates. Correct what you need before saving, and later with “Edit”."),
+                ("Use the data", "Holidays can become events in the family calendar, period by period. And you can ask the assistant “how much holiday do I have left?”."),
+            ],
+            "faq": [
+                ("Who can see my payslip?", "Only you. The tab is private until you choose to share it with another adult in the family, who then sees the values and the files."),
+                ("How much does reading a document cost?", "Each page read uses one AI message, up to three per document. Work is in the Pro and Max plans."),
+                ("Does the assistant give advice on my contract?", "It answers with your data (holiday, leave, net pay, end date) but doesn't give professional advice: for questions about your contract or payslip, ask HR, your payroll office or an employment adviser."),
+            ],
+        },
+    },
+    {
         "slug": "password",
         "icon": "🔐", "tint": "violet", "shots": "Password", "plan": "free",
         "related": ["note", "wallet", "documenti"],
@@ -405,6 +440,41 @@ TOOLS = [
                 ("Is health data encrypted?", "Yes: reports and attachments are encrypted with the family key, and clinical entries are readable by members only."),
                 ("What comes from Apple Health / Health Connect?", "Steps, heart rate, blood pressure, SpO₂, active calories, workouts and distance, only if you grant permission."),
                 ("What does the Pro plan add?", "AI-generated meal and fitness plans tailored to the profile, available only on Pro and Max, plus daily AI messages for the health-history summary, which Free can only try with its 5 one-off messages."),
+            ],
+        },
+    },
+    {
+        "slug": "farmacie-di-turno",
+        "icon": "💊", "tint": "green", "shots": None, "plan": "pro", "web": False,
+        "related": ["salute", "assistente-ai", "posizione"],
+        "it": {
+            "title": "Farmacie di turno vicino a te",
+            "short": "La farmacia di turno del tuo comune, letta dalla fonte ufficiale (Federfarma, Ordine dei farmacisti, ASL o Comune), con chiamata e indicazioni in un tocco.",
+            "lead": "Di notte o la domenica, con un figlio con la febbre, non serve girare tra siti diversi: KidBox trova la pagina ufficiale dei turni del tuo comune, la legge e ti mostra chi è aperto.",
+            "steps": [
+                ("Scegli il comune", "È lo stesso delle Notizie: lo imposti una volta e vale per tutta la famiglia."),
+                ("KidBox trova la fonte", "L'AI cerca la pagina ufficiale dei turni e impara a leggerla, anche quando è un PDF o un'immagine. Da lì in poi si aggiorna da sola, ogni poche ore."),
+                ("Chiama o vai", "Per ogni farmacia vedi il servizio (notturno, pomeridiano, festivo) e l'indirizzo, con i pulsanti per chiamare o aprire le indicazioni."),
+            ],
+            "faq": [
+                ("Da dove vengono i turni?", "Solo da fonti ufficiali: Federfarma, Ordine dei farmacisti, ASL o Comune. Sotto i turni trovi sempre la fonte e l'ora dell'ultimo aggiornamento."),
+                ("E se non trova il mio comune?", "Puoi indicare tu il sito che pubblica i turni: ha la precedenza e vale solo per la tua famiglia. Se la pagina cambia e non si riesce più a leggerla, KidBox nasconde i turni e lascia il link alla fonte, invece di mostrare dati vecchi."),
+                ("Serve il piano Pro?", "Sì, le farmacie di turno sono nei piani Pro e Max. Le trovi in Home su iPhone e Android; sul web non ci sono ancora."),
+            ],
+        },
+        "en": {
+            "title": "On-duty pharmacies near you",
+            "short": "Your town's on-duty pharmacy, read from the official source (Federfarma, the pharmacists' association, the health authority or the town hall), with call and directions in one tap.",
+            "lead": "At night or on a Sunday, with a child running a temperature, there's no need to go through several websites: KidBox finds your town's official rota page, reads it and shows you who's open.",
+            "steps": [
+                ("Choose your town", "It's the same one used for News: set it once and it applies to the whole family."),
+                ("KidBox finds the source", "The AI looks for the official rota page and learns to read it, even when it's a PDF or an image. From then on it updates by itself every few hours."),
+                ("Call or go", "For each pharmacy you see the service (night, afternoon, holiday) and the address, with buttons to call or open directions."),
+            ],
+            "faq": [
+                ("Where do the rotas come from?", "Only from official sources: Federfarma, the pharmacists' association, the health authority or the town hall. Under the rota you always see the source and the time of the last update."),
+                ("What if it can't find my town?", "You can enter the website that publishes the rota yourself: it takes priority and applies only to your family. If the page changes and can no longer be read, KidBox hides the rota and leaves the link to the source, instead of showing old data."),
+                ("Do I need the Pro plan?", "Yes, on-duty pharmacies are in the Pro and Max plans. You'll find them on Home on iPhone and Android; they're not on the web yet. The service covers Italian towns."),
             ],
         },
     },
