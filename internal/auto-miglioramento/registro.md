@@ -78,6 +78,10 @@ Regole: non si sposta una data in avanti per salvare una scommessa (si chiude
   - (a) smentita → il messaggio o il pubblico non funziona: si confronta col video e, se anche quello non porta, i soldi vanno sulle creator.
 - **Se smentita**: (a) chi vede KidBox su Meta non arriva fino allo store; (c) il canale porta organizzatori soli, e il problema resta il passaggio da 1 a 2 membri.
 - **Limite noto**: 10 €/giorno su quattro gruppi sono pochi per l'apprendimento di Meta (servono decine di conversioni a settimana per gruppo). Il pixel vede solo chi accetta i cookie, quindi i `Lead` sono una parte dei tap veri.
+- **Cambi in corsa** (letti dallo storico dell'account):
+  - **30/10/2026 ~9:00**: gruppi IT, FR e UK in pausa interi. Il consiglio era di fermare solo i caroselli IT e FR e il gruppo UK; così si sono fermati anche i video IT e FR, i due CTR più alti. Nello stesso giorno, nel gruppo ES, il video «chi prende Marco» è stato sostituito dalla variante «acordarte de todo» (gancio nuovo nei primi 3,6 s).
+  - **01/11/2026 ~9:45**: IT e FR riattivati, «acordarte de todo» in pausa (2,71 €, CTR 0,9%, 0 Lead). Attive: carosello ES, video IT, video FR; i caroselli IT e FR restano accesi (dalla UI non si riusciva a spegnerli), ma Meta non ci spendeva più dal 29/10.
+  - Effetto sui numeri: 27–29/10 15 Lead con 30 €; 30/10–01/11, solo Spagna, 1 Lead con 21,63 €. Nel verdetto (a) va letto sapendo che 3 dei 14 giorni sono girati con un solo paese.
 
 ---
 
