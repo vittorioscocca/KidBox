@@ -1167,7 +1167,12 @@ function reportMd(el) {
   if (el.classList.contains('bar-row')) return `- ${reportClean(el.querySelector('.bar-lbl')?.innerText)}: ${reportClean(el.querySelector('.bar-val')?.innerText)}\n`;
   if (el.classList.contains('funnel-step')) return `- ${reportClean(el.querySelector('.funnel-step-label')?.innerText)}: ${reportClean(el.querySelector('.funnel-step-val')?.innerText)} (${reportClean(el.querySelector('.funnel-step-pct')?.innerText)})\n`;
   if (el.classList.contains('tcard-hdr')) return `\n### ${reportText(el)}\n`;
-  if (!el.children.length) { const t = reportClean(el.innerText); return t ? t + '\n' : ''; }
+  // Testo con grassetti o span in mezzo: una riga sola, altrimenti ogni pezzo
+  // verrebbe scritto da solo e le parole di collegamento andrebbero perse.
+  if ([...el.children].every(c => /^(B|STRONG|I|EM|SPAN|A|SMALL|CODE)$/.test(c.tagName))) {
+    const t = reportText(el);
+    return t ? t + '\n' : '';
+  }
   return [...el.children].map(reportMd).join('');
 }
 window.downloadReport = function() {
