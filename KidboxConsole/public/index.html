@@ -170,15 +170,16 @@ function fmtBytes(b) {
 const EUR_RATE = 0.92;
 
 // ── Delta di allineamento ──────────────────────────────────────────────────
-// AI:      Anthropic $0.55 - Firestore $0.0232 = $0.5268 non tracciati
+// AI: niente più delta fisso. I 0,5268 $ erano lo scarto di un solo mese ma
+// venivano sommati a ogni mese in corso: a novembre 3 chiamate valevano
+// «€0,98». Il costo vero è la fattura Anthropic (anthropic-daily-report.js);
+// qui resta la stima interna, che a ottobre era il 26% sotto la fattura.
 // Storage: Firebase 871 MB - Firestore 194.2 MB = 676.8 MB non tracciati
-// Aggiorna questi due valori ogni volta che vedi una nuova discrepanza.
 //
 // Link utili:
 //   Anthropic costi  → https://platform.claude.com/cost
 //   Firebase Storage → https://console.firebase.google.com/u/1/project/kidbox-42cd7/overview
 //   Google Billing   → https://console.cloud.google.com/billing/015E5B-092B59-BED0B8?authuser=1
-const AI_DELTA_USD    = 0.5268;
 const STORAGE_DELTA_B = 0;
 
 function fmtEur(n)  { return n==null ? '—' : '€'+Number(n*EUR_RATE).toFixed(2).replace('.',','); }
@@ -773,12 +774,22 @@ function renderFamiliesTable(rows) {
   const filtered = applyTimeFilter(rows, 'updatedAt');
 
   // ── aggiorna stat card sempre coerenti con la vista filtrata ──
-  let pFree=0, pPro=0, pMax=0;
-  filtered.forEach(r => { if(r.trial) pFree++; else if(r.plan==='pro') pPro++; else if(r.plan==='max') pMax++; else pFree++; });
+  // La prova Pro conta come Free: nessuno paga. Pro e Max separano chi paga
+  // dagli override della console, che altrimenti sembrano abbonati.
+  let pFree=0, pPro=0, pMax=0, mPro=0, mMax=0;
+  filtered.forEach(r => {
+    if(r.trial) pFree++;
+    else if(r.plan==='pro') { pPro++; if(r.manual) mPro++; }
+    else if(r.plan==='max') { pMax++; if(r.manual) mMax++; }
+    else pFree++;
+  });
   setVal('stat-families', fmtNum(filtered.length));
   setVal('stat-plan-pro', fmtNum(pPro));
   setVal('stat-plan-max', fmtNum(pMax));
+  setVal('stat-plan-pro-sub', `${fmtNum(pPro-mPro)} paganti · ${fmtNum(mPro)} manuali da console`);
+  setVal('stat-plan-max-sub', `${fmtNum(pMax-mMax)} paganti · ${fmtNum(mMax)} manuali da console`);
   _planData = { free: pFree, pro: pPro, max: pMax };
+  updateLegend();
   drawPie('pie-plans', [
     { val: pFree, color: 'var(--color-dim-line)' },
     { val: pPro,  color: 'var(--color-blue)' },
@@ -1377,6 +1388,8 @@ async function loadFamilies() {
       // Prova Pro (functions/proTrial.js): `plan` dice pro ma nessuno paga.
       const trial = plan === 'pro' && d.planSource === 'trial';
       const planLabel = trial ? 'pro · prova' : plan;
+      // Piano impostato a mano dalla console: nessuno paga.
+      const manual = (ov === 'pro' || ov === 'max');
       let storageBytes=0, aiMonth=0, ownerEmail='—', iosCount=0, androidCount=0, totalMemberCount=0, activeCount14d=0, hasInternal=false;
       const joins = [];
       try { const sd=await getDoc(doc(db,'families',fid,'stats','storage')); if(sd.exists()) storageBytes=sd.data().usedBytes||0; } catch {}
@@ -1416,7 +1429,7 @@ async function loadFamilies() {
         }
       } catch {}
       const fname = d.name || '—';
-      return { fid, fname, plan, trial, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: fdoc.data().updatedAt?.toDate(), totalMembers: totalMemberCount, activeMembers14d: activeCount14d, createdAtMs: d.createdAt?.toDate?.().getTime() || 0, joins, internal: hasInternal };
+      return { fid, fname, plan, trial, manual, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: fdoc.data().updatedAt?.toDate(), totalMembers: totalMemberCount, activeMembers14d: activeCount14d, createdAtMs: d.createdAt?.toDate?.().getTime() || 0, joins, internal: hasInternal };
     }));
     rows.push(...res);
   }
@@ -1470,7 +1483,7 @@ async function loadAICosts() {
       setVal('stat-ai-calls',  fmtNum(d.calls||0));
       setVal('stat-ai-input',  fmtNum(d.inputTokens||0));
       setVal('stat-ai-output', fmtNum(d.outputTokens||0));
-      const aiCost = (d.costUsd||0) + AI_DELTA_USD;
+      const aiCost = d.costUsd||0;
       setVal('stat-ai-cost', fmtUsd(aiCost));
       _costData.ai = aiCost;
     } else {
@@ -2094,7 +2107,6 @@ async function updateStatsForFilter() {
   // utenti e famiglie sono già aggiornati da renderUsersTable/renderFamiliesTable
   // ── AI: somma i mesi del periodo ──
   const months = monthsInRange(from, to);
-  const cur = monthKey();
   let calls=0, inputTok=0, outputTok=0, costUsd=0;
   for (const mk of months) {
     try {
@@ -2108,8 +2120,7 @@ async function updateStatsForFilter() {
       }
     } catch {}
   }
-  const delta = months.includes(cur) ? AI_DELTA_USD : 0;
-  const aiCost = costUsd + delta;
+  const aiCost = costUsd;
   setVal('stat-ai-calls',  fmtNum(calls));
   setVal('stat-ai-input',  fmtNum(inputTok));
   setVal('stat-ai-output', fmtNum(outputTok));
@@ -2874,12 +2885,12 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         <div class="card">
           <div class="card-lbl">Piano Pro</div>
           <div class="card-val c-blue" id="stat-plan-pro">—</div>
-          <div class="card-sub">famiglie abbonate</div>
+          <div class="card-sub" id="stat-plan-pro-sub">famiglie col piano</div>
         </div>
         <div class="card">
           <div class="card-lbl">Piano Max</div>
           <div class="card-val c-purple" id="stat-plan-max">—</div>
-          <div class="card-sub">famiglie abbonate</div>
+          <div class="card-sub" id="stat-plan-max-sub">famiglie col piano</div>
         </div>
       </div>
 
@@ -2918,7 +2929,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         <div class="card">
           <div class="card-lbl">Costo AI stimato</div>
           <div class="card-val c-red" id="stat-ai-cost">—</div>
-          <div class="card-sub">EUR questo mese</div>
+          <div class="card-sub">stima interna · la fattura Anthropic è più alta</div>
         </div>
       </div>
 
