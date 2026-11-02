@@ -76,35 +76,15 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-refresh').addEventListener('click', () => loadAll());
   document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
 
-  // sidebar nav active state
-  document.querySelectorAll('.nav-item[data-section]').forEach(link => {
-    link.addEventListener('click', () => {
-      document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
-    });
-  });
-
-  // scroll-spy: la voce attiva segue la sezione visibile
-  const navLinks = [...document.querySelectorAll('.nav-item[data-section]')];
-  const anchors = navLinks.map(l => document.getElementById(l.dataset.section)).filter(Boolean);
-  window.spyLock = 0;
-  navLinks.forEach(l => l.addEventListener('click', () => { spyLock = Date.now() + 900; }));
-  const updateSpy = () => {
-    if (Date.now() < spyLock) return;
-    const top = el => el.getBoundingClientRect().top + window.scrollY;
-    const y = window.scrollY + 80;
-    let current = anchors[0];
-    for (const a of anchors) { if (top(a) <= y) current = a; }
-    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 2) current = anchors[anchors.length - 1];
-    navLinks.forEach(l => l.classList.toggle('active', l.dataset.section === current?.id));
-    const bn = [...document.querySelectorAll('.bn-item[data-section]')];
-    let bnCur = bn[0];
-    for (const b of bn) { const a = document.getElementById(b.dataset.section); if (a && top(a) <= y) bnCur = b; }
-    bn.forEach(b => b.classList.toggle('active', b === bnCur));
-  };
-  window.addEventListener('scroll', updateSpy, { passive: true });
-  window.addEventListener('resize', updateSpy);
-  updateSpy();
+  // Una pagina per voce di menu: l'hash dell'indirizzo dice quale (#families…),
+  // così il link resta valido dopo il ricaricamento.
+  document.querySelectorAll('.nav-group-hdr').forEach(h => h.addEventListener('click', () => {
+    const g = h.closest('.nav-group');
+    g.classList.toggle('open');
+    h.setAttribute('aria-expanded', g.classList.contains('open'));
+  }));
+  window.addEventListener('hashchange', () => showPage(location.hash.slice(1), false));
+  showPage(location.hash.slice(1) || 'users', false);
 
   // sidebar toggle mobile
   document.getElementById('sidebar-toggle')?.addEventListener('click', toggleSidebar);
@@ -820,7 +800,7 @@ function renderFamiliesTable(rows) {
     return `
     <tr>
       <td data-label="Family ID" class="mono dim" style="cursor:pointer;font-size:11px" title="${r.fid}"
-        onclick="selectOverrideUser('','${email.replace(/'/g,"\\'")}','${String(r.fid).replace(/'/g,"\\'")}');document.getElementById('section-plans').scrollIntoView({behavior:'smooth'})">
+        onclick="selectOverrideUser('','${email.replace(/'/g,"\\'")}','${String(r.fid).replace(/'/g,"\\'")}');showPage('plans')">
         ${r.fid.slice(0,18)}…</td>
       <td data-label="Famiglia" style="font-size:13px;font-weight:500" title="${r.fname||''}">${fnameShort}</td>
       <td data-label="Email" class="dim" style="font-size:12px" title="${email}">${emailShort}</td>
@@ -947,12 +927,18 @@ window.closeSidebar = function() {
   document.getElementById('sidebar-overlay').classList.remove('show');
 };
 
-window.bnGo = function(el, sectionId) {
-  document.querySelectorAll('.bn-item').forEach(i => i.classList.remove('active'));
-  el.classList.add('active');
-  spyLock = Date.now() + 900;
-  document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+window.showPage = function(pid, push = true) {
+  const pages = [...document.querySelectorAll('.page')];
+  if (!pages.some(p => p.dataset.page === pid)) pid = 'users';
+  pages.forEach(p => p.classList.toggle('active', p.dataset.page === pid));
+  document.querySelectorAll('.nav-item[data-page]').forEach(l => l.classList.toggle('active', l.dataset.page === pid));
+  document.querySelectorAll('.bn-item[data-page]').forEach(l => l.classList.toggle('active', l.dataset.page === pid));
+  document.querySelector(`.nav-item[data-page="${pid}"]`)?.closest('.nav-group')?.classList.add('open');
+  if (push && location.hash.slice(1) !== pid) history.pushState(null, '', '#' + pid);
+  window.scrollTo(0, 0);
 };
+
+window.bnGo = function(el, pid) { showPage(pid); };
 
 window.famGoPage = function(p) {
   const filtered = applyFamilySearch(applyTimeFilter(_familyRows, 'updatedAt'));
@@ -1197,7 +1183,8 @@ window.downloadReport = function() {
   const filter = badge && badge.style.display !== 'none' ? reportClean(badge.innerText) : 'Tutto';
   let out = `# KidBox · Report console\n\nGenerato ${now.toLocaleString('it-IT', { timeZone: 'Europe/Rome' })} · ultimo aggiornamento dati: ${reportClean(document.getElementById('last-upd')?.innerText)} · mese ${reportClean(document.getElementById('month-badge')?.innerText)} · periodo: ${filter}\n\nSolo aggregati. Account di test esclusi dove indicato. «—» = dato non caricato o non misurato.\n`;
   let on = false;
-  for (const node of main.children) {
+  const nodes = [...main.children].flatMap(n => n.classList.contains('page') ? [...n.children] : [n]);
+  for (const node of nodes) {
     if (node.classList.contains('sec-title')) {
       const title = reportText(node);
       on = REPORT_SECTIONS.test(title);
@@ -2400,6 +2387,23 @@ nav.sidebar-nav {
 [id^="section-"]{scroll-margin-top:52px}
 .sec-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.9px;color:var(--color-dim);margin:32px 0 14px}
 .sec-title:first-child{margin-top:0}
+/* Pagine: una sola visibile per volta. */
+.page{display:none}
+.page.active{display:block;animation:pageIn .18s ease}
+@keyframes pageIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.page > .sec-title:first-of-type{margin-top:0 !important}
+/* Menu annidato. */
+.nav-group{margin-bottom:2px}
+.nav-group-hdr{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;color:var(--sidebar-fg);font-size:13px;font-weight:600;cursor:pointer}
+.nav-group-hdr:hover{background:rgba(255,255,255,.07);color:#f0ede8}
+.nav-group-hdr:focus-visible{outline:2px solid #f97316;outline-offset:-2px}
+.nav-group-hdr .nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.nav-chev{margin-left:auto;width:7px;height:7px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(45deg) translateY(-2px);opacity:.6;transition:transform .15s}
+.nav-group.open .nav-chev{transform:rotate(-135deg) translate(-1px,-1px)}
+.nav-sub{display:none;padding:2px 0 6px 14px}
+.nav-group.open .nav-sub{display:block}
+.nav-group:has(.nav-item.active) > .nav-group-hdr{color:#f97316}
+
 
 /* ── GRIDS ───────────────────────────── */
 .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
@@ -2759,60 +2763,57 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
     </div>
 
     <nav class="sidebar-nav">
-      <div class="nav-section-lbl">Overview</div>
-      <a class="nav-item active" data-section="section-users" href="#section-users">
-        <span class="nav-icon">👥</span> Utenti & Famiglie
-      </a>
-      <a class="nav-item" data-section="section-ai" href="#section-ai">
-        <span class="nav-icon">🤖</span> AI & Costi
-      </a>
-      <a class="nav-item" data-section="section-storage" href="#section-storage">
-        <span class="nav-icon">💾</span> Storage
-      </a>
-
-      <div class="nav-section-lbl">Gestione</div>
-      <a class="nav-item" data-section="section-plans" href="#section-plans">
-        <span class="nav-icon">🎁</span> Piani Override
-      </a>
-      <a class="nav-item" data-section="section-pricing" href="#section-pricing">
-        <span class="nav-icon">🏷️</span> Listino piani
-      </a>
-      <a class="nav-item" data-section="section-broadcast" href="#section-broadcast">
-        <span class="nav-icon">🔔</span> Notifiche push
-      </a>
-      <a class="nav-item" data-section="section-active" href="#section-active">
-        <span class="nav-icon">📈</span> Utenti attivi
-      </a>
-      <a class="nav-item" data-section="section-families" href="#section-families">
-        <span class="nav-icon">📋</span> Tutte le famiglie
-      </a>
-      <a class="nav-item" data-section="section-funnel-anchor" href="#section-funnel-anchor">
-        <span class="nav-icon">📉</span> Funnel attivazione
-      </a>
-      <a class="nav-item" data-section="section-users-table" href="#section-users-table">
-        <span class="nav-icon">👤</span> Tutti gli utenti
-      </a>
-
-      <div class="nav-section-lbl">Supporto</div>
-      <a class="nav-item" data-section="section-tickets" href="#section-tickets">
-        <span class="nav-icon">🐛</span> Bug Report
-        <span class="nav-badge" id="nav-ticket-badge"></span>
-      </a>
-      <a class="nav-item" data-section="section-support" href="#section-support">
-        <span class="nav-icon">💬</span> Ticket Supporto
-        <span class="nav-badge" id="nav-support-badge"></span>
-      </a>
-
-      <div class="nav-section-lbl">Link rapidi</div>
-      <a class="nav-item" href="https://platform.claude.com/cost" target="_blank">
-        <span class="nav-icon">🤖</span> Anthropic Cost
-      </a>
-      <a class="nav-item" href="https://console.firebase.google.com/u/1/project/kidbox-42cd7/overview" target="_blank">
-        <span class="nav-icon">🔥</span> Firebase Console
-      </a>
-      <a class="nav-item" href="https://console.cloud.google.com/billing/015E5B-092B59-BED0B8?authuser=1" target="_blank">
-        <span class="nav-icon">💰</span> Google Billing
-      </a>
+      <div class="nav-group open" data-group="overview">
+        <button class="nav-group-hdr" type="button" aria-expanded="true"><span class="nav-icon">📊</span> Panoramica<span class="nav-chev" aria-hidden="true"></span></button>
+        <div class="nav-sub">
+          <a class="nav-item" data-page="users" href="#users"><span class="nav-icon">👥</span> Utenti & Famiglie</a>
+          <a class="nav-item" data-page="ai" href="#ai"><span class="nav-icon">🤖</span> AI & Costi</a>
+          <a class="nav-item" data-page="storage" href="#storage"><span class="nav-icon">💾</span> Storage & Costi</a>
+        </div>
+      </div>
+      <div class="nav-group open" data-group="growth">
+        <button class="nav-group-hdr" type="button" aria-expanded="true"><span class="nav-icon">📈</span> Crescita<span class="nav-chev" aria-hidden="true"></span></button>
+        <div class="nav-sub">
+          <a class="nav-item" data-page="active" href="#active"><span class="nav-icon">📈</span> Utenti attivi</a>
+          <a class="nav-item" data-page="funnel" href="#funnel"><span class="nav-icon">📉</span> Funnel attivazione</a>
+          <a class="nav-item" data-page="cohorts" href="#cohorts"><span class="nav-icon">🌱</span> Coorti</a>
+          <a class="nav-item" data-page="landing" href="#landing"><span class="nav-icon">🌐</span> Landing</a>
+        </div>
+      </div>
+      <div class="nav-group open" data-group="lists">
+        <button class="nav-group-hdr" type="button" aria-expanded="true"><span class="nav-icon">📋</span> Elenchi<span class="nav-chev" aria-hidden="true"></span></button>
+        <div class="nav-sub">
+          <a class="nav-item" data-page="families" href="#families"><span class="nav-icon">📋</span> Tutte le famiglie</a>
+          <a class="nav-item" data-page="users-table" href="#users-table"><span class="nav-icon">👤</span> Tutti gli utenti</a>
+        </div>
+      </div>
+      <div class="nav-group open" data-group="manage">
+        <button class="nav-group-hdr" type="button" aria-expanded="true"><span class="nav-icon">⚙️</span> Gestione<span class="nav-chev" aria-hidden="true"></span></button>
+        <div class="nav-sub">
+          <a class="nav-item" data-page="plans" href="#plans"><span class="nav-icon">🎁</span> Piani override</a>
+          <a class="nav-item" data-page="pricing" href="#pricing"><span class="nav-icon">🏷️</span> Listino piani</a>
+          <a class="nav-item" data-page="broadcast" href="#broadcast"><span class="nav-icon">🔔</span> Notifiche push</a>
+        </div>
+      </div>
+      <div class="nav-group open" data-group="support">
+        <button class="nav-group-hdr" type="button" aria-expanded="true"><span class="nav-icon">🛟</span> Supporto<span class="nav-chev" aria-hidden="true"></span></button>
+        <div class="nav-sub">
+          <a class="nav-item" data-page="tickets" href="#tickets"><span class="nav-icon">🐛</span> Bug report
+            <span class="nav-badge" id="nav-ticket-badge"></span>
+          </a>
+          <a class="nav-item" data-page="support" href="#support"><span class="nav-icon">💬</span> Ticket supporto
+            <span class="nav-badge" id="nav-support-badge"></span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-group" data-group="links">
+        <button class="nav-group-hdr" type="button" aria-expanded="false"><span class="nav-icon">🔗</span> Link rapidi<span class="nav-chev" aria-hidden="true"></span></button>
+        <div class="nav-sub">
+          <a class="nav-item" href="https://platform.claude.com/cost" target="_blank"><span class="nav-icon">🤖</span> Anthropic Cost</a>
+          <a class="nav-item" href="https://console.firebase.google.com/u/1/project/kidbox-42cd7/overview" target="_blank"><span class="nav-icon">🔥</span> Firebase Console</a>
+          <a class="nav-item" href="https://console.cloud.google.com/billing/015E5B-092B59-BED0B8?authuser=1" target="_blank"><span class="nav-icon">💰</span> Google Billing</a>
+        </div>
+      </div>
     </nav>
 
     <div class="sidebar-footer">
@@ -2879,6 +2880,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
     <div class="main">
       <div class="err-box" id="err-box"></div>
 
+      <section class="page" data-page="users">
       <!-- UTENTI & FAMIGLIE -->
       <div id="section-users"></div>
       <div class="sec-title">👥 Utenti & Famiglie</div>
@@ -2918,6 +2920,8 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         </div>
       </div>
 
+      </section>
+      <section class="page" data-page="ai">
       <!-- AI -->
       <div id="section-ai"></div>
       <div class="sec-title">🤖 AI — <span id="ai-month-lbl">—</span></div>
@@ -2944,6 +2948,8 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         </div>
       </div>
 
+      </section>
+      <section class="page" data-page="storage">
       <!-- STORAGE & COSTO TOTALE -->
       <div id="section-storage"></div>
       <div class="sec-title">💾 Storage & Costi</div>
@@ -3037,6 +3043,8 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         </div>
       </div>
 
+      </section>
+      <section class="page" data-page="plans">
       <!-- GESTIONE PIANI OVERRIDE -->
       <div id="section-plans"></div>
       <div class="sec-title">🎁 Gestione Piani — Override Amministrativo</div>
@@ -3090,6 +3098,8 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
           </div>
       </div>
 
+      </section>
+      <section class="page" data-page="pricing">
       <!-- LISTINO PIANI -->
       <div id="section-pricing"></div>
       <div class="sec-title" style="margin-top:32px">🏷️ Listino piani</div>
@@ -3117,6 +3127,8 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         </div>
       </div>
 
+      </section>
+      <section class="page" data-page="broadcast">
       <!-- BROADCAST NOTIFICHE -->
       <div id="section-broadcast"></div>
       <div class="sec-title" style="margin-top:32px">🔔 Notifiche push — invio manuale</div>
@@ -3197,6 +3209,8 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         </div>
       </div>
 
+      </section>
+      <section class="page" data-page="active">
       <!-- UTENTI ATTIVI -->
       <div id="section-active"></div>
       <div class="sec-title" style="margin-top:32px">
@@ -3281,6 +3295,8 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         <div id="retention-table" style="padding:12px 16px"><div class="dim small">Premi «Calcola». Attivo = almeno un'azione di valore nella settimana, come il DAU.</div></div>
       </div>
 
+      </section>
+      <section class="page" data-page="families">
       <!-- TABELLA FAMIGLIE -->
       <div id="section-families"></div>
       <div class="sec-title" style="margin-top:32px">📋 Tutte le famiglie</div>
@@ -3317,18 +3333,26 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       </div>
       <div style="height:32px"></div>
 
+      </section>
+      <section class="page" data-page="funnel">
       <!-- FUNNEL ATTIVAZIONE -->
       <div id="section-funnel-anchor"></div>
       <div class="sec-title" style="margin-top:32px">📉 Funnel attivazione</div>
       <div id="section-funnel"></div>
 
+      </section>
+      <section class="page" data-page="cohorts">
       <div class="sec-title" style="margin-top:32px">🌱 Coorti: famiglie che trovano un secondo membro</div>
       <div id="section-cohorts"></div>
 
+      </section>
+      <section class="page" data-page="landing">
       <div class="sec-title" style="margin-top:32px">🌐 Landing: chi arriva e cosa fa <span class="sub" id="landing-sub"></span></div>
       <div id="section-landing"></div>
       <div style="height:32px"></div>
 
+      </section>
+      <section class="page" data-page="users-table">
       <!-- TABELLA UTENTI -->
       <div id="section-users-table"></div>
       <div class="sec-title" style="margin-top:32px">👤 Tutti gli utenti</div>
@@ -3363,6 +3387,8 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 
       <div style="height:32px"></div>
 
+      </section>
+      <section class="page" data-page="tickets">
       <!-- TICKET & BUG REPORT -->
       <div id="section-tickets"></div>
       <div class="sec-title" style="margin-top:40px">🐛 Ticket & Bug Report</div>
@@ -3405,6 +3431,8 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         </table></div>
       </div>
 
+      </section>
+      <section class="page" data-page="support">
       <!-- SUPPORTO CHAT -->
       <div id="section-support"></div>
       <div class="sec-title" style="margin-top:40px">💬 Ticket Supporto Chat</div>
@@ -3445,6 +3473,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
           </tbody>
         </table></div>
       </div>
+      </section>
       <div style="height:52px"></div>
     </div>
 
@@ -3457,24 +3486,24 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 
   <!-- BOTTOM NAV (mobile only) -->
   <nav id="bottom-nav">
-    <a class="bn-item active" data-section="section-users" onclick="bnGo(this,'section-users')">
+    <a class="bn-item active" data-page="users" onclick="bnGo(this,'users')">
       <span class="bn-icon">📊</span>
       <span class="bn-lbl">Overview</span>
     </a>
-    <a class="bn-item" data-section="section-families" onclick="bnGo(this,'section-families')">
+    <a class="bn-item" data-page="families" onclick="bnGo(this,'families')">
       <span class="bn-icon">📋</span>
       <span class="bn-lbl">Famiglie</span>
     </a>
-    <a class="bn-item" data-section="section-funnel-anchor" onclick="bnGo(this,'section-funnel-anchor')">
+    <a class="bn-item" data-page="funnel" onclick="bnGo(this,'funnel')">
       <span class="bn-icon">📉</span>
       <span class="bn-lbl">Funnel</span>
     </a>
-    <a class="bn-item" data-section="section-tickets" onclick="bnGo(this,'section-tickets')">
+    <a class="bn-item" data-page="tickets" onclick="bnGo(this,'tickets')">
       <span class="bn-icon">🐛</span>
       <span class="bn-lbl">Bug</span>
       <span class="bn-bdg" id="bn-bdg-tickets"></span>
     </a>
-    <a class="bn-item" data-section="section-support" onclick="bnGo(this,'section-support')">
+    <a class="bn-item" data-page="support" onclick="bnGo(this,'support')">
       <span class="bn-icon">💬</span>
       <span class="bn-lbl">Chat</span>
       <span class="bn-bdg" id="bn-bdg-support"></span>
