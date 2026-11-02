@@ -311,6 +311,9 @@
   /* langmenu:css:end */
   /* Telefoni: con il cuore la barra non ci sta più a 375 px. */
   @media (max-width:480px){ .nav-r { gap:6px; } .theme-btn, .like-btn { width:30px; height:30px; } .nav-cta { padding:7px 11px; font-size:0.78rem; white-space:nowrap; } .lang-menu summary { padding:6px 8px; } }
+  /* Telefoni stretti: il pulsante «Scarica» più lungo (ES, EN) non deve uscire dallo schermo. */
+  @media (max-width:420px){ nav{ padding:12px 12px; } .logo { font-size:1.05rem; gap:6px; } .logo img { width:28px; height:28px; } .nav-r { gap:5px; } .nav-cta { padding:7px 10px; font-size:0.74rem; } }
+  @media (max-width:340px){ .like { display:none; } }
   /* footer:css:start */
   footer { border-top:1px solid var(--border); margin-top:70px; padding:26px 0 30px; font-size:0.78rem; color:var(--muted); line-height:1.45; }
   .sf-notes { padding-bottom:16px; border-bottom:1px solid var(--border); }
