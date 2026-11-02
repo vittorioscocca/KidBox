@@ -190,6 +190,22 @@ ES = {
             ("¿Qué añade el plan Pro?", "Planes de alimentación y de ejercicio generados por IA a medida del perfil, reservados a Pro y Max, y mensajes de IA cada día para el resumen del historial de salud, que en el Free solo se puede probar con los 5 mensajes únicos."),
         ],
     },
+    "notizie": {
+        "title": "Noticias para la familia",
+        "short": "Cada día hasta 10 noticias útiles para la familia — ayudas, colegio, salud, gastos de casa, ocio — desde el país hasta tu municipio, cada una con su fuente.",
+        "lead": "La ayuda con el plazo a punto de cerrar, el comedor escolar que vuelve a empezar, la fiesta en la plaza el sábado: cosas que una familia necesita saber y que suele descubrir tarde. KidBox las busca en la web cada día y te las resume, con el enlace a la fuente.",
+        "steps": [
+            ("Actívalas y elige el municipio", "Las activa un miembro, en Ajustes → Noticias, y desde entonces las lee toda la familia. El municipio sirve para las noticias locales y los eventos cercanos."),
+            ("La IA busca y selecciona", "Cada día busca en la web ayudas y economía, colegio, salud, crianza, sociedad y ocio, del país a la región y al municipio. Solo conserva noticias recientes o con un plazo todavía por delante, y cada enlace sale de la búsqueda real, nunca inventado."),
+            ("Lee, guarda, añade", "Los eventos a unos sesenta kilómetros pasan al calendario de KidBox con un toque; una noticia se guarda con el marcador. Si lo pides, KidBox también busca ofertas a medida para facturas y compra."),
+        ],
+        "faq": [
+            ("¿Hace falta el plan Pro?", "Sí, las Noticias están en los planes Pro y Max. Las encuentras en la barra inferior en iPhone y Android y en la barra lateral en Mac; en la web todavía no."),
+            ("¿Usan mensajes de IA?", "Sí: cada edición usa algunos mensajes de IA del plan, como máximo 6, y una familia la paga una sola vez aunque la lean todos. Las ofertas a medida solo se buscan cuando lo pides."),
+            ("¿Todos ven las mismas noticias?", "La edición es de la familia, con el municipio y el idioma que elige quien las activa. Los temas, en cambio, los elige cada uno, y las noticias guardadas se quedan en tu cuenta."),
+            ("¿Qué sabe el servidor de mí?", "Solo país, región, provincia y municipio, nunca tu ubicación exacta. Para las ofertas, el teléfono prepara un resumen sin nombres, direcciones ni códigos, y solo después de tu consentimiento a la IA."),
+        ],
+    },
     "farmacie-di-turno": {
         "title": "Farmacias de guardia cerca de ti",
         "short": "La farmacia de guardia de tu municipio italiano, leída de la fuente oficial (Federfarma, el colegio de farmacéuticos, la autoridad sanitaria o el ayuntamiento), con llamada e indicaciones en un toque.",
@@ -495,6 +511,22 @@ FR = {
             ("Les données de santé sont-elles chiffrées ?", "Oui : comptes rendus et pièces jointes sont chiffrés avec la clé de la famille, et les fiches cliniques ne sont lisibles que par les membres."),
             ("Qu'est-ce qui arrive d'Apple Health / Health Connect ?", "Pas, fréquence cardiaque, tension artérielle, SpO₂, calories actives, entraînements et distance, seulement si vous l'autorisez."),
             ("Qu'apporte l'offre Pro ?", "Des plans alimentaires et d'entraînement générés par l'IA selon le profil, réservés à Pro et Max, et des messages IA chaque jour pour la synthèse de l'historique de santé, que Free ne peut qu'essayer avec ses 5 messages uniques."),
+        ],
+    },
+    "notizie": {
+        "title": "Actualités pour la famille",
+        "short": "Chaque jour jusqu'à 10 actualités utiles à la famille — aides, école, santé, dépenses de la maison, sorties — du pays jusqu'à votre commune, chacune avec sa source.",
+        "lead": "L'aide dont la demande se clôt bientôt, la cantine qui reprend, la fête sur la place samedi : des choses qu'une famille doit savoir et qu'elle découvre souvent trop tard. KidBox les cherche sur le web chaque jour et vous les résume, avec le lien vers la source.",
+        "steps": [
+            ("Activez-les et choisissez la commune", "Un membre les active dans Réglages → Actualités, et dès lors toute la famille les lit. La commune sert aux actualités locales et aux événements proches."),
+            ("L'IA cherche et trie", "Chaque jour, elle cherche sur le web les aides et l'économie, l'école, la santé, l'éducation, la société et les sorties, du pays à la région puis à la commune. Elle ne garde que les actualités récentes ou dont l'échéance est encore à venir, et chaque lien vient de la vraie recherche, jamais inventé."),
+            ("Lisez, enregistrez, ajoutez", "Les événements à une soixantaine de kilomètres passent dans le calendrier KidBox d'un toucher ; une actualité s'enregistre avec le signet. Sur demande, KidBox cherche aussi des offres sur mesure pour les factures et les courses."),
+        ],
+        "faq": [
+            ("Faut-il l'offre Pro ?", "Oui, les Actualités sont dans les offres Pro et Max. Vous les trouvez dans la barre du bas sur iPhone et Android et dans la barre latérale sur Mac ; pas encore sur le web."),
+            ("Utilisent-elles des messages IA ?", "Oui : chaque édition utilise quelques messages IA de l'offre, 6 au maximum, et une famille ne la paie qu'une fois même si tout le monde la lit. Les offres sur mesure ne sont cherchées que quand vous le demandez."),
+            ("Tout le monde voit-il les mêmes actualités ?", "L'édition appartient à la famille, avec la commune et la langue choisies par celui qui les active. Les thèmes, en revanche, chacun les choisit pour soi, et les actualités enregistrées restent liées à votre compte."),
+            ("Que sait le serveur de moi ?", "Seulement le pays, la région, la province et la commune, jamais votre position exacte. Pour les offres, le téléphone prépare un résumé sans noms, adresses ni codes, et seulement après votre consentement à l'IA."),
         ],
     },
     "farmacie-di-turno": {

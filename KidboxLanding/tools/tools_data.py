@@ -444,6 +444,43 @@ TOOLS = [
         },
     },
     {
+        "slug": "notizie",
+        "icon": "📰", "tint": "amber", "shots": None, "plan": "pro", "web": False,
+        "related": ["calendario", "assistente-ai", "farmacie-di-turno"],
+        "it": {
+            "title": "Notizie per la famiglia",
+            "short": "Ogni giorno fino a 10 notizie utili alla famiglia — bonus, scuola, salute, conti di casa, tempo libero — dal paese fino al tuo comune, ognuna con la sua fonte.",
+            "lead": "Il bonus con la domanda in scadenza, la mensa che riparte, la festa in piazza sabato: cose che servono a una famiglia e che di solito si scoprono tardi. KidBox le cerca sul web ogni giorno e te le riassume, con il link alla fonte.",
+            "steps": [
+                ("Accendile e scegli il comune", "Le accende un membro, da Impostazioni → Notizie, e da lì le legge tutta la famiglia. Il comune serve per le notizie locali e per gli eventi vicini."),
+                ("L'AI cerca e seleziona", "Ogni giorno cerca sul web bonus ed economia, scuola, salute, crescita, società e tempo libero, dal paese alla regione al comune. Tiene solo le notizie recenti o con una scadenza ancora davanti, e ogni link viene dalla ricerca vera, non da un'invenzione."),
+                ("Leggi, salva, aggiungi", "Gli eventi entro una sessantina di chilometri finiscono nel calendario di KidBox con un tocco; una notizia si salva col segnalibro. Su richiesta, KidBox cerca anche offerte su misura per bollette e spesa."),
+            ],
+            "faq": [
+                ("Serve il piano Pro?", "Sì, le Notizie sono nei piani Pro e Max. Le trovi nella barra in basso su iPhone e Android e nella barra laterale sul Mac; sul web non ci sono ancora."),
+                ("Usano i messaggi AI?", "Sì: ogni edizione usa alcuni messaggi AI del piano, al massimo 6, e una famiglia la paga una volta sola anche se la leggono tutti. Le offerte su misura si cercano solo quando lo chiedi."),
+                ("Ognuno vede le stesse notizie?", "L'edizione è della famiglia, con comune e lingua scelti da chi le accende. Gli argomenti invece li sceglie ciascuno per sé, e le notizie salvate restano del tuo account."),
+                ("Cosa sa il server di me?", "Solo paese, regione, provincia e comune, mai la posizione precisa. Per le offerte il telefono prepara un riassunto senza nomi, indirizzi o codici, e solo dopo il tuo consenso all'AI."),
+            ],
+        },
+        "en": {
+            "title": "News for your family",
+            "short": "Up to 10 useful stories for your family every day — benefits, school, health, household bills, things to do — from the national level down to your town, each with its source.",
+            "lead": "The benefit whose application closes soon, the school canteen starting again, the street party on Saturday: things a family needs to know and usually finds out too late. KidBox searches the web for them every day and sums them up, with a link to the source.",
+            "steps": [
+                ("Turn them on and pick your town", "One member turns them on in Settings → News, and from then on the whole family reads them. The town is used for local news and nearby events."),
+                ("The AI searches and filters", "Every day it searches the web for benefits and money, school, health, growing up, society and things to do, from the country to the region to the town. It keeps only recent stories or ones with a deadline still ahead, and every link comes from the actual search, never made up."),
+                ("Read, save, add", "Events within about sixty kilometres go into the KidBox calendar in one tap; a story can be saved with the bookmark. On request, KidBox also looks for tailored offers on bills and groceries."),
+            ],
+            "faq": [
+                ("Do I need the Pro plan?", "Yes, News is in the Pro and Max plans. You'll find it in the bottom bar on iPhone and Android and in the sidebar on Mac; it's not on the web yet."),
+                ("Does it use AI messages?", "Yes: each edition uses a few of the plan's AI messages, at most 6, and a family pays for it only once even if everyone reads it. Tailored offers are only searched when you ask."),
+                ("Does everyone see the same news?", "The edition belongs to the family, with the town and language chosen by whoever turns it on. Topics, instead, each person picks for themselves, and saved stories stay with your account."),
+                ("What does the server know about me?", "Only country, region, province and town, never your exact location. For offers, the phone prepares a summary without names, addresses or codes, and only after you consent to the AI."),
+            ],
+        },
+    },
+    {
         "slug": "farmacie-di-turno",
         "icon": "💊", "tint": "green", "shots": None, "plan": "pro", "web": False,
         "related": ["salute", "assistente-ai", "posizione"],

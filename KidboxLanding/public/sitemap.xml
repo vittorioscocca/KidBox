@@ -685,6 +685,42 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/salute"/>
   </url>
   <url>
+    <loc>https://kidboxapp.com/strumenti/notizie</loc>
+    <lastmod>2026-11-02</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/notizie"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/notizie"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/notizie"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/notizie"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/notizie"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/en/tools/notizie</loc>
+    <lastmod>2026-11-02</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/notizie"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/notizie"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/notizie"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/notizie"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/notizie"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/notizie</loc>
+    <lastmod>2026-11-02</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/notizie"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/notizie"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/notizie"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/notizie"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/notizie"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/notizie</loc>
+    <lastmod>2026-11-02</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/notizie"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/notizie"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/notizie"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/notizie"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/notizie"/>
+  </url>
+  <url>
     <loc>https://kidboxapp.com/strumenti/farmacie-di-turno</loc>
     <lastmod>2026-11-02</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/farmacie-di-turno"/>
