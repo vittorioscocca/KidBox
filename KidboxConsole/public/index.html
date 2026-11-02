@@ -738,6 +738,7 @@ function sortRows(rows, col, dir) {
     if (col === 'storage')   { va = a.storageBytes; vb = b.storageBytes; }
     else if (col === 'ai')   { va = a.aiMonth;      vb = b.aiMonth; }
     else if (col === 'date') { va = a.updatedAt?.getTime()||0; vb = b.updatedAt?.getTime()||0; }
+    else if (col === 'lastOpen') { va = a.lastOpenAt?.getTime()||0; vb = b.lastOpenAt?.getTime()||0; }
     else { va = 0; vb = 0; }
     return dir === 'desc' ? vb - va : va - vb;
   });
@@ -801,7 +802,7 @@ function renderFamiliesTable(rows) {
     const msg = _famQuery.trim()
       ? 'Nessuna famiglia corrisponde alla ricerca'
       : 'Nessuna famiglia nel periodo selezionato';
-    tbody.innerHTML = `<tr><td colspan="8" class="empty">${msg}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="empty">${msg}</td></tr>`;
     renderPagination('fam', 0, 1, 'famGoPage');
     return;
   }
@@ -827,6 +828,7 @@ function renderFamiliesTable(rows) {
       <td data-label="Dispositivi" style="font-size:13px;white-space:nowrap">${platforms}</td>
       <td data-label="Storage" class="mono">${fmtBytes(r.storageBytes)}</td>
       <td data-label="AI mese" class="mono ${r.aiMonth>0?'hi':''}">${r.aiMonth > 0 ? r.aiMonth : '—'}</td>
+      <td data-label="Ultimo accesso" class="mono" style="font-size:11px;white-space:nowrap" title="${r.lastOpenAt ? r.lastOpenAt.toLocaleString('it-IT') + ' · ' + r.openedMembers7d + ' su ' + r.totalMembers + ' membri negli ultimi 7 giorni' : 'Nessun membro ha aperto l\'app iOS o Android negli ultimi 90 giorni'}">${fmtLastActive(r.lastOpenAt)}${r.totalMembers > 1 && r.lastOpenAt ? ` <span class="dim">${r.openedMembers7d}/${r.totalMembers}</span>` : ''}</td>
       <td data-label="Aggiornato" class="dim">${r.updatedAt?r.updatedAt.toLocaleDateString('it-IT'):'—'}</td>
     </tr>`;
   }).join('');
@@ -1390,6 +1392,9 @@ async function loadFamilies() {
       const planLabel = trial ? 'pro · prova' : plan;
       // Piano impostato a mano dalla console: nessuno paga.
       const manual = (ov === 'pro' || ov === 'max');
+      // Ultimo accesso: la più recente «Ultima apertura» (session_start, solo
+      // iOS e Android) fra i membri, come nella tabella degli utenti.
+      let lastOpenAt=null, openedMembers7d=0;
       let storageBytes=0, aiMonth=0, ownerEmail='—', iosCount=0, androidCount=0, totalMemberCount=0, activeCount14d=0, hasInternal=false;
       const joins = [];
       try { const sd=await getDoc(doc(db,'families',fid,'stats','storage')); if(sd.exists()) storageBytes=sd.data().usedBytes||0; } catch {}
@@ -1399,6 +1404,7 @@ async function loadFamilies() {
         const membSnap = await getDocs(collection(db,'families',fid,'members'));
         let ownerUid = null;
         const ago14 = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+        const ago7  = new Date(Date.now() -  7 * 24 * 60 * 60 * 1000);
         membSnap.forEach(m => {
           const md = m.data();
           totalMemberCount++;
@@ -1416,6 +1422,11 @@ async function loadFamilies() {
           // fallisce: si muove col profilo e col token FCM, non con l'uso.
           const lastActive = userRow?.lastActiveAt || userRow?.updatedAt;
           if (lastActive && lastActive > ago14) activeCount14d++;
+          const lo = userRow?.lastOpenAt;
+          if (lo) {
+            if (!lastOpenAt || lo > lastOpenAt) lastOpenAt = lo;
+            if (lo > ago7) openedMembers7d++;
+          }
         });
         if (!ownerUid && !membSnap.empty) ownerUid = membSnap.docs[0].id;
         if (ownerUid) {
@@ -1429,7 +1440,7 @@ async function loadFamilies() {
         }
       } catch {}
       const fname = d.name || '—';
-      return { fid, fname, plan, trial, manual, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: fdoc.data().updatedAt?.toDate(), totalMembers: totalMemberCount, activeMembers14d: activeCount14d, createdAtMs: d.createdAt?.toDate?.().getTime() || 0, joins, internal: hasInternal };
+      return { fid, fname, plan, trial, manual, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: fdoc.data().updatedAt?.toDate(), totalMembers: totalMemberCount, activeMembers14d: activeCount14d, lastOpenAt, openedMembers7d, createdAtMs: d.createdAt?.toDate?.().getTime() || 0, joins, internal: hasInternal };
     }));
     rows.push(...res);
   }
@@ -3289,10 +3300,11 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
               <th>Dispositivi</th>
               <th data-sort="storage" onclick="sortFamilies('storage')" style="cursor:pointer">Storage<span class="sort-arrow"> ↓</span></th>
               <th data-sort="ai" onclick="sortFamilies('ai')" style="cursor:pointer">AI mese<span class="sort-arrow"> ↕</span></th>
+              <th data-sort="lastOpen" onclick="sortFamilies('lastOpen')" style="cursor:pointer" title="L'apertura dell'app più recente fra i membri (iOS e Android; il web non è contato; storico 90 giorni). Accanto: quanti membri l'hanno aperta negli ultimi 7 giorni su quanti sono.">Ultimo accesso<span class="sort-arrow"> ↕</span></th>
               <th data-sort="date" onclick="sortFamilies('date')" style="cursor:pointer">Aggiornato<span class="sort-arrow"> ↕</span></th>
             </tr>
           </thead>
-          <tbody id="fam-tbody"><tr><td colspan="8" class="empty">Caricamento…</td></tr></tbody>
+          <tbody id="fam-tbody"><tr><td colspan="9" class="empty">Caricamento…</td></tr></tbody>
         </table></div>
         <div class="pagination" id="fam-pagination" style="display:none">
           <span class="pag-info" id="fam-pag-info"></span>
