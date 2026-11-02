@@ -118,6 +118,13 @@
 
   .hero-stage { margin:52px auto 0; position:relative; width:100%; display:flex; justify-content:center; }
   .hero-glow { position:absolute; inset:-30px 0 auto; height:55%; background:radial-gradient(ellipse at center,rgba(232,131,58,.22),transparent 68%); filter:blur(20px); z-index:0; }
+  /* Spot video nella prima schermata: accanto alla Home su schermi larghi, al suo posto sul telefono. */
+  .hero-stage { gap:44px; align-items:center; }
+  .device.spot { max-width:351px; aspect-ratio:351/609; }
+  .spot video.shot { width:100%; height:100%; display:block; object-fit:cover; object-position:center; cursor:pointer; background:#000; }
+  .spot-audio { position:absolute; right:12px; bottom:12px; width:42px; height:42px; border-radius:50%; border:0; display:grid; place-items:center; background:rgba(0,0,0,.55); color:#fff; cursor:pointer; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:2; }
+  .spot-audio .s-on { display:none; } .spot-audio.on .s-on { display:block; } .spot-audio.on .s-off { display:none; }
+  @media (max-width:760px){ .hero-stage .hero-app { display:none; } }
 
   /* DEVICE */
   .device { position:relative; width:100%; max-width:320px; aspect-ratio:320/650; background:var(--bezel); border-radius:42px; padding:10px; box-shadow:var(--shadow-lg), inset 0 0 0 1.5px rgba(255,255,255,0.06); z-index:1; }

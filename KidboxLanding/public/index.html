@@ -147,6 +147,13 @@
 
   .hero-stage { margin:52px auto 0; position:relative; width:100%; display:flex; justify-content:center; }
   .hero-glow { position:absolute; inset:-30px 0 auto; height:55%; background:radial-gradient(ellipse at center,rgba(232,131,58,.22),transparent 68%); filter:blur(20px); z-index:0; }
+  /* Spot video nella prima schermata: accanto alla Home su schermi larghi, al suo posto sul telefono. */
+  .hero-stage { gap:44px; align-items:center; }
+  .device.spot { max-width:351px; aspect-ratio:351/609; }
+  .spot video.shot { width:100%; height:100%; display:block; object-fit:cover; object-position:center; cursor:pointer; background:#000; }
+  .spot-audio { position:absolute; right:12px; bottom:12px; width:42px; height:42px; border-radius:50%; border:0; display:grid; place-items:center; background:rgba(0,0,0,.55); color:#fff; cursor:pointer; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:2; }
+  .spot-audio .s-on { display:none; } .spot-audio.on .s-on { display:block; } .spot-audio.on .s-off { display:none; }
+  @media (max-width:760px){ .hero-stage .hero-app { display:none; } }
 
   /* DEVICE */
   .device { position:relative; width:100%; max-width:320px; aspect-ratio:320/650; background:var(--bezel); border-radius:42px; padding:10px; box-shadow:var(--shadow-lg), inset 0 0 0 1.5px rgba(255,255,255,0.06); z-index:1; }
@@ -470,7 +477,8 @@
     <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Apri subito</span><span class="st-main">Web App</span></span></a>
   </div>
   <div class="hero-stage rv">
-    <div class="device sm"><div class="screen"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/it/home-dark.webp"><img class="shot" src="/assets/app/it/home.webp?v=2" alt="La Home di KidBox per la famiglia Rossi" width="600" height="1304" loading="eager" decoding="async"></picture></div></div>
+    <div class="device sm hero-app"><div class="screen"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/it/home-dark.webp"><img class="shot" src="/assets/app/it/home.webp?v=2" alt="La Home di KidBox per la famiglia Rossi" width="600" height="1304" loading="eager" decoding="async"></picture></div></div>
+    <div class="device spot"><div class="screen"><video class="shot" data-src="/assets/video/spot-it.mp4" poster="/assets/video/spot-it.webp" muted playsinline loop preload="none" aria-label="Lo spot di KidBox: una giornata di famiglia organizzata con l'app"></video><button class="spot-audio" type="button" aria-pressed="false" aria-label="Attiva l'audio" data-on="Attiva l'audio" data-off="Disattiva l'audio"><svg class="s-off" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="m23 9-6 6"/><path d="m17 9 6 6"/></svg><svg class="s-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg></button></div></div>
   </div>
 </div>
 
@@ -898,5 +906,6 @@
      riallinea a `config/plans`, che si modifica dalla console admin. -->
 <script defer src="/assets/plans.js?v=5"></script>
 <script defer src="/assets/like.js?v=1"></script>
+<script defer src="/assets/spot.js?v=1"></script>
 </body>
 </html>

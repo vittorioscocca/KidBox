@@ -208,7 +208,9 @@ def parts_for(lang, depth):
     stores = extract(src, r'<div class="hero-cta">.*?</div>\n')
     footer = rebase_links(extract(src, r"<footer>.*?</footer>"), depth, L["src"])
     # Il telefono della hero: dal 23/10/2026 uno screenshot vero su una riga.
-    phone = extract(src, r'<div class="device sm"><div class="screen">.*?</div></div>')
+    # Dal 02/11/2026 nella hero c'è anche lo spot video: qui serve solo la Home.
+    phone = extract(src, r'<div class="device sm hero-app"><div class="screen">.*?</div></div>')
+    phone = phone.replace(' hero-app"', '"')
     return style, stores, footer, phone
 
 
