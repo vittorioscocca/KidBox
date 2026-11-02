@@ -131,6 +131,12 @@
 
   .hero-stage { margin:52px auto 0; position:relative; width:100%; display:flex; justify-content:center; }
   .hero-glow { position:absolute; inset:-30px 0 auto; height:55%; background:radial-gradient(ellipse at center,rgba(232,131,58,.22),transparent 68%); filter:blur(20px); z-index:0; }
+  /* Foto di famiglia dietro la prima schermata: un velo del colore di fondo la tiene leggibile e la fa sfumare nella pagina. */
+  .hero { isolation:isolate; }
+  .hero-photo { position:absolute; inset:0 0 auto; height:max(56.25vw, 620px); max-height:100%; z-index:-1; }
+  .hero-photo ~ p { text-shadow:0 1px 18px color-mix(in srgb,var(--bg) 85%,transparent), 0 0 2px color-mix(in srgb,var(--bg) 60%,transparent); }
+  .hero-photo img { width:100%; height:100%; object-fit:cover; object-position:center 35%; display:block; }
+  .hero-photo::after { content:""; position:absolute; inset:0; background:radial-gradient(ellipse 50% 42% at 50% 30%, color-mix(in srgb,var(--bg) 72%,transparent), transparent 100%), linear-gradient(180deg, color-mix(in srgb,var(--bg) 45%,transparent) 0%, color-mix(in srgb,var(--bg) 30%,transparent) 30%, color-mix(in srgb,var(--bg) 50%,transparent) 62%, var(--bg) 97%); }
   /* Spot video nella prima schermata: accanto alla Home su schermi larghi, al suo posto sul telefono. */
   .hero-stage { gap:44px; align-items:center; }
   .device.spot { max-width:351px; aspect-ratio:351/609; }
@@ -381,6 +387,7 @@
 </nav>
 
 <div id="top" class="hero">
+  <div class="hero-photo"><img src="/assets/hero/famiglia-cena-1920.webp" srcset="/assets/hero/famiglia-cena-1000.webp 1000w, /assets/hero/famiglia-cena-1920.webp 1920w" sizes="100vw" width="1920" height="1080" alt="Una familia cenando en una terraza al atardecer" fetchpriority="high" decoding="async"></div>
   <div class="hero-glow"></div>
   <h1>El agente de la familia<br><span class="g">que se adelanta por&nbsp;ti.</span></h1>
   <p>Se da cuenta de la tarea que nadie ha cogido, de la dosis olvidada, de la factura a punto de vencer, y pregunta a la familia quién se encarga. Salud, documentos, gastos, viajes y chat, todo en una sola app.</p>
