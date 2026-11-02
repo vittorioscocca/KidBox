@@ -75,7 +75,7 @@ def end_card(lang, bg, mark, words):
     mask = Image.new("L", (size, size), 0)
     ImageDraw.Draw(mask).rounded_rectangle([0, 0, size - 1, size - 1], radius=68, fill=255)
     # Un alone arancione morbido stacca l'icona dal fondo scuro.
-    x0, y0 = (W - size) // 2, 470
+    x0, y0 = (W - size) // 2, 310  # sotto il 14% in alto che Reels copre col nome della pagina
     glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     ImageDraw.Draw(glow).rounded_rectangle([x0, y0 + 10, x0 + size, y0 + size + 10], radius=68, fill=(232, 131, 58, 110))
     img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(40)))
@@ -86,19 +86,23 @@ def end_card(lang, bg, mark, words):
     d = ImageDraw.Draw(img)
     f = font(84, HEAVY)
     x = (W - f.getlength("KidBox")) / 2
-    d.text((x, 805), "Kid", font=f, fill=(246, 239, 230))
-    d.text((x + f.getlength("Kid"), 805), "Box", font=f, fill=(244, 153, 90))
+    d.text((x, 645), "Kid", font=f, fill=(246, 239, 230))
+    d.text((x + f.getlength("Kid"), 645), "Box", font=f, fill=(244, 153, 90))
     img.save(mark)
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    y = 1010
-    f = font(78, HEAVY)
+    y = 840
+    f, step = font(78, HEAVY), 96
     lines = balance(END[lang], f, W - 160)
+    if len(lines) > 3:  # il francese: più piccolo per restare fuori dalla fascia bassa
+        f, step = font(66, HEAVY), 80
+        lines = balance(END[lang], f, W - 160)
     for line in lines:
         d.text(((W - f.getlength(line)) / 2, y), line, font=f, fill=(246, 239, 230))
-        y += 96
+        y += step
     f = font(48, DEMI)
-    d.text(((W - f.getlength(txt["sub"])) / 2, y + 60), txt["sub"], font=f, fill=(244, 153, 90))
+    # Tutto sopra il 35% in basso (y 1248), dove Reels mette testo e pulsante.
+    d.text(((W - f.getlength(txt["sub"])) / 2, y + 40), txt["sub"], font=f, fill=(244, 153, 90))
     img.save(words)
 
 
