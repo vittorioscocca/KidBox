@@ -142,13 +142,29 @@
   .hero-photo ~ p { text-shadow:0 1px 18px color-mix(in srgb,var(--bg) 85%,transparent), 0 0 2px color-mix(in srgb,var(--bg) 60%,transparent); }
   .hero-photo img { width:100%; height:100%; object-fit:cover; object-position:center 35%; display:block; }
   .hero-photo::after { content:""; position:absolute; inset:0; background:radial-gradient(ellipse 50% 42% at 50% 30%, color-mix(in srgb,var(--bg) 72%,transparent), transparent 100%), linear-gradient(180deg, color-mix(in srgb,var(--bg) 45%,transparent) 0%, color-mix(in srgb,var(--bg) 30%,transparent) 30%, color-mix(in srgb,var(--bg) 40%,transparent) 66%, var(--bg) 100%); }
-  /* Spot video nella prima schermata: accanto alla Home su schermi larghi, al suo posto sul telefono. */
-  .hero-stage { gap:44px; align-items:center; }
-  .device.spot { max-width:351px; aspect-ratio:351/609; }
-  .spot video.shot { width:100%; height:100%; display:block; object-fit:cover; object-position:center; cursor:pointer; background:#000; }
-  .spot-audio { position:absolute; right:12px; bottom:12px; width:42px; height:42px; border-radius:50%; border:0; display:grid; place-items:center; background:rgba(0,0,0,.55); color:#fff; cursor:pointer; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:2; }
-  .spot-audio .s-on { display:none; } .spot-audio.on .s-on { display:block; } .spot-audio.on .s-off { display:none; }
-  @media (max-width:760px){ .hero-stage .hero-app { display:none; } }
+  /* Il film: link nella prima schermata, sezione con l'anteprima, player a schermo pieno. */
+  .film-link { all:unset; cursor:pointer; display:inline-flex; align-items:center; gap:9px; margin-top:26px; font-weight:700; font-size:1rem; color:var(--text); }
+  .film-link .fl-ico { width:34px; height:34px; border-radius:50%; display:grid; place-items:center; background:var(--accent); color:#fff; transition:transform .2s; }
+  .film-link:hover .fl-ico { transform:scale(1.08); }
+  .film-link .fl-dur { color:var(--muted); font-weight:600; }
+  .film-link:focus-visible { outline:2px solid var(--accent); outline-offset:4px; border-radius:20px; }
+  .film { display:grid; grid-template-columns:1fr minmax(0,380px); gap:56px; align-items:center; max-width:980px; margin:0 auto; }
+  .film-copy h2 { font-size:clamp(1.9rem,4.2vw,3rem); font-weight:800; letter-spacing:-0.035em; line-height:1.05; text-wrap:balance; }
+  .film-copy p { color:var(--muted); font-size:1.05rem; margin-top:14px; max-width:44ch; }
+  .film-poster { all:unset; cursor:pointer; position:relative; display:block; border-radius:28px; overflow:hidden; aspect-ratio:9/16; box-shadow:var(--shadow-lg); background:#000; }
+  .film-poster img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .6s cubic-bezier(.2,.7,.2,1); }
+  .film-poster:hover img { transform:scale(1.03); }
+  .film-poster:focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
+  .film-play { position:absolute; left:50%; top:50%; width:76px; height:76px; margin:-38px 0 0 -38px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.92); color:#1c1008; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+  .film-play svg { width:28px; height:28px; margin-left:4px; }
+  @media (max-width:760px){ .film { grid-template-columns:1fr; gap:32px; text-align:center; } .film-copy p { margin-inline:auto; } .film-poster { max-width:340px; margin:0 auto; width:100%; } }
+  .film-dlg { border:0; padding:0; margin:0; width:100vw; height:100dvh; max-width:none; max-height:none; background:#000; color:#fff; }
+  .film-dlg::backdrop { background:#000; }
+  .film-dlg[open] { display:grid; place-items:center; }
+  .film-dlg video { height:100dvh; max-width:100vw; aspect-ratio:9/16; object-fit:contain; background:#000; display:block; }
+  .film-close { position:fixed; top:16px; right:16px; width:44px; height:44px; border-radius:50%; border:0; background:rgba(255,255,255,.16); color:#fff; font-size:1.5rem; line-height:1; cursor:pointer; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:2; }
+  .film-close:hover { background:rgba(255,255,255,.28); }
+  html.film-open { overflow:hidden; }
 
   /* DEVICE */
   .device { position:relative; width:100%; max-width:320px; aspect-ratio:320/650; background:var(--bezel); border-radius:42px; padding:10px; box-shadow:var(--shadow-lg), inset 0 0 0 1.5px rgba(255,255,255,0.06); z-index:1; }
@@ -405,10 +421,10 @@
       <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Disponible sur</span><span class="st-main">Google Play</span></span></a>
       <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Ouvrir maintenant</span><span class="st-main">Web App</span></span></a>
     </div>
+    <button class="film-link" type="button" data-film><span class="fl-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg></span>Voir le film <span class="fl-dur">35 s</span></button>
   </div>
   <div class="hero-stage rv">
     <div class="device sm hero-app"><div class="screen"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/fr/home-dark.webp"><img class="shot" src="/assets/app/fr/home.webp?v=2" alt="L'accueil de KidBox pour la famille Rossi" width="600" height="1304" loading="eager" decoding="async"></picture></div></div>
-    <div class="device spot"><div class="screen"><video class="shot" data-src="/assets/video/spot-fr.mp4" poster="/assets/video/spot-fr.webp" muted playsinline loop preload="none" aria-label="Le spot KidBox : une journée en famille organisée avec l'appli"></video><button class="spot-audio" type="button" aria-pressed="false" aria-label="Activer le son" data-on="Activer le son" data-off="Couper le son"><svg class="s-off" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="m23 9-6 6"/><path d="m17 9 6 6"/></svg><svg class="s-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg></button></div></div>
   </div>
 </div>
 
@@ -425,6 +441,24 @@
     <div class="step"><div class="n">3</div><h3>Ajoutez ce qui compte</h3><p>Rendez-vous, documents, tâches, calendrier : toute la famille les voit. L'assistant IA lit les documents et vous propose quoi faire. Vous pouvez essayer Pro 14 jours gratuitement.</p></div>
   </div>
 </section>
+
+<!-- FILM -->
+<section id="film" class="wrap">
+  <div class="film rv">
+    <div class="film-copy">
+      <div class="kicker">Le film</div>
+      <h2>Une journée avec KidBox</h2>
+      <p>De la course du matin au dîner ensemble : agenda, listes, localisation, santé et assistant, en 35 secondes.</p>
+      <button class="film-link" type="button" data-film><span class="fl-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg></span>Regarder avec le son <span class="fl-dur">35 s</span></button>
+    </div>
+    <button class="film-poster" type="button" data-film aria-label="Voir le film KidBox"><img src="/assets/video/film-anteprima.webp" alt="" width="720" height="1280" loading="lazy" decoding="async"><span class="film-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg></span></button>
+  </div>
+</section>
+
+<dialog class="film-dlg" aria-label="Voir le film KidBox">
+  <button class="film-close" type="button" aria-label="Fermer">×</button>
+  <video data-src="/assets/video/spot-fr.mp4" poster="/assets/video/spot-fr.webp" controls playsinline preload="none" aria-label="Le film KidBox : une journée en famille organisée avec l'appli"></video>
+</dialog>
 
 <!-- PRODUCTS -->
 <section id="prodotti" class="wrap">
@@ -788,6 +822,6 @@
      riallinea a `config/plans`, che si modifica dalla console admin. -->
 <script defer src="/assets/plans.js?v=5"></script>
 <script defer src="/assets/like.js?v=1"></script>
-<script defer src="/assets/spot.js?v=1"></script>
+<script defer src="/assets/film.js?v=1"></script>
 </body>
 </html>

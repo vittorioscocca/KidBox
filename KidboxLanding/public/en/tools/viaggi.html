@@ -129,13 +129,29 @@
   .hero-photo ~ p { text-shadow:0 1px 18px color-mix(in srgb,var(--bg) 85%,transparent), 0 0 2px color-mix(in srgb,var(--bg) 60%,transparent); }
   .hero-photo img { width:100%; height:100%; object-fit:cover; object-position:center 35%; display:block; }
   .hero-photo::after { content:""; position:absolute; inset:0; background:radial-gradient(ellipse 50% 42% at 50% 30%, color-mix(in srgb,var(--bg) 72%,transparent), transparent 100%), linear-gradient(180deg, color-mix(in srgb,var(--bg) 45%,transparent) 0%, color-mix(in srgb,var(--bg) 30%,transparent) 30%, color-mix(in srgb,var(--bg) 40%,transparent) 66%, var(--bg) 100%); }
-  /* Spot video nella prima schermata: accanto alla Home su schermi larghi, al suo posto sul telefono. */
-  .hero-stage { gap:44px; align-items:center; }
-  .device.spot { max-width:351px; aspect-ratio:351/609; }
-  .spot video.shot { width:100%; height:100%; display:block; object-fit:cover; object-position:center; cursor:pointer; background:#000; }
-  .spot-audio { position:absolute; right:12px; bottom:12px; width:42px; height:42px; border-radius:50%; border:0; display:grid; place-items:center; background:rgba(0,0,0,.55); color:#fff; cursor:pointer; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:2; }
-  .spot-audio .s-on { display:none; } .spot-audio.on .s-on { display:block; } .spot-audio.on .s-off { display:none; }
-  @media (max-width:760px){ .hero-stage .hero-app { display:none; } }
+  /* Il film: link nella prima schermata, sezione con l'anteprima, player a schermo pieno. */
+  .film-link { all:unset; cursor:pointer; display:inline-flex; align-items:center; gap:9px; margin-top:26px; font-weight:700; font-size:1rem; color:var(--text); }
+  .film-link .fl-ico { width:34px; height:34px; border-radius:50%; display:grid; place-items:center; background:var(--accent); color:#fff; transition:transform .2s; }
+  .film-link:hover .fl-ico { transform:scale(1.08); }
+  .film-link .fl-dur { color:var(--muted); font-weight:600; }
+  .film-link:focus-visible { outline:2px solid var(--accent); outline-offset:4px; border-radius:20px; }
+  .film { display:grid; grid-template-columns:1fr minmax(0,380px); gap:56px; align-items:center; max-width:980px; margin:0 auto; }
+  .film-copy h2 { font-size:clamp(1.9rem,4.2vw,3rem); font-weight:800; letter-spacing:-0.035em; line-height:1.05; text-wrap:balance; }
+  .film-copy p { color:var(--muted); font-size:1.05rem; margin-top:14px; max-width:44ch; }
+  .film-poster { all:unset; cursor:pointer; position:relative; display:block; border-radius:28px; overflow:hidden; aspect-ratio:9/16; box-shadow:var(--shadow-lg); background:#000; }
+  .film-poster img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .6s cubic-bezier(.2,.7,.2,1); }
+  .film-poster:hover img { transform:scale(1.03); }
+  .film-poster:focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
+  .film-play { position:absolute; left:50%; top:50%; width:76px; height:76px; margin:-38px 0 0 -38px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.92); color:#1c1008; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+  .film-play svg { width:28px; height:28px; margin-left:4px; }
+  @media (max-width:760px){ .film { grid-template-columns:1fr; gap:32px; text-align:center; } .film-copy p { margin-inline:auto; } .film-poster { max-width:340px; margin:0 auto; width:100%; } }
+  .film-dlg { border:0; padding:0; margin:0; width:100vw; height:100dvh; max-width:none; max-height:none; background:#000; color:#fff; }
+  .film-dlg::backdrop { background:#000; }
+  .film-dlg[open] { display:grid; place-items:center; }
+  .film-dlg video { height:100dvh; max-width:100vw; aspect-ratio:9/16; object-fit:contain; background:#000; display:block; }
+  .film-close { position:fixed; top:16px; right:16px; width:44px; height:44px; border-radius:50%; border:0; background:rgba(255,255,255,.16); color:#fff; font-size:1.5rem; line-height:1; cursor:pointer; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:2; }
+  .film-close:hover { background:rgba(255,255,255,.28); }
+  html.film-open { overflow:hidden; }
 
   /* DEVICE */
   .device { position:relative; width:100%; max-width:320px; aspect-ratio:320/650; background:var(--bezel); border-radius:42px; padding:10px; box-shadow:var(--shadow-lg), inset 0 0 0 1.5px rgba(255,255,255,0.06); z-index:1; }
