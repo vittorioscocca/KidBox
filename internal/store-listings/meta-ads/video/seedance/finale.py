@@ -151,6 +151,8 @@ def main():
     p.add_argument("--cuts", default="0,2.33,6.33,9.67,16.54,21.08,26.58")
     p.add_argument("--audio-seedance", action="store_true",
                    help="tiene l'audio di Seedance invece della colonna sonora di musica_spot.py")
+    p.add_argument("--musica", default="musica_spot.py",
+                   help="generatore della colonna sonora: musica_spot.py o musica_jazz.py")
     a = p.parse_args()
 
     dur = float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -198,7 +200,7 @@ def main():
             # La musica di Seedance è quasi solo ambiente: base continua composta
             # sugli stacchi, che sfuma da sola alla fine.
             music = os.path.join(tmp, "musica.wav")
-            subprocess.run([sys.executable, os.path.join(HERE, "musica_spot.py"), music,
+            subprocess.run([sys.executable, os.path.join(HERE, a.musica), music,
                             "--dur", str(total), "--card", str(dur - fade), "--cuts", a.cuts],
                            check=True, stdout=subprocess.DEVNULL)
             inputs += ["-i", music]
