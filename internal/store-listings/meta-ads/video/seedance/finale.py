@@ -149,6 +149,8 @@ def main():
     p.add_argument("--lang", default="it")
     p.add_argument("--end", type=float, default=5.0)
     p.add_argument("--cuts", default="0,2.33,6.33,9.67,16.54,21.08,26.58")
+    p.add_argument("--audio-seedance", action="store_true",
+                   help="tiene l'audio di Seedance invece della colonna sonora di musica_spot.py")
     a = p.parse_args()
 
     dur = float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -192,6 +194,16 @@ def main():
             f"[a1][tail]acrossfade=d=1.5,atrim=0:{total},"
             f"afade=t=out:st={total - 2.5}:d=2.5[a]"
         )
+        if not a.audio_seedance:
+            # La musica di Seedance è quasi solo ambiente: base continua composta
+            # sugli stacchi, che sfuma da sola alla fine.
+            music = os.path.join(tmp, "musica.wav")
+            subprocess.run([sys.executable, os.path.join(HERE, "musica_spot.py"), music,
+                            "--dur", str(total), "--card", str(dur - fade), "--cuts", a.cuts],
+                           check=True, stdout=subprocess.DEVNULL)
+            inputs += ["-i", music]
+            n_music = 4 + len(CAPTIONS[a.lang])
+            flt = flt[:flt.index("[0:a]asplit")] + f"[{n_music}:a]anull[a]"
         subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", a.src,
                         "-loop", "1", "-t", str(a.end), "-i", card,
                         "-loop", "1", "-t", str(a.end), "-i", mark,
