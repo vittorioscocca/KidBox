@@ -105,6 +105,12 @@ struct GeofenceListView: View {
         }
         .onAppear {
             startRealtimeSync()
+            #if DEBUG
+            // `-KBDemoLocation zone`: apre la prima zona (la scuola).
+            if CommandLine.arguments.contains("zone"), CommandLine.arguments.contains("-KBDemoLocation") {
+                geofenceToEdit = sortedGeofences.first { $0.id == "demo-zone-0" }
+            }
+            #endif
         }
         .onDisappear {
             geofenceListener?.remove()
@@ -154,7 +160,7 @@ struct GeofenceListView: View {
     private func statusBadge(isActive: Bool) -> some View {
         Group {
             if isActive {
-                Text("Attiva")
+                Text(String(localized: "geofence.status.active", defaultValue: "Attiva"))
             } else {
                 Text("Inattiva")
             }

@@ -506,6 +506,12 @@ final class AppCoordinator: ObservableObject {
                         default: break
                         }
                     }
+                    // `-KBDemoLocation zones|zone`: elenco delle zone (la scheda della
+                    // scuola la apre GeofenceListView; «share» lo apre FamilyLocationView).
+                    if section == .location, let l = args.firstIndex(of: "-KBDemoLocation"), args.indices.contains(l + 1),
+                       ["zones", "zone"].contains(args[l + 1]) {
+                        path.append(.geofenceList(familyId: KBDemoSeed.familyId))
+                    }
                     // `-KBDemoTravel trip|itinerary|info`: apre il viaggio della demo
                     // (itinerario e «Storia e territorio» li apre TravelDetailView).
                     if section == .travel, let t = args.firstIndex(of: "-KBDemoTravel"), args.indices.contains(t + 1),
@@ -792,6 +798,8 @@ final class AppCoordinator: ObservableObject {
             return "viaggi_destinazione"
         case .familyLocation:
             return "posizione"
+        case .geofenceList:
+            return "posizione_zone"
         case .familySettings:
             return "impostazioni_famiglia"
         case .pediatricChildSelector, .pediatricHome:
@@ -935,6 +943,8 @@ final class AppCoordinator: ObservableObject {
             PasswordsHomeView(familyId: familyId)
         case .passwordsSecurity(familyId: let familyId):
             PasswordsSecurityView(familyId: familyId)
+        case .geofenceList(familyId: let familyId):
+            GeofenceListView(familyId: familyId)
         case .passwordDetail(familyId: let familyId, entryId: let entryId):
             PasswordDetailView(familyId: familyId, entryId: entryId)
         case .askExpert:

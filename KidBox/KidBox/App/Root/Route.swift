@@ -45,6 +45,7 @@ enum Route: Hashable {
     case chat
     case shoppingList(familyId: String)
     case familyLocation(familyId: String)
+    case geofenceList(familyId: String)
     case todoList(familyId: String, childId: String, listId: String)
     case document
     case documentsHome

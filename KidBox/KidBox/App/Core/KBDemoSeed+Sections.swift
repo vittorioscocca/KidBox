@@ -202,6 +202,18 @@ extension KBDemoSeed {
         _ = OtpKeychainStore.saveOtpConfig(elementID: "demo-pw-4",
                                            config: ["secret": "JBSWY3DPEHPK3PXP", "period": 30, "digits": 6, "algorithm": "SHA1"])
 
+        // Zone di arrivo, a Milano vicino alle posizioni della demo
+        let zones: [(String, String, Double, Double, Double, Bool)] = [
+            (t("Scuola di Marco", "Marco's school", "Colegio de Marco", "École de Marco"), "🏫", 45.4719, 9.1771, 150, true),
+            (t("Casa", "Home", "Casa", "Maison"), "🏠", 45.4642, 9.1900, 200, true),
+            (t("Casa della nonna", "Grandma's house", "Casa de la abuela", "Chez Mamie"), "👵", 45.4773, 9.1815, 100, false),
+        ]
+        for (i, z) in zones.enumerated() {
+            ctx.insert(KBGeofence(id: "demo-zone-\(i)", familyId: fid, name: z.0, emoji: z.1, latitude: z.2, longitude: z.3,
+                                  radius: z.4, notifyOnArrive: true, notifyOnLeave: z.5,
+                                  notifyMembers: [me, partner], monitoredMemberIds: [partner, grandmaUid], createdBy: me))
+        }
+
         // Notizie accese per la famiglia, su Milano
         UserDefaults.standard.set([
             "enabled": true,
@@ -218,6 +230,7 @@ extension KBDemoSeed {
         delete(KBMedicalVisit.self); delete(KBVaccine.self); delete(KBTreatment.self)
         delete(KBDocument.self); delete(KBDocumentCategory.self); delete(KBChatMessage.self)
         delete(KBTrip.self); delete(KBTripLeg.self); delete(KBTripDayPlan.self); delete(PasswordEntry.self)
+        delete(KBGeofence.self)
     }
 
     // MARK: - Dati del server, finti
@@ -230,7 +243,7 @@ extension KBDemoSeed {
             SharedUserLocation(id: "demo-luca", name: "Luca", latitude: 45.4689, longitude: 9.1747,
                                mode: .realtime, expiresAt: nil, avatarURL: nil, batteryLevel: 68, isCharging: false,
                                lastUpdateAt: now.addingTimeInterval(-60)),
-            SharedUserLocation(id: grandmaUid, name: it ? "Nonna Giulia" : "Grandma Giulia", latitude: 45.4773, longitude: 9.1815,
+            SharedUserLocation(id: grandmaUid, name: ["it": "Nonna Giulia", "es": "Abuela Giulia", "fr": "Mamie Giulia"][rawDemoLang] ?? "Grandma Giulia", latitude: 45.4773, longitude: 9.1815,
                                mode: .temporary, expiresAt: now.addingTimeInterval(2 * 3600), avatarURL: nil,
                                batteryLevel: 91, isCharging: true, lastUpdateAt: now.addingTimeInterval(-300)),
         ]

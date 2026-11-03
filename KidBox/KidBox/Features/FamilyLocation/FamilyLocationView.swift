@@ -239,6 +239,15 @@ struct FamilyLocationView: View {
         .sheet(isPresented: $showShareSheet) {
             shareSheet
         }
+        #if DEBUG
+        // `-KBDemoLocation share`: per le catture della landing (zone: AppCoordinator).
+        .task {
+            let args = CommandLine.arguments
+            guard let i = args.firstIndex(of: "-KBDemoLocation"), args.indices.contains(i + 1) else { return }
+            try? await Task.sleep(for: .milliseconds(800))
+            if args[i + 1] == "share" { showShareSheet = true }
+        }
+        #endif
     }
     
     // MARK: - Bottoni overlay
