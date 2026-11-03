@@ -20,7 +20,7 @@ ES = {
             ("¿Hace falta que todos tengan el mismo móvil?", "No. KidBox funciona en iPhone, Android y web: cada uno usa lo que tiene, y el calendario es el mismo para todos."),
             ("¿Puedo recibir un recordatorio?", "Sí: para cada evento eliges con cuánta antelación avisarte, y la notificación llega a los dispositivos con las notificaciones activadas."),
             ("¿El asistente de IA puede crear eventos?", "Sí. Escribiendo «pon el pediatra el jueves a las 16» el asistente crea el evento en el calendario familiar."),
-            ('¿Veo también Google Calendar y Outlook?', 'Sí. Añade tu cuenta de Google al móvil, o la app de Outlook, y sus eventos aparecen en el calendario de KidBox junto a los de la familia; o pega el enlace iCal de un calendario y lo ve toda la familia. Son de solo lectura: con «Copiar en KidBox» un evento pasa a ser de la familia. Los eventos creados en KidBox no se escriben en Google ni en Outlook.'),
+            ('¿Veo también Google Calendar y Outlook?', 'Sí. Añade tu cuenta de Google al móvil, o la app de Outlook, y sus eventos aparecen en el calendario de KidBox junto a los de la familia; o pega el enlace iCal de un calendario y lo ve toda la familia. Son de solo lectura: con «Copiar en KidBox» un evento pasa a ser de la familia. Y al revés: desde los ajustes del calendario creas un enlace solo tuyo, y Google Calendar, Outlook o el Calendario de Apple muestran los eventos de familia que tú ves, en solo lectura. Google lo actualiza cada 12-24 horas.'),
         ],
     },
     "to-do": {
@@ -344,7 +344,7 @@ FR = {
             ("Tout le monde doit-il avoir le même téléphone ?", "Non. KidBox fonctionne sur iPhone, Android et le web : chacun utilise ce qu'il a, et le calendrier est le même pour tous."),
             ("Puis-je recevoir un rappel ?", "Oui : pour chaque événement, vous choisissez quand être prévenu, et la notification arrive sur les appareils où les notifications sont activées."),
             ("L'assistant IA peut-il créer des événements ?", "Oui. En écrivant « mets le pédiatre jeudi à 16h », l'assistant crée l'événement dans le calendrier familial."),
-            ('Puis-je voir aussi Google Agenda et Outlook ?', "Oui. Ajoutez votre compte Google au téléphone, ou l'app Outlook, et leurs événements apparaissent dans le calendrier KidBox à côté de ceux de la famille ; ou collez le lien iCal d'un calendrier et toute la famille le voit. Ils sont en lecture seule : « Copier dans KidBox » transforme un événement en événement de famille. Les événements créés dans KidBox ne sont pas écrits dans Google ou Outlook."),
+            ('Puis-je voir aussi Google Agenda et Outlook ?', "Oui. Ajoutez votre compte Google au téléphone, ou l'app Outlook, et leurs événements apparaissent dans le calendrier KidBox à côté de ceux de la famille ; ou collez le lien iCal d'un calendrier et toute la famille le voit. Ils sont en lecture seule : « Copier dans KidBox » transforme un événement en événement de famille. Et dans l'autre sens : depuis les réglages du calendrier, vous créez un lien rien qu'à vous, et Google Agenda, Outlook ou le Calendrier d'Apple affichent les événements de famille que vous voyez, en lecture seule. Google le met à jour toutes les 12 à 24 heures."),
         ],
     },
     "to-do": {
