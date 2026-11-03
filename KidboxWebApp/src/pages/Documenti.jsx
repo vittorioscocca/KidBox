@@ -378,6 +378,22 @@ export default function Documenti() {
     }
   };
 
+  /** Eliminazione dalla barra di selezione, uno o più file insieme. */
+  const removeSelected = async () => {
+    const docs = selectedDocs;
+    if (!docs.length || !window.confirm(t.documents.deleteSelectedConfirm(docs.length))) return;
+    try {
+      await Promise.all(
+        docs.map((d) =>
+          softDeleteDocument({ familyId: currentFamilyId, userId: user.uid, documentId: d.id })
+        )
+      );
+      exitSelection();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const removeDocument = async (docData) => {
     if (!window.confirm(t.documents.deleteConfirm)) return;
     await softDeleteDocument({
@@ -549,6 +565,9 @@ export default function Documenti() {
               🖼 {t.documents.toPdf}
             </button>
           )}
+          <button className="docs-btn danger" onClick={removeSelected}>
+            🗑 {t.documents.delete}
+          </button>
           <button className="link-btn" onClick={exitSelection}>
             {t.documents.clearSelection}
           </button>

@@ -206,14 +206,20 @@
 
 .card-actions button,
 .doc-actions button {
-  width: 26px;
-  height: 26px;
+  /* 26px e 0.8rem non si leggevano: le azioni sono il modo principale di
+     agire su un file, vanno viste. */
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
-  color: var(--muted);
+  color: var(--text);
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 1.15rem;
+  line-height: 1;
 }
 
 .card-actions button:hover,
@@ -277,7 +283,7 @@
 
 .doc-actions {
   display: flex;
-  gap: 2px;
+  gap: 4px;
   flex-shrink: 0;
   opacity: 0;
 }
@@ -345,6 +351,15 @@
   border-radius: 10px;
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   font-size: 0.85rem;
+}
+
+.docs-btn.danger {
+  color: #d32f2f;
+  border-color: color-mix(in srgb, #d32f2f 45%, var(--border));
+}
+
+.docs-btn.danger:hover {
+  border-color: #d32f2f;
 }
 
 .selection-bar .docs-btn:disabled {
@@ -424,6 +439,10 @@
 
 .docs-filegrid .doc-actions {
   align-self: flex-end;
+  /* Cinque pulsanti da 36px non stanno in una scheda da 160px. */
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 100%;
   opacity: 0;
 }
 
