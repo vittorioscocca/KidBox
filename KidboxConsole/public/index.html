@@ -11,7 +11,7 @@
 import { initializeApp }          from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js';
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider }
                                    from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js';
-import { getFirestore, collection, doc, getDoc, getDocs, onSnapshot, query, orderBy, updateDoc, deleteDoc }
+import { getFirestore, collection, collectionGroup, doc, getDoc, getDocs, onSnapshot, query, orderBy, updateDoc, deleteDoc }
                                    from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js';
 import { getFunctions, httpsCallable }
                                    from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-functions.js';
@@ -1415,6 +1415,35 @@ function renderUsersTable(rows) {
 let _planData = { free:0, pro:0, max:0 };
 let _costData  = { ai:0, storage:0 };
 
+// Copia di utenti e famiglie nel browser (solo su questo computer): all'apertura
+// la console mostra subito l'ultimo caricamento, con la sua ora, e intanto
+// rilegge tutto. Le date viaggiano come {__d: ms}.
+const CACHE_KEY = 'kb-admin-cache-v1';
+function saveCache() {
+  try {
+    const rep = function (k, v) { return this[k] instanceof Date ? { __d: this[k].getTime() } : v; };
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      savedAt: Date.now(), users: _allUsersRows, families: _familyRows,
+      internal: [..._internalUids], platform: _platformByUid, familyByUid: _familyByUid,
+    }, rep));
+  } catch (e) { console.warn('copia locale non salvata', e); }
+}
+function restoreCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const c = JSON.parse(raw, (k, v) => v && typeof v === 'object' && '__d' in v ? new Date(v.__d) : v);
+    _internalUids = new Set(c.internal || []);
+    _platformByUid = c.platform || {};
+    _allUsersRows = c.users || [];
+    renderFamilyViews(c.families || []);
+    _familyByUid = c.familyByUid || {};
+    renderUsersTable(_allUsersRows);
+    renderUserCharts();
+    return c.savedAt;
+  } catch (e) { console.warn('copia locale illeggibile', e); return null; }
+}
+
 async function loadAll() {
   document.getElementById('btn-refresh').disabled = true;
   document.getElementById('err-box').style.display = 'none';
@@ -1422,11 +1451,18 @@ async function loadAll() {
   setVal('month-badge', monthKey());
   setVal('ai-month-lbl', monthKey());
 
+  // Solo alla prima apertura: con «Aggiorna» i dati a schermo sono già freschi.
+  if (!_familyRows.length) {
+    const savedAt = restoreCache();
+    if (savedAt) setStatus(`Dati del ${new Date(savedAt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · aggiornamento…`);
+  }
+
   try {
     await loadUsers();
     await loadFamilies();
     renderUsersTable(_allUsersRows);
     renderUserCharts();
+    saveCache();
     await loadAICosts();
     await loadActiveUsers();
     await loadLanding();
@@ -1494,85 +1530,97 @@ async function loadUsers() {
   } catch { setVal('stat-users','N/A'); setVal('stat-platform-ios','N/A'); setVal('stat-platform-android','N/A'); }
 }
 
+// Quattro letture in parallelo invece di 4 per famiglia in fila (con 293
+// famiglie erano ~120 attese una dopo l'altra, 15-25 s): tutte le famiglie,
+// tutti i membri e tutti i contatori di spazio con due query di gruppo (le
+// rules danno lettura globale all'admin), i messaggi AI del mese. L'email del
+// proprietario viene dagli utenti già caricati da loadUsers.
 async function loadFamilies() {
-  const snap = await getDocs(collection(db,'families'));
-  const docs  = snap.docs;
   const mk = monthKey();
-  let planFree=0, planPro=0, planMax=0, totalStorage=0;
-  const rows = [];
+  const fidOf = ref => { const p = ref.path.split('/'); return p.length === 4 && p[0] === 'families' ? p[1] : null; };
+  const [snap, membersByFid, storageByFid, aiByFid] = await Promise.all([
+    getDocs(collection(db,'families')),
+    getDocs(collectionGroup(db,'members')).then(qs => {
+      const m = {};
+      qs.forEach(d => { const fid = fidOf(d.ref); if (fid) (m[fid] ||= []).push(d); });
+      return m;
+    }).catch(e => { console.warn('members: query di gruppo fallita, ripiego per famiglia', e); return null; }),
+    getDocs(collectionGroup(db,'stats')).then(qs => {
+      const m = {};
+      qs.forEach(d => { const fid = fidOf(d.ref); if (fid && d.id === 'storage') m[fid] = d.data().usedBytes || 0; });
+      return m;
+    }).catch(e => { console.warn('stats: query di gruppo fallita, ripiego per famiglia', e); return null; }),
+    getDocs(collection(db,'ai_costs',mk,'families')).then(qs => {
+      const m = {};
+      qs.forEach(d => { m[d.id] = d.data().calls || 0; });
+      return m;
+    }).catch(() => ({})),
+  ]);
   _familyByUid = {};
+  const userByUid = new Map(_allUsersRows.map(u => [u.uid, u]));
+  const ago14 = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+  const ago7  = new Date(Date.now() -  7 * 24 * 60 * 60 * 1000);
 
-  const chunks = [];
-  for (let i=0; i<docs.length; i+=10)
-    chunks.push(docs.slice(i,i+10));
-
-  for (const chunk of chunks) {
-    const res = await Promise.all(chunk.map(async fdoc => {
-      const fid  = fdoc.id;
-      const d    = fdoc.data();
-      const ov   = d.planOverride;
-      const plan = (ov === 'pro' || ov === 'max') ? ov : (d.plan || 'free');
-      // Prova Pro (functions/proTrial.js): `plan` dice pro ma nessuno paga.
-      const trial = plan === 'pro' && d.planSource === 'trial';
-      const planLabel = trial ? 'pro · prova' : plan;
-      // Piano impostato a mano dalla console: nessuno paga.
-      const manual = (ov === 'pro' || ov === 'max');
-      // Ultimo accesso: la più recente «Ultima apertura» (session_start, solo
-      // iOS e Android) fra i membri, come nella tabella degli utenti.
-      let lastOpenAt=null, openedMembers7d=0;
-      let storageBytes=0, aiMonth=0, ownerEmail='—', iosCount=0, androidCount=0, totalMemberCount=0, activeCount14d=0, hasInternal=false;
-      // Membro vero = non cancellato e con un ruolo, come rules e server.
-      let realMemberCount=0;
-      const joins = [];
-      try { const sd=await getDoc(doc(db,'families',fid,'stats','storage')); if(sd.exists()) storageBytes=sd.data().usedBytes||0; } catch {}
-      // legge messaggi AI del mese corrente (non giornaliero)
-      try { const ad=await getDoc(doc(db,'ai_costs',mk,'families',fid)); if(ad.exists()) aiMonth=ad.data().calls||0; } catch {}
-      try {
-        const membSnap = await getDocs(collection(db,'families',fid,'members'));
-        let ownerUid = null;
-        const ago14 = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-        const ago7  = new Date(Date.now() -  7 * 24 * 60 * 60 * 1000);
-        membSnap.forEach(m => {
-          const md = m.data();
-          totalMemberCount++;
-          if (md.isDeleted !== true && md.role) realMemberCount++;
-          if (_internalUids.has(m.id)) hasInternal = true;
-          const jt = (md.joinedAt || md.createdAt)?.toDate?.();
-          if (jt) joins.push(jt.getTime());
-          if (md.role === 'owner' || md.role === 'admin') ownerUid = m.id;
-          _familyByUid[m.id] = fid;
-          const p = _platformByUid[m.id];
-          if (p === 'ios') iosCount++;
-          else if (p === 'android') androidCount++;
-          const userRow = _allUsersRows.find(u => u.uid === m.id);
-          // lastActiveAt da Auth (login o rinnovo token, tutti i client).
-          // `users/{uid}.updatedAt` resta solo come ripiego se la callable
-          // fallisce: si muove col profilo e col token FCM, non con l'uso.
-          const lastActive = userRow?.lastActiveAt || userRow?.updatedAt;
-          if (lastActive && lastActive > ago14) activeCount14d++;
-          const lo = userRow?.lastOpenAt;
-          if (lo) {
-            if (!lastOpenAt || lo > lastOpenAt) lastOpenAt = lo;
-            if (lo > ago7) openedMembers7d++;
-          }
-        });
-        if (!ownerUid && !membSnap.empty) ownerUid = membSnap.docs[0].id;
-        if (ownerUid) {
-          const usnap = await getDoc(doc(db,'users',ownerUid));
-          if (usnap.exists()) ownerEmail = usnap.data().email || '';
-          if (!ownerEmail) {
-            const authRow = _allUsersRows.find(u => u.uid === ownerUid);
-            ownerEmail = authRow?.email !== '—' ? (authRow?.email || '') : '';
-          }
-          if (!ownerEmail) ownerEmail = '—';
+  const rows = await Promise.all(snap.docs.map(async fdoc => {
+    const fid  = fdoc.id;
+    const d    = fdoc.data();
+    const ov   = d.planOverride;
+    const plan = (ov === 'pro' || ov === 'max') ? ov : (d.plan || 'free');
+    // Prova Pro (functions/proTrial.js): `plan` dice pro ma nessuno paga.
+    const trial = plan === 'pro' && d.planSource === 'trial';
+    const planLabel = trial ? 'pro · prova' : plan;
+    // Piano impostato a mano dalla console: nessuno paga.
+    const manual = (ov === 'pro' || ov === 'max');
+    // Ultimo accesso: la più recente «Ultima apertura» (session_start, solo
+    // iOS e Android) fra i membri, come nella tabella degli utenti.
+    let lastOpenAt=null, openedMembers7d=0;
+    let storageBytes=0, ownerEmail='—', iosCount=0, androidCount=0, totalMemberCount=0, activeCount14d=0, hasInternal=false;
+    // Membro vero = non cancellato e con un ruolo, come rules e server.
+    let realMemberCount=0;
+    const joins = [];
+    if (storageByFid) storageBytes = storageByFid[fid] || 0;
+    else { try { const sd=await getDoc(doc(db,'families',fid,'stats','storage')); if(sd.exists()) storageBytes=sd.data().usedBytes||0; } catch {} }
+    const aiMonth = aiByFid[fid] || 0;
+    try {
+      const members = membersByFid ? (membersByFid[fid] || []) : (await getDocs(collection(db,'families',fid,'members'))).docs;
+      let ownerUid = null;
+      members.forEach(m => {
+        const md = m.data();
+        totalMemberCount++;
+        if (md.isDeleted !== true && md.role) realMemberCount++;
+        if (_internalUids.has(m.id)) hasInternal = true;
+        const jt = (md.joinedAt || md.createdAt)?.toDate?.();
+        if (jt) joins.push(jt.getTime());
+        if (md.role === 'owner' || md.role === 'admin') ownerUid = m.id;
+        _familyByUid[m.id] = fid;
+        const p = _platformByUid[m.id];
+        if (p === 'ios') iosCount++;
+        else if (p === 'android') androidCount++;
+        const userRow = userByUid.get(m.id);
+        // lastActiveAt da Auth (login o rinnovo token, tutti i client).
+        // `users/{uid}.updatedAt` resta solo come ripiego se la callable
+        // fallisce: si muove col profilo e col token FCM, non con l'uso.
+        const lastActive = userRow?.lastActiveAt || userRow?.updatedAt;
+        if (lastActive && lastActive > ago14) activeCount14d++;
+        const lo = userRow?.lastOpenAt;
+        if (lo) {
+          if (!lastOpenAt || lo > lastOpenAt) lastOpenAt = lo;
+          if (lo > ago7) openedMembers7d++;
         }
-      } catch {}
-      const fname = d.name || '—';
-      return { fid, fname, plan, trial, manual, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: fdoc.data().updatedAt?.toDate(), totalMembers: totalMemberCount, realMembers: realMemberCount, activeMembers14d: activeCount14d, lastOpenAt, openedMembers7d, createdAtMs: d.createdAt?.toDate?.().getTime() || 0, joins, internal: hasInternal };
-    }));
-    rows.push(...res);
-  }
+      });
+      if (!ownerUid && members.length) ownerUid = members[0].id;
+      // users/{uid}.email, poi l'email di Auth: è già in _allUsersRows.
+      const em = ownerUid ? userByUid.get(ownerUid)?.email : null;
+      if (em && em !== '—') ownerEmail = em;
+    } catch {}
+    const fname = d.name || '—';
+    return { fid, fname, plan, trial, manual, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: d.updatedAt?.toDate(), totalMembers: totalMemberCount, realMembers: realMemberCount, activeMembers14d: activeCount14d, lastOpenAt, openedMembers7d, createdAtMs: d.createdAt?.toDate?.().getTime() || 0, joins, internal: hasInternal };
+  }));
+  renderFamilyViews(rows);
+}
 
+function renderFamilyViews(rows) {
+  let planFree=0, planPro=0, planMax=0, totalStorage=0;
   rows.forEach(r => {
     if(r.trial) planFree++;
     else if(r.plan==='pro')  planPro++;
