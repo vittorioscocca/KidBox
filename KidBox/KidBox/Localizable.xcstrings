@@ -169,6 +169,28 @@
         }
       }
     },
+    "Controllo fughe (HIBP)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Breach check (HIBP)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Control de filtraciones (HIBP)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contrôle des fuites (HIBP)"
+          }
+        }
+      }
+    },
     "Giorno %lld" : {
       "localizations" : {
         "en" : {
@@ -2417,6 +2439,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld albums sélectionnés"
+          }
+        }
+      }
+    },
+    "%lld altre voci usano la stessa password." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld other entries use the same password."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otras %lld entradas usan la misma contraseña."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld autres entrées utilisent le même mot de passe."
           }
         }
       }
@@ -28913,6 +28957,28 @@
         }
       }
     },
+    "Esegui «Scansiona ora» nel report sicurezza per aggiornare questo stato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Run “Scan now” in the security report to update this status."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa «Escanear ahora» en el informe de seguridad para actualizar este estado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lancez « Scanner maintenant » dans le rapport de sécurité pour mettre à jour cet état."
+          }
+        }
+      }
+    },
     "Eseguita" : {
       "comment" : "Visit status: completed",
       "localizations" : {
@@ -48210,6 +48276,28 @@
         }
       }
     },
+    "Nessuna occorrenza trovata nei controlli eseguiti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not found in the checks run so far."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No aparece en las comprobaciones realizadas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune occurrence trouvée lors des contrôles effectués."
+          }
+        }
+      }
+    },
     "Nessuna password" : {
       "localizations" : {
         "en" : {
@@ -48581,6 +48669,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Personne ne s'en occupe"
+          }
+        }
+      }
+    },
+    "Nessun’altra voce nella famiglia usa la stessa password." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No other entry in the family uses the same password."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguna otra entrada de la familia usa la misma contraseña."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune autre entrée de la famille n'utilise le même mot de passe."
           }
         }
       }
@@ -49508,6 +49618,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pas encore connecté"
+          }
+        }
+      }
+    },
+    "Non ancora verificata con i database di fughe note." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not yet checked against known breach databases."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no comprobada con las bases de datos de filtraciones conocidas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas encore vérifié dans les bases de fuites connues."
           }
         }
       }
@@ -55458,6 +55590,28 @@
         }
       }
     },
+    "Password duplicata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicate password"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraseña duplicada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mot de passe en double"
+          }
+        }
+      }
+    },
     "Password in scadenza" : {
       "localizations" : {
         "en" : {
@@ -55520,6 +55674,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mot de passe introuvable"
+          }
+        }
+      }
+    },
+    "Password uguale ad altre credenziali" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same password as other credentials"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misma contraseña que otras credenciales"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Même mot de passe que d'autres identifiants"
           }
         }
       }
@@ -74953,6 +75129,50 @@
         }
       }
     },
+    "Trovata %@ volte in data breach" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Found %@ times in data breaches"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontrada %@ veces en filtraciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouvé %@ fois dans des fuites de données"
+          }
+        }
+      }
+    },
+    "Trovata %@ volte in data breach pubblici." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Found %@ times in public data breaches."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontrada %@ veces en filtraciones públicas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouvé %@ fois dans des fuites de données publiques."
+          }
+        }
+      }
+    },
     "Trovato testo ambiguo in %lld note — verifica i record %@." : {
       "localizations" : {
         "en" : {
@@ -75683,6 +75903,28 @@
         }
       }
     },
+    "Ultimo controllo: %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last check: %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Última comprobación: %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dernier contrôle : %@."
+          }
+        }
+      }
+    },
     "Un account aggiunto all'iPhone porta con sé i suoi calendari: dopo l'accesso compaiono qui da soli." : {
       "localizations" : {
         "en" : {
@@ -76214,6 +76456,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unité"
+          }
+        }
+      }
+    },
+    "Un’altra voce usa la stessa password." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Another entry uses the same password."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otra entrada usa la misma contraseña."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une autre entrée utilise le même mot de passe."
           }
         }
       }

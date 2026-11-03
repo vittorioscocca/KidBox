@@ -143,7 +143,7 @@ struct PasswordsSecurityView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(KBTheme.secondaryText(colorScheme))
                         ForEach(cluster.entries, id: \.id) { entry in
-                            securityRow(entry: entry, subtitle: "Password uguale ad altre credenziali")
+                            securityRow(entry: entry, subtitle: String(localized: "Password uguale ad altre credenziali"))
                         }
                     }
                     .padding(.vertical, 4)
@@ -161,7 +161,7 @@ struct PasswordsSecurityView: View {
                     .foregroundStyle(KBTheme.secondaryText(colorScheme))
             } else {
                 ForEach(weakEntries, id: \.id) { entry in
-                    securityRow(entry: entry, subtitle: "Forza password: \(strengthLabel(for: entry))")
+                    securityRow(entry: entry, subtitle: String(localized: "Forza password: \(strengthLabel(for: entry))"))
                 }
             }
         }
@@ -195,7 +195,7 @@ struct PasswordsSecurityView: View {
 
     private func compromisedText(for count: Int) -> String {
         let formatted = count.formatted(.number.locale(kbDeviceLocale()))
-        return "Trovata \(formatted) volte in data breach"
+        return String(localized: "Trovata \(formatted) volte in data breach")
     }
 
     private func scanNow() async {

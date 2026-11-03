@@ -220,6 +220,7 @@ struct PasswordDetailView: View {
 
     @ViewBuilder
     private func scrollContent(e: PasswordEntry) -> some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Text(visibilityLabel(for: e))
@@ -234,11 +235,21 @@ struct PasswordDetailView: View {
 
                 if let payload = OTPService.payload(elementID: e.id) {
                     OtpLiveCard(payload: payload, colorScheme: colorScheme)
+                        .id("kb.otp")
                 }
 
                 metaCard(e)
             }
             .padding()
+        }
+        #if DEBUG
+        .task {
+            // `-KBDemoPasswords detail`: per le catture, il codice OTP a schermo.
+            guard CommandLine.arguments.contains("-KBDemoPasswords") else { return }
+            try? await Task.sleep(for: .milliseconds(600))
+            proxy.scrollTo("kb.otp", anchor: .center)
+        }
+        #endif
         }
     }
 
@@ -393,7 +404,7 @@ struct PasswordDetailView: View {
             securityInfoRow(
                 icon: hibpIcon(summary.hibp),
                 tint: hibpTint(summary.hibp, colorScheme: colorScheme),
-                title: "Controllo fughe (HIBP)",
+                title: String(localized: "Controllo fughe (HIBP)"),
                 detail: hibpDetailText(summary),
                 footnote: hibpFootnote(summary)
             )
@@ -403,7 +414,7 @@ struct PasswordDetailView: View {
                 tint: summary.duplicateOtherCount > 0
                     ? Color(red: 0.95, green: 0.55, blue: 0.12)
                     : KBTheme.green,
-                title: "Password duplicata",
+                title: String(localized: "Password duplicata"),
                 detail: duplicateDetailText(summary.duplicateOtherCount),
                 footnote: nil
             )
@@ -485,22 +496,22 @@ struct PasswordDetailView: View {
     private func hibpDetailText(_ summary: PasswordSecuritySummary) -> String {
         switch summary.hibp {
         case .notChecked:
-            return "Non ancora verificata con i database di fughe note."
+            return String(localized: "Non ancora verificata con i database di fughe note.")
         case .safe:
-            return "Nessuna occorrenza trovata nei controlli eseguiti."
+            return String(localized: "Nessuna occorrenza trovata nei controlli eseguiti.")
         case .compromised(let count):
             let formatted = count.formatted(.number.locale(kbDeviceLocale()))
-            return "Trovata \(formatted) volte in data breach pubblici."
+            return String(localized: "Trovata \(formatted) volte in data breach pubblici.")
         }
     }
 
     private func hibpFootnote(_ summary: PasswordSecuritySummary) -> String? {
         switch summary.hibp {
         case .notChecked:
-            return "Esegui «Scansiona ora» nel report sicurezza per aggiornare questo stato."
+            return String(localized: "Esegui «Scansiona ora» nel report sicurezza per aggiornare questo stato.")
         case .safe, .compromised:
             if let at = summary.hibpCheckedAt {
-                return "Ultimo controllo: \(at.formatted(date: .abbreviated, time: .shortened))."
+                return String(localized: "Ultimo controllo: \(at.formatted(date: .abbreviated, time: .shortened)).")
             }
             return nil
         }
@@ -509,11 +520,11 @@ struct PasswordDetailView: View {
     private func duplicateDetailText(_ otherCount: Int) -> String {
         switch otherCount {
         case 0:
-            return "Nessun’altra voce nella famiglia usa la stessa password."
+            return String(localized: "Nessun’altra voce nella famiglia usa la stessa password.")
         case 1:
-            return "Un’altra voce usa la stessa password."
+            return String(localized: "Un’altra voce usa la stessa password.")
         default:
-            return "\(otherCount) altre voci usano la stessa password."
+            return String(localized: "\(otherCount) altre voci usano la stessa password.")
         }
     }
 

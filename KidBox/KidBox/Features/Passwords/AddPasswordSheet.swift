@@ -34,6 +34,7 @@ struct AddPasswordSheet: View {
     @State private var generatorOptions = PasswordGeneratorOptions()
     /// Dopo "Genera password" la password resta visibile in chiaro (non come SecureField).
     @State private var showPasswordInClearText = false
+    @State private var generatorExpanded = false
 
     init(familyId: String) {
         self.familyId = familyId
@@ -113,7 +114,7 @@ struct AddPasswordSheet: View {
                         if new.isEmpty { showPasswordInClearText = false }
                     }
                     StrengthMeterView(password: password)
-                    DisclosureGroup("Generatore") {
+                    DisclosureGroup("Generatore", isExpanded: $generatorExpanded) {
                         Stepper(value: $generatorOptions.length, in: 8...64) {
                             Text("Lunghezza: \(generatorOptions.length)")
                                 .foregroundStyle(KBTheme.primaryText(colorScheme))
@@ -181,6 +182,18 @@ struct AddPasswordSheet: View {
             .scrollContentBackground(.hidden)
             .background(KBTheme.background(colorScheme).ignoresSafeArea())
             .navigationTitle("Nuova password")
+            #if DEBUG
+            .onAppear {
+                // `-KBDemoPasswords new`: modulo già compilato col generatore aperto.
+                guard CommandLine.arguments.contains("-KBDemoPasswords") else { return }
+                titleText = "Spotify"
+                username = "famiglia.rossi@example.com"
+                generatorOptions.length = 20
+                password = PasswordGenerator.generate(options: generatorOptions)
+                showPasswordInClearText = true
+                generatorExpanded = true
+            }
+            #endif
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

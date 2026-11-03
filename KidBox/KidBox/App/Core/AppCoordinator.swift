@@ -497,6 +497,15 @@ final class AppCoordinator: ObservableObject {
                         path.append(.documentsCategory(familyId: KBDemoSeed.familyId, categoryId: "demo-doc-cat-\(n)",
                                                        title: KBDemoSeed.demoDocFolders[n]))
                     }
+                    // `-KBDemoPasswords detail|security|new`: dettaglio di Amazon (con
+                    // l'OTP), controllo di sicurezza; «new» lo apre PasswordsHomeView.
+                    if section == .passwords, let p = args.firstIndex(of: "-KBDemoPasswords"), args.indices.contains(p + 1) {
+                        switch args[p + 1] {
+                        case "detail": path.append(.passwordDetail(familyId: KBDemoSeed.familyId, entryId: "demo-pw-4"))
+                        case "security": path.append(.passwordsSecurity(familyId: KBDemoSeed.familyId))
+                        default: break
+                        }
+                    }
                     // `-KBDemoTravel trip|itinerary|info`: apre il viaggio della demo
                     // (itinerario e «Storia e territorio» li apre TravelDetailView).
                     if section == .travel, let t = args.firstIndex(of: "-KBDemoTravel"), args.indices.contains(t + 1),

@@ -176,13 +176,16 @@ extension KBDemoSeed {
         if FamilyKeychainStore.loadFamilyKey(familyId: fid, userId: me) == nil {
             try? FamilyKeychainStore.saveFamilyKey(SymmetricKey(size: .bits256), familyId: fid, userId: me)
         }
+        // Per il controllo di sicurezza delle catture: «Luce e gas» compare in
+        // una violazione, il Wi-Fi è debole, Netflix e il pediatra hanno la
+        // stessa password. Amazon ha anche il codice OTP.
         let passwords: [(String, String, String, String, Bool)] = [
-            ("Netflix", "famiglia.rossi@example.com", "netflix.com", "Gx7!pRt2vQ", true),
-            (it ? "Wi-Fi di casa" : "Home Wi-Fi", "Rossi-Casa", "", "Lasagne2026!", true),
-            (it ? "Registro elettronico" : "School portal", "anna.rossi", "scuola.example.it", "Q4m#Ls9wTz", false),
-            (it ? "Luce e gas" : "Energy supplier", "anna.rossi@example.com", "energia.example.it", "Ve8$nB3kRw", false),
-            ("Amazon", "famiglia.rossi@example.com", "amazon.it", "Zt5@cH8pLx", false),
-            (it ? "Pediatra online" : "Paediatrician portal", "marco.rossi", "salute.example.it", "Pk2!dW7mYs", false),
+            ("Netflix", "famiglia.rossi@example.com", "netflix.com", "Pk2!dW7mYs", true),
+            (t("Wi-Fi di casa", "Home Wi-Fi", "Wi-Fi de casa", "Wi-Fi de la maison"), "Rossi-Casa", "", "rossi2015", true),
+            (t("Registro elettronico", "School portal", "Portal del cole", "Espace école"), "anna.rossi", "scuola.example.it", "Q4m#Ls9wTz", false),
+            (t("Luce e gas", "Energy supplier", "Luz y gas", "Électricité et gaz"), "anna.rossi@example.com", "energia.example.it", "Ve8$nB3kRw", false),
+            ("Amazon", "famiglia.rossi@example.com", "amazon.it", "Zt5@cH8pLx#q9Wm-Rv3", false),
+            (t("Pediatra online", "Paediatrician portal", "Pediatra en línea", "Pédiatre en ligne"), "marco.rossi", "salute.example.it", "Pk2!dW7mYs", false),
         ]
         let vis = KBVisibilityScope.family
         func seal(_ s: String) -> Data? {
@@ -190,11 +193,14 @@ extension KBDemoSeed {
         }
         for (i, p) in passwords.enumerated() {
             guard let title = seal(p.0), let secret = seal(p.3) else { continue }
-            ctx.insert(PasswordEntry(familyId: fid, createdBy: me, visibility: vis, titleCipher: title,
+            ctx.insert(PasswordEntry(id: "demo-pw-\(i)", familyId: fid, createdBy: me, visibility: vis, titleCipher: title,
                                      usernameCipher: seal(p.1), passwordCipher: secret,
                                      websiteCipher: p.2.isEmpty ? nil : seal(p.2),
-                                     lastUsedAt: day(-i, 20, 0), isFavorite: p.4))
+                                     lastUsedAt: day(-i, 20, 0), pwnedCount: i == 3 ? 3 : 0,
+                                     pwnedCheckedAt: .now, isFavorite: p.4))
         }
+        _ = OtpKeychainStore.saveOtpConfig(elementID: "demo-pw-4",
+                                           config: ["secret": "JBSWY3DPEHPK3PXP", "period": 30, "digits": 6, "algorithm": "SHA1"])
 
         // Notizie accese per la famiglia, su Milano
         UserDefaults.standard.set([

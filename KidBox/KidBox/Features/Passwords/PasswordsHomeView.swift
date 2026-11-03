@@ -303,6 +303,15 @@ struct PasswordsHomeView: View {
         .sheet(isPresented: $showAdd) {
             AddPasswordSheet(familyId: familyId)
         }
+        #if DEBUG
+        .task {
+            // `-KBDemoPasswords new`: per le catture della landing.
+            let args = CommandLine.arguments
+            if let i = args.firstIndex(of: "-KBDemoPasswords"), args.indices.contains(i + 1), args[i + 1] == "new" {
+                showAdd = true
+            }
+        }
+        #endif
         .sheet(isPresented: $showGroupsManagement) {
             NavigationStack { GroupsManagementView(familyId: familyId) }
         }
