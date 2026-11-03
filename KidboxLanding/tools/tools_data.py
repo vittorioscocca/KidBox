@@ -321,6 +321,7 @@ TOOLS = [
             "faq": [
                 ("Come funziona il controllo delle violazioni?", "Con k-anonymity su Have I Been Pwned: viene inviata solo una parte dell'hash, mai la password."),
                 ("Posso generare password sicure?", "Sì, il generatore crea password lunghe e casuali, con o senza simboli."),
+                ("Genera anche i codici per la verifica in due passaggi?", "Sì. Inquadri il codice QR che il servizio mostra quando attivi l'autenticazione a due fattori (o incolli la chiave) e KidBox genera i codici OTP a 6 cifre che cambiano ogni 30 secondi: funziona con tutti i servizi che usano un'app di autenticazione (standard TOTP). Se la credenziale è di famiglia, il codice ce l'hanno tutti i membri; su iPhone lo compila anche l'AutoFill."),
                 ("Le password personali sono cifrate diversamente?", "Sì: usano una chiave derivata dalla tua identità, così nemmeno gli altri membri della famiglia possono leggerle."),
             ],
         },
@@ -336,6 +337,7 @@ TOOLS = [
             "faq": [
                 ("How does the breach check work?", "With k-anonymity on Have I Been Pwned: only part of the hash is sent, never the password."),
                 ("Can I generate strong passwords?", "Yes, the generator creates long random passwords, with or without symbols."),
+                ("Does it also generate two-step verification codes?", "Yes. Scan the QR code the service shows when you turn on two-factor authentication (or paste the key) and KidBox generates the 6-digit OTP codes that change every 30 seconds: it works with every service that uses an authenticator app (the TOTP standard). If the credential is a family one, every member has the code; on iPhone AutoFill fills it in too."),
                 ("Are personal passwords encrypted differently?", "Yes: they use a key derived from your identity, so not even other family members can read them."),
             ],
         },

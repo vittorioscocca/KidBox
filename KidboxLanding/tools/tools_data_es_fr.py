@@ -143,6 +143,7 @@ ES = {
         "faq": [
             ("¿Cómo funciona el control de filtraciones?", "Con k-anonimato en Have I Been Pwned: solo se envía una parte del hash, nunca la contraseña."),
             ("¿Puedo generar contraseñas seguras?", "Sí, el generador crea contraseñas largas y aleatorias, con o sin símbolos."),
+            ("¿Genera también los códigos de verificación en dos pasos?", "Sí. Escaneas el código QR que muestra el servicio al activar la autenticación en dos factores (o pegas la clave) y KidBox genera los códigos OTP de 6 cifras que cambian cada 30 segundos: funciona con todos los servicios que usan una app de autenticación (estándar TOTP). Si la credencial es de la familia, todos los miembros tienen el código; en iPhone también lo rellena el autocompletado."),
             ("¿Las contraseñas personales se cifran de otra forma?", "Sí: usan una clave derivada de tu identidad, así que ni siquiera los demás miembros de la familia pueden leerlas."),
         ],
     },
@@ -467,6 +468,7 @@ FR = {
         "faq": [
             ("Comment fonctionne le contrôle des fuites ?", "Avec le k-anonymat sur Have I Been Pwned : seule une partie du hash est envoyée, jamais le mot de passe."),
             ("Puis-je générer des mots de passe sûrs ?", "Oui, le générateur crée des mots de passe longs et aléatoires, avec ou sans symboles."),
+            ("Génère-t-il aussi les codes de validation en deux étapes ?", "Oui. Scannez le code QR affiché par le service quand vous activez l'authentification à deux facteurs (ou collez la clé) et KidBox génère les codes OTP à 6 chiffres qui changent toutes les 30 secondes : cela fonctionne avec tous les services qui utilisent une app d'authentification (standard TOTP). Si l'identifiant est familial, tous les membres ont le code ; sur iPhone, le remplissage automatique le saisit aussi."),
             ("Les mots de passe personnels sont-ils chiffrés autrement ?", "Oui : ils utilisent une clé dérivée de votre identité, si bien que même les autres membres de la famille ne peuvent pas les lire."),
         ],
     },
