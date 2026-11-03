@@ -27,6 +27,13 @@ extension KBDemoSeed {
         return lang == "it" ? "it" : "en"
     }
 
+    /// La lingua chiesta così com'è (it, en, es, fr), per le parti tradotte
+    /// in tutte e quattro.
+    static var rawDemoLang: String {
+        let args = CommandLine.arguments
+        return args.firstIndex(of: "-KBDemoLang").flatMap { args.indices.contains($0 + 1) ? args[$0 + 1] : nil } ?? "it"
+    }
+
     static let grandmaUid = "demo-nonna"
 
     // MARK: - Dati locali
@@ -42,21 +49,33 @@ extension KBDemoSeed {
         ctx.insert(KBFamilyMember(id: "m-\(grandmaUid)", familyId: fid, userId: grandmaUid, role: "member",
                                   displayName: it ? "Nonna Giulia" : "Grandma Giulia", updatedBy: me))
 
-        // Salute di Marco
-        ctx.insert(KBMedicalVisit(familyId: fid, childId: child, date: day(-20, 10, 0), doctorName: "Dr. Bianchi",
+        // Salute di Marco: anche in spagnolo e francese, per il carosello
+        // della landing.
+        let lang = rawDemoLang
+        func t(_ it: String, _ en: String, _ es: String, _ fr: String) -> String {
+            switch lang { case "it": return it; case "es": return es; case "fr": return fr; default: return en }
+        }
+        ctx.insert(KBMedicalVisit(id: "demo-visit-checkup", familyId: fid, childId: child, date: day(-20, 10, 0),
+                                  doctorName: lang == "fr" ? "Dr Bianchi" : "Dr. Bianchi",
                                   doctorSpecialization: .pediatra,
-                                  reason: it ? "Bilancio di salute degli 8 anni" : "8-year check-up",
-                                  diagnosis: it ? "Crescita regolare, peso e altezza nella norma" : "Healthy growth, weight and height on track",
-                                  recommendations: it ? "Vitamina D fino a marzo, controllo vista a scuola" : "Vitamin D until March, eye test at school",
+                                  reason: t("Bilancio di salute degli 8 anni", "8-year check-up", "Revisión de los 8 años", "Bilan de santé des 8 ans"),
+                                  diagnosis: t("Crescita regolare, peso e altezza nella norma", "Healthy growth, weight and height on track",
+                                               "Crecimiento normal, peso y altura dentro de lo esperado", "Croissance régulière, poids et taille dans la norme"),
+                                  recommendations: t("Vitamina D fino a marzo, controllo vista a scuola", "Vitamin D until March, eye test at school",
+                                                     "Vitamina D hasta marzo, revisión de la vista en el colegio", "Vitamine D jusqu'en mars, contrôle de la vue à l'école"),
                                   visitStatus: .completed, createdBy: me))
-        ctx.insert(KBMedicalVisit(familyId: fid, childId: child, date: day(-45, 16, 30), doctorName: "Dr.ssa Ferri",
+        ctx.insert(KBMedicalVisit(familyId: fid, childId: child, date: day(-45, 16, 30),
+                                  doctorName: t("Dr.ssa Ferri", "Dr. Ferri", "Dra. Ferri", "Dr Ferri"),
                                   doctorSpecialization: .otorinolaringoiatra,
-                                  reason: it ? "Mal d'orecchio" : "Earache",
-                                  diagnosis: it ? "Otite media, risolta in una settimana" : "Middle-ear infection, cleared in a week",
+                                  reason: t("Mal d'orecchio", "Earache", "Dolor de oído", "Mal d'oreille"),
+                                  diagnosis: t("Otite media, risolta in una settimana", "Middle-ear infection, cleared in a week",
+                                               "Otitis media, resuelta en una semana", "Otite moyenne, guérie en une semaine"),
                                   visitStatus: .completed, createdBy: partner))
-        ctx.insert(KBMedicalVisit(familyId: fid, childId: child, date: day(2, 9, 15), doctorName: "Dr. Bianchi",
+        ctx.insert(KBMedicalVisit(familyId: fid, childId: child, date: day(2, 9, 15),
+                                  doctorName: lang == "fr" ? "Dr Bianchi" : "Dr. Bianchi",
                                   doctorSpecialization: .pediatra,
-                                  reason: it ? "Controllo dopo l'otite" : "Follow-up after the ear infection",
+                                  reason: t("Controllo dopo l'otite", "Follow-up after the ear infection",
+                                            "Control después de la otitis", "Contrôle après l'otite"),
                                   visitStatus: .booked, reminderOn: true, createdBy: me))
         ctx.insert(KBVaccine(familyId: fid, childId: child, vaccineType: .esavalente, status: .administered,
                              doseNumber: 3, totalDoses: 3, administeredDate: day(-365 * 7, 10, 0), createdBy: me))
@@ -64,8 +83,9 @@ extension KBDemoSeed {
                              doseNumber: 2, totalDoses: 2, administeredDate: day(-365 * 2, 10, 0), createdBy: me))
         ctx.insert(KBVaccine(familyId: fid, childId: child, vaccineType: .influenza, status: .scheduled,
                              doseNumber: 1, totalDoses: 1, scheduledDate: day(14, 11, 0), reminderOn: true, createdBy: me))
-        ctx.insert(KBTreatment(familyId: fid, childId: child, drugName: it ? "Vitamina D" : "Vitamin D",
-                               dosageValue: 4, dosageUnit: it ? "gocce" : "drops", isLongTerm: true,
+        ctx.insert(KBTreatment(familyId: fid, childId: child,
+                               drugName: t("Vitamina D", "Vitamin D", "Vitamina D", "Vitamine D"),
+                               dosageValue: 4, dosageUnit: t("gocce", "drops", "gotas", "gouttes"), isLongTerm: true,
                                startDate: day(-20, 8, 0), scheduleTimes: ["08:00"], reminderEnabled: true, createdBy: me))
 
         // Documenti

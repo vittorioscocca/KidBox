@@ -478,6 +478,19 @@ final class AppCoordinator: ObservableObject {
                 // ripeterebbe sopra sé stessa.
                 if section != .dashboard, args.contains("-KBDemoPush") {
                     path = [section.route(familyId: KBDemoSeed.familyId)]
+                    // `-KBDemoHealth home|visits|visit|vaccines|treatments`:
+                    // con la sezione health, entra nella salute di Marco.
+                    if section == .health, let h = args.firstIndex(of: "-KBDemoHealth"), args.indices.contains(h + 1) {
+                        let fid = KBDemoSeed.familyId, cid = "demo-marco"
+                        path.append(.pediatricHome(familyId: fid, childId: cid))
+                        switch args[h + 1] {
+                        case "visits": path.append(.pediatricVisits(familyId: fid, childId: cid))
+                        case "visit": path.append(.pediatricVisitDetail(familyId: fid, childId: cid, visitId: "demo-visit-checkup"))
+                        case "vaccines": path.append(.pediatricVaccines(familyId: fid, childId: cid))
+                        case "treatments": path.append(.pediatricTreatments(familyId: fid, childId: cid))
+                        default: break
+                        }
+                    }
                 }
             }
             return
