@@ -49,6 +49,7 @@ python3 -m http.server 8080
 | `families` | elenco famiglie, stats per famiglia, override piano |
 | `ai_costs/{monthKey}` + `/families/{fid}` | costi AI mensili aggregati e per famiglia |
 | `metrics/{YYYY-MM-DD}` | rollup utenti attivi — DAU/WAU/MAU, famiglie, feature |
+| `landingTraffic/{YYYY-MM-DD}` | contatore delle aperture della landing (pagina Landing) |
 | `cases` | ticket & bug report |
 | `crash_reports` | crash |
 | `support_tickets` | chat di supporto |
@@ -58,6 +59,7 @@ python3 -m http.server 8080
 |---|---|
 | `initStorageUsageAdmin` | ricalcolo storage di tutte le famiglie |
 | `runAnalyticsRollup` | ricalcolo rollup utenti attivi (oggi + ieri) |
+| `getLandingStats` | Google Search e GA4 della landing (gira come `ga4-reader`, risultato tenuto 30 min) |
 
 > `ai_usage` e `ai_costs` sono popolati da `askAI`; `metrics` da
 > `analyticsRollupDaily`. Vedi `functions/ARCHITECTURE.md` e
