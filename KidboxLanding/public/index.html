@@ -512,6 +512,14 @@
   @media (max-width:420px){ .nav-in { padding:7px 10px; font-size:0.74rem; } }
   @media (max-width:365px){ .nav-in { display:none; } }
   .hero-top > p { color:color-mix(in srgb,var(--text) 82%,transparent); font-weight:500; }
+  /* Barra trasparente in cima alla pagina e freccia «torna su» (assets/scroll.js) */
+  nav { transition:background-color .3s, border-color .3s, backdrop-filter .3s; }
+  nav.at-top { background:transparent; border-bottom-color:transparent; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .to-top { position:fixed; right:20px; bottom:88px; z-index:8999; width:46px; height:46px; border-radius:50%; border:1px solid var(--border); background:var(--surface); color:var(--text); box-shadow:var(--shadow-lg); display:grid; place-items:center; cursor:pointer; opacity:0; visibility:hidden; transform:translateY(10px); transition:opacity .25s, transform .25s, visibility .25s; }
+  .to-top.show { opacity:1; visibility:visible; transform:none; }
+  .to-top:hover { color:var(--accent); }
+  .to-top:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  @media (max-width:520px){ .to-top { right:14px; bottom:76px; width:42px; height:42px; } }
   @media (prefers-reduced-motion:reduce){ .band .device, .hero-stage .device, .band .screen img.shot { opacity:1; translate:none; scale:none; transition:none; } }
 
   @media (max-width:860px) {
@@ -605,7 +613,7 @@
     <p>Non una raccolta di funzioni sciolte, ma strumenti che si conoscono tra loro e condividono lo stesso contesto.</p>
   </div>
 
-  <!-- SALUTE (mockup CSS) -->
+  <!-- SALUTE (carosello di schermate vere) -->
   <div class="band rv">
     <div class="band-copy">
       <div class="p-eyebrow" style="color:var(--green)">🩺 Salute & Pediatria</div>
@@ -619,7 +627,11 @@
       <a class="p-more" href="/strumenti/salute" aria-label="Scopri di più: Salute & Pediatria">Scopri di più ›</a>
     </div>
     <div class="band-visual">
-      <div class="device tilt"><div class="screen"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/it/health-dark.webp"><img class="shot" src="/assets/app/it/health.webp" alt="Il diario di salute di Marco: cure, vaccini e visite" width="600" height="1304" loading="lazy" decoding="async"></picture></div></div>
+      <div class="carousel" data-carousel role="group" aria-roledescription="carousel" aria-label="Schermate della Salute">
+        <div class="device tilt"><div class="screen"><div class="car-track"><figure class="car-slide" data-cap="Il diario di salute di ogni figlio"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/it/health-dark.webp?v=2"><img class="shot" src="/assets/app/it/health.webp?v=2" alt="Il diario di salute di Marco: cure, vaccini, visite ed esami" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></picture></figure><figure class="car-slide" data-cap="Ogni visita, con diagnosi e consigli"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/it/health-visit-dark.webp"><img class="shot" src="/assets/app/it/health-visit.webp" alt="La visita del bilancio di salute con diagnosi e raccomandazioni" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></picture></figure><figure class="car-slide" data-cap="I vaccini fatti e quelli da fare"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/it/health-vaccines-dark.webp"><img class="shot" src="/assets/app/it/health-vaccines.webp" alt="I vaccini di Marco: influenza in programma, MPR ed esavalente fatti" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></picture></figure><figure class="car-slide" data-cap="Le cure in corso, con il promemoria"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/it/health-treatments-dark.webp"><img class="shot" src="/assets/app/it/health-treatments.webp" alt="La vitamina D in corso, quattro gocce al giorno con promemoria" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></picture></figure></div></div></div>
+        <p class="car-cap" aria-live="polite">Il diario di salute di ogni figlio</p>
+        <div class="car-nav"><div class="car-dots" role="tablist"><button class="car-dot" type="button" role="tab" aria-label="Il diario di salute di ogni figlio"></button><button class="car-dot" type="button" role="tab" aria-label="Ogni visita, con diagnosi e consigli"></button><button class="car-dot" type="button" role="tab" aria-label="I vaccini fatti e quelli da fare"></button><button class="car-dot" type="button" role="tab" aria-label="Le cure in corso, con il promemoria"></button></div><button class="car-play" type="button" aria-label="Metti in pausa" data-pause="Metti in pausa" data-play="Riproduci"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11a.8.8 0 0 0 1.2.7l9-5.5a.8.8 0 0 0 0-1.4l-9-5.5A.8.8 0 0 0 3 1.5z"/></svg></button></div>
+      </div>
     </div>
   </div>
   <!-- CALENDARIO (illustrazione CSS) -->
@@ -1027,5 +1039,6 @@
 <script defer src="/assets/like.js?v=1"></script>
 <script defer src="/assets/film.js?v=1"></script>
 <script defer src="/assets/carousel.js?v=1"></script>
+<script defer src="/assets/scroll.js?v=1"></script>
 </body>
 </html>

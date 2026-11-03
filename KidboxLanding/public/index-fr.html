@@ -426,6 +426,14 @@
   @media (max-width:420px){ .nav-in { padding:7px 10px; font-size:0.74rem; } }
   @media (max-width:365px){ .nav-in { display:none; } }
   .hero-top > p { color:color-mix(in srgb,var(--text) 82%,transparent); font-weight:500; }
+  /* Barra trasparente in cima alla pagina e freccia «torna su» (assets/scroll.js) */
+  nav { transition:background-color .3s, border-color .3s, backdrop-filter .3s; }
+  nav.at-top { background:transparent; border-bottom-color:transparent; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .to-top { position:fixed; right:20px; bottom:88px; z-index:8999; width:46px; height:46px; border-radius:50%; border:1px solid var(--border); background:var(--surface); color:var(--text); box-shadow:var(--shadow-lg); display:grid; place-items:center; cursor:pointer; opacity:0; visibility:hidden; transform:translateY(10px); transition:opacity .25s, transform .25s, visibility .25s; }
+  .to-top.show { opacity:1; visibility:visible; transform:none; }
+  .to-top:hover { color:var(--accent); }
+  .to-top:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  @media (max-width:520px){ .to-top { right:14px; bottom:76px; width:42px; height:42px; } }
   @media (prefers-reduced-motion:reduce){ .band .device, .hero-stage .device, .band .screen img.shot { opacity:1; translate:none; scale:none; transition:none; } }
 
   @media (max-width:860px) {
@@ -532,7 +540,11 @@
       <a class="p-more" href="/fr/tools/salute" aria-label="En savoir plus: Santé et pédiatrie">En savoir plus ›</a>
     </div>
     <div class="band-visual">
-      <div class="device tilt"><div class="screen"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/en/health-dark.webp"><img class="shot" src="/assets/app/en/health.webp" alt="Le carnet de santé de Marco : traitements, vaccins et visites" width="600" height="1304" loading="lazy" decoding="async"></picture></div></div>
+      <div class="carousel" data-carousel role="group" aria-roledescription="carousel" aria-label="Écrans Santé">
+        <div class="device tilt"><div class="screen"><div class="car-track"><figure class="car-slide" data-cap="Le journal de santé de chaque enfant"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/fr/health-dark.webp?v=2"><img class="shot" src="/assets/app/fr/health.webp?v=2" alt="Le journal de santé de Marco : traitements, vaccins, visites et examens" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></picture></figure><figure class="car-slide" data-cap="Chaque visite, avec diagnostic et conseils"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/fr/health-visit-dark.webp"><img class="shot" src="/assets/app/fr/health-visit.webp" alt="Le bilan de santé avec diagnostic et recommandations" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></picture></figure><figure class="car-slide" data-cap="Les vaccins faits et ceux à venir"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/fr/health-vaccines-dark.webp"><img class="shot" src="/assets/app/fr/health-vaccines.webp" alt="Les vaccins de Marco : grippe prévue, ROR et hexavalent faits" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></picture></figure><figure class="car-slide" data-cap="Les traitements en cours, avec rappel"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/fr/health-treatments-dark.webp"><img class="shot" src="/assets/app/fr/health-treatments.webp" alt="Vitamine D en cours, quatre gouttes par jour avec rappel" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></picture></figure></div></div></div>
+        <p class="car-cap" aria-live="polite">Le journal de santé de chaque enfant</p>
+        <div class="car-nav"><div class="car-dots" role="tablist"><button class="car-dot" type="button" role="tab" aria-label="Le journal de santé de chaque enfant"></button><button class="car-dot" type="button" role="tab" aria-label="Chaque visite, avec diagnostic et conseils"></button><button class="car-dot" type="button" role="tab" aria-label="Les vaccins faits et ceux à venir"></button><button class="car-dot" type="button" role="tab" aria-label="Les traitements en cours, avec rappel"></button></div><button class="car-play" type="button" aria-label="Mettre en pause" data-pause="Mettre en pause" data-play="Lire"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11a.8.8 0 0 0 1.2.7l9-5.5a.8.8 0 0 0 0-1.4l-9-5.5A.8.8 0 0 0 3 1.5z"/></svg></button></div>
+      </div>
     </div>
   </div>
   <!-- CALENDARIO (illustrazione CSS) -->
@@ -891,5 +903,6 @@
 <script defer src="/assets/like.js?v=1"></script>
 <script defer src="/assets/film.js?v=1"></script>
 <script defer src="/assets/carousel.js?v=1"></script>
+<script defer src="/assets/scroll.js?v=1"></script>
 </body>
 </html>

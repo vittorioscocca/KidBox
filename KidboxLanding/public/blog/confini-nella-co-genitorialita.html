@@ -483,6 +483,14 @@
   @media (max-width:420px){ .nav-in { padding:7px 10px; font-size:0.74rem; } }
   @media (max-width:365px){ .nav-in { display:none; } }
   .hero-top > p { color:color-mix(in srgb,var(--text) 82%,transparent); font-weight:500; }
+  /* Barra trasparente in cima alla pagina e freccia «torna su» (assets/scroll.js) */
+  nav { transition:background-color .3s, border-color .3s, backdrop-filter .3s; }
+  nav.at-top { background:transparent; border-bottom-color:transparent; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .to-top { position:fixed; right:20px; bottom:88px; z-index:8999; width:46px; height:46px; border-radius:50%; border:1px solid var(--border); background:var(--surface); color:var(--text); box-shadow:var(--shadow-lg); display:grid; place-items:center; cursor:pointer; opacity:0; visibility:hidden; transform:translateY(10px); transition:opacity .25s, transform .25s, visibility .25s; }
+  .to-top.show { opacity:1; visibility:visible; transform:none; }
+  .to-top:hover { color:var(--accent); }
+  .to-top:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  @media (max-width:520px){ .to-top { right:14px; bottom:76px; width:42px; height:42px; } }
   @media (prefers-reduced-motion:reduce){ .band .device, .hero-stage .device, .band .screen img.shot { opacity:1; translate:none; scale:none; transition:none; } }
 
   @media (max-width:860px) {
