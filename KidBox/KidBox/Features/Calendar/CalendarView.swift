@@ -595,8 +595,31 @@ struct CalendarView: View {
                     addSheetDate = AddSheetDate(date: sharePrefillDate ?? selectedDate)
                 }
             }
+            #if DEBUG
+            openDemoSheetIfAsked()
+            #endif
         }
     }
+
+    #if DEBUG
+    /// Screenshot della landing (`-KBDemoSeed`): `-KBDemoCalendarSheet
+    /// settings` apre «Calendari collegati» (`export` anche la pagina del link),
+    /// `event` il primo evento di salute.
+    /// La vista si sceglie con `-kb.calendar.viewMode week`.
+    private func openDemoSheetIfAsked() {
+        let args = CommandLine.arguments
+        guard args.contains("-KBDemoSeed"),
+              let i = args.firstIndex(of: "-KBDemoCalendarSheet"), args.indices.contains(i + 1) else { return }
+        let what = args[i + 1]
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            switch what {
+            case "settings", "export": isDeviceCalendarSettingsPresented = true
+            case "event": editingEvent = events.first { $0.categoryRaw == KBEventCategory.health.rawValue } ?? events.first
+            default: break
+            }
+        }
+    }
+    #endif
     
     /// Apre la scheda dell'evento arrivato da notifica, invece di fermarsi al
     /// calendario con l'evento evidenziato sotto: la notifica parla di QUEL
@@ -2476,7 +2499,7 @@ struct CalendarEventFormView: View {
         Button { recurrence = value } label: {
             Text(value.label)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(isSelected ? .white : primaryText)
+                .foregroundStyle(isSelected ? buttonFg : primaryText)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
                 .background(

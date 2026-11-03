@@ -30,6 +30,13 @@ final class CalendarExportStore: ObservableObject {
     func run(_ action: String, familyId: String) async {
         if action == "get" { isLoading = true } else { isBusy = true }
         defer { isLoading = false; isBusy = false }
+        #if DEBUG
+        // La demo degli screenshot non ha un utente Firebase: link finto.
+        if KBDemoSeed.isActive {
+            url = URL(string: "https://kidboxapp.com/cal/demo.ics")
+            return
+        }
+        #endif
         do {
             let result = try await functions.httpsCallable("calendarExportLink").call([
                 "familyId": familyId,

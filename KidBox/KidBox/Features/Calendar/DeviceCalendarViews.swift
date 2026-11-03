@@ -64,6 +64,10 @@ struct DeviceCalendarSettingsView: View {
     @State private var feedToRemove: CalendarFeed?
     @State private var feedErrorMessage: String?
     @State private var connectProvider: ConnectProvider?
+    /// Solo screenshot della demo (`-KBDemoCalendarSheet export`): apre
+    /// subito la pagina del link.
+    @State private var isShowingExport = CommandLine.arguments.contains("-KBDemoSeed")
+        && CommandLine.arguments.contains("export")
 
     private var calendarsBySource: [(source: String, calendars: [DeviceCalendarInfo])] {
         var order: [String] = []
@@ -110,6 +114,9 @@ struct DeviceCalendarSettingsView: View {
             }
             .navigationTitle("Calendari collegati")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(isPresented: $isShowingExport) {
+                CalendarExportView(familyId: familyId)
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Fine") { dismiss() }
