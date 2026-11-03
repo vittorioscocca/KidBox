@@ -84,8 +84,11 @@ function LoginScreen() {
     signUpWithEmail,
     resetPassword,
   } = useAuth();
-  const [showEmailForm, setShowEmailForm] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
+  /* «Registrati» della landing arriva con `?signup`: il modulo email si apre
+     già in modalità creazione account. */
+  const [startSignUp] = useState(() => new URLSearchParams(window.location.search).has("signup"));
+  const [showEmailForm, setShowEmailForm] = useState(startSignUp);
+  const [isSignUp, setIsSignUp] = useState(startSignUp);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
