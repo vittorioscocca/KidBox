@@ -47,7 +47,7 @@ extension KBDemoSeed {
         let child = "demo-marco"
 
         ctx.insert(KBFamilyMember(id: "m-\(grandmaUid)", familyId: fid, userId: grandmaUid, role: "member",
-                                  displayName: it ? "Nonna Giulia" : "Grandma Giulia", updatedBy: me))
+                                  displayName: ["it": "Nonna Giulia", "es": "Abuela Giulia", "fr": "Mamie Giulia"][rawDemoLang] ?? "Grandma Giulia", updatedBy: me))
 
         // Salute di Marco: anche in spagnolo e francese, per il carosello
         // della landing.
@@ -112,27 +112,27 @@ extension KBDemoSeed {
         }
 
         // Chat
-        let chat: [(String, String, String?, Int, Int, (Double, Double)?)] = it
-            ? [(partner, "Luca", "Esco ora dall'ufficio, prendo io Marco a nuoto", 16, 5, nil),
-               (me, "Anna", "Perfetto! Nella borsa c'è già l'accappatoio", 16, 7, nil),
-               (grandmaUid, "Nonna Giulia", "Stasera vi aspetto a cena, faccio le lasagne", 16, 20, nil),
-               (me, "Anna", "Arriviamo verso le 20!", 16, 22, nil),
-               (partner, "Luca", nil, 17, 2, (45.4689, 9.1747)),
-               (partner, "Luca", "Siamo in piscina, Marco è già in acqua", 17, 3, nil)]
-            : [(partner, "Luca", "Leaving the office now, I'll take Marco to swimming", 16, 5, nil),
-               (me, "Anna", "Perfect! His bathrobe is already in the bag", 16, 7, nil),
-               (grandmaUid, "Grandma Giulia", "Dinner at mine tonight, I'm making lasagne", 16, 20, nil),
-               (me, "Anna", "We'll be there around 8!", 16, 22, nil),
-               (partner, "Luca", nil, 17, 2, (45.4689, 9.1747)),
-               (partner, "Luca", "We're at the pool, Marco is already in the water", 17, 3, nil)]
-        // Orari relativi ad adesso: l'ultimo messaggio è di pochi minuti fa.
-        let lastMinutes = (chat.last?.3 ?? 17) * 60 + (chat.last?.4 ?? 3)
+        let grandma = t("Nonna Giulia", "Grandma Giulia", "Abuela Giulia", "Mamie Giulia")
+        let chat: [(String, String, String?, Int, Int, (Double, Double)?)] = [
+            (partner, "Luca", t("Esco ora dall'ufficio, prendo io Marco a nuoto", "Leaving the office now, I'll take Marco to swimming",
+                                "Salgo ahora de la oficina, recojo yo a Marco en natación", "Je quitte le bureau, je prends Marco à la piscine"), 16, 5, nil),
+            (me, "Anna", t("Perfetto! Nella borsa c'è già l'accappatoio", "Perfect! His bathrobe is already in the bag",
+                           "¡Perfecto! El albornoz ya está en la bolsa", "Parfait ! Le peignoir est déjà dans le sac"), 16, 7, nil),
+            (grandmaUid, grandma, t("Stasera vi aspetto a cena, faccio le lasagne", "Dinner at mine tonight, I'm making lasagne",
+                                    "Esta noche os espero a cenar, hago lasaña", "Ce soir je vous attends pour dîner, je fais des lasagnes"), 16, 20, nil),
+            (me, "Anna", t("Arriviamo verso le 20!", "We'll be there around 8!", "¡Llegamos sobre las 20!", "On arrive vers 20 h !"), 16, 22, nil),
+            (partner, "Luca", nil, 17, 2, (45.4689, 9.1747)),
+            (partner, "Luca", t("Siamo in piscina, Marco è già in acqua", "We're at the pool, Marco is already in the water",
+                                "Estamos en la piscina, Marco ya está en el agua", "On est à la piscine, Marco est déjà dans l'eau"), 17, 3, nil),
+        ]
+        // Oggi, nel pomeriggio: per gli screenshot la barra di stato va messa
+        // dopo le 17:03 (`simctl status_bar … --time 17:41`).
         for (sender, name, text, h, m, loc) in chat {
-            let minutesAgo = lastMinutes - (h * 60 + m) + 4
-            ctx.insert(KBChatMessage(familyId: fid, senderId: sender, senderName: name,
-                                     type: loc == nil ? .text : .location, text: text,
-                                     latitude: loc?.0, longitude: loc?.1,
-                                     createdAt: Date().addingTimeInterval(TimeInterval(-minutesAgo * 60))))
+            let msg = KBChatMessage(familyId: fid, senderId: sender, senderName: name,
+                                    type: loc == nil ? .text : .location, text: text,
+                                    latitude: loc?.0, longitude: loc?.1, createdAt: day(0, h, m))
+            msg.syncState = .synced
+            ctx.insert(msg)
         }
 
         // Viaggio con l'itinerario

@@ -47,7 +47,8 @@ struct ChatMessageActionsOverlay: View {
     private let emojis = ["👍", "❤️", "😂", "😮", "😢", "🙏"]
     private let barHeight: CGFloat = 52
     private let rowHeight: CGFloat = 46
-    private let menuWidth: CGFloat = 250
+    // 270: a 250 «Acciones sugeridas» con freccia e icona veniva troncato.
+    private let menuWidth: CGFloat = 270
     private let gap: CGFloat = 8
 
     private var visibleSuggestions: [KBSaveAction] {
@@ -239,6 +240,7 @@ struct ChatMessageActionsOverlay: View {
                 Text(LocalizedStringKey(title))
                     .foregroundStyle(textColor)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                 Spacer(minLength: 8)
                 if trailingChevron {
                     Image(systemName: "chevron.right")

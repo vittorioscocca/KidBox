@@ -192,7 +192,7 @@ struct ChatBubble: View {
     var body: some View {
         VStack(alignment: isOwn ? .trailing : .leading, spacing: 2) {
             let name = message.senderName.trimmingCharacters(in: .whitespacesAndNewlines)
-            let displayName = isOwn ? "Tu" : (name.isEmpty ? "Utente" : name)
+            let displayName = isOwn ? String(localized: "Tu") : (name.isEmpty ? String(localized: "Utente") : name)
             Text(displayName)
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -492,10 +492,10 @@ struct ChatBubble: View {
     }
     
     private var replyTitle: String {
-        guard let repliedTo else { return "Risposta" }
+        guard let repliedTo else { return String(localized: "Risposta") }
         return repliedTo.senderId == currentUID
-        ? "Tu"
-        : (repliedTo.senderName.isEmpty ? "Utente" : repliedTo.senderName)
+        ? String(localized: "Tu")
+        : (repliedTo.senderName.isEmpty ? String(localized: "Utente") : repliedTo.senderName)
     }
     
     @ViewBuilder

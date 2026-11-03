@@ -66,7 +66,7 @@ struct ChatView: View {
     
     private var chatNavigationTitle: String {
         let name = activeFamily?.name.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return name.isEmpty ? "Chat famiglia" : "Chat \(name)"
+        return name.isEmpty ? String(localized: "Chat di famiglia") : String(localized: "Chat \(name)")
     }
     
     var body: some View {
@@ -583,7 +583,7 @@ struct BubbleRowView: View, Equatable {
             ChatBubble(
                 message: msg,
                 isOwn: isOwn,
-                currentUID: Auth.auth().currentUser?.uid ?? "",
+                currentUID: KBUid.current ?? "",
                 onReactionTap: onReactionTap,
                 onLongPress: { messageForReaction = msg },
                 onEdit: canAct ? onEdit : nil,
@@ -1353,10 +1353,13 @@ private struct ChatConversationView: View {
         let locale = kbDeviceLocale()
         switch daysAgo {
         case 0, 1:
+            // «Oggi» / «Ieri»: relativo all'inizio del giorno con lo stile per
+            // nome, se no scriveva «10 ore fa» per i messaggi di oggi.
             let relativeFormatter = RelativeDateTimeFormatter()
             relativeFormatter.locale = locale
             relativeFormatter.unitsStyle = .full
-            let label = relativeFormatter.localizedString(for: date, relativeTo: Date())
+            relativeFormatter.dateTimeStyle = .named
+            let label = relativeFormatter.localizedString(from: DateComponents(day: -daysAgo))
             return label.capitalized(with: locale)
         case 2...6:
             return date.formatted(
@@ -1374,7 +1377,7 @@ private struct ChatConversationView: View {
     // MARK: - makeBubbleRow
     
     private func makeBubbleRow(msg: KBChatMessage, proxy: ScrollViewProxy) -> BubbleRowView {
-        let uid = Auth.auth().currentUser?.uid ?? ""
+        let uid = KBUid.current ?? ""
         let isOwn = msg.senderId == uid
         let canAct = isOwn && viewModel.canEditOrDelete(msg)
         return BubbleRowView(
@@ -2163,7 +2166,7 @@ private struct ChatConversationView: View {
     
     // MARK: - Selection helpers
     
-    private var currentUID: String { Auth.auth().currentUser?.uid ?? "" }
+    private var currentUID: String { KBUid.current ?? "" }
     
     private var canDeleteForEveryone: Bool {
         guard !selectedMessageIds.isEmpty else { return false }

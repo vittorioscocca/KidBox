@@ -15347,6 +15347,28 @@
         }
       }
     },
+    "Chat %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ chat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat %@"
+          }
+        }
+      }
+    },
     "Chat di famiglia" : {
       "localizations" : {
         "en" : {
@@ -64762,6 +64784,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Répondre à %@"
+          }
+        }
+      }
+    },
+    "Risposta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Respuesta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réponse"
           }
         }
       }
