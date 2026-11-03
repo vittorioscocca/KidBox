@@ -83,7 +83,7 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 | Spese | Voci per categoria, più quelle che nascono da sole dalle altre schede | F |
 | Wallet | Biglietti e documenti d'identità con lettura AI dei campi, carte fedeltà con codice a barre, carte di pagamento («Pagamento»: numero, intestatario, scadenza, IBAN, PIN, foto fronte/retro) inserite solo a mano, tutte cifrate e mai lette dall'AI; numero e PIN visibili solo dopo Face ID/impronta (sul web a richiesta, si rinascondono in 30 s); niente CVV | F (la lettura AI consuma i messaggi del piano: sul Free i 5 una tantum) |
 | Documenti | Cartelle e categorie, file cifrati, allegati di tutte le altre schede | F |
-| Password | Credenziali di famiglia o personali, cifrate, con AutoFill e audit di sicurezza | F |
+| Password | Credenziali di famiglia o personali, cifrate, con AutoFill e audit di sicurezza; codici OTP (TOTP, 6 cifre ogni 30 s) per la verifica in due passaggi, da QR o chiave `otpauth://`, nel campo cifrato `otpConfigCipherB64` (iOS, Android, web; su iPhone li compila anche l'AutoFill) | F |
 | Foto e video | Album condivisi, cifrati | F |
 | Chat | Chat di famiglia cifrata end-to-end, con vocali e galleria media | F |
 

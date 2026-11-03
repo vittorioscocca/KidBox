@@ -8,11 +8,12 @@ Genera le pagine scritte a mano in spagnolo e francese a partire dall'inglese.
 
 Le traduzioni stanno in `tools/i18n/<pagina>.json` come liste allineate:
     {"en": [...], "es": [...], "fr": [...]}
-(`en` è l'output di `extract`). Ogni traduzione deve avere esattamente gli stessi
-tag dell'inglese, nello stesso ordine: la build lo verifica.
+(`en` è l'output di `extract`). Ogni traduzione deve avere gli stessi tag dell'inglese, nello stesso ordine
+(gli attributi possono essere tradotti): la build lo verifica.
 Un «testo» è un blocco: una sequenza di testo e tag inline (a, strong, em, span,
 br…) tra due tag di blocco, preso con i suoi tag. Si traducono anche alt, title,
-aria-label, placeholder e il content delle meta description/og.
+aria-label, placeholder, le didascalie dei caroselli (data-cap, data-pause,
+data-play) e il content delle meta description/og.
 
 La build fallisce se manca una traduzione: quando l'inglese cambia, `extract`
 mostra i testi nuovi. I link verso le pagine inglesi diventano quelli della
@@ -35,7 +36,7 @@ TARGETS = ["es", "fr"]
 INLINE = {"a", "strong", "em", "b", "i", "span", "br", "code", "small", "sup", "sub", "mark", "u", "abbr"}
 SKIP = {"style", "script", "svg", "noscript"}
 TOKEN = re.compile(r"<!--.*?-->|<![^>]*>|<(/?)([a-zA-Z0-9]+)([^>]*)>|[^<]+", re.S)
-ATTRS = re.compile(r'(?<=\s)(alt|title|aria-label|placeholder)="([^"]*)"')
+ATTRS = re.compile(r'(?<=\s)(alt|title|aria-label|placeholder|data-cap|data-pause|data-play)="([^"]*)"')
 META = re.compile(r'(<meta\s+(?:name="description"|property="og:(?:title|description)")\s+content=")([^"]*)(")')
 
 
@@ -117,9 +118,21 @@ LINK_MAP = [
     (r"support-en\.html", "support-{l}.html"), (r"privacy-en\.html", "privacy-{l}.html"),
     (r"terms-en\.html", "terms-{l}.html"), (r"data-deletion-en\.html", "data-deletion-{l}.html"),
     (r"/privacy-en\b", "/privacy-{l}"), (r"(?<![a-z])en/tools/", "{l}/tools/"), (r"(?<![a-z])en/blog/", "{l}/blog/"),
-    # Solo la Home ha lo screenshot in ogni lingua; le altre restano in inglese.
-    (r"/assets/app/en/home(-dark)?\.webp", r"/assets/app/{l}/home\1.webp"),
 ]
+
+
+def localize_assets(page, lang):
+    """Le schermate dell'app che esistono nella lingua (Home, caroselli) prendono
+    quella; le altre (Posizione, Password) restano in inglese."""
+    def rep(m):
+        name = m.group(1)
+        return f"/assets/app/{lang}/{name}" if (PUBLIC / "assets" / "app" / lang / name).exists() else m.group(0)
+    page = re.sub(r"/assets/app/en/([\w-]+\.webp)", rep, page)
+    # Lo spot della Home ha una versione per lingua.
+    def video(m):
+        name = f"spot-{lang}.{m.group(1)}"
+        return f"/assets/video/{name}" if (PUBLIC / "assets" / "video" / name).exists() else m.group(0)
+    return re.sub(r"/assets/video/spot-en\.(mp4|webp)", video, page)
 
 
 def build_page(name, lang):
@@ -128,7 +141,10 @@ def build_page(name, lang):
     data = json.loads(dic_file.read_text(encoding="utf-8")) if dic_file.exists() else {"en": []}
     if len(data.get(lang, [])) != len(data["en"]):
         raise SystemExit(f"{dic_file.name} [{lang}]: {len(data.get(lang, []))} traduzioni per {len(data['en'])} testi")
-    tags = lambda x: re.findall(r"<[^>]+>", x)
+    # Si confronta la struttura (nome e ordine dei tag), non gli attributi:
+    # didascalie dei caroselli, aria-label, data-pause/data-play e il video
+    # della lingua stanno dentro i tag e vanno tradotti con il testo.
+    tags = lambda x: re.findall(r"</?[a-zA-Z0-9]+", x)
     for en, tr in zip(data["en"], data[lang]):
         if tags(en) != tags(tr):
             raise SystemExit(f"{dic_file.name} [{lang}]: tag diversi in {en[:70]!r}\n→ {tr[:70]!r}")
@@ -148,6 +164,7 @@ def build_page(name, lang):
     page = "".join(out)
     for pat, rep in LINK_MAP:
         page = re.sub(pat, rep.format(l=lang), page)
+    page = localize_assets(page, lang)
     page = re.sub(r'<html lang="en">', f'<html lang="{lang}">', page, count=1)
     target = name.replace("-en.html", f"-{lang}.html")
     (PUBLIC / target).write_text(page, encoding="utf-8")
