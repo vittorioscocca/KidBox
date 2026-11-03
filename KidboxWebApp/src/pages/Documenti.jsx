@@ -146,6 +146,34 @@ export default function Documenti() {
       .sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
   }, [folders, currentFolderId, searching]);
 
+  /**
+   * Tutte le cartelle in ordine di albero, con la profondità: per «Sposta in»,
+   * dove una lista piatta non dice dove sta una cartella. Una cartella il cui
+   * padre non esiste più finisce in radice, come su iOS.
+   */
+  const folderTree = useMemo(() => {
+    const ids = new Set(folders.map((f) => f.id));
+    const byParent = new Map();
+    for (const f of folders) {
+      const parent = f.parentId && ids.has(f.parentId) ? f.parentId : null;
+      if (!byParent.has(parent)) byParent.set(parent, []);
+      byParent.get(parent).push(f);
+    }
+    const out = [];
+    const walk = (parent, depth, seen) => {
+      const children = (byParent.get(parent) ?? []).sort((a, b) =>
+        (a.title ?? "").localeCompare(b.title ?? "")
+      );
+      for (const f of children) {
+        if (seen.has(f.id)) continue;
+        out.push({ folder: f, depth });
+        walk(f.id, depth + 1, new Set(seen).add(f.id));
+      }
+    };
+    walk(null, 0, new Set());
+    return out;
+  }, [folders]);
+
   const visibleDocs = useMemo(() => {
     const q = search.trim().toLowerCase();
     // La ricerca guarda in tutte le cartelle, non solo in quella aperta.
@@ -781,7 +809,7 @@ export default function Documenti() {
             </button>
           </div>
           <div className="modal-title">{t.documents.moveTo}</div>
-          <div className="modal-section">
+          <div className="modal-section folder-tree">
             <button
               className="modal-option"
               onClick={async () => {
@@ -797,10 +825,11 @@ export default function Documenti() {
               📂 {t.documents.root}
               {!movingDoc.categoryId && " ✓"}
             </button>
-            {folders.map((f) => (
+            {folderTree.map(({ folder: f, depth }) => (
               <button
                 key={f.id}
-                className="modal-option"
+                className="modal-option folder-tree-option"
+                style={{ paddingLeft: 16 + depth * 22 }}
                 onClick={async () => {
                   await moveDocument({
                     familyId: currentFamilyId,
@@ -811,7 +840,10 @@ export default function Documenti() {
                   setMovingDoc(null);
                 }}
               >
-                📁 {f.title}
+                <span className="folder-tree-label">
+                  {depth > 0 && <span className="folder-tree-branch" aria-hidden="true">└</span>}
+                  {depth === 0 ? "📁" : "📂"} {f.title}
+                </span>
                 {movingDoc.categoryId === f.id && " ✓"}
               </button>
             ))}

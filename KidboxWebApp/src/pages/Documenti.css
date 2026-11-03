@@ -449,3 +449,22 @@
 .docs-filegrid li:hover .doc-actions {
   opacity: 1;
 }
+
+/* ── «Sposta in»: albero delle cartelle ── */
+.folder-tree {
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+}
+
+.folder-tree-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.folder-tree-branch {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
