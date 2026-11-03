@@ -1144,6 +1144,16 @@ private extension DocumentFolderView {
                     view.viewModel.bind(modelContext: view.modelContext)
                     view.viewModel.startObservingChanges()
                     view.viewModel.reload()
+                    #if DEBUG
+                    // Screenshot della landing: `-KBDemoDocIntel bill|report`.
+                    let demoArgs = CommandLine.arguments
+                    if KBDemoSeed.isActive, let i = demoArgs.firstIndex(of: "-KBDemoDocIntel"), demoArgs.indices.contains(i + 1) {
+                        let kind = demoArgs[i + 1]
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            view.viewModel.docIntelPayload = KBDemoSeed.demoDocIntel(kind)
+                        }
+                    }
+                    #endif
                     if let docId = coordinator.pendingOpenDocumentId,
                        view.viewModel.docs.first(where: { $0.id == docId }) != nil || view.viewModel.docs.isEmpty {
                         coordinator.pendingOpenDocumentId = nil

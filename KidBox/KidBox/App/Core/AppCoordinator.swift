@@ -491,6 +491,12 @@ final class AppCoordinator: ObservableObject {
                         default: break
                         }
                     }
+                    // `-KBDemoDocs <0-3>`: apre quella cartella dei documenti.
+                    if section == .documents, let d = args.firstIndex(of: "-KBDemoDocs"), args.indices.contains(d + 1),
+                       let n = Int(args[d + 1]), KBDemoSeed.demoDocFolders.indices.contains(n) {
+                        path.append(.documentsCategory(familyId: KBDemoSeed.familyId, categoryId: "demo-doc-cat-\(n)",
+                                                       title: KBDemoSeed.demoDocFolders[n]))
+                    }
                 }
             }
             return

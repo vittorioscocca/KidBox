@@ -88,23 +88,24 @@ extension KBDemoSeed {
                                dosageValue: 4, dosageUnit: t("gocce", "drops", "gotas", "gouttes"), isLongTerm: true,
                                startDate: day(-20, 8, 0), scheduleTimes: ["08:00"], reminderEnabled: true, createdBy: me))
 
-        // Documenti
-        let folders = it ? ["Scuola", "Casa", "Salute", "Auto"] : ["School", "Home", "Health", "Car"]
-        let cats = folders.enumerated().map { i, name in
+        // Documenti, in tutte e quattro le lingue (carosello della landing)
+        let cats = demoDocFolders.enumerated().map { i, name in
             KBDocumentCategory(id: "demo-doc-cat-\(i)", familyId: fid, title: name, sortOrder: i, updatedBy: me)
         }
         cats.forEach { ctx.insert($0) }
-        let docs: [(String, Int, Int)] = it
-            ? [("Pagella primo quadrimestre", 0, -12), ("Autorizzazione gita al museo", 0, -2),
-               ("Contratto di affitto", 1, -200), ("Bolletta luce ottobre", 1, -6),
-               ("Libretto vaccinale di Marco", 2, -30), ("Referto visita pediatrica", 2, -20),
-               ("Polizza auto 2026", 3, -90), ("Libretto di circolazione", 3, -400)]
-            : [("School report, first term", 0, -12), ("Museum trip permission slip", 0, -2),
-               ("Rental agreement", 1, -200), ("October electricity bill", 1, -6),
-               ("Marco's vaccination record", 2, -30), ("Paediatric visit report", 2, -20),
-               ("Car insurance 2026", 3, -90), ("Vehicle registration", 3, -400)]
-        for (title, cat, daysAgo) in docs {
-            ctx.insert(KBDocument(familyId: fid, childId: nil, categoryId: cats[cat].id, title: title,
+        let docs: [(String, Int, Int, String?)] = [
+            (t("Pagella primo quadrimestre", "School report, first term", "Boletín de notas del primer trimestre", "Bulletin du premier trimestre"), 0, -12, nil),
+            (t("Autorizzazione gita al museo", "Museum trip permission slip", "Autorización excursión al museo", "Autorisation sortie au musée"), 0, -2, nil),
+            (t("Orario scolastico 2026-27", "School timetable 2026-27", "Horario escolar 2026-27", "Emploi du temps 2026-27"), 0, -60, nil),
+            (t("Contratto di affitto", "Rental agreement", "Contrato de alquiler", "Contrat de location"), 1, -200, nil),
+            (t("Bolletta luce ottobre", "October electricity bill", "Factura de la luz de octubre", "Facture d'électricité d'octobre"), 1, -6, "demo-doc-bill"),
+            (t("Libretto vaccinale di Marco", "Marco's vaccination record", "Cartilla de vacunación de Marco", "Carnet de vaccination de Marco"), 2, -30, nil),
+            (t("Referto visita pediatrica", "Paediatric visit report", "Informe de la visita al pediatra", "Compte rendu de la visite pédiatrique"), 2, -20, "demo-doc-report"),
+            (t("Polizza auto 2026", "Car insurance 2026", "Póliza del coche 2026", "Assurance auto 2026"), 3, -90, nil),
+            (t("Libretto di circolazione", "Vehicle registration", "Permiso de circulación", "Carte grise"), 3, -400, nil),
+        ]
+        for (title, cat, daysAgo, docId) in docs {
+            ctx.insert(KBDocument(id: docId ?? UUID().uuidString, familyId: fid, childId: nil, categoryId: cats[cat].id, title: title,
                                   fileName: "\(title).pdf", mimeType: "application/pdf",
                                   fileSize: Int64(180_000 + title.count * 4_000), storagePath: "", downloadURL: nil,
                                   createdBy: me, updatedBy: me, createdAt: day(daysAgo, 18, 0), updatedAt: day(daysAgo, 18, 0)))
@@ -295,6 +296,67 @@ extension KBDemoSeed {
         ]
         guard let data = try? JSONSerialization.data(withJSONObject: raw) else { return nil }
         return try? JSONDecoder().decode(NewsFeed.self, from: data)
+    }
+    // MARK: - Documenti per gli screenshot
+
+    static var demoDocFolders: [String] {
+        switch rawDemoLang {
+        case "it": return ["Scuola", "Casa", "Salute", "Auto"]
+        case "es": return ["Colegio", "Casa", "Salud", "Coche"]
+        case "fr": return ["École", "Maison", "Santé", "Voiture"]
+        default: return ["School", "Home", "Health", "Car"]
+        }
+    }
+
+    /// `-KBDemoDocIntel bill|report`: la scheda in cui l'assistente propone
+    /// cosa fare del documento, con una risposta inventata (niente AI).
+    static func demoDocIntel(_ kind: String) -> DocIntelPayload? {
+        let l = rawDemoLang
+        func t(_ it: String, _ en: String, _ es: String, _ fr: String) -> String {
+            switch l { case "it": return it; case "es": return es; case "fr": return fr; default: return en }
+        }
+        let iso = ISO8601DateFormatter()
+        let due = iso.string(from: Calendar.current.date(byAdding: .day, value: 15, to: Date()) ?? Date())
+        var a: [[String: Any]]
+        var head: (String, String)
+        let docId: String
+        if kind == "bill" {
+            docId = "demo-doc-bill"
+            head = (t("Bolletta luce", "Electricity bill", "Factura de la luz", "Facture d'électricité"),
+                    t("Bolletta luce ottobre 2026", "Electricity bill, October 2026", "Factura de la luz, octubre 2026", "Facture d'électricité, octobre 2026"))
+            a = [
+                ["type": "expense_add", "title": head.1, "amount": 84.2, "date": due,
+                 "summary": t("84,20 € in Utenze, ottobre", "€84.20 in Utilities, October", "84,20 € en Suministros, octubre", "84,20 € en Énergie, octobre")],
+                ["type": "house_payment", "title": head.1, "amount": 84.2, "date": due,
+                 "summary": t("Scade tra 15 giorni, addebito sul conto", "Due in 15 days, direct debit", "Vence en 15 días, domiciliada", "Échéance dans 15 jours, prélèvement")],
+                ["type": "todo_add", "title": t("Controllare l'addebito della luce", "Check the electricity debit", "Comprobar el cargo de la luz", "Vérifier le prélèvement d'électricité"), "date": due,
+                 "summary": t("Controllare l'addebito della luce", "Check the electricity debit", "Comprobar el cargo de la luz", "Vérifier le prélèvement d'électricité")],
+                ["type": "rename_document", "renameTo": head.1,
+                 "summary": t("Rinomina in «Bolletta luce ottobre 2026»", "Rename to “Electricity bill, October 2026”", "Renombrar como «Factura de la luz, octubre 2026»", "Renommer en « Facture d'électricité, octobre 2026 »")],
+            ]
+        } else {
+            docId = "demo-doc-report"
+            head = (t("Referto di visita pediatrica", "Paediatric visit report", "Informe de visita pediátrica", "Compte rendu pédiatrique"),
+                    t("Bilancio di salute di Marco, 8 anni", "Marco's 8-year check-up", "Revisión de los 8 años de Marco", "Bilan de santé de Marco, 8 ans"))
+            a = [
+                ["type": "medical_visit", "childId": "demo-marco", "doctorName": "Dr. Bianchi",
+                 "title": t("Bilancio di salute degli 8 anni", "8-year check-up", "Revisión de los 8 años", "Bilan de santé des 8 ans"),
+                 "summary": t("Pediatra: crescita regolare, peso e altezza nella norma", "Paediatrician: healthy growth, weight and height on track", "Pediatra: crecimiento normal, peso y altura correctos", "Pédiatre : croissance régulière, poids et taille dans la norme")],
+                ["type": "treatment_add", "childId": "demo-marco", "title": t("Vitamina D", "Vitamin D", "Vitamina D", "Vitamine D"),
+                 "dosageValue": 4, "dosageUnit": t("gocce", "drops", "gotas", "gouttes"), "dailyFrequency": 1,
+                 "summary": t("Vitamina D, 4 gocce al giorno fino a marzo", "Vitamin D, 4 drops a day until March", "Vitamina D, 4 gotas al día hasta marzo", "Vitamine D, 4 gouttes par jour jusqu'en mars")],
+                ["type": "health_reminder", "childId": "demo-marco", "date": due,
+                 "title": t("Controllo della vista", "Eye test", "Revisión de la vista", "Contrôle de la vue"),
+                 "summary": t("Controllo della vista a scuola", "Eye test at school", "Revisión de la vista en el colegio", "Contrôle de la vue à l'école")],
+                ["type": "rename_document", "renameTo": head.1,
+                 "summary": t("Rinomina in «Bilancio di salute di Marco, 8 anni»", "Rename to “Marco's 8-year check-up”", "Renombrar como «Revisión de los 8 años de Marco»", "Renommer en « Bilan de santé de Marco, 8 ans »")],
+            ]
+        }
+        let json: [String: Any] = ["documentType": head.0, "suggestedTitle": head.1, "actions": a]
+        guard let data = try? JSONSerialization.data(withJSONObject: json),
+              let result = try? JSONDecoder().decode(DocIntelResult.self, from: data) else { return nil }
+        return DocIntelPayload(result: result, documentId: docId,
+                               children: [.init(id: "demo-marco", name: "Marco")], vehicles: [])
     }
 }
 #endif
