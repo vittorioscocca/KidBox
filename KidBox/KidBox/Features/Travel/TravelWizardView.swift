@@ -274,7 +274,7 @@ private extension View {
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("Fine") {
+                    Button(String(localized: "button.done", defaultValue: "Fine")) {
                         travelWizardDismissKeyboard()
                     }
                 }

@@ -119,7 +119,7 @@ struct PharmacyView: View {
                 NewsSettingsView(familyId: familyId)
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
-                            Button("Fine") { showPlaceSettings = false }
+                            Button(String(localized: "button.done", defaultValue: "Fine")) { showPlaceSettings = false }
                         }
                     }
             }

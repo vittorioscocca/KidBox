@@ -244,7 +244,7 @@ struct PediatricVisitsView: View {
                         if !isSelecting { selectedIds.removeAll() }
                     }
                 } label: {
-                    Text(isSelecting ? "Fine" : "Seleziona").font(.subheadline)
+                    Text(isSelecting ? String(localized: "button.done", defaultValue: "Fine") : String(localized: "Seleziona")).font(.subheadline)
                 }
                 if !isSelecting {
                     Button { showAddSheet = true } label: { Image(systemName: "plus") }

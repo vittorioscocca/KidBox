@@ -396,7 +396,7 @@ struct PediatricVaccinesView: View {
                         if !isSelecting { selectedIds.removeAll() }
                     }
                 } label: {
-                    Text(isSelecting ? "Fine" : "Seleziona").font(.subheadline)
+                    Text(isSelecting ? String(localized: "button.done", defaultValue: "Fine") : String(localized: "Seleziona")).font(.subheadline)
                 }
                 if !isSelecting {
                     Button {

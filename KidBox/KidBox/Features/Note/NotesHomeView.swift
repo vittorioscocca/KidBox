@@ -184,7 +184,7 @@ struct NotesHomeView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if isSelecting {
-                        Button("Fine") {
+                        Button(String(localized: "button.done", defaultValue: "Fine")) {
                             isSelecting = false
                             selectedIds = []
                         }

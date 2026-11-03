@@ -1264,7 +1264,7 @@ private struct SetupFamilyCard: View {
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Fine") { focusedField = nil }
+                Button(String(localized: "button.done", defaultValue: "Fine")) { focusedField = nil }
                     .font(.body.weight(.semibold))
             }
         }

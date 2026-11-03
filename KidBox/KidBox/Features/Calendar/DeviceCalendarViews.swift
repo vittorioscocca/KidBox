@@ -119,7 +119,7 @@ struct DeviceCalendarSettingsView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Fine") { dismiss() }
+                    Button(String(localized: "button.done", defaultValue: "Fine")) { dismiss() }
                 }
             }
             .onAppear {

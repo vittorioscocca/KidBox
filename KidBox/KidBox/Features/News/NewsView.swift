@@ -108,7 +108,7 @@ struct NewsView: View {
                 NewsSettingsView(familyId: familyId)
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
-                            Button("Fine") { showSettings = false }
+                            Button(String(localized: "button.done", defaultValue: "Fine")) { showSettings = false }
                         }
                     }
             }
@@ -144,7 +144,27 @@ struct NewsView: View {
             await vm.loadSavedOffers(familyId: familyId, family: family, prefs: prefs)
         }
         .onDisappear { vm.stopPolling() }
+        #if DEBUG
+        .task { await openDemoViewIfAsked() }
+        #endif
     }
+
+    #if DEBUG
+    /// `-KBDemoNews events|event|settings|<categoria>`: per gli screenshot
+    /// della landing apre il filtro, il «+» di un evento o le impostazioni.
+    private func openDemoViewIfAsked() async {
+        let args = CommandLine.arguments
+        guard KBDemoSeed.isActive, let i = args.firstIndex(of: "-KBDemoNews"), args.indices.contains(i + 1) else { return }
+        try? await Task.sleep(for: .seconds(1.2))
+        switch args[i + 1] {
+        case "events": vm.eventsOnly = true
+        case "settings": showSettings = true
+        case "event":
+            if let e = vm.feed?.events.first { calendarPrefill = CalendarEventPrefill(newsEvent: e) }
+        case let raw: vm.filter = NewsCategory(rawValue: raw)
+        }
+    }
+    #endif
 
     // MARK: - Contenuto
 
@@ -185,7 +205,9 @@ struct NewsView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(Date().formatted(.dateTime.weekday(.wide).day().month(.wide).locale(kbDeviceLocale())).capitalized)
+            // Solo l'iniziale: `.capitalized` dava «Martes, 3 De Noviembre».
+            let today = Date().formatted(.dateTime.weekday(.wide).day().month(.wide).locale(kbDeviceLocale()))
+            Text(today.prefix(1).uppercased() + today.dropFirst())
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
             Button {
@@ -453,44 +475,47 @@ struct NewsView: View {
     }
 
     private var offersButton: some View {
-        Button {
-            guard AISettings.shared.consentGiven else {
-                showOffersConsent = true
-                return
-            }
-            Task { await vm.searchOffers(familyId: familyId, family: family, context: modelContext) }
-        } label: {
-            HStack(spacing: 10) {
-                if vm.isSearchingOffers {
-                    ProgressView().tint(.white)
-                    Text("Sto confrontando bollette e offerte…")
-                } else {
-                    Image(systemName: "magnifyingglass")
-                    if vm.offers?.offers.isEmpty == false {
-                        Text("Cerca di nuovo")
+        // Il costo sta sotto il pulsante nel flusso, non in un overlay
+        // spostato: in inglese, spagnolo e francese va su due righe e finiva
+        // sopra il pulsante.
+        VStack(spacing: 6) {
+            Button {
+                guard AISettings.shared.consentGiven else {
+                    showOffersConsent = true
+                    return
+                }
+                Task { await vm.searchOffers(familyId: familyId, family: family, context: modelContext) }
+            } label: {
+                HStack(spacing: 10) {
+                    if vm.isSearchingOffers {
+                        ProgressView().tint(.white)
+                        Text("Sto confrontando bollette e offerte…")
                     } else {
-                        Text("Cerca offerte da bollette e spesa")
+                        Image(systemName: "magnifyingglass")
+                        if vm.offers?.offers.isEmpty == false {
+                            Text("Cerca di nuovo")
+                        } else {
+                            Text("Cerca offerte da bollette e spesa")
+                        }
                     }
                 }
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .foregroundStyle(.white)
+                .background(RoundedRectangle(cornerRadius: 14).fill(KBTheme.bubbleTint))
             }
-            .font(.subheadline.weight(.semibold))
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .foregroundStyle(.white)
-            .background(RoundedRectangle(cornerRadius: 14).fill(KBTheme.bubbleTint))
-        }
-        .buttonStyle(.plain)
-        .disabled(vm.isSearchingOffers)
-        .overlay(alignment: .bottom) {
+            .buttonStyle(.plain)
+            .disabled(vm.isSearchingOffers)
             if !vm.isSearchingOffers {
                 Text(String(format: NSLocalizedString("Circa %d messaggi AI · usa le bollette in Casa e la lista della spesa", comment: "News: cost of personal offers"),
                             vm.offers?.estimateUnits ?? 8))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                    .offset(y: 18)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
             }
         }
-        .padding(.bottom, 16)
     }
 
     /// `item` e `placeName` solo per le notizie: il browser offre «Salva
