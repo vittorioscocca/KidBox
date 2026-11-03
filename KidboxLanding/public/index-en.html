@@ -426,9 +426,14 @@
   @media (max-width:420px){ .nav-in { padding:7px 10px; font-size:0.74rem; } }
   @media (max-width:365px){ .nav-in { display:none; } }
   .hero-top > p { color:color-mix(in srgb,var(--text) 82%,transparent); font-weight:500; }
+  /* La prima schermata sale sotto la barra: in cima, attraverso la barra trasparente, si vede la foto. */
+  .hero { margin-top:-72px; }
+  .hero-top { padding-top:168px; }
+  .hero-photo::after { background:radial-gradient(ellipse 50% 42% at 50% 34%, color-mix(in srgb,var(--bg) 72%,transparent), transparent 100%), linear-gradient(180deg, color-mix(in srgb,var(--bg) 14%,transparent) 0%, color-mix(in srgb,var(--bg) 30%,transparent) 30%, color-mix(in srgb,var(--bg) 40%,transparent) 66%, var(--bg) 100%); }
   /* Barra trasparente in cima alla pagina e freccia «torna su» (assets/scroll.js) */
   nav { transition:background-color .3s, border-color .3s, backdrop-filter .3s; }
   nav.at-top { background:transparent; border-bottom-color:transparent; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  nav.at-top .nav-lnk { color:var(--text); }
   .to-top { position:fixed; right:20px; bottom:88px; z-index:8999; width:46px; height:46px; border-radius:50%; border:1px solid var(--border); background:var(--surface); color:var(--text); box-shadow:var(--shadow-lg); display:grid; place-items:center; cursor:pointer; opacity:0; visibility:hidden; transform:translateY(10px); transition:opacity .25s, transform .25s, visibility .25s; }
   .to-top.show { opacity:1; visibility:visible; transform:none; }
   .to-top:hover { color:var(--accent); }
