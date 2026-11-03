@@ -389,6 +389,27 @@
   .hero-stage.in .device { translate:0 0; scale:1; }
   /* Una colonna: solo dal basso, niente scroll orizzontale. */
   @media (max-width:860px){ .band .device, .band.rev .device { translate:0 40px; } }
+  /* Carosello delle sezioni (assets/carousel.js) */
+  .carousel { display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; max-width:320px; }
+  .carousel .screen { touch-action:pan-y; }
+  .car-track { display:flex; width:100%; height:100%; transition:transform .7s cubic-bezier(.4,0,.2,1); }
+  .car-slide { flex:0 0 100%; width:100%; height:100%; margin:0; }
+  .car-slide img.shot { -webkit-user-drag:none; user-select:none; }
+  .car-cap { margin:4px 0 0; min-height:2.8em; max-width:300px; text-align:center; font-size:15px; line-height:1.4; font-weight:600; color:var(--text); }
+  .car-nav { display:flex; align-items:center; gap:10px; }
+  .car-dots { display:flex; align-items:center; gap:9px; height:44px; padding:0 18px; border-radius:999px; background:var(--bg2); }
+  .car-dot { position:relative; width:8px; height:8px; padding:0; border:0; border-radius:999px; background:var(--faint); cursor:pointer; overflow:hidden; transition:width .45s cubic-bezier(.4,0,.2,1), background .3s; }
+  .car-dot::before { content:""; position:absolute; inset:-14px -5px; }
+  .car-dot.on { width:36px; }
+  .car-dot.on::after { content:""; position:absolute; inset:0; border-radius:inherit; background:var(--text); transform-origin:left; transform:scaleX(1); }
+  .car-dot.on.run::after { animation:car-fill var(--car-ms,4500ms) linear forwards; }
+  @keyframes car-fill { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+  .car-play { width:44px; height:44px; border:0; border-radius:50%; background:var(--bg2); color:var(--text); cursor:pointer; display:grid; place-items:center; }
+  .car-play svg { width:14px; height:14px; fill:currentColor; }
+  .car-play .i-play, .car-play.is-paused .i-pause { display:none; }
+  .car-play.is-paused .i-play { display:block; }
+  .car-dot:focus-visible, .car-play:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  @media (prefers-reduced-motion:reduce){ .car-track, .car-dot { transition:none; } }
   @media (prefers-reduced-motion:reduce){ .band .device, .hero-stage .device, .band .screen img.shot { opacity:1; translate:none; scale:none; transition:none; } }
 
   @media (max-width:860px) {
@@ -511,7 +532,11 @@
       <a class="p-more" href="/en/tools/calendario" aria-label="Learn more: Calendar">Learn more ›</a>
     </div>
     <div class="band-visual">
-      <div class="device tilt"><div class="screen"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/en/calendar-dark.webp"><img class="shot" src="/assets/app/en/calendar.webp" alt="The Rossi family calendar in November: Marco's swimming, parents' meeting, dinner at grandma's" width="600" height="1304" loading="lazy" decoding="async"></picture></div></div>
+      <div class="carousel" data-carousel role="group" aria-roledescription="carousel" aria-label="Calendar screens">
+        <div class="device tilt"><div class="screen"><div class="car-track"><figure class="car-slide" data-cap="The whole month at a glance"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/en/calendar-dark.webp"><img class="shot" src="/assets/app/en/calendar.webp" alt="The Rossi family calendar in November: Marco's swimming, parents' meeting, dinner at grandma's" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></picture></figure><figure class="car-slide" data-cap="Everyone's week, hour by hour"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/en/calendar-week-dark.webp"><img class="shot" src="/assets/app/en/calendar-week.webp" alt="The Rossi family's week: paediatrician, swimming, guitar lesson" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></picture></figure><figure class="car-slide" data-cap="Google, Outlook and the school calendar, together"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/en/calendar-connect-dark.webp"><img class="shot" src="/assets/app/en/calendar-connect.webp" alt="Connected calendars: Google Calendar, Outlook and calendars subscribed by link" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></picture></figure><figure class="car-slide" data-cap="And KidBox inside the calendar you already use"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/en/calendar-export-dark.webp"><img class="shot" src="/assets/app/en/calendar-export.webp" alt="The personal link to see KidBox in Google Calendar, Outlook and Apple" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></picture></figure></div></div></div>
+        <p class="car-cap" aria-live="polite">The whole month at a glance</p>
+        <div class="car-nav"><div class="car-dots" role="tablist"><button class="car-dot" type="button" role="tab" aria-label="The whole month at a glance"></button><button class="car-dot" type="button" role="tab" aria-label="Everyone's week, hour by hour"></button><button class="car-dot" type="button" role="tab" aria-label="Google, Outlook and the school calendar, together"></button><button class="car-dot" type="button" role="tab" aria-label="And KidBox inside the calendar you already use"></button></div><button class="car-play" type="button" aria-label="Pause" data-pause="Pause" data-play="Play"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11a.8.8 0 0 0 1.2.7l9-5.5a.8.8 0 0 0 0-1.4l-9-5.5A.8.8 0 0 0 3 1.5z"/></svg></button></div>
+      </div>
     </div>
   </div>
   <!-- DOCUMENTS -->
@@ -846,5 +871,6 @@
 <script defer src="/assets/plans.js?v=5"></script>
 <script defer src="/assets/like.js?v=1"></script>
 <script defer src="/assets/film.js?v=1"></script>
+<script defer src="/assets/carousel.js?v=1"></script>
 </body>
 </html>

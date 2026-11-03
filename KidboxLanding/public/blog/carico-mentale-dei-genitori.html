@@ -446,6 +446,27 @@
   .hero-stage.in .device { translate:0 0; scale:1; }
   /* Una colonna: solo dal basso, niente scroll orizzontale. */
   @media (max-width:860px){ .band .device, .band.rev .device { translate:0 40px; } }
+  /* Carosello delle sezioni (assets/carousel.js) */
+  .carousel { display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; max-width:320px; }
+  .carousel .screen { touch-action:pan-y; }
+  .car-track { display:flex; width:100%; height:100%; transition:transform .7s cubic-bezier(.4,0,.2,1); }
+  .car-slide { flex:0 0 100%; width:100%; height:100%; margin:0; }
+  .car-slide img.shot { -webkit-user-drag:none; user-select:none; }
+  .car-cap { margin:4px 0 0; min-height:2.8em; max-width:300px; text-align:center; font-size:15px; line-height:1.4; font-weight:600; color:var(--text); }
+  .car-nav { display:flex; align-items:center; gap:10px; }
+  .car-dots { display:flex; align-items:center; gap:9px; height:44px; padding:0 18px; border-radius:999px; background:var(--bg2); }
+  .car-dot { position:relative; width:8px; height:8px; padding:0; border:0; border-radius:999px; background:var(--faint); cursor:pointer; overflow:hidden; transition:width .45s cubic-bezier(.4,0,.2,1), background .3s; }
+  .car-dot::before { content:""; position:absolute; inset:-14px -5px; }
+  .car-dot.on { width:36px; }
+  .car-dot.on::after { content:""; position:absolute; inset:0; border-radius:inherit; background:var(--text); transform-origin:left; transform:scaleX(1); }
+  .car-dot.on.run::after { animation:car-fill var(--car-ms,4500ms) linear forwards; }
+  @keyframes car-fill { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+  .car-play { width:44px; height:44px; border:0; border-radius:50%; background:var(--bg2); color:var(--text); cursor:pointer; display:grid; place-items:center; }
+  .car-play svg { width:14px; height:14px; fill:currentColor; }
+  .car-play .i-play, .car-play.is-paused .i-pause { display:none; }
+  .car-play.is-paused .i-play { display:block; }
+  .car-dot:focus-visible, .car-play:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  @media (prefers-reduced-motion:reduce){ .car-track, .car-dot { transition:none; } }
   @media (prefers-reduced-motion:reduce){ .band .device, .hero-stage .device, .band .screen img.shot { opacity:1; translate:none; scale:none; transition:none; } }
 
   @media (max-width:860px) {
