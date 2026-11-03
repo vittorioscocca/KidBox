@@ -1220,6 +1220,13 @@
         "destination": "/join.html"
       },
       {
+        "source": "/cal/**",
+        "function": {
+          "functionId": "calendarExportFeed",
+          "region": "europe-west1"
+        }
+      },
+      {
         "source": "/api/request",
         "function": {
           "functionId": "requestPublic",

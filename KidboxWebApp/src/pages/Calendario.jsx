@@ -13,6 +13,7 @@ import { useFamily } from "../FamilyContext";
 import { useAuth } from "../AuthContext";
 import { useCalendarFeeds } from "../hooks/useCalendarFeeds";
 import CalendarFeedsModal from "../components/CalendarFeedsModal";
+import CalendarExportModal from "../components/CalendarExportModal";
 import FeedEventModal from "../components/FeedEventModal";
 import { useTranslation } from "../i18n/LocaleContext";
 import EventEditModal from "../components/EventEditModal";
@@ -511,6 +512,7 @@ export default function Calendario() {
   // squadra o festività accanto agli eventi di famiglia.
   const { feeds, events: feedEvents } = useCalendarFeeds(currentFamilyId);
   const [showFeeds, setShowFeeds] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const [openedFeedEvent, setOpenedFeedEvent] = useState(null);
   const [copyPrefill, setCopyPrefill] = useState(null);
   const [error, setError] = useState(null);
@@ -721,6 +723,9 @@ export default function Calendario() {
         <button className="cal-feeds-btn" onClick={() => setShowFeeds(true)} title={t.calendar.feeds.title}>
           🔗 {t.calendar.feeds.title}
         </button>
+        <button className="cal-feeds-btn" onClick={() => setShowExport(true)} title={t.calendar.export.title}>
+          ↗ {t.calendar.export.button}
+        </button>
         <div className="seg-control">
           {VIEWS.map((v) => (
             <button
@@ -912,6 +917,9 @@ export default function Calendario() {
         </>
       )}
 
+      {showExport && (
+        <CalendarExportModal familyId={currentFamilyId} onClose={() => setShowExport(false)} />
+      )}
       {showFeeds && (
         <CalendarFeedsModal
           familyId={currentFamilyId}

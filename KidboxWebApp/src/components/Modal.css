@@ -312,3 +312,50 @@ textarea.modal-field {
 .feed-help-privacy {
   color: var(--muted);
 }
+
+/* Il calendario di KidBox in Google, Outlook e Apple (CalendarExportModal). */
+.export-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0 10px;
+}
+
+.export-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.export-link:hover {
+  border-color: var(--accent);
+}
+
+.export-url {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.export-url .modal-field {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.export-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.export-secondary {
+  color: var(--accent);
+}

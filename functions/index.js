@@ -8690,6 +8690,11 @@ exports.deleteCalendarFeed = calendarFeeds.deleteCalendarFeed;
 exports.refreshCalendarFeeds = calendarFeeds.refreshCalendarFeeds;
 exports.uploadCalendarFeedContent = calendarFeeds.uploadCalendarFeedContent;
 
+// Calendario di KidBox in Google, Outlook e Apple (link iCal in uscita): vedi calendarExport.js.
+const calendarExport = require("./calendarExport");
+exports.calendarExportLink = calendarExport.calendarExportLink;
+exports.calendarExportFeed = calendarExport.calendarExportFeed;
+
 // Richieste («Chi prende Marco giovedì?»): domanda → primo «Io» → to-do.
 // Disegno in internal/richieste-disegno.md. Gli helper delle push restano qui
 // e il modulo li riceve, così token, lingua e pulizia hanno una sola copia.
