@@ -497,6 +497,12 @@ final class AppCoordinator: ObservableObject {
                         path.append(.documentsCategory(familyId: KBDemoSeed.familyId, categoryId: "demo-doc-cat-\(n)",
                                                        title: KBDemoSeed.demoDocFolders[n]))
                     }
+                    // `-KBDemoTravel trip|itinerary|info`: apre il viaggio della demo
+                    // (itinerario e «Storia e territorio» li apre TravelDetailView).
+                    if section == .travel, let t = args.firstIndex(of: "-KBDemoTravel"), args.indices.contains(t + 1),
+                       ["trip", "itinerary", "info"].contains(args[t + 1]) {
+                        path.append(.travelTripDetail(familyId: KBDemoSeed.familyId, tripId: "demo-trip"))
+                    }
                 }
             }
             return

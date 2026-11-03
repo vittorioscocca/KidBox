@@ -271,6 +271,7 @@ struct TravelDetailView: View {
             )
 
             ZStack {
+            ScrollViewReader { kbProxy in
             ScrollView {
                 TravelItineraryDetailView(
                     overview: overview,
@@ -320,6 +321,8 @@ struct TravelDetailView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 24)
             }
+            .task { await openDemoViewIfAsked(kbProxy, destination: overview.destinationTitle) }
+            }
             if regeneratingDayId != nil {
                 Color.black.opacity(0.25).ignoresSafeArea()
                 VStack(spacing: 12) {
@@ -338,6 +341,21 @@ struct TravelDetailView: View {
             }
             .background(KBTheme.background(colorScheme))
         }
+    }
+
+    /// `-KBDemoTravel itinerary|info` (solo DEBUG, demo degli screenshot):
+    /// scorre all'itinerario o apre «Storia e territorio».
+    private func openDemoViewIfAsked(_ proxy: ScrollViewProxy, destination: String) async {
+        #if DEBUG
+        let args = CommandLine.arguments
+        guard KBDemoSeed.isActive, let i = args.firstIndex(of: "-KBDemoTravel"), args.indices.contains(i + 1) else { return }
+        try? await Task.sleep(for: .seconds(1))
+        switch args[i + 1] {
+        case "itinerary": proxy.scrollTo("kb.itinerary", anchor: UnitPoint(x: 0.5, y: 0.1))
+        case "info": placeInfoDestination = destination
+        default: break
+        }
+        #endif
     }
 
     @ViewBuilder

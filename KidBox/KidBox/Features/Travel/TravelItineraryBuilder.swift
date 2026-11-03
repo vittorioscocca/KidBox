@@ -166,13 +166,13 @@ enum TravelItineraryBuilder {
         let destination = destinationTitle(from: tripName)
         let proposalDays = TravelJSONCoercion.dayPlans(from: proposal)
         let dayCount = max(proposalDays.count, plannedDayCount, 1)
-        let dayWord = dayCount == 1 ? "giorno" : "giorni"
         let travelers = travelerSummary(
             participantIdsJson: participantIdsJson,
             members: members,
             children: children
         )
-        let subtitle = "Italia · \(dayCount) \(dayWord) · \(travelers)"
+        let dayLabel = dayCount == 1 ? String(localized: "\(dayCount) giorno") : String(localized: "\(dayCount) giorni")
+        let subtitle = "\(String(localized: "Italia")) · \(dayLabel) · \(travelers)"
 
         let days = proposalDays.enumerated().map { index, proposalDay in
             buildDayFromProposal(dayIndex: index + 1, proposalDay: proposalDay)
@@ -217,7 +217,7 @@ enum TravelItineraryBuilder {
         let days = base.dayCount
         return TravelItineraryOverview(
             destinationTitle: destination.name,
-            subtitle: "\(regionLine) · \(days) \(days == 1 ? "giorno" : "giorni") · Anteprima AI",
+            subtitle: "\(regionLine) · \(days == 1 ? String(localized: "\(days) giorno") : String(localized: "\(days) giorni")) · \(String(localized: "Anteprima AI"))",
             dayCount: base.dayCount,
             estimatedTotal: base.estimatedTotal,
             budgetLimit: base.budgetLimit,
@@ -394,8 +394,8 @@ enum TravelItineraryBuilder {
         ].filter { !$0.stops.isEmpty }
 
         let headline = location.isEmpty
-            ? "Giorno \(dayIndex)"
-            : (dayIndex == 1 ? "Arrivo a \(location)" : location)
+            ? String(localized: "Giorno \(dayIndex)")
+            : (dayIndex == 1 ? String(localized: "Arrivo a \(location)") : location)
 
         return TravelItineraryDay(
             id: "\(dayIndex)-\(dateString)",
@@ -432,8 +432,8 @@ enum TravelItineraryBuilder {
         ].filter { !$0.stops.isEmpty }
 
         let headline = plan.location.isEmpty
-            ? "Giorno \(dayIndex)"
-            : (dayIndex == 1 ? "Arrivo a \(plan.location)" : plan.location)
+            ? String(localized: "Giorno \(dayIndex)")
+            : (dayIndex == 1 ? String(localized: "Arrivo a \(plan.location)") : plan.location)
 
         return TravelItineraryDay(
             id: plan.id,

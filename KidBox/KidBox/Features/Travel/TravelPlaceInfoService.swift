@@ -38,16 +38,22 @@ actor TravelPlaceInfoService {
     private var cache: [String: TravelPlaceInfo] = [:]
 
     func info(for place: String, familyId: String? = nil) async throws -> TravelPlaceInfo {
-        let key = place.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        // Prima la Wikipedia della lingua dell'app: il nome della destinazione
+        // arriva tradotto («Florence», «Florencia») e cercato su it.wikipedia
+        // dava il carcere ADX Florence del Colorado, o nessuna scheda.
+        let appLanguage = kbDeviceLocale().language.languageCode?.identifier ?? "it"
+        let key = appLanguage + "|" + place.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !key.isEmpty else { throw TravelPlaceInfoError.notFound }
         if let cached = cache[key], cached.googleDetails != nil || familyId == nil {
             return cached
         }
 
-        // Italiano prima: per una località italiana l'articolo it.wikipedia è
+        // Poi italiano: per una località italiana l'articolo it.wikipedia è
         // quasi sempre più ricco di quello inglese.
         var base: TravelPlaceInfo?
-        for language in ["it", "en"] where base == nil {
+        var languages = [appLanguage]
+        for fallback in ["it", "en"] where !languages.contains(fallback) { languages.append(fallback) }
+        for language in languages where base == nil {
             base = await fetchInfo(place: place, language: language)
         }
         guard var info = base else { throw TravelPlaceInfoError.notFound }
@@ -86,6 +92,11 @@ actor TravelPlaceInfoService {
 
         var images = base.imageURLs
         for url in extraImages where !images.contains(url) { images.append(url) }
+        // Stemmi, bandiere e mappe su Wikipedia sono SVG: in testa alla galleria
+        // (e come copertina del viaggio) va una foto. it.wikipedia apre Firenze
+        // con lo stemma, en.wikipedia con una veduta.
+        let isDrawing: (URL) -> Bool = { $0.absoluteString.lowercased().contains(".svg") }
+        images = images.filter { !isDrawing($0) } + images.filter(isDrawing)
 
         return TravelPlaceInfo(
             title: base.title,

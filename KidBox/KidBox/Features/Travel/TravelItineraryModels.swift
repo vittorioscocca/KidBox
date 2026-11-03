@@ -13,9 +13,9 @@ enum TravelItineraryPeriod: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .morning: return "MATTINA"
-        case .afternoon: return "POMERIGGIO"
-        case .evening: return "SERA"
+        case .morning: return String(localized: "Mattina").uppercased()
+        case .afternoon: return String(localized: "Pomeriggio").uppercased()
+        case .evening: return String(localized: "travel.period.evening", defaultValue: "Sera").uppercased()
         }
     }
 

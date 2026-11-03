@@ -47,6 +47,7 @@ struct TravelItineraryDetailView: View {
                     }
                 }
                 itinerarySection
+                    .id("kb.itinerary")
             }
             .padding(.horizontal, contentHorizontalPadding)
         }
@@ -107,7 +108,9 @@ struct TravelItineraryDetailView: View {
                 action: hotelsCount > 0 ? String(localized: "Vedi \(hotelsCount)") : nil,
                 onTap: onHotelsTap
             )
-            budgetRow(emoji: "✈️", title: String(localized: "Voli"), subtitle: formatMoney(overview.budget.flights), action: nil, showsChevron: false)
+            // «Trasporti» e non «Voli»: senza un volo la stima copre treno o
+            // auto, e un viaggio in treno mostrava «Voli 120 €».
+            budgetRow(emoji: "🧳", title: String(localized: "Trasporti"), subtitle: formatMoney(overview.budget.flights), action: nil, showsChevron: false)
             HStack(spacing: 10) {
                 tappableBudgetCompactCard(
                     emoji: "🍽️",
@@ -332,7 +335,7 @@ struct TravelItineraryDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Circle().fill(block.period.accentColor).frame(width: 8, height: 8)
-                Text("\(block.period.title) · \(block.stops.count) \(block.stops.count == 1 ? "tappa" : "tappe")")
+                Text(verbatim: "\(block.period.title) · \(block.stops.count == 1 ? String(localized: "\(block.stops.count) tappa") : String(localized: "\(block.stops.count) tappe"))")
                     .font(.caption.weight(.bold))
                 Spacer()
                 if !block.durationSummary.isEmpty || !block.costSummary.isEmpty {
@@ -447,7 +450,7 @@ struct TravelItineraryDetailView: View {
             id: stop.id.uuidString,
             placeName: TravelItineraryBuilder.placeQueryName(title: stop.title, subtitle: stop.detail),
             locationContext: location,
-            scheduleBadge: "GIORNO \(day.dayIndex) · \(block.period.title)",
+            scheduleBadge: "\(String(localized: "Giorno \(day.dayIndex)").uppercased()) · \(block.period.title)",
             time: stop.time,
             staySummary: metrics.stay,
             costSummary: metrics.cost,

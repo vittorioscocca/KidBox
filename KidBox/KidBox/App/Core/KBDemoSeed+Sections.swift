@@ -136,7 +136,7 @@ extension KBDemoSeed {
         }
 
         // Viaggio con l'itinerario
-        let trip = KBTrip(id: "demo-trip", familyId: fid, name: it ? "Toscana in famiglia" : "Family trip to Tuscany",
+        let trip = KBTrip(id: "demo-trip", familyId: fid, name: t("Firenze", "Florence", "Florencia", "Florence"),
                           startDate: day(30, 9, 0), endDate: day(33, 18, 0),
                           participantIdsJson: "[\"\(me)\",\"\(partner)\",\"\(child)\"]",
                           budgetTotal: 1200, createdBy: me)
@@ -146,15 +146,24 @@ extension KBDemoSeed {
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "en_US_POSIX")
         fmt.dateFormat = "yyyy-MM-dd"
-        let days: [(String, String, String, String)] = it
-            ? [("Firenze", "Arrivo in treno e passeggiata fino a Ponte Vecchio", "Giardino di Boboli, con il labirinto per Marco", "Cena in trattoria in Oltrarno"),
-               ("Firenze", "Museo Galileo: esperimenti a misura di bambino", "Gelato e giro in carrozza in piazza della Signoria", "Tramonto da piazzale Michelangelo"),
-               ("San Gimignano", "Le torri e il centro storico", "Picnic nelle colline e fattoria con gli animali", "Agriturismo con piscina"),
-               ("Siena", "Piazza del Campo e il Duomo", "Laboratorio di ceramica per famiglie", "Rientro a Milano in treno")]
-            : [("Florence", "Arrive by train and walk to Ponte Vecchio", "Boboli Gardens, with the maze for Marco", "Dinner at a trattoria in Oltrarno"),
-               ("Florence", "Galileo Museum: experiments for kids", "Gelato and a carriage ride in Piazza della Signoria", "Sunset from Piazzale Michelangelo"),
-               ("San Gimignano", "The towers and the old town", "Picnic in the hills and a farm with animals", "Farm stay with a pool"),
-               ("Siena", "Piazza del Campo and the Cathedral", "Family pottery workshop", "Train back to Milan")]
+        let days: [(String, String, String, String)] = [
+            (t("Firenze", "Florence", "Florencia", "Florence"),
+             t("Arrivo in treno e passeggiata fino a Ponte Vecchio", "Arrive by train and walk to Ponte Vecchio", "Llegada en tren y paseo hasta el Ponte Vecchio", "Arrivée en train et promenade jusqu'au Ponte Vecchio"),
+             t("Giardino di Boboli, con il labirinto per Marco", "Boboli Gardens, with the maze for Marco", "Jardín de Bóboli, con el laberinto para Marco", "Jardin de Boboli, avec le labyrinthe pour Marco"),
+             t("Cena in trattoria in Oltrarno", "Dinner at a trattoria in Oltrarno", "Cena en una trattoria del Oltrarno", "Dîner dans une trattoria de l'Oltrarno")),
+            (t("Firenze", "Florence", "Florencia", "Florence"),
+             t("Museo Galileo: esperimenti a misura di bambino", "Galileo Museum: experiments for kids", "Museo Galileo: experimentos para niños", "Musée Galilée : des expériences pour les enfants"),
+             t("Gelato e giro in carrozza in piazza della Signoria", "Gelato and a carriage ride in Piazza della Signoria", "Helado y paseo en carroza por la Piazza della Signoria", "Glace et tour en calèche sur la Piazza della Signoria"),
+             t("Tramonto da piazzale Michelangelo", "Sunset from Piazzale Michelangelo", "Atardecer desde el Piazzale Michelangelo", "Coucher de soleil depuis le Piazzale Michelangelo")),
+            (t("San Gimignano", "San Gimignano", "San Gimignano", "San Gimignano"),
+             t("Le torri e il centro storico", "The towers and the old town", "Las torres y el casco antiguo", "Les tours et le centre historique"),
+             t("Picnic nelle colline e fattoria con gli animali", "Picnic in the hills and a farm with animals", "Pícnic en las colinas y granja con animales", "Pique-nique dans les collines et ferme avec des animaux"),
+             t("Agriturismo con piscina", "Farm stay with a pool", "Agroturismo con piscina", "Agritourisme avec piscine")),
+            (t("Siena", "Siena", "Siena", "Sienne"),
+             t("Piazza del Campo e il Duomo", "Piazza del Campo and the Cathedral", "La Piazza del Campo y la catedral", "La Piazza del Campo et la cathédrale"),
+             t("Laboratorio di ceramica per famiglie", "Family pottery workshop", "Taller de cerámica para familias", "Atelier de céramique en famille"),
+             t("Rientro a Milano in treno", "Train back to Milan", "Vuelta a Milán en tren", "Retour à Milan en train")),
+        ]
         for (i, d) in days.enumerated() {
             ctx.insert(KBTripDayPlan(familyId: fid, tripId: trip.id, dateString: fmt.string(from: day(30 + i, 9, 0)),
                                      location: d.0, morningPlan: d.1, afternoonPlan: d.2, eveningPlan: d.3))
