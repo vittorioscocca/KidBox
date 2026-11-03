@@ -225,6 +225,7 @@ function renderBarChart(elId, labels, series, fmt = fmtNum, W = 420) {
   const el = document.getElementById(elId);
   if (!el) return;
   const H = 160, PL = 40, PB = 18, PT = 14;
+  delete el.dataset.report;
   const totals = labels.map((_, i) => series.reduce((a, x) => a + (x.values[i] || 0), 0));
   const max = Math.max(...totals);
   if (!(max > 0)) { el.innerHTML = '<div class="dim small">Nessun dato</div>'; return; }
@@ -250,6 +251,11 @@ function renderBarChart(elId, labels, series, fmt = fmtNum, W = 420) {
     ? `<text x="${(PL + i * slot + slot / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="9" style="fill:var(--color-dim)">${l}</text>` : '').join('');
   const legend = series.length > 1 ? `<div class="small" style="margin-top:6px">${series.map(sr => `<span style="margin-right:12px;white-space:nowrap"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${sr.color};margin-right:4px"></span>${sr.name}</span>`).join('')}</div>` : '';
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${grid}${bars}${ticks}</svg>${legend}`;
+  // Per l'export: il grafico come tabella dei suoi numeri.
+  // Senza le righe a zero prima che i dati comincino.
+  const first = Math.max(0, totals.findIndex(t => t > 0));
+  el.dataset.report = reportMdTable(['Periodo', ...series.map(sr => sr.name), ...(series.length > 1 ? ['Totale'] : [])],
+    labels.map((l, i) => [l, ...series.map(sr => fmt(sr.values[i] || 0)), ...(series.length > 1 ? [fmt(totals[i])] : [])]).slice(first));
 }
 
 // Ciambella con legenda: `slices` = [{name, val, color}].
@@ -1439,26 +1445,57 @@ function renderLandingGa4(ga) {
 }
 
 // ── Report scaricabile ────────────────────────────────────────────────────────
-// Legge la pagina com'è ORA (stessi numeri, stesso filtro Periodo) e la scrive in
-// Markdown. Solo le sezioni di numeri: le tabelle lunghe con email (famiglie,
-// utenti, ticket) e i moduli di azione (piani, listino, notifiche) restano fuori.
-const REPORT_SECTIONS = /Utenti & Famiglie|AI —|Storage & Costi|Utenti attivi|Funnel attivazione|Coorti|Landing/;
+// Legge la console com'è ORA (stessi numeri, stesso filtro Periodo) e la scrive
+// in Markdown: tutte le pagine, landing compresa. Restano fuori solo i moduli di
+// azione (piani, listino, notifiche). I grafici entrano come tabella dei loro
+// dati (`data-report`); famiglie e utenti entrano per intero dai dati, non dalla
+// pagina della tabella a schermo. Email, nomi delle persone e azioni no.
+const REPORT_SKIP = /Gestione Piani|Listino piani|Notifiche push/;
+const REPORT_DROP_COLS = /^(Email|Nome|Azioni)$/;
 function reportClean(t) { return (t || '').replace(/\s+/g, ' ').replace(/[↕▲▼]/g, '').trim(); }
 function reportText(el) {
   const c = el.cloneNode(true);
   c.querySelectorAll('button').forEach(b => b.remove());
   return reportClean(c.textContent);
 }
-function reportTable(t) {
-  const head = [...t.querySelectorAll('thead th')].map(th => reportClean(th.innerText));
-  const rows = [...t.querySelectorAll('tbody tr')].slice(0, 200)
-    .map(tr => [...tr.children].map(td => reportClean(td.innerText).replace(/\|/g, '/')));
+function reportMdTable(head, rows) {
   if (!head.length || !rows.length) return '';
+  const cell = c => String(c ?? '—').replace(/\|/g, '/');
   return '\n| ' + head.join(' | ') + ' |\n|' + head.map(() => '---').join('|') + '|\n' +
-    rows.map(r => '| ' + r.join(' | ') + ' |').join('\n') + '\n';
+    rows.map(r => '| ' + r.map(cell).join(' | ') + ' |').join('\n') + '\n';
+}
+function reportTable(t) {
+  const tbodyId = t.querySelector('tbody')?.id;
+  if (tbodyId === 'fam-tbody') return reportFamilies();
+  if (tbodyId === 'user-tbody') return reportUsers();
+  const head = [...t.querySelectorAll('thead th')].map(th => reportClean(th.innerText));
+  const keep = head.map(h => !REPORT_DROP_COLS.test(h));
+  const rows = [...t.querySelectorAll('tbody tr')].slice(0, 200)
+    .map(tr => [...tr.children].map(td => reportClean(td.innerText)).filter((_, i) => keep[i]));
+  return reportMdTable(head.filter((_, i) => keep[i]), rows);
+}
+const repDate = d => d ? new Date(d).toLocaleDateString('it-IT') : '—';
+function reportFamilies() {
+  const rows = [..._familyRows].sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0)).map(r => [
+    r.fid.slice(0, 8), (r.fname || '—') + (r.internal ? ' (prova)' : ''), r.planLabel || r.plan, r.realMembers,
+    `iOS ${r.iosCount} · Android ${r.androidCount}`, fmtBytes(r.storageBytes), r.aiMonth,
+    repDate(r.createdAtMs), repDate(r.lastOpenAt)]);
+  return `\nTutte le ${rows.length} famiglie, dalla più recente (senza email).\n` +
+    reportMdTable(['ID', 'Famiglia', 'Piano', 'Membri', 'Dispositivi', 'Storage', 'AI mese', 'Creata', 'Ultima apertura'], rows);
+}
+function reportUsers() {
+  const famById = new Map(_familyRows.map(r => [r.fid, r]));
+  const rows = [..._allUsersRows].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map(u => {
+    const f = famById.get(_familyByUid[u.uid]);
+    return [u.uid.slice(0, 8) + (u.internal ? ' (test)' : ''), f ? (f.fname || '—') : '—', f ? (f.planLabel || f.plan) : '—',
+      u.platform || '—', repDate(u.createdAt), repDate(u.lastOpenAt), repDate(u.lastActiveAt)];
+  });
+  return `\nTutti i ${rows.length} utenti, dal più recente (senza email né nomi).\n` +
+    reportMdTable(['Utente', 'Famiglia', 'Piano', 'Dispositivo', 'Registrato', 'Ultima apertura', 'App viva'], rows);
 }
 function reportMd(el) {
   if (el.nodeType === 3) return '';
+  if (el.dataset?.report) return el.dataset.report;
   if (!el.matches || el.matches('svg,canvas,button,script,style,input,select')) return '';
   if (el.tagName === 'TABLE') return reportTable(el);
   if (el.querySelector(':scope > .card-lbl')) {
@@ -1489,7 +1526,7 @@ window.downloadReport = function() {
   for (const node of nodes) {
     if (node.classList.contains('sec-title')) {
       const title = reportText(node);
-      on = REPORT_SECTIONS.test(title);
+      on = !!title && !REPORT_SKIP.test(title);
       if (on) out += `\n## ${title}\n`;
       continue;
     }
@@ -2034,6 +2071,7 @@ function renderTrendChart(days) {
   const ticks = [0, Math.floor((asc.length-1)/2), asc.length-1].map(i => `<text x="${x(i)}" y="${H-4}" text-anchor="middle" font-size="9" fill="var(--color-dim)">${asc[i].id.slice(5)}</text>`).join('');
   const legend = series.map(([n,,c]) => `<span style="margin-right:12px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${c};margin-right:4px"></span>${n}</span>`).join('');
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${grid}${lines}${ticks}</svg><div class="small" style="margin-top:6px">${legend}</div>`;
+  el.dataset.report = reportMdTable(['Giorno', ...series.map(([n]) => n)], asc.map(d => [d.id, ...series.map(([, k]) => d[k] ?? '—')]));
 }
 
 // Funnel calcolato dal server (analyticsRollup.buildFamilyFunnel): una famiglia
