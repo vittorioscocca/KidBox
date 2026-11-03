@@ -219,10 +219,12 @@ function drawPie(canvasId, slices) {
 // ── Grafici SVG ──────────────────────────
 // Barre impilate: `series` = [{name, color, values}] allineate a `labels`.
 // SVG con i colori del tema, come renderTrendChart: niente librerie.
-function renderBarChart(elId, labels, series, fmt = fmtNum) {
+// `W` più largo per i grafici a tutta riga: il viewBox si scala con la
+// larghezza, e a 420 le scritte uscirebbero enormi.
+function renderBarChart(elId, labels, series, fmt = fmtNum, W = 420) {
   const el = document.getElementById(elId);
   if (!el) return;
-  const W = 420, H = 160, PL = 40, PB = 18, PT = 14;
+  const H = 160, PL = 40, PB = 18, PT = 14;
   const totals = labels.map((_, i) => series.reduce((a, x) => a + (x.values[i] || 0), 0));
   const max = Math.max(...totals);
   if (!(max > 0)) { el.innerHTML = '<div class="dim small">Nessun dato</div>'; return; }
@@ -239,7 +241,7 @@ function renderBarChart(elId, labels, series, fmt = fmtNum) {
       bars += `<rect x="${x.toFixed(1)}" y="${y1.toFixed(1)}" width="${bw.toFixed(1)}" height="${(y0 - y1).toFixed(1)}" rx="2" style="fill:${sr.color}"><title>${l} · ${sr.name}: ${fmt(v)}</title></rect>`;
       acc += v;
     });
-    if (totals[i]) bars += `<text x="${(x + bw / 2).toFixed(1)}" y="${(y(totals[i]) - 3).toFixed(1)}" text-anchor="middle" font-size="8" style="fill:var(--color-text)">${fmt(totals[i])}</text>`;
+    if (totals[i] && n <= 16) bars += `<text x="${(x + bw / 2).toFixed(1)}" y="${(y(totals[i]) - 3).toFixed(1)}" text-anchor="middle" font-size="8" style="fill:var(--color-text)">${fmt(totals[i])}</text>`;
   });
   const grid = [0, .5, 1].map(f => `<line x1="${PL}" x2="${W - 6}" y1="${y(max * f)}" y2="${y(max * f)}" style="stroke:var(--color-brd)"/><text x="${PL - 4}" y="${y(max * f) + 3}" text-anchor="end" font-size="9" style="fill:var(--color-dim)">${fmt(max * f)}</text>`).join('');
   const every = Math.ceil(n / 6);
@@ -1248,29 +1250,192 @@ function renderCohorts(rows) {
 // Contatore nostro della landing (senza cookie): aperture, restati 10 secondi e
 // tap sullo store per sorgente, ultimi 7 giorni chiusi. Un giorno senza documento
 // vale zero (nessun ping). Doc: functions/landingTraffic.js.
+// ── LANDING ──────────────────────────────
+// Tre fonti che contano cose diverse e non si sommano:
+//  · contatore `landingTraffic` (dal 16/09): ogni apertura di pagina, anche
+//    senza consenso ai cookie; letto qui, lettura admin.
+//  · Google Search (Search Console): click e impressioni nei risultati, con
+//    2-3 giorni di ritardo.
+//  · GA4 sugli host della landing: solo chi accetta i cookie, quindi meno.
+// Le ultime due arrivano dalla callable getLandingStats (functions/landingStats.js),
+// che tiene il risultato 30 minuti; «Aggiorna» lo rifà.
+const LANDING_SRC = { meta: ['Meta', 'var(--color-purple)'], google: ['Google', 'var(--color-blue)'], direct: ['Diretto', 'var(--color-orange)'], referral: ['Altri siti', 'var(--color-green)'], other: ['Altro', 'var(--color-dim-line)'] };
+const dm = id => id.slice(8, 10) + '/' + id.slice(5, 7);
+const pctTxt = (n, d) => d ? Math.round(n / d * 100) + '%' : '—';
+function deltaTxt(cur, prev) {
+  if (!prev) return '';
+  const d = Math.round((cur - prev) / prev * 100);
+  return ` · ${d >= 0 ? '+' : ''}${d}% sul periodo prima`;
+}
+function tableCard(head, rows) {
+  if (!rows.length) return '<div class="dim small" style="padding:12px 16px">Nessun dato</div>';
+  return `<div class="tbl-scroll"><table><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${
+    rows.map(r => `<tr>${r.map((c, i) => `<td data-label="${head[i]}">${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+function barsCard(elId, items, color) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const max = Math.max(1, ...items.map(x => x[1]));
+  const tot = items.reduce((a, x) => a + x[1], 0);
+  el.innerHTML = items.length ? items.map(([lbl, n, sub]) => `
+    <div class="bar-row">
+      <div class="bar-lbl" title="${lbl}">${lbl}</div>
+      <div class="bar-track"><div class="bar-fill ${color}" style="width:${(n / max * 100).toFixed(1)}%"></div></div>
+      <div class="bar-val">${sub ?? fmtNum(n) + ' · ' + pctTxt(n, tot)}</div>
+    </div>`).join('') : '<div class="dim small">Nessun dato</div>';
+}
+const escHtml = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+let _landingLoaded = false;
 async function loadLanding() {
   const el = document.getElementById('section-landing');
   if (!el) return;
+  // Google Search e GA4 non bloccano il resto della console.
+  loadLandingGoogle(_landingLoaded);
+  _landingLoaded = true;
   try {
-    const ids = lastNDates(8).slice(1);              // ieri … 7 giorni fa
-    const snaps = await Promise.all(ids.map(id => getDoc(doc(db, 'landingTraffic', id))));
-    const days = snaps.filter(x => x.exists()).map(x => x.data());
-    const SRC = { meta: 'Meta (Instagram/Facebook)', google: 'Google', direct: 'diretto', referral: 'altri siti', other: 'altro' };
-    const sum = (k) => days.reduce((a, d) => a + (d[k] || 0), 0);
-    const rows = Object.keys(SRC).map(k => ({ k, v: sum('view_src_' + k), e: sum('engaged_src_' + k), s: sum('store_src_' + k) }))
-      .filter(r => r.v || r.s).sort((a, b) => b.v - a.v);
-    document.getElementById('landing-sub').textContent = `· ${ids[ids.length - 1].slice(5)} → ${ids[0].slice(5)} · ${days.length} giorni con dati`;
-    if (!rows.length) { el.innerHTML = '<div class="tcard"><div class="dim small" style="padding:12px 16px">Nessuna apertura registrata negli ultimi 7 giorni</div></div>'; return; }
-    const pc = (n, d) => d ? Math.round(n / d * 100) + '%' : '—';
-    const tv = sum('view'), te = sum('engaged');
-    const ts = sum('store_ios') + sum('store_android') + sum('store_web');
-    const tr = rows.map(r => `<tr><td>${SRC[r.k]}</td><td>${fmtNum(r.v)}</td><td>${fmtNum(r.e)} <span class="dim">${pc(r.e, r.v)}</span></td><td>${fmtNum(r.s)}</td><td>${pc(r.s, r.v)}</td></tr>`).join('');
-    el.innerHTML = `<div class="tcard"><div class="tbl-scroll"><table><thead><tr><th>Sorgente</th><th>Aperture</th><th>Restati 10 s</th><th>Tap store</th><th>Store ÷ aperture</th></tr></thead><tbody>${tr}
-    <tr><td><b>Totale</b></td><td><b>${fmtNum(tv)}</b></td><td><b>${fmtNum(te)}</b> <span class="dim">${pc(te, tv)}</span></td><td><b>${fmtNum(ts)}</b> <span class="dim">iOS ${sum('store_ios')} · Android ${sum('store_android')} · web ${sum('store_web')}</span></td><td>${pc(ts, tv)}</td></tr></tbody></table></div>
-    <div class="small dim" style="padding:8px 16px">Conta le aperture di pagina, non le persone: si confronta con le «landing viste» di Meta, non con gli utenti di GA4.</div></div>`;
+    const snap = await getDocs(collection(db, 'landingTraffic'));
+    const byId = {};
+    snap.forEach(d => { byId[d.id] = d.data(); });
+    renderLandingCounter(byId);
   } catch (e) {
     el.innerHTML = `<div class="tcard"><div class="dim small" style="padding:12px 16px">Errore: ${e.message}</div></div>`;
   }
+}
+
+function renderLandingCounter(byId) {
+  const el = document.getElementById('section-landing');
+  {
+    const ids = Object.keys(byId).sort();
+    const sumOf = (list, k) => list.reduce((a, id) => a + (byId[id]?.[k] || 0), 0);
+    const w1 = lastNDates(7), w0 = lastNDates(14).slice(7);   // da oggi indietro
+    const v1 = sumOf(w1, 'view'), v0 = sumOf(w0, 'view');
+    const allV = sumOf(ids, 'view'), allE = sumOf(ids, 'engaged');
+    const stores = k => sumOf(ids, 'store_' + k);
+    const allS = stores('ios') + stores('android') + stores('web');
+    setVal('lt-views', allV.toLocaleString('it-IT'));
+    setVal('lt-views-sub', ids.length ? `dal ${dm(ids[0])} · ${ids.length} giorni · media ${Math.round(allV / ids.length)} al giorno` : 'nessun dato');
+    setVal('lt-week', fmtNum(v1));
+    setVal('lt-week-sub', `aperture negli ultimi 7 giorni (oggi compreso)${deltaTxt(v1, v0)}`);
+    setVal('lt-engaged', pctTxt(allE, allV));
+    setVal('lt-engaged-sub', `${fmtNum(allE)} aperture rimaste almeno 10 s`);
+    setVal('lt-store', fmtNum(allS));
+    setVal('lt-store-sub', `iOS ${stores('ios')} · Android ${stores('android')} · web ${stores('web')} · ${pctTxt(allS, allV)} delle aperture`);
+
+    const days = lastNDates(60).reverse();
+    renderBarChart('chart-lt-daily', days.map(dm), Object.entries(LANDING_SRC).map(([k, [name, color]]) => ({
+      name, color, values: days.map(id => byId[id]?.['view_src_' + k] || 0),
+    })), fmtNum, 1000);
+    const PAGES = { home: 'Home', blog: 'Blog', strumenti: 'Strumenti', scarica: 'Scarica', other: 'Altre pagine' };
+    barsCard('bars-lt-pages', Object.entries(PAGES).map(([k, l]) => [l, sumOf(ids, 'view_page_' + k)]).sort((a, b) => b[1] - a[1]), 'orange');
+    const PLAT = { ios: 'iPhone / iPad', android: 'Android', other: 'Computer e altro' };
+    barsCard('bars-lt-plat', Object.entries(PLAT).map(([k, l]) => [l, sumOf(ids, 'view_plat_' + k)]), 'blue');
+
+    // Tabella per sorgente degli ultimi 7 giorni chiusi (ieri … 7 giorni fa).
+    const wk = lastNDates(8).slice(1);
+    const rows = Object.keys(LANDING_SRC).map(k => ({ k, v: sumOf(wk, 'view_src_' + k), e: sumOf(wk, 'engaged_src_' + k), s: sumOf(wk, 'store_src_' + k) }))
+      .filter(r => r.v || r.s).sort((a, b) => b.v - a.v);
+    document.getElementById('landing-sub').textContent = `· sorgenti ${dm(wk[wk.length - 1])} → ${dm(wk[0])}`;
+    if (!rows.length) { el.innerHTML = '<div class="tcard"><div class="dim small" style="padding:12px 16px">Nessuna apertura registrata negli ultimi 7 giorni</div></div>'; return; }
+    const tv = sumOf(wk, 'view'), te = sumOf(wk, 'engaged');
+    const ts = sumOf(wk, 'store_ios') + sumOf(wk, 'store_android') + sumOf(wk, 'store_web');
+    const tr = rows.map(r => `<tr><td>${LANDING_SRC[r.k][0]}</td><td>${fmtNum(r.v)}</td><td>${fmtNum(r.e)} <span class="dim">${pctTxt(r.e, r.v)}</span></td><td>${fmtNum(r.s)}</td><td>${pctTxt(r.s, r.v)}</td></tr>`).join('');
+    el.innerHTML = `<div class="tcard"><div class="tcard-hdr">Per sorgente · ultimi 7 giorni chiusi</div><div class="tbl-scroll"><table><thead><tr><th>Sorgente</th><th>Aperture</th><th>Restati 10 s</th><th>Tap store</th><th>Store ÷ aperture</th></tr></thead><tbody>${tr}
+    <tr><td><b>Totale</b></td><td><b>${fmtNum(tv)}</b></td><td><b>${fmtNum(te)}</b> <span class="dim">${pctTxt(te, tv)}</span></td><td><b>${fmtNum(ts)}</b> <span class="dim">iOS ${sumOf(wk, 'store_ios')} · Android ${sumOf(wk, 'store_android')} · web ${sumOf(wk, 'store_web')}</span></td><td>${pctTxt(ts, tv)}</td></tr></tbody></table></div>
+    <div class="small dim" style="padding:8px 16px">Conta le aperture di pagina, non le persone: si confronta con le «landing viste» di Meta, non con gli utenti di GA4. Le tue visite contano come le altre.</div></div>`;
+  }
+}
+
+async function loadLandingGoogle(force) {
+  const status = document.getElementById('lg-status');
+  if (status) status.textContent = 'Caricamento da Google…';
+  let d;
+  try {
+    d = (await httpsCallable(functions, 'getLandingStats', { timeout: 70000 })({ force: !!force })).data;
+  } catch (e) {
+    if (status) status.textContent = 'Errore: ' + e.message;
+    return;
+  }
+  if (status) status.textContent = `Letti da Google alle ${new Date(d.computedAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
+  renderSearchConsole(d.searchConsole || {});
+  renderLandingGa4(d.ga4 || {});
+}
+
+function renderSearchConsole(sc) {
+  const box = document.getElementById('sc-wrap');
+  if (sc.error) { box.innerHTML = `<div class="tcard"><div class="dim small" style="padding:12px 16px">Search Console non disponibile: ${escHtml(sc.error)}</div></div>`; return; }
+  const daily = sc.daily || [];
+  const lastDay = daily.length ? daily[daily.length - 1].keys[0] : null;
+  const win = (from, to) => daily.slice(Math.max(0, daily.length - to), daily.length - from);
+  const agg = rows => {
+    const c = rows.reduce((a, r) => a + r.clicks, 0), im = rows.reduce((a, r) => a + r.impressions, 0);
+    const pos = im ? rows.reduce((a, r) => a + r.position * r.impressions, 0) / im : 0;
+    return { c, im, ctr: im ? c / im : 0, pos };
+  };
+  const cur = agg(win(0, 28)), prevRows = win(28, 56), prev = prevRows.length >= 28 ? agg(prevRows) : null;
+  setVal('sc-clicks', fmtNum(cur.c));
+  setVal('sc-clicks-sub', `28 giorni${prev ? deltaTxt(cur.c, prev.c) : ''}`);
+  setVal('sc-impr', fmtNum(cur.im));
+  setVal('sc-impr-sub', `volte che KidBox è apparso${prev ? deltaTxt(cur.im, prev.im) : ''}`);
+  setVal('sc-ctr', (cur.ctr * 100).toFixed(1).replace('.', ',') + '%');
+  setVal('sc-pos', cur.pos ? cur.pos.toFixed(1).replace('.', ',') : '—');
+  setVal('sc-sub', lastDay ? `· dati fino al ${dm(lastDay)} (Google pubblica con 2-3 giorni di ritardo)` : '');
+
+  const d60 = daily.slice(-60);
+  const labels = d60.map(r => dm(r.keys[0]));
+  renderBarChart('chart-sc-impr', labels, [{ name: 'Impressioni', color: 'var(--color-blue)', values: d60.map(r => r.impressions) }]);
+  renderBarChart('chart-sc-clicks', labels, [{ name: 'Click', color: 'var(--color-green)', values: d60.map(r => r.clicks) }]);
+
+  const pctF = x => (x * 100).toFixed(1).replace('.', ',') + '%';
+  const posF = x => x.toFixed(1).replace('.', ',');
+  document.getElementById('sc-queries').innerHTML = tableCard(['Ricerca', 'Click', 'Impressioni', 'CTR', 'Posizione'],
+    (sc.queries || []).sort((a, b) => b.impressions - a.impressions).slice(0, 20)
+      .map(r => [escHtml(r.keys[0]), r.clicks, fmtNum(r.impressions), pctF(r.ctr), posF(r.position)]));
+  const short = u => u.replace(/^https:\/\/(www\.)?kidboxapp\.com/, '') || '/';
+  document.getElementById('sc-pages').innerHTML = tableCard(['Pagina', 'Click', 'Impressioni', 'Posizione'],
+    (sc.pages || []).sort((a, b) => b.impressions - a.impressions).slice(0, 20)
+      .map(r => [`<span title="${escHtml(r.keys[0])}">${escHtml(short(r.keys[0]))}</span>`, r.clicks, fmtNum(r.impressions), posF(r.position)]));
+  const CC = { ita: 'Italia', usa: 'Stati Uniti', esp: 'Spagna', fra: 'Francia', gbr: 'Regno Unito', deu: 'Germania', che: 'Svizzera', bel: 'Belgio', can: 'Canada', mex: 'Messico', arg: 'Argentina', ind: 'India', bra: 'Brasile', nld: 'Paesi Bassi', aus: 'Australia', irl: 'Irlanda', aut: 'Austria', prt: 'Portogallo', col: 'Colombia', chl: 'Cile' };
+  barsCard('bars-sc-countries', (sc.countries || []).map(r => [CC[r.keys[0]] || r.keys[0].toUpperCase(), r.impressions,
+    `${fmtNum(r.impressions)} impr. · ${r.clicks} click`]), 'blue');
+  const DEV = { DESKTOP: 'Computer', MOBILE: 'Telefono', TABLET: 'Tablet' };
+  barsCard('bars-sc-devices', (sc.devices || []).map(r => [DEV[r.keys[0]] || r.keys[0], r.impressions,
+    `${fmtNum(r.impressions)} impr. · ${r.clicks} click`]), 'blue');
+}
+
+function renderLandingGa4(ga) {
+  const box = document.getElementById('ga-wrap');
+  if (ga.error) { box.innerHTML = `<div class="tcard"><div class="dim small" style="padding:12px 16px">GA4 non disponibile: ${escHtml(ga.error)}</div></div>`; return; }
+  const iso = k => `${k.slice(0, 4)}-${k.slice(4, 6)}-${k.slice(6, 8)}`;
+  const byDay = {};
+  (ga.daily || []).forEach(r => { byDay[iso(r.keys[0])] = r.values; });
+  const d28 = lastNDates(28), d56 = lastNDates(56).slice(28);
+  const sumI = (ids, i) => ids.reduce((a, id) => a + (byDay[id]?.[i] || 0), 0);
+  // Utenti unici dei 28 giorni: la somma per dispositivo (una persona su due
+  // dispositivi conta due volte; la somma giornaliera gonfierebbe molto di più).
+  const users28 = (ga.devices || []).reduce((a, r) => a + r.values[0], 0);
+  const ses = sumI(d28, 1), ses0 = sumI(d56, 1), views = sumI(d28, 2), eng = sumI(d28, 3);
+  setVal('ga-users', fmtNum(users28));
+  setVal('ga-sessions', fmtNum(ses));
+  setVal('ga-sessions-sub', `visite in 28 giorni${deltaTxt(ses, ses0)}`);
+  setVal('ga-views', fmtNum(views));
+  setVal('ga-views-sub', ses ? `${(views / ses).toFixed(1).replace('.', ',')} pagine per visita` : 'pagine viste');
+  setVal('ga-engaged', pctTxt(eng, ses));
+  setVal('ga-engaged-sub', `${fmtNum(eng)} visite con interazione`);
+
+  const days = lastNDates(60).reverse();
+  renderBarChart('chart-ga-daily', days.map(dm), [{ name: 'Visite', color: 'var(--color-orange)', values: days.map(id => byDay[id]?.[1] || 0) }], fmtNum, 1000);
+  document.getElementById('ga-channels').innerHTML = tableCard(['Canale', 'Sorgente', 'Visite', 'Con interazione'],
+    (ga.channels || []).map(r => [escHtml(r.keys[0]), escHtml(r.keys[1]), r.values[0], `${r.values[1]} · ${pctTxt(r.values[1], r.values[0])}`]));
+  document.getElementById('ga-pages').innerHTML = tableCard(['Pagina', 'Viste', 'Utenti'],
+    (ga.pages || []).slice(0, 20).map(r => [escHtml(r.keys[0]), r.values[0], r.values[1]]));
+  const EV = { page_view: 'Pagina vista', user_engagement: 'Interazione', session_start: 'Inizio visita', first_visit: 'Prima visita', store_click: 'Tap verso lo store', scroll: 'Scorrimento', click: 'Clic su link esterno', invite_landing_shown: 'Pagina invito vista', invite_store_click: 'Store dalla pagina invito' };
+  document.getElementById('ga-events').innerHTML = tableCard(['Evento', 'Volte', 'Persone'],
+    (ga.events || []).map(r => [EV[r.keys[0]] ? `${EV[r.keys[0]]} <span class="dim">${r.keys[0]}</span>` : escHtml(r.keys[0]), r.values[0], r.values[1]]));
+  const CN = { Italy: 'Italia', Spain: 'Spagna', France: 'Francia', 'United States': 'Stati Uniti', 'United Kingdom': 'Regno Unito', Germany: 'Germania', Switzerland: 'Svizzera', Belgium: 'Belgio', Netherlands: 'Paesi Bassi', Ireland: 'Irlanda', Mexico: 'Messico', Argentina: 'Argentina', Brazil: 'Brasile', India: 'India', Canada: 'Canada', '(not set)': 'non noto' };
+  barsCard('bars-ga-countries', (ga.countries || []).map(r => [CN[r.keys[0]] || r.keys[0], r.values[0]]), 'orange');
+  const DV = { mobile: 'Telefono', desktop: 'Computer', tablet: 'Tablet' };
+  barsCard('bars-ga-devices', (ga.devices || []).map(r => [DV[r.keys[0]] || r.keys[0], r.values[0]]), 'orange');
 }
 
 // ── Report scaricabile ────────────────────────────────────────────────────────
@@ -3641,8 +3806,67 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 
       </section>
       <section class="page" data-page="landing">
-      <div class="sec-title" style="margin-top:32px">🌐 Landing: chi arriva e cosa fa <span class="sub" id="landing-sub"></span></div>
+      <div class="sec-title">🌐 Landing · contatore delle aperture <span class="sub">ogni pagina aperta, anche senza consenso ai cookie</span></div>
+      <div class="grid-4">
+        <div class="card"><div class="card-lbl">Aperture totali</div><div class="card-val c-orange" id="lt-views">—</div><div class="card-sub" id="lt-views-sub">—</div></div>
+        <div class="card"><div class="card-lbl">Ultimi 7 giorni</div><div class="card-val c-orange" id="lt-week">—</div><div class="card-sub" id="lt-week-sub">—</div></div>
+        <div class="card"><div class="card-lbl">Restati almeno 10 s</div><div class="card-val c-green" id="lt-engaged">—</div><div class="card-sub" id="lt-engaged-sub">—</div></div>
+        <div class="card"><div class="card-lbl">Tap verso gli store</div><div class="card-val c-blue" id="lt-store">—</div><div class="card-sub" id="lt-store-sub">—</div></div>
+      </div>
+      <div class="tcard" style="margin-top:12px">
+        <div class="tcard-hdr">Aperture per giorno <span class="sub">60 giorni, per sorgente</span></div>
+        <div class="chart-box" id="chart-lt-daily"><div class="dim small">Caricamento…</div></div>
+      </div>
+      <div class="charts-row">
+        <div class="tcard"><div class="tcard-hdr">Per pagina <span class="sub">da sempre</span></div><div class="bars-wrap" id="bars-lt-pages"><div class="dim small">Caricamento…</div></div></div>
+        <div class="tcard"><div class="tcard-hdr">Per dispositivo <span class="sub">da sempre</span></div><div class="bars-wrap" id="bars-lt-plat"><div class="dim small">Caricamento…</div></div></div>
+      </div>
+      <div class="sec-title" style="margin-top:24px">Sorgenti <span class="sub" id="landing-sub"></span></div>
       <div id="section-landing"></div>
+
+      <div class="sec-title" style="margin-top:32px">🔎 Google Search <span class="sub" id="sc-sub"></span> <span class="sub" id="lg-status" style="margin-left:8px"></span></div>
+      <div id="sc-wrap">
+        <div class="grid-4">
+          <div class="card"><div class="card-lbl">Click da Google</div><div class="card-val c-green" id="sc-clicks">—</div><div class="card-sub" id="sc-clicks-sub">28 giorni</div></div>
+          <div class="card"><div class="card-lbl">Impressioni</div><div class="card-val c-blue" id="sc-impr">—</div><div class="card-sub" id="sc-impr-sub">28 giorni</div></div>
+          <div class="card"><div class="card-lbl">CTR</div><div class="card-val" id="sc-ctr">—</div><div class="card-sub">click ÷ impressioni, 28 giorni</div></div>
+          <div class="card"><div class="card-lbl">Posizione media</div><div class="card-val" id="sc-pos">—</div><div class="card-sub">nei risultati, 28 giorni (1 = primo)</div></div>
+        </div>
+        <div class="charts-row">
+          <div class="tcard"><div class="tcard-hdr">Impressioni per giorno <span class="sub">60 giorni</span></div><div class="chart-box" id="chart-sc-impr"><div class="dim small">Caricamento…</div></div></div>
+          <div class="tcard"><div class="tcard-hdr">Click per giorno <span class="sub">60 giorni</span></div><div class="chart-box" id="chart-sc-clicks"><div class="dim small">Caricamento…</div></div></div>
+        </div>
+        <div class="charts-row">
+          <div class="tcard"><div class="tcard-hdr">Ricerche <span class="sub">28 giorni, le più viste</span></div><div id="sc-queries"><div class="dim small" style="padding:12px 16px">Caricamento…</div></div></div>
+          <div class="tcard"><div class="tcard-hdr">Pagine <span class="sub">28 giorni, le più viste</span></div><div id="sc-pages"><div class="dim small" style="padding:12px 16px">Caricamento…</div></div></div>
+        </div>
+        <div class="charts-row">
+          <div class="tcard"><div class="tcard-hdr">Paesi <span class="sub">28 giorni</span></div><div class="bars-wrap" id="bars-sc-countries"><div class="dim small">Caricamento…</div></div></div>
+          <div class="tcard"><div class="tcard-hdr">Dispositivi <span class="sub">28 giorni</span></div><div class="bars-wrap" id="bars-sc-devices"><div class="dim small">Caricamento…</div></div></div>
+        </div>
+      </div>
+
+      <div class="sec-title" style="margin-top:32px">📊 Google Analytics sulla landing <span class="sub">solo chi accetta i cookie: sono meno delle aperture</span></div>
+      <div id="ga-wrap">
+        <div class="grid-4">
+          <div class="card"><div class="card-lbl">Persone</div><div class="card-val c-orange" id="ga-users">—</div><div class="card-sub">28 giorni</div></div>
+          <div class="card"><div class="card-lbl">Visite</div><div class="card-val c-orange" id="ga-sessions">—</div><div class="card-sub" id="ga-sessions-sub">28 giorni</div></div>
+          <div class="card"><div class="card-lbl">Pagine viste</div><div class="card-val c-blue" id="ga-views">—</div><div class="card-sub" id="ga-views-sub">28 giorni</div></div>
+          <div class="card"><div class="card-lbl">Visite con interazione</div><div class="card-val c-green" id="ga-engaged">—</div><div class="card-sub" id="ga-engaged-sub">28 giorni</div></div>
+        </div>
+        <div class="tcard" style="margin-top:12px"><div class="tcard-hdr">Visite per giorno <span class="sub">60 giorni</span></div><div class="chart-box" id="chart-ga-daily"><div class="dim small">Caricamento…</div></div></div>
+        <div class="charts-row">
+          <div class="tcard"><div class="tcard-hdr">Da dove arrivano <span class="sub">28 giorni</span></div><div id="ga-channels"><div class="dim small" style="padding:12px 16px">Caricamento…</div></div></div>
+          <div class="tcard"><div class="tcard-hdr">Pagine più viste <span class="sub">28 giorni</span></div><div id="ga-pages"><div class="dim small" style="padding:12px 16px">Caricamento…</div></div></div>
+        </div>
+        <div class="charts-row">
+          <div class="tcard"><div class="tcard-hdr">Cosa fanno <span class="sub">eventi, 28 giorni</span></div><div id="ga-events"><div class="dim small" style="padding:12px 16px">Caricamento…</div></div></div>
+          <div>
+            <div class="tcard"><div class="tcard-hdr">Paesi <span class="sub">persone, 28 giorni</span></div><div class="bars-wrap" id="bars-ga-countries"><div class="dim small">Caricamento…</div></div></div>
+            <div class="tcard" style="margin-top:12px"><div class="tcard-hdr">Dispositivi <span class="sub">persone, 28 giorni</span></div><div class="bars-wrap" id="bars-ga-devices"><div class="dim small">Caricamento…</div></div></div>
+          </div>
+        </div>
+      </div>
       <div style="height:32px"></div>
 
       </section>

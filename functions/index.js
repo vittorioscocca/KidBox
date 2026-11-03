@@ -8679,6 +8679,10 @@ exports.unlinkAlexa = alexa.unlinkAlexa;
 // perché in `landingTraffic.js`.
 exports.landingPing = require("./landingTraffic").landingPing;
 
+// Google Search e GA4 della landing per la console admin. Il perché in
+// `landingStats.js`.
+exports.getLandingStats = require("./landingStats").build({ADMIN_UIDS});
+
 // «Mi piace l'idea» della landing: un like per IP, IP mai salvato. Il perché in
 // `landingLikes.js`.
 exports.landingLike = require("./landingLikes").landingLike;
