@@ -180,6 +180,12 @@ function showErr(msg) {
 }
 
 // ── Pie chart ────────────────────────────
+// Il canvas non risolve `var(--…)`: un fillStyle così viene ignorato e
+// tutte le fette uscivano del colore di prima.
+function cssColor(c) {
+  const m = /^var\((--[^)]+)\)$/.exec(c || '');
+  return m ? getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim() : c;
+}
 function drawPie(canvasId, slices) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
@@ -200,7 +206,7 @@ function drawPie(canvasId, slices) {
     ctx.moveTo(cx,cy);
     ctx.arc(cx,cy,r,angle,angle+sweep);
     ctx.closePath();
-    ctx.fillStyle = s.color;
+    ctx.fillStyle = cssColor(s.color);
     ctx.fill();
     angle += sweep;
   });
@@ -208,6 +214,137 @@ function drawPie(canvasId, slices) {
   ctx.arc(cx,cy,r*0.55,0,Math.PI*2);
   ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-card').trim() || '#fff';
   ctx.fill();
+}
+
+// ── Grafici SVG ──────────────────────────
+// Barre impilate: `series` = [{name, color, values}] allineate a `labels`.
+// SVG con i colori del tema, come renderTrendChart: niente librerie.
+function renderBarChart(elId, labels, series, fmt = fmtNum) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const W = 420, H = 160, PL = 40, PB = 18, PT = 14;
+  const totals = labels.map((_, i) => series.reduce((a, x) => a + (x.values[i] || 0), 0));
+  const max = Math.max(...totals);
+  if (!(max > 0)) { el.innerHTML = '<div class="dim small">Nessun dato</div>'; return; }
+  const n = labels.length, slot = (W - PL - 6) / n, bw = Math.max(4, slot * 0.62);
+  const y = v => PT + (H - PT - PB) * (1 - v / max);
+  let bars = '';
+  labels.forEach((l, i) => {
+    const x = PL + i * slot + (slot - bw) / 2;
+    let acc = 0;
+    series.forEach(sr => {
+      const v = sr.values[i] || 0;
+      if (!v) return;
+      const y1 = y(acc + v), y0 = y(acc);
+      bars += `<rect x="${x.toFixed(1)}" y="${y1.toFixed(1)}" width="${bw.toFixed(1)}" height="${(y0 - y1).toFixed(1)}" rx="2" style="fill:${sr.color}"><title>${l} · ${sr.name}: ${fmt(v)}</title></rect>`;
+      acc += v;
+    });
+    if (totals[i]) bars += `<text x="${(x + bw / 2).toFixed(1)}" y="${(y(totals[i]) - 3).toFixed(1)}" text-anchor="middle" font-size="8" style="fill:var(--color-text)">${fmt(totals[i])}</text>`;
+  });
+  const grid = [0, .5, 1].map(f => `<line x1="${PL}" x2="${W - 6}" y1="${y(max * f)}" y2="${y(max * f)}" style="stroke:var(--color-brd)"/><text x="${PL - 4}" y="${y(max * f) + 3}" text-anchor="end" font-size="9" style="fill:var(--color-dim)">${fmt(max * f)}</text>`).join('');
+  const every = Math.ceil(n / 6);
+  // Etichette contate dall'ultima, così la settimana in corso c'è sempre.
+  const ticks = labels.map((l, i) => (n - 1 - i) % every === 0
+    ? `<text x="${(PL + i * slot + slot / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="9" style="fill:var(--color-dim)">${l}</text>` : '').join('');
+  const legend = series.length > 1 ? `<div class="small" style="margin-top:6px">${series.map(sr => `<span style="margin-right:12px;white-space:nowrap"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${sr.color};margin-right:4px"></span>${sr.name}</span>`).join('')}</div>` : '';
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${grid}${bars}${ticks}</svg>${legend}`;
+}
+
+// Ciambella con legenda: `slices` = [{name, val, color}].
+function renderDonut(elId, slices) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const total = slices.reduce((a, x) => a + (x.val || 0), 0);
+  const r = 46, C = 2 * Math.PI * r;
+  let off = 0, arcs = '';
+  if (total) slices.forEach(sl => {
+    if (!sl.val) return;
+    const len = sl.val / total * C;
+    arcs += `<circle cx="60" cy="60" r="${r}" fill="none" stroke-width="22" style="stroke:${sl.color}" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)"><title>${sl.name}: ${sl.val}</title></circle>`;
+    off += len;
+  });
+  else arcs = `<circle cx="60" cy="60" r="${r}" fill="none" stroke-width="22" style="stroke:var(--color-muted)"/>`;
+  const pct = v => total ? Math.round(v / total * 100) + '%' : '—';
+  el.innerHTML = `<div style="display:flex;align-items:center;gap:20px"><svg viewBox="0 0 120 120" width="120" height="120" style="flex-shrink:0">${arcs}<text x="60" y="64" text-anchor="middle" font-size="16" font-weight="600" style="fill:var(--color-text)">${total}</text></svg>
+    <div class="pie-legend">${slices.map(sl => `<div class="legend-item"><div class="legend-dot" style="background:${sl.color}"></div><span class="legend-label">${sl.name}</span><span class="legend-val">${sl.val} · ${pct(sl.val)}</span></div>`).join('')}</div></div>`;
+}
+
+const romeDay = d => d.toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
+// Ultime n settimane (lunedì, Europe/Rome), dalla più vecchia.
+function lastNWeeks(n) {
+  const w0 = weekStart(todayKey());
+  return Array.from({ length: n }, (_, k) => addDaysStr(w0, -7 * (n - 1 - k)));
+}
+const weekLabel = ws => ws.slice(8, 10) + '/' + ws.slice(5, 7);
+
+// ── UTENTI & FAMIGLIE: grafici ───────────
+// Sempre senza account di test e senza le famiglie che li contengono, e
+// senza il filtro di periodo delle tabelle: sono l'andamento complessivo.
+function renderUserCharts() {
+  const users = _allUsersRows.filter(u => !u.internal);
+  const fams  = _familyRows.filter(r => !r.internal);
+  const now = Date.now(), DAY = 864e5;
+
+  const opened = days => users.filter(u => u.lastOpenAt && now - u.lastOpenAt.getTime() < days * DAY).length;
+  const pctOf = (a, b) => b ? ` (${Math.round(a / b * 100)}%)` : '';
+  const o7 = opened(7), o30 = opened(30);
+  setVal('stat-open-7', fmtNum(o7));
+  setVal('stat-open-7-sub', `su ${users.length} utenti${pctOf(o7, users.length)} · solo app iOS/Android`);
+  setVal('stat-open-30', fmtNum(o30));
+  setVal('stat-open-30-sub', `su ${users.length} utenti${pctOf(o30, users.length)}`);
+  const multi = fams.filter(r => r.realMembers >= 2).length;
+  setVal('stat-multi', fmtNum(multi));
+  setVal('stat-multi-sub', `su ${fams.length} famiglie${pctOf(multi, fams.length)} · senza quelle di prova`);
+  const trial = fams.filter(r => r.trial).length;
+  setVal('stat-trial', fmtNum(trial));
+
+  const weeks = lastNWeeks(12), idx = {};
+  weeks.forEach((w, i) => idx[w] = i);
+  const z = () => weeks.map(() => 0);
+  const ios = z(), android = z(), other = z();
+  users.forEach(u => {
+    if (!u.createdAt) return;
+    const i = idx[weekStart(romeDay(u.createdAt))];
+    if (i == null) return;
+    (u.platform === 'ios' ? ios : u.platform === 'android' ? android : other)[i]++;
+  });
+  renderBarChart('chart-signups', weeks.map(weekLabel), [
+    { name: 'iOS', color: 'var(--color-blue)', values: ios },
+    { name: 'Android', color: 'var(--color-green)', values: android },
+    { name: 'Web / non noto', color: 'var(--color-dim-line)', values: other },
+  ]);
+
+  const shared = z(), alone = z();
+  fams.forEach(r => {
+    if (!r.createdAtMs) return;
+    const i = idx[weekStart(romeDay(new Date(r.createdAtMs)))];
+    if (i == null) return;
+    (r.realMembers >= 2 ? shared : alone)[i]++;
+  });
+  renderBarChart('chart-newfam', weeks.map(weekLabel), [
+    { name: 'Oggi con 2+ membri', color: 'var(--color-orange)', values: shared },
+    { name: 'Ancora da soli', color: 'var(--color-dim-line)', values: alone },
+  ]);
+
+  const buckets = [['Nessun membro', r => r.realMembers === 0], ['1 membro', r => r.realMembers === 1],
+    ['2 membri', r => r.realMembers === 2], ['3 membri', r => r.realMembers === 3], ['4 o più', r => r.realMembers >= 4]]
+    .map(([lbl, f]) => [lbl, fams.filter(f).length]).filter(([lbl, n]) => n || lbl !== 'Nessun membro');
+  const maxB = Math.max(1, ...buckets.map(b => b[1]));
+  document.getElementById('bars-members').innerHTML = buckets.map(([lbl, n]) => `
+    <div class="bar-row">
+      <div class="bar-lbl">${lbl}</div>
+      <div class="bar-track"><div class="bar-fill ${lbl.startsWith('1') || lbl.startsWith('Nessun') ? 'blue' : 'orange'}" style="width:${(n / maxB * 100).toFixed(1)}%"></div></div>
+      <div class="bar-val">${n}${pctOf(n, fams.length)}</div>
+    </div>`).join('');
+
+  const paid = (plan) => fams.filter(r => !r.trial && !r.manual && r.plan === plan).length;
+  renderDonut('donut-plans', [
+    { name: 'Free', val: fams.filter(r => !r.trial && !r.manual && r.plan !== 'pro' && r.plan !== 'max').length, color: 'var(--color-dim-line)' },
+    { name: 'Prova Pro', val: trial, color: 'var(--color-orange)' },
+    { name: 'Pro pagante', val: paid('pro'), color: 'var(--color-blue)' },
+    { name: 'Max pagante', val: paid('max'), color: 'var(--color-purple)' },
+    { name: 'Pro/Max dati a mano', val: fams.filter(r => r.manual).length, color: 'var(--color-green)' },
+  ]);
 }
 
 // ── SUPPORTO CHAT ─────────────────────────
@@ -1289,6 +1426,7 @@ async function loadAll() {
     await loadUsers();
     await loadFamilies();
     renderUsersTable(_allUsersRows);
+    renderUserCharts();
     await loadAICosts();
     await loadActiveUsers();
     await loadLanding();
@@ -1383,6 +1521,8 @@ async function loadFamilies() {
       // iOS e Android) fra i membri, come nella tabella degli utenti.
       let lastOpenAt=null, openedMembers7d=0;
       let storageBytes=0, aiMonth=0, ownerEmail='—', iosCount=0, androidCount=0, totalMemberCount=0, activeCount14d=0, hasInternal=false;
+      // Membro vero = non cancellato e con un ruolo, come rules e server.
+      let realMemberCount=0;
       const joins = [];
       try { const sd=await getDoc(doc(db,'families',fid,'stats','storage')); if(sd.exists()) storageBytes=sd.data().usedBytes||0; } catch {}
       // legge messaggi AI del mese corrente (non giornaliero)
@@ -1395,6 +1535,7 @@ async function loadFamilies() {
         membSnap.forEach(m => {
           const md = m.data();
           totalMemberCount++;
+          if (md.isDeleted !== true && md.role) realMemberCount++;
           if (_internalUids.has(m.id)) hasInternal = true;
           const jt = (md.joinedAt || md.createdAt)?.toDate?.();
           if (jt) joins.push(jt.getTime());
@@ -1427,7 +1568,7 @@ async function loadFamilies() {
         }
       } catch {}
       const fname = d.name || '—';
-      return { fid, fname, plan, trial, manual, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: fdoc.data().updatedAt?.toDate(), totalMembers: totalMemberCount, activeMembers14d: activeCount14d, lastOpenAt, openedMembers7d, createdAtMs: d.createdAt?.toDate?.().getTime() || 0, joins, internal: hasInternal };
+      return { fid, fname, plan, trial, manual, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: fdoc.data().updatedAt?.toDate(), totalMembers: totalMemberCount, realMembers: realMemberCount, activeMembers14d: activeCount14d, lastOpenAt, openedMembers7d, createdAtMs: d.createdAt?.toDate?.().getTime() || 0, joins, internal: hasInternal };
     }));
     rows.push(...res);
   }
@@ -1484,6 +1625,10 @@ async function loadAICosts() {
       const aiCost = d.costUsd||0;
       setVal('stat-ai-cost', fmtUsd(aiCost));
       _costData.ai = aiCost;
+      setVal('stat-ai-per-msg', d.calls ? '€'+(aiCost/d.calls*EUR_RATE).toFixed(4).replace('.',',') : '—');
+      const news = d.newsCostUsd||0;
+      setVal('stat-ai-news', fmtUsd(news));
+      setVal('stat-ai-news-sub', aiCost ? `${Math.round(news/aiCost*100)}% del costo stimato del mese` : 'del costo stimato del mese');
     } else {
       ['stat-ai-calls','stat-ai-input','stat-ai-output'].forEach(i=>setVal(i,'0'));
       setVal('stat-ai-cost','€0,00');
@@ -1493,6 +1638,11 @@ async function loadAICosts() {
   try {
     const fs   = await getDocs(collection(db,'ai_costs',mk,'families'));
     const fams = fs.docs.map(d=>({fid:d.id,...d.data()})).sort((a,b)=>(b.calls||0)-(a.calls||0));
+    const realFams = _familyRows.filter(r => !r.internal);
+    const realIds = new Set(realFams.map(r => r.fid));
+    const usingAI = fams.filter(f => (f.calls||0) > 0 && realIds.has(f.fid)).length;
+    setVal('stat-ai-fams', fmtNum(usingAI));
+    setVal('stat-ai-fams-sub', `su ${realFams.length} famiglie${realFams.length ? ` (${Math.round(usingAI/realFams.length*100)}%)` : ''} · senza quelle di prova`);
     const maxC = fams[0]?.calls||1;
 
     // risolve nome famiglia dal cache _familyRows (i doc ID non hanno prefisso family_)
@@ -1511,6 +1661,26 @@ async function loadAICosts() {
           </div>`).join('')
       : '<div class="dim small">Nessuna chiamata AI questo mese</div>';
   } catch { document.getElementById('bars-ai').innerHTML='<div class="dim small">Nessuna chiamata AI questo mese</div>'; }
+
+  // Ultimi 6 mesi: un documento ai_costs/{YYYY-MM} per mese, 6 letture.
+  try {
+    const months = [];
+    const [y0, m0] = mk.split('-').map(Number);
+    for (let k = 5; k >= 0; k--) {
+      const d = new Date(Date.UTC(y0, m0 - 1 - k, 1));
+      months.push(d.toISOString().slice(0, 7));
+    }
+    const docs = await Promise.all(months.map(m => getDoc(doc(db, 'ai_costs', m)).catch(() => null)));
+    const data = docs.map(d => d?.exists() ? d.data() : {});
+    const MESI = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+    const labels = months.map(m => MESI[Number(m.slice(5)) - 1] + ' ' + m.slice(2, 4));
+    renderBarChart('chart-ai-calls', labels, [{ name: 'Messaggi', color: 'var(--color-orange)', values: data.map(d => d.calls || 0) }]);
+    const eur = v => '€' + (v * EUR_RATE).toFixed(2).replace('.', ',');
+    renderBarChart('chart-ai-cost', labels, [
+      { name: 'Notizie', color: 'var(--color-purple)', values: data.map(d => d.newsCostUsd || 0) },
+      { name: 'Il resto', color: 'var(--color-red)', values: data.map(d => Math.max(0, (d.costUsd || 0) - (d.newsCostUsd || 0))) },
+    ], eur);
+  } catch { ['chart-ai-calls', 'chart-ai-cost'].forEach(id => { const e = document.getElementById(id); if (e) e.innerHTML = '<div class="dim small">Non disponibile</div>'; }); }
 }
 
 // ── UTENTI ATTIVI ────────────────────────────────────────────────────────────
@@ -2460,6 +2630,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 
 /* ── BARS ────────────────────────────── */
 .bars-wrap{padding:16px 18px}
+.chart-box{padding:12px 16px}
 .bar-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--color-brd)}
 .bar-row:last-child{border-bottom:none}
 .bar-lbl{width:110px;font-size:11px;color:var(--color-dim);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2920,6 +3091,51 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         </div>
       </div>
 
+      <div class="grid-4" style="margin-top:12px">
+        <div class="card">
+          <div class="card-lbl">Hanno aperto l'app · 7 gg</div>
+          <div class="card-val c-green" id="stat-open-7">—</div>
+          <div class="card-sub" id="stat-open-7-sub">utenti</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Hanno aperto l'app · 30 gg</div>
+          <div class="card-val c-green" id="stat-open-30">—</div>
+          <div class="card-sub" id="stat-open-30-sub">utenti</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Famiglie con 2+ membri</div>
+          <div class="card-val c-orange" id="stat-multi">—</div>
+          <div class="card-sub" id="stat-multi-sub">senza quelle di prova</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">In prova Pro</div>
+          <div class="card-val c-blue" id="stat-trial">—</div>
+          <div class="card-sub">famiglie · nessuno paga</div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="tcard">
+          <div class="tcard-hdr">Iscrizioni per settimana <span class="sub">12 settimane · senza account di test</span></div>
+          <div class="chart-box" id="chart-signups"><div class="dim small">Caricamento…</div></div>
+        </div>
+        <div class="tcard">
+          <div class="tcard-hdr">Famiglie nuove per settimana <span class="sub">12 settimane · senza quelle di prova</span></div>
+          <div class="chart-box" id="chart-newfam"><div class="dim small">Caricamento…</div></div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="tcard">
+          <div class="tcard-hdr">Famiglie per numero di membri <span class="sub">membri veri, senza quelle di prova</span></div>
+          <div class="bars-wrap" id="bars-members"><div class="dim small">Caricamento…</div></div>
+        </div>
+        <div class="tcard">
+          <div class="tcard-hdr">Piani <span class="sub">famiglie, senza quelle di prova</span></div>
+          <div class="chart-box" id="donut-plans"><div class="dim small">Caricamento…</div></div>
+        </div>
+      </div>
+
       </section>
       <section class="page" data-page="ai">
       <!-- AI -->
@@ -2946,6 +3162,40 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
           <div class="card-val c-red" id="stat-ai-cost">—</div>
           <div class="card-sub">stima interna · la fattura Anthropic è più alta</div>
         </div>
+      </div>
+
+      <div class="grid-3" style="margin-top:12px">
+        <div class="card">
+          <div class="card-lbl">Costo medio per messaggio</div>
+          <div class="card-val c-red" id="stat-ai-per-msg">—</div>
+          <div class="card-sub">stima interna, mese in corso</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Famiglie che usano l'AI</div>
+          <div class="card-val c-orange" id="stat-ai-fams">—</div>
+          <div class="card-sub" id="stat-ai-fams-sub">questo mese</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Notizie</div>
+          <div class="card-val c-purple" id="stat-ai-news">—</div>
+          <div class="card-sub" id="stat-ai-news-sub">del costo stimato del mese</div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="tcard">
+          <div class="tcard-hdr">Messaggi AI per mese <span class="sub">ultimi 6 mesi</span></div>
+          <div class="chart-box" id="chart-ai-calls"><div class="dim small">Caricamento…</div></div>
+        </div>
+        <div class="tcard">
+          <div class="tcard-hdr">Costo AI stimato per mese <span class="sub">la fattura Anthropic è più alta</span></div>
+          <div class="chart-box" id="chart-ai-cost"><div class="dim small">Caricamento…</div></div>
+        </div>
+      </div>
+
+      <div class="tcard" style="margin-top:12px">
+        <div class="tcard-hdr">Top famiglie · AI <span class="sub">messaggi del mese</span></div>
+        <div class="bars-wrap" id="bars-ai"><div class="dim small">Caricamento…</div></div>
       </div>
 
       </section>
@@ -3032,15 +3282,9 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       </div>
 
       <!-- TOP BARS -->
-      <div class="grid-2" style="margin-top:12px">
-        <div class="tcard">
-          <div class="tcard-hdr">Top famiglie · AI <span class="sub" id="top-ai-month"></span></div>
-          <div class="bars-wrap" id="bars-ai"><div class="dim small">Caricamento…</div></div>
-        </div>
-        <div class="tcard">
-          <div class="tcard-hdr">Top famiglie · Storage</div>
-          <div class="bars-wrap" id="bars-storage"><div class="dim small">Caricamento…</div></div>
-        </div>
+      <div class="tcard" style="margin-top:12px">
+        <div class="tcard-hdr">Top famiglie · Storage</div>
+        <div class="bars-wrap" id="bars-storage"><div class="dim small">Caricamento…</div></div>
       </div>
 
       </section>
