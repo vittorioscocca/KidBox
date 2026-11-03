@@ -1,0 +1,34 @@
+# Novità macOS 2.4.7 — testi «Novità» per App Store Connect (Mac)
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 03/11/2026 sulle modifiche dopo la 2.4.6 Mac, uguali a iOS salvo il Calendario di Apple al posto di quello dell'iPhone: aggiornamento di sicurezza (Firebase 12.19.3, certificati eMudhra revocati), calendario di KidBox in Google/Outlook/Apple col link iCal, traduzioni di Viaggi, Password, chat e pulsanti, ricorrenza leggibile in tema scuro, «Oggi» in chat.
+
+## it
+
+• Aggiornamento di sicurezza: la connessione ai dati della famiglia non si fida più di alcuni certificati revocati di recente. Ti consigliamo di installarlo.
+• KidBox negli altri calendari: dalle impostazioni del calendario crei un link solo tuo e vedi gli eventi di famiglia anche nel Calendario di Apple, in Google Calendar o in Outlook. È in sola lettura, e se lo condividi per sbaglio lo rigeneri.
+• Viaggi: in Storia e territorio la copertina è una foto del posto invece di stemmi e mappe.
+• Nel modulo evento la ricorrenza scelta si legge anche in tema scuro, e in chat sopra i messaggi di oggi c'è scritto «Oggi».
+
+## en-GB
+
+• Security update: the connection to your family's data no longer trusts some recently revoked certificates. We recommend installing it.
+• KidBox in your other calendars: from the calendar settings create a link that's yours only and see family events in Apple Calendar, Google Calendar or Outlook too. It's read-only, and if you share it by mistake you can regenerate it.
+• Trips: History and area is now in English and finds the right town, with a photo of the place as the cover instead of coats of arms and maps; the itinerary is translated too.
+• Password security and reports, the chat and the "Done" buttons are now in English.
+• In the event form the chosen repeat is readable in dark mode too, and in the chat today's messages are headed "Today".
+
+## es-ES
+
+• Actualización de seguridad: la conexión con los datos de tu familia ya no confía en algunos certificados revocados hace poco. Te recomendamos instalarla.
+• KidBox en tus otros calendarios: desde los ajustes del calendario creas un enlace solo tuyo y ves los eventos de la familia también en el Calendario de Apple, en Google Calendar o en Outlook. Es de solo lectura y, si lo compartes por error, lo regeneras.
+• Viajes: Historia y territorio ahora está en español y encuentra la ciudad correcta, con una foto del lugar como portada en lugar de escudos y mapas; el itinerario también está traducido.
+• La seguridad y los informes de Contraseñas, el chat y los botones «Hecho» ahora están en español.
+• En el formulario del evento la repetición elegida se lee también en tema oscuro, y en el chat los mensajes de hoy llevan «Hoy» encima.
+
+## fr-FR
+
+• Mise à jour de sécurité : la connexion aux données de votre famille ne fait plus confiance à certains certificats révoqués récemment. Nous vous conseillons de l'installer.
+• KidBox dans vos autres calendriers : depuis les réglages du calendrier, créez un lien rien qu'à vous et retrouvez les événements de la famille aussi dans le Calendrier d'Apple, Google Agenda ou Outlook. Il est en lecture seule et, si vous le partagez par erreur, vous le régénérez.
+• Voyages : Histoire et territoire est maintenant en français et trouve la bonne ville, avec une photo du lieu en couverture au lieu des blasons et des cartes ; l'itinéraire est traduit lui aussi.
+• La sécurité et les rapports des Mots de passe, la discussion et les boutons « Terminé » sont maintenant en français.
+• Dans le formulaire d'événement, la répétition choisie se lit aussi en mode sombre, et dans la discussion les messages du jour sont précédés de « Aujourd'hui ».
