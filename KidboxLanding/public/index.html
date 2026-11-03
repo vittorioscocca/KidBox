@@ -134,6 +134,9 @@
   .hero h1 { font-size:clamp(2.6rem,6.5vw,5rem); font-weight:800; line-height:1.02; letter-spacing:-0.04em; text-wrap:balance; margin:0 auto 22px; max-width:18ch; }
   .hero h1 .g { background:linear-gradient(120deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .hero-top > p { font-size:clamp(1.05rem,2vw,1.28rem); color:var(--muted); max-width:54ch; margin:0 auto 34px; }
+  .try-free { display:inline-flex; align-items:center; justify-content:center; gap:8px; margin:0 auto 14px; padding:14px 34px; border-radius:999px; background:var(--accent); color:#fff; font-weight:800; font-size:1.05rem; text-decoration:none; box-shadow:0 10px 28px rgba(232,131,58,.35); transition:transform .18s, box-shadow .18s; }
+  .try-free:hover { transform:translateY(-2px); box-shadow:0 14px 34px rgba(232,131,58,.45); }
+  .try-free:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
   .hero-cta { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
   .store { display:inline-flex; align-items:center; gap:10px; padding:13px 22px; background:var(--text); color:var(--bg); border-radius:14px; text-decoration:none; transition:transform .18s,opacity .18s; }
   .store:hover { transform:translateY(-2px); opacity:.9; }
@@ -510,12 +513,12 @@
     <div class="hero-glow"></div>
     <h1>L'agente di famiglia<br><span class="g">che ci pensa prima di&nbsp;te.</span></h1>
     <p>Si accorge del to-do che nessuno ha preso, della dose dimenticata, della bolletta in scadenza, e chiede alla famiglia chi se ne occupa. Salute, documenti, spese, viaggi e chat, tutto in un'unica app.</p>
+    <a class="try-free" href="https://app.kidboxapp.com" aria-label="Prova gratis — Apri KidBox nel browser, senza installare niente">Prova gratis <span aria-hidden="true">→</span></a>
     <div class="hero-cta">
       <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Scarica su</span><span class="st-main">App Store</span></span></a>
       <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Disponibile su</span><span class="st-main">Google Play</span></span></a>
-      <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Apri subito</span><span class="st-main">Web App</span></span></a>
     </div>
-    <button class="film-link" type="button" data-film><span class="fl-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg></span>Guarda il video <span class="fl-dur">35 s</span></button>
+    <button class="film-link" type="button" data-film><span class="fl-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg></span>Guarda il video</button>
   </div>
   <div class="hero-stage rv">
     <div class="device sm hero-app"><div class="screen"><picture><source media="(prefers-color-scheme: dark)" srcset="/assets/app/it/home-dark.webp"><img class="shot" src="/assets/app/it/home.webp?v=2" alt="La Home di KidBox per la famiglia Rossi" width="600" height="1304" loading="eager" decoding="async"></picture></div></div>
@@ -543,7 +546,7 @@
       <div class="kicker">Il video</div>
       <h2>Una giornata con KidBox</h2>
       <p>Dalla corsa del mattino alla cena insieme: calendario, liste, posizione, salute e assistente, in 35 secondi.</p>
-      <button class="film-link" type="button" data-film><span class="fl-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg></span>Guarda con l'audio <span class="fl-dur">35 s</span></button>
+      <button class="film-link" type="button" data-film><span class="fl-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg></span>Guarda con l'audio</button>
     </div>
     <button class="film-poster" type="button" data-film aria-label="Guarda il video di KidBox"><img src="/assets/video/film-anteprima.webp" alt="" width="720" height="1280" loading="lazy" decoding="async"><span class="film-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg></span></button>
   </div>
@@ -589,6 +592,7 @@
         <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Eventi ricorrenti</b> e promemoria prima che inizino</span></li>
         <li><span class="ck" style="background:var(--accent)">✓</span><span>Il <b>calendario del telefono</b> accanto a quello di famiglia</span></li>
         <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Calendari iscritti da link</b>, come quello della scuola o della squadra</span></li>
+      <li><span class="ck" style="background:var(--accent)">✓</span><span><b>KidBox dentro Google, Outlook e Apple</b>, con un link solo tuo</span></li>
       </ul>
       <div class="cal-with"><span class="cw-l">Funziona con</span><span class="cal-pill"><svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Google Calendar</span><span class="cal-pill"><svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><rect x="16" y="9" width="28" height="30" rx="4" fill="#28A8EA"/><rect x="16" y="24" width="28" height="15" rx="0" fill="#0078D4"/><rect x="4" y="12" width="24" height="24" rx="4" fill="#0F6CBD"/><ellipse cx="16" cy="24" rx="6" ry="7" fill="none" stroke="#fff" stroke-width="3.2"/></svg>Outlook</span></div>
       <a class="p-more" href="/strumenti/calendario" aria-label="Scopri di più: Calendario">Scopri di più ›</a>
@@ -935,10 +939,10 @@
     <div class="kicker">Inizia oggi</div>
     <h2>La famiglia merita un'app all'altezza.</h2>
     <p>Gratuita per iniziare. Nessuna carta richiesta.</p>
+    <a class="try-free" href="https://app.kidboxapp.com" aria-label="Prova gratis — Apri KidBox nel browser, senza installare niente">Prova gratis <span aria-hidden="true">→</span></a>
     <div class="hero-cta" style="justify-content:center">
       <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Scarica su</span><span class="st-main">App Store</span></span></a>
       <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Disponibile su</span><span class="st-main">Google Play</span></span></a>
-      <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Apri subito</span><span class="st-main">Web App</span></span></a>
     </div>
   </div>
   <!-- footer:start -->
