@@ -106,6 +106,7 @@ struct DeviceCalendarSettingsView: View {
 
                 connectSection
                 feedsSection
+                exportSection
             }
             .navigationTitle("Calendari collegati")
             .navigationBarTitleDisplayMode(.inline)
@@ -233,6 +234,21 @@ struct DeviceCalendarSettingsView: View {
             Text("Calendari iscritti")
         } footer: {
             Text("Il link di un calendario pubblicato: scuola, squadra, festività, o l'indirizzo iCal di un Google Calendar. Gli eventi li vede tutta la famiglia e si aggiornano da soli ogni qualche ora.")
+        }
+    }
+
+    /// Il verso opposto: il calendario di KidBox dentro Google, Outlook e Apple.
+    private var exportSection: some View {
+        Section {
+            NavigationLink {
+                CalendarExportView(familyId: familyId)
+            } label: {
+                Label("Vedi KidBox in Google, Outlook e Apple", systemImage: "square.and.arrow.up")
+            }
+        } header: {
+            Text("KidBox negli altri calendari")
+        } footer: {
+            Text("Un link solo tuo, con gli eventi di famiglia che vedi tu, da aggiungere al calendario che usi già.")
         }
     }
 

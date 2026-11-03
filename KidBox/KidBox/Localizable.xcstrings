@@ -52,6 +52,402 @@
     " Meteo" : {
 
     },
+    "Google, Outlook e Apple" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google, Outlook and Apple"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google, Outlook y Apple"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google, Outlook et Apple"
+          }
+        }
+      }
+    },
+    "Rigenera il link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regenerate link"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regenerar enlace"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Régénérer le lien"
+          }
+        }
+      }
+    },
+    "Disattiva" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn off"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactiver"
+          }
+        }
+      }
+    },
+    "Non è stato possibile completare l'operazione. Riprova." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong. Please try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido completar la operación. Inténtalo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'opération n'a pas abouti. Réessayez."
+          }
+        }
+      }
+    },
+    "Un link solo tuo: Google Calendar, Outlook o il Calendario di Apple lo leggono e mostrano gli eventi di famiglia che vedi tu. È in sola lettura: gli eventi si creano e si cambiano in KidBox." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A link just for you: Google Calendar, Outlook or Apple Calendar read it and show the family events you can see. It's read-only: events are created and changed in KidBox."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un enlace solo tuyo: Google Calendar, Outlook o el Calendario de Apple lo leen y muestran los eventos de familia que tú ves. Es de solo lectura: los eventos se crean y se cambian en KidBox."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un lien rien qu'à vous : Google Agenda, Outlook ou le Calendrier d'Apple le lisent et affichent les événements de famille que vous voyez. Il est en lecture seule : les événements se créent et se modifient dans KidBox."
+          }
+        }
+      }
+    },
+    "Crea il mio link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create my link"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear mi enlace"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créer mon lien"
+          }
+        }
+      }
+    },
+    "Aggiungi al Calendario dell'iPhone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to iPhone Calendar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir al Calendario del iPhone"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter au Calendrier de l'iPhone"
+          }
+        }
+      }
+    },
+    "Aggiungi a Google Calendar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Google Calendar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir a Google Calendar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter à Google Agenda"
+          }
+        }
+      }
+    },
+    "Aggiungi a Outlook.com" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Outlook.com"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir a Outlook.com"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter à Outlook.com"
+          }
+        }
+      }
+    },
+    "Outlook di lavoro (Microsoft 365)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work Outlook (Microsoft 365)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outlook del trabajo (Microsoft 365)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outlook professionnel (Microsoft 365)"
+          }
+        }
+      }
+    },
+    "Se Google Calendar non si apre dal telefono, aggiungilo dal computer: calendar.google.com › Altri calendari › + › Da URL, e incolla il link." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If Google Calendar doesn't open from your phone, add it from a computer: calendar.google.com › Other calendars › + › From URL, and paste the link."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si Google Calendar no se abre desde el móvil, añádelo desde el ordenador: calendar.google.com › Otros calendarios › + › Desde URL, y pega el enlace."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si Google Agenda ne s'ouvre pas depuis le téléphone, ajoutez-le depuis un ordinateur : calendar.google.com › Autres agendas › + › À partir de l'URL, et collez le lien."
+          }
+        }
+      }
+    },
+    "Il link attuale smetterà subito di funzionare: andrà aggiunto di nuovo in Google o Outlook." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The current link will stop working right away and will need to be added again in Google or Outlook."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El enlace actual dejará de funcionar enseguida: habrá que volver a añadirlo en Google u Outlook."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lien actuel cessera aussitôt de fonctionner : il faudra l'ajouter à nouveau dans Google ou Outlook."
+          }
+        }
+      }
+    },
+    "Il link smetterà di funzionare e gli eventi spariranno da Google o Outlook al prossimo aggiornamento." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The link will stop working and the events will disappear from Google or Outlook at the next refresh."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El enlace dejará de funcionar y los eventos desaparecerán de Google u Outlook en la próxima actualización."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lien cessera de fonctionner et les événements disparaîtront de Google ou Outlook à la prochaine mise à jour."
+          }
+        }
+      }
+    },
+    "Google rilegge i calendari iscritti quando vuole lui, di solito ogni 12-24 ore: un evento nuovo può comparire lì il giorno dopo. Outlook e Apple sono più rapidi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google refreshes subscribed calendars on its own schedule, usually every 12-24 hours: a new event may show up there the next day. Outlook and Apple are quicker."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google vuelve a leer los calendarios suscritos cuando él decide, normalmente cada 12-24 horas: un evento nuevo puede aparecer allí al día siguiente. Outlook y Apple son más rápidos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google relit les calendriers abonnés quand il le décide, en général toutes les 12 à 24 heures : un nouvel événement peut y apparaître le lendemain. Outlook et Apple sont plus rapides."
+          }
+        }
+      }
+    },
+    "Chi ha questo link vede i tuoi eventi di famiglia. Se l'hai condiviso per sbaglio, rigeneralo: il vecchio smette subito di funzionare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anyone with this link can see your family events. If you shared it by mistake, regenerate it: the old one stops working right away."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quien tenga este enlace ve tus eventos de familia. Si lo compartiste por error, regéneralo: el anterior deja de funcionar enseguida."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toute personne qui a ce lien voit vos événements de famille. Si vous l'avez partagé par erreur, régénérez-le : l'ancien cesse aussitôt de fonctionner."
+          }
+        }
+      }
+    },
+    "Vedi KidBox in Google, Outlook e Apple" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See KidBox in Google, Outlook and Apple"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver KidBox en Google, Outlook y Apple"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir KidBox dans Google, Outlook et Apple"
+          }
+        }
+      }
+    },
+    "KidBox negli altri calendari" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox in other calendars"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox en otros calendarios"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox dans les autres calendriers"
+          }
+        }
+      }
+    },
+    "Un link solo tuo, con gli eventi di famiglia che vedi tu, da aggiungere al calendario che usi già." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A link just for you, with the family events you can see, to add to the calendar you already use."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un enlace solo tuyo, con los eventos de familia que tú ves, para añadir al calendario que ya usas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un lien rien qu'à vous, avec les événements de famille que vous voyez, à ajouter au calendrier que vous utilisez déjà."
+          }
+        }
+      }
+    },
     "–" : {
       "localizations" : {
         "en" : {
