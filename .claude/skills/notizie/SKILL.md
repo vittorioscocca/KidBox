@@ -106,6 +106,10 @@ Disegno completo in `internal/notizie.md`. Qui le regole e le trappole.
 
 La prima apertura del giorno aspetta circa 50 secondi (nazionale mediana 45, locale 50, massimo poco più di 2 minuti; i client controllano per 4 minuti). `NewsPreparingCard` su iOS e `PreparingCard` su Android mostrano un conto alla rovescia da 60 secondi e, ogni 5 secondi, un argomento dell'edizione. **Le frasi non sono i passi veri**: le ricerche girano sul server. Se cambiano i prompt di `prompts.js` vanno riallineate, nelle quattro lingue e nello stesso ordine sulle due app. L'inizio dell'attesa sta nel ViewModel, perché la card esce dalla lista scorrendo.
 
+## Edizione salvata sul telefono (dal 04/11/2026)
+
+L'edizione completa del giorno sta su disco (`news-feed.json` nella cache, iOS `NewsService.storedFeed`, Android `NewsFeedCache`) e dura il **giorno solare**: finché `dateKey` è oggi e coincidono uid, famiglia e `key` (argomenti, luogo, lingua), riaprire la scheda o l'app non chiama `getFamilyNews`. Si salva solo se è definitiva (`isComplete`): niente edizioni in preparazione né di ripiego (`stale`). Trascinare per aggiornare scavalca il file. Le offerte non vengono da lì: le rilegge `loadSavedOffers`, perché possono essere più nuove.
+
 ## Prova Pro: un uso solo (dal 04/11/2026)
 
 Una famiglia in prova usa le Notizie **una volta sola**: un giorno di edizioni, rileggibili fino a sera, offerte comprese. Il blocco è nel server (`trialAccess` in `functions/news/index.js`, documento `news_trial_use/{familyId}`), così vale anche per le versioni già installate: risponde `permission-denied` con `reason: "plan"`, che tutti i client mostrano come «incluse nei piani Pro e Max».

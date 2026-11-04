@@ -255,6 +255,17 @@ struct NewsFeed: Decodable {
     let maxUnitsPerEdition: Int?
 
     var isPreparing: Bool { status == "preparing" }
+
+    /// Definitiva per oggi: tutte le edizioni pronte e nessuna di ripiego (tetto
+    /// di spesa, generazione fallita), che alla prossima apertura va riprovata.
+    var isComplete: Bool {
+        guard !isPreparing, pending.isEmpty, let country = editions.country, country.isFinal else { return false }
+        return editions.local?.isFinal ?? true
+    }
+}
+
+extension NewsFeed.EditionInfo {
+    var isFinal: Bool { status == "ready" && !stale }
 }
 
 // MARK: - Date

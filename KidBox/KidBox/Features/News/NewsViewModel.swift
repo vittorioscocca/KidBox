@@ -52,6 +52,17 @@ final class NewsViewModel: ObservableObject {
     func load(familyId: String, family: NewsFamilySettings, prefs: NewsPrefs, key: String, force: Bool = false) async {
         guard !familyId.isEmpty, family.enabled else { return }
         if !force, loadedKey == key, feed != nil { return }
+        // Niente offerte da qui: le ricarica `loadSavedOffers`, e le ultime
+        // cercate possono essere più nuove dell'edizione salvata.
+        if !force, let stored = NewsService.shared.storedFeed(familyId: familyId, key: key) {
+            pollTask?.cancel()
+            feed = stored
+            loadedKey = key
+            phase = .ready
+            preparingSince = nil
+            AppAnalytics.newsOpened(items: stored.items.count, events: stored.events.count, units: 0, preparing: false)
+            return
+        }
         if !force, feed == nil, let cached = NewsService.shared.cachedFeed,
            cached.familyId == familyId, cached.dateKey == NewsDates.key(Date()) {
             feed = cached.feed
@@ -63,7 +74,7 @@ final class NewsViewModel: ObservableObject {
             preparingSince = preparingSince ?? Date()
         }
         do {
-            let fresh = try await NewsService.shared.fetchFeed(familyId: familyId, family: family, prefs: prefs)
+            let fresh = try await NewsService.shared.fetchFeed(familyId: familyId, family: family, prefs: prefs, key: key)
             apply(fresh, key: key)
             if fresh.isPreparing { startPolling(familyId: familyId, family: family, prefs: prefs, key: key) }
             AppAnalytics.newsOpened(items: fresh.items.count, events: fresh.events.count, units: fresh.charge.units, preparing: fresh.isPreparing)
@@ -88,7 +99,7 @@ final class NewsViewModel: ObservableObject {
             for _ in 0..<maxPolls {
                 try? await Task.sleep(for: pollInterval)
                 if Task.isCancelled { return }
-                guard let fresh = try? await NewsService.shared.fetchFeed(familyId: familyId, family: family, prefs: prefs) else { continue }
+                guard let fresh = try? await NewsService.shared.fetchFeed(familyId: familyId, family: family, prefs: prefs, key: key) else { continue }
                 if Task.isCancelled { return }
                 self.apply(fresh, key: key)
                 if !fresh.isPreparing { return }

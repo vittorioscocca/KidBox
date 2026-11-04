@@ -8,6 +8,8 @@
 //  rete. Il presidio vero resta il server (`gate()` in functions/news).
 //
 
+import FirebaseAuth
+
 import Foundation
 import FirebaseFunctions
 
@@ -72,6 +74,22 @@ final class NewsService {
     /// L'ultima edizione scaricata, per riaprire la scheda senza attese.
     private(set) var cachedFeed: (familyId: String, dateKey: String, feed: NewsFeed)?
 
+    /// L'edizione completa del giorno, su disco: dura il giorno solare, così
+    /// riaprire la scheda o l'app non richiama il server. La mattina dopo la
+    /// data non coincide più e si scarica quella nuova.
+    private struct StoredFeed: Codable {
+        let uid: String
+        let familyId: String
+        let key: String
+        let dateKey: String
+        let payload: Data
+    }
+
+    private var storedFeedURL: URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("news-feed.json")
+    }
+
     private init() {}
 
     // MARK: - Edizione del giorno
@@ -79,7 +97,7 @@ final class NewsService {
     /// Luogo e lingua sono quelli della famiglia (`NewsFamilyStore`), gli
     /// argomenti di chi legge. Prima si aspetta che l'ultima scelta della
     /// famiglia sia sul server: il server la legge e la preferisce.
-    func fetchFeed(familyId: String, family: NewsFamilySettings, prefs: NewsPrefs) async throws -> NewsFeed {
+    func fetchFeed(familyId: String, family: NewsFamilySettings, prefs: NewsPrefs, key: String) async throws -> NewsFeed {
         #if DEBUG
         if KBDemoSeed.isActive, let demo = KBDemoSeed.newsFeed() { return demo }
         #endif
@@ -98,10 +116,34 @@ final class NewsService {
             let result = try await callable.call(payload)
             let feed = try decode(NewsFeed.self, from: result.data)
             cachedFeed = (familyId, feed.dateKey, feed)
+            if feed.isComplete { storeFeed(result.data, feed: feed, familyId: familyId, key: key) }
             return feed
         } catch let error as NSError {
             throw map(error)
         }
+    }
+
+    /// L'edizione di oggi già salvata, se è di questo utente e di queste scelte.
+    func storedFeed(familyId: String, key: String) -> NewsFeed? {
+        #if DEBUG
+        if KBDemoSeed.isActive { return nil }
+        #endif
+        guard let url = storedFeedURL,
+              let uid = Auth.auth().currentUser?.uid,
+              let data = try? Data(contentsOf: url),
+              let stored = try? JSONDecoder().decode(StoredFeed.self, from: data),
+              stored.uid == uid, stored.familyId == familyId, stored.key == key,
+              stored.dateKey == NewsDates.key(Date()) else { return nil }
+        return try? JSONDecoder().decode(NewsFeed.self, from: stored.payload)
+    }
+
+    private func storeFeed(_ raw: Any, feed: NewsFeed, familyId: String, key: String) {
+        guard let url = storedFeedURL,
+              let uid = Auth.auth().currentUser?.uid,
+              let payload = try? JSONSerialization.data(withJSONObject: raw) else { return }
+        let stored = StoredFeed(uid: uid, familyId: familyId, key: key, dateKey: feed.dateKey, payload: payload)
+        guard let data = try? JSONEncoder().encode(stored) else { return }
+        try? data.write(to: url, options: .atomic)
     }
 
     // MARK: - Offerte su misura
@@ -189,5 +231,8 @@ final class NewsService {
         }
     }
 
-    func clearCache() { cachedFeed = nil }
+    func clearCache() {
+        cachedFeed = nil
+        if let storedFeedURL { try? FileManager.default.removeItem(at: storedFeedURL) }
+    }
 }
