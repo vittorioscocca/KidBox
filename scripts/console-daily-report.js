@@ -238,7 +238,9 @@ async function main() {
     const fid = name.split("/families/")[1]?.split("/")[0];
     if (!fid) continue;
     const memberId = name.split("/").pop();
-    const f = (perFamily[fid] = perFamily[fid] || { n: 0, internal: false, joins: [] });
+    // Le famiglie ZZZ-TEST-… (prove lato server) hanno membri finti, non account
+    // di test: senza il prefisso contavano fra le famiglie vere con 2+ membri.
+    const f = (perFamily[fid] = perFamily[fid] || { n: 0, internal: fid.startsWith("ZZZ-TEST"), joins: [] });
     f.n += 1;
     if (internalUids.has(memberId)) f.internal = true;
     const t = tsMillis(r.document.fields?.joinedAt) || tsMillis(r.document.fields?.createdAt);

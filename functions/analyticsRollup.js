@@ -372,6 +372,9 @@ async function buildFamilyFunnel(daily, snaps, internal) {
   };
   const gaps = [];
   for (const f of famSnap.docs) {
+    // ZZZ-TEST-…: prove lato server, con membri finti che non sono account
+    // di test e quindi non escono dal filtro `internal`.
+    if (f.id.startsWith("ZZZ-TEST")) continue;
     const list = members.get(f.id) || [];
     out.families += 1;
     if (list.length >= 1) out.withMembers += 1;

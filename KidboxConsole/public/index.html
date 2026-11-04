@@ -1651,7 +1651,7 @@ async function loadAll() {
   document.getElementById('err-box').style.display = 'none';
   setStatus('Caricamento…');
   setVal('month-badge', monthKey());
-  setVal('ai-month-lbl', monthKey());
+  setVal('ai-month-lbl', `${monthKey()} · mese in corso, il filtro periodo non si applica`);
 
   // Solo alla prima apertura: con «Aggiorna» i dati a schermo sono già freschi.
   if (!_familyRows.length) {
@@ -1816,7 +1816,7 @@ async function loadFamilies() {
       if (em && em !== '—') ownerEmail = em;
     } catch {}
     const fname = d.name || '—';
-    return { fid, fname, plan, trial, manual, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: d.updatedAt?.toDate(), totalMembers: totalMemberCount, realMembers: realMemberCount, activeMembers14d: activeCount14d, lastOpenAt, openedMembers7d, createdAtMs: d.createdAt?.toDate?.().getTime() || 0, joins, internal: hasInternal };
+    return { fid, fname, plan, trial, manual, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: d.updatedAt?.toDate(), totalMembers: totalMemberCount, realMembers: realMemberCount, activeMembers14d: activeCount14d, lastOpenAt, openedMembers7d, createdAtMs: d.createdAt?.toDate?.().getTime() || 0, joins, internal: hasInternal || fid.startsWith('ZZZ-TEST') };
   }));
   renderFamilyViews(rows);
 }
@@ -2506,47 +2506,11 @@ function updateTotalCost() {
 }
 
 // ── AGGIORNAMENTO STATISTICHE PER FILTRO TEMPORALE ───────────────────────────
-function monthsInRange(from, to) {
-  const cur  = monthKey();
-  if (!from && !to) return [cur];
-  const start = from || new Date();
-  const end   = to   || new Date();
-  const list  = [];
-  let d = new Date(start.getFullYear(), start.getMonth(), 1);
-  while (d <= end) {
-    list.push(d.toLocaleDateString('sv-SE').slice(0,7));
-    d.setMonth(d.getMonth()+1);
-  }
-  return list.length ? list : [cur];
-}
-
-async function updateStatsForFilter() {
-  const { from, to } = getFilterRange();
-
+// I costi AI esistono solo per mese (ai_costs/{YYYY-MM}): un periodo di giorni
+// non si può ricavare, e sommare i mesi che tocca faceva sembrare «7 giorni» due
+// mesi interi. La sezione AI resta sul mese in corso e lo dice nel titolo.
+function updateStatsForFilter() {
   // utenti e famiglie sono già aggiornati da renderUsersTable/renderFamiliesTable
-  // ── AI: somma i mesi del periodo ──
-  const months = monthsInRange(from, to);
-  let calls=0, inputTok=0, outputTok=0, costUsd=0;
-  for (const mk of months) {
-    try {
-      const td = await getDoc(doc(db,'ai_costs',mk));
-      if (td.exists()) {
-        const d = td.data();
-        calls    += d.calls        || 0;
-        inputTok += d.inputTokens  || 0;
-        outputTok+= d.outputTokens || 0;
-        costUsd  += d.costUsd      || 0;
-      }
-    } catch {}
-  }
-  const aiCost = costUsd;
-  setVal('stat-ai-calls',  fmtNum(calls));
-  setVal('stat-ai-input',  fmtNum(inputTok));
-  setVal('stat-ai-output', fmtNum(outputTok));
-  setVal('stat-ai-cost',   fmtUsd(aiCost));
-  _costData.ai = aiCost;
-  setVal('ai-month-lbl', months.length===1 ? months[0] : months[0]+' → '+months[months.length-1]);
-
   updateTotalCost();
   updateLegend();
 }
@@ -3413,7 +3377,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         <div class="card">
           <div class="card-lbl">Costo AI stimato</div>
           <div class="card-val c-red" id="stat-ai-cost">—</div>
-          <div class="card-sub">stima interna · la fattura Anthropic è più alta</div>
+          <div class="card-sub">stima interna · il costo vero è la fattura Anthropic</div>
         </div>
       </div>
 
@@ -3441,7 +3405,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
           <div class="chart-box" id="chart-ai-calls"><div class="dim small">Caricamento…</div></div>
         </div>
         <div class="tcard">
-          <div class="tcard-hdr">Costo AI stimato per mese <span class="sub">la fattura Anthropic è più alta</span></div>
+          <div class="tcard-hdr">Costo AI stimato per mese <span class="sub">stima interna · il costo vero è la fattura Anthropic</span></div>
           <div class="chart-box" id="chart-ai-cost"><div class="dim small">Caricamento…</div></div>
         </div>
       </div>
