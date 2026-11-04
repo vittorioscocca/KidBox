@@ -95,3 +95,8 @@ dashboard/
 # Tolti dal tracciamento il 20/09/2026; il pattern prende anche gli altri
 # emulatori (firebase-, database-, pubsub-, ui-debug.log).
 *-debug.log
+
+# Video: pesano e non sono sorgenti. Restano sul disco; il deploy della landing
+# parte da qui, quindi i quattro spot in KidboxLanding/public/assets/video non
+# esistono in un checkout pulito. Tolti dal tracciamento il 04/11/2026.
+*.mp4
