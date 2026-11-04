@@ -46,6 +46,7 @@
 //   news_offers/{familyId}              le ultime offerte su misura della famiglia
 //                                       (fino al 03/10/2026 news_personal/{uid})
 //   news_usage/{dateKey}                spesa del giorno, per il tetto globale
+//   news_trial_use/{familyId}           l'unico uso delle Notizie in prova Pro
 // Disegno e numeri in internal/notizie.md.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -67,6 +68,7 @@ const JOBS = "news_jobs";
 const CHARGES = "news_charges";
 const OFFERS = "news_offers";
 const USAGE = "news_usage";
+const TRIAL_USES = "news_trial_use";
 
 const ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -373,6 +375,48 @@ function build(deps) {
   }
 
   /**
+   * Prova Pro: le Notizie si usano una volta sola per famiglia, cioè un giorno
+   * di edizioni, rileggibili fino a sera. Il controllo è qui e non nei client
+   * perché deve valere anche per le versioni già installate: l'errore «plan» lo
+   * capiscono tutte e mostra già «incluse nei piani Pro e Max».
+   * «saved» è chi ha aperto ma non ha mai visto niente (l'edizione richiede
+   * minuti e il telefono smette di aspettare): riceve quella già pagata da noi,
+   * senza generarne un'altra.
+   * @param {string} familyId
+   * @param {object} quota
+   * @param {string} dateKey
+   * @return {Promise<"open"|"saved">}
+   */
+  async function trialAccess(familyId, quota, dateKey) {
+    if (quota.period !== "trial") return "open";
+    const ref = db().collection(TRIAL_USES).doc(familyId);
+    const used = await db().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (snap.exists) return snap.data();
+      tx.set(ref, {dateKey, seen: false, at: admin.firestore.FieldValue.serverTimestamp()});
+      return null;
+    });
+    if (!used || used.dateKey === dateKey) return "open";
+    if (used.seen) {
+      throw new HttpsError("permission-denied", "Le Notizie sono incluse nei piani Pro e Max.", {reason: "plan"});
+    }
+    return "saved";
+  }
+
+  /**
+   * L'uso della prova è stato consumato oggi: domani le Notizie si chiudono.
+   * @param {string} familyId
+   * @param {object} quota
+   * @param {string} dateKey
+   * @return {Promise<void>}
+   */
+  async function markTrialSeen(familyId, quota, dateKey) {
+    if (quota.period !== "trial") return;
+    await db().collection(TRIAL_USES).doc(familyId).set({dateKey, seen: true}, {merge: true})
+        .catch((e) => logger.warn("news: uso della prova non segnato", {familyId, error: e.message}));
+  }
+
+  /**
    * Quanto si è speso oggi in generazioni, contro il tetto.
    * @param {string} dateKey
    * @param {typeof DEFAULTS} cfg
@@ -568,9 +612,11 @@ function build(deps) {
       const now = admin.firestore.FieldValue.serverTimestamp();
       for (const t of claimed) {
         batch.update(t.ref, {status: "paid"});
+        // `lastReadAt` fa preparare la zona ogni mattina (prepareNewsEditions):
+        // chi ha un uso solo non deve tenere accesa la generazione.
         batch.update(db().collection(EDITIONS).doc(t.edition.id), {
           readers: admin.firestore.FieldValue.increment(1),
-          lastReadAt: now,
+          ...(quota.period === "trial" ? {} : {lastReadAt: now}),
         });
       }
       await batch.commit().catch((e) => logger.warn("news: aggiornamento lettori fallito", {error: e.message}));
@@ -670,9 +716,17 @@ function build(deps) {
         const timeZone = parseTimeZone(d.timeZone);
         const categories = parseCategories(d.categories);
         const today = P.todayInfo(timeZone);
+        const access = await trialAccess(familyId, quota, today.dateKey);
 
         const scopes = scopesFor(place, lang, timeZone);
-        const resolved = await Promise.all(scopes.map((s) => resolveEdition(s, today, cfg)));
+        const resolved = await Promise.all(scopes.map(async (s) => {
+          if (access === "saved") {
+            // shiftDay +1: `previousEditions` parte dal giorno prima, qui serve anche oggi.
+            const prev = await previousEditions(s.key, shiftDay(today.dateKey, 1), 7);
+            if (prev.length) return {status: "ready", edition: prev[0], stale: true, reason: "trial"};
+          }
+          return resolveEdition(s, today, cfg);
+        }));
         const byKind = {};
         scopes.forEach((s, i) => {
           byKind[s.kind] = resolved[i];
@@ -683,6 +737,9 @@ function build(deps) {
         const {items, events} = compose(byKind.country?.edition, byKind.local?.edition, categories, today.dateKey);
         const offers = await savedOffers(familyId);
         const pending = scopes.filter((s, i) => resolved[i].status === "preparing").map((s) => s.kind);
+        if (readyEditions.length > 0 && pending.length === 0) {
+          await markTrialSeen(familyId, quota, today.dateKey);
+        }
 
         logger.info("getFamilyNews", {
           uid, familyId, place: place.city || place.countryCode, lang, pending,
@@ -903,6 +960,7 @@ function build(deps) {
         }
         const timeZone = parseTimeZone(d.timeZone);
         const today = P.todayInfo(timeZone);
+        await trialAccess(familyId, quota, today.dateKey);
         if (await overBudget(today.dateKey, cfg)) {
           throw new HttpsError("resource-exhausted", "Le ricerche di oggi sono finite: riprova domani.", {reason: "news-budget"});
         }
@@ -948,6 +1006,7 @@ function build(deps) {
           throw new HttpsError("unavailable", "La ricerca delle offerte non è riuscita. Riprova fra poco.");
         }
         const {offers, dropped} = P.sanitizeOffers(json.offers, {allowedUrls: P.collectSearchUrls(r.blocks), max: MAX_OFFERS});
+        await markTrialSeen(familyId, quota, today.dateKey);
 
         // Conguaglio: si restituisce quanto prenotato in più, si prova a
         // scalare quanto manca (se la quota non basta più, lo si regala).

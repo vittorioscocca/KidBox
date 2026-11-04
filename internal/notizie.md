@@ -252,3 +252,12 @@ salvataggio vero è `content_created` calendar) in GA4; `news_usage/{data}` e i 
 `news: edizione pronta` (costUsd, searches, dropped) per costo e qualità; la
 media dei lettori per zona (`readers` sulle edizioni) per capire se il prezzo
 per famiglia scende davvero.
+
+## Prova Pro: un uso solo
+
+Dal 04/11/2026 una famiglia in prova usa le Notizie una volta sola. Regole e
+trappole in `.claude/skills/notizie/SKILL.md`, sezione «Prova Pro: un uso solo».
+Motivo: fino a quel giorno 10,71 $ spesi, letti solo dall'account dello
+sviluppatore; le due famiglie vere che le hanno aperte (Spagna, Francia) non
+hanno visto niente, perché l'edizione richiede minuti e il telefono smette di
+aspettare dopo circa 40 secondi.

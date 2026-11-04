@@ -102,6 +102,14 @@ Disegno completo in `internal/notizie.md`. Qui le regole e le trappole.
 - Testi in quattro lingue sulle due app (`/localizzazione`): su iOS le
   `NSLocalizedString` non escono nei `.stringsdata`, vanno aggiunte a mano.
 
+## Prova Pro: un uso solo (dal 04/11/2026)
+
+Una famiglia in prova usa le Notizie **una volta sola**: un giorno di edizioni, rileggibili fino a sera, offerte comprese. Il blocco è nel server (`trialAccess` in `functions/news/index.js`, documento `news_trial_use/{familyId}`), così vale anche per le versioni già installate: risponde `permission-denied` con `reason: "plan"`, che tutti i client mostrano come «incluse nei piani Pro e Max».
+
+- `seen` si scrive solo quando l'edizione è arrivata davvero. Chi ha aperto e se n'è andato mentre si preparava (`seen: false`) il giorno dopo riceve quella già pronta (`previousEditions`), senza generarne un'altra.
+- Le letture della prova non scrivono `lastReadAt`, quindi non fanno preparare la zona ogni mattina.
+- I piani Pro e Max veri, compresi gli override dalla console, non passano da qui.
+
 ## Misurare l'uso (aggiunto il 09/10/2026)
 
 **GA4, sei eventi** (iOS e Android, stessi nomi): `news_opened` (con `items`, `events`, `units`, `preparing`), `news_item_opened` (`kind`, `category`, `level`), `news_item_saved` (`category`, `level`, `from`), `news_event_add`, `news_offers_searched` (`offers`, `units`), `news_activated`. I parametri sono dimensioni custom **non registrate in GA4**: si leggono gli eventi, non le spaccature. Per usarle vanno registrate (gli eventi passati restano «(not set)»).
