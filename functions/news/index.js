@@ -380,7 +380,7 @@ function build(deps) {
    * perché deve valere anche per le versioni già installate: l'errore «plan» lo
    * capiscono tutte e mostra già «incluse nei piani Pro e Max».
    * «saved» è chi ha aperto ma non ha mai visto niente (l'edizione richiede
-   * minuti e il telefono smette di aspettare): riceve quella già pagata da noi,
+   * circa 50 secondi e c'è chi esce prima): riceve quella già pagata da noi,
    * senza generarne un'altra.
    * @param {string} familyId
    * @param {object} quota

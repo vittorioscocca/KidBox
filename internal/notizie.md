@@ -259,5 +259,6 @@ Dal 04/11/2026 una famiglia in prova usa le Notizie una volta sola. Regole e
 trappole in `.claude/skills/notizie/SKILL.md`, sezione «Prova Pro: un uso solo».
 Motivo: fino a quel giorno 10,71 $ spesi, letti solo dall'account dello
 sviluppatore; le due famiglie vere che le hanno aperte (Spagna, Francia) non
-hanno visto niente, perché l'edizione richiede minuti e il telefono smette di
-aspettare dopo circa 40 secondi.
+hanno visto niente: sono uscite prima che l'edizione fosse pronta (circa 50
+secondi, massimo 2 minuti; i client aspettano fino a 4 minuti). La spagnola è
+uscita 7 secondi prima, la francese subito.
