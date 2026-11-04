@@ -8,8 +8,10 @@
  * nessun permesso nuovo. Il token arriva dal metadata server, senza librerie.
  * Il contatore `landingTraffic` lo legge la console da sola (lettura admin).
  *
- * Solo admin (`ADMIN_UIDS` di index.js). Risultato tenuto 30 minuti in memoria
- * dell'istanza: la console può riaprire la pagina senza rifare 11 chiamate.
+ * Solo admin (`ADMIN_UIDS` di index.js). La console passa il periodo scelto
+ * (`from`, `to`, oppure `all`): le serie per giorno arrivano sempre intere, gli
+ * spaccati sono del periodo. Risultato tenuto 30 minuti in memoria
+ * dell'istanza, per periodo: cambiando filtro non si rifanno 11 chiamate.
  */
 
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
@@ -26,10 +28,14 @@ const LANDING_HOSTS = [
   "kidbox-landing.firebaseapp.com",
 ];
 const CACHE_MS = 30 * 60 * 1000;
+const CACHE_MAX = 12;
+// Search Console tiene 16 mesi: «Tutto» arriva fin lì.
+const MAX_DAYS = 480;
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const METADATA_TOKEN = "http://metadata.google.internal/computeMetadata/v1/" +
   "instance/service-accounts/default/token";
 
-let cache = null;
+const cache = new Map();
 
 /**
  * Token OAuth del service account di runtime, con gli scope chiesti.
@@ -57,6 +63,20 @@ function dayAgo(n) {
 }
 
 /**
+ * Il periodo chiesto dalla console, in date valide e dentro lo storico.
+ * @param {object} d i dati della chiamata
+ * @return {{from: string, to: string}}
+ */
+function parseRange(d) {
+  const oldest = dayAgo(MAX_DAYS);
+  const to = DAY_RE.test(d?.to) ? d.to : dayAgo(0);
+  let from = DAY_RE.test(d?.from) ? d.from : dayAgo(28);
+  if (d?.all || from < oldest) from = oldest;
+  if (from > to) from = to;
+  return {from, to};
+}
+
+/**
  * POST JSON con token; errore leggibile se la risposta non è 2xx.
  * @param {string} url
  * @param {string} tok
@@ -78,46 +98,51 @@ async function postJson(url, tok, body) {
 }
 
 /**
- * Search Console: serie di 92 giorni e spaccati degli ultimi 28.
+ * Search Console: serie per giorno intera e spaccati del periodo.
  * @param {string} tok
+ * @param {{from: string, to: string}} range
  * @return {Promise<object>}
  */
-async function searchConsole(tok) {
+async function searchConsole(tok, range) {
   const url = "https://www.googleapis.com/webmasters/v3/sites/" +
     `${encodeURIComponent(SITE)}/searchAnalytics/query`;
-  const q = (dimensions, days, rowLimit) => postJson(url, tok, {
-    startDate: dayAgo(days), endDate: dayAgo(0), dimensions, rowLimit,
-  }).then((j) => (j.rows || []).map((r) => ({
-    keys: r.keys || [],
-    clicks: r.clicks,
-    impressions: r.impressions,
-    ctr: r.ctr,
-    position: r.position,
-  })));
+  const query = (dimensions, startDate, endDate, rowLimit) =>
+    postJson(url, tok, {startDate, endDate, dimensions, rowLimit})
+        .then((j) => (j.rows || []).map((r) => ({
+          keys: r.keys || [],
+          clicks: r.clicks,
+          impressions: r.impressions,
+          ctr: r.ctr,
+          position: r.position,
+        })));
+  const q = (dimensions, limit) =>
+    query(dimensions, range.from, range.to, limit);
   const [daily, queries, pages, countries, devices] = await Promise.all([
-    q(["date"], 92, 200),
-    q(["query"], 28, 30),
-    q(["page"], 28, 30),
-    q(["country"], 28, 12),
-    q(["device"], 28, 5),
+    query(["date"], dayAgo(MAX_DAYS), dayAgo(0), MAX_DAYS + 20),
+    q(["query"], 30),
+    q(["page"], 30),
+    q(["country"], 12),
+    q(["device"], 5),
   ]);
   return {daily, queries, pages, countries, devices};
 }
 
 /**
- * GA4 sui soli host della landing. Conta solo chi ha dato il consenso.
+ * GA4 sui soli host della landing: serie per giorno intera e spaccati del
+ * periodo. Conta solo chi ha dato il consenso.
  * @param {string} tok
+ * @param {{from: string, to: string}} range
  * @return {Promise<object>}
  */
-async function ga4(tok) {
+async function ga4(tok, range) {
   const url = "https://analyticsdata.googleapis.com/v1beta/properties/" +
     `${GA4_PROPERTY}:runReport`;
   const hostFilter = {
     filter: {fieldName: "hostName", inListFilter: {values: LANDING_HOSTS}},
   };
-  const run = (dimensions, metrics, days, limit, orderBys) =>
+  const run = (dimensions, metrics, limit, orderBys, dates = range) =>
     postJson(url, tok, {
-      dateRanges: [{startDate: `${days}daysAgo`, endDate: "today"}],
+      dateRanges: [{startDate: dates.from, endDate: dates.to}],
       dimensions: dimensions.map((name) => ({name})),
       metrics: metrics.map((name) => ({name})),
       dimensionFilter: hostFilter,
@@ -128,17 +153,18 @@ async function ga4(tok) {
       values: (r.metricValues || []).map((v) => Number(v.value) || 0),
     })));
   const byDate = [{dimension: {dimensionName: "date"}}];
+  const history = {from: dayAgo(MAX_DAYS), to: dayAgo(0)};
   const [daily, pages, channels, countries, devices, events] =
     await Promise.all([
       run(["date"],
           ["activeUsers", "sessions", "screenPageViews", "engagedSessions"],
-          90, 100, byDate),
-      run(["pagePath"], ["screenPageViews", "activeUsers"], 28, 30),
+          MAX_DAYS + 20, byDate, history),
+      run(["pagePath"], ["screenPageViews", "activeUsers"], 30),
       run(["sessionDefaultChannelGroup", "sessionSource"],
-          ["sessions", "engagedSessions"], 28, 20),
-      run(["country"], ["activeUsers"], 28, 12),
-      run(["deviceCategory"], ["activeUsers"], 28, 5),
-      run(["eventName"], ["eventCount", "totalUsers"], 28, 25),
+          ["sessions", "engagedSessions"], 20),
+      run(["country"], ["activeUsers"], 12),
+      run(["deviceCategory"], ["activeUsers"], 5),
+      run(["eventName"], ["eventCount", "totalUsers"], 25),
     ]);
   return {daily, pages, channels, countries, devices, events};
 }
@@ -163,16 +189,23 @@ exports.build = ({ADMIN_UIDS}) => onCall(
       if (!ADMIN_UIDS.includes(uid)) {
         throw new HttpsError("permission-denied", "Non autorizzato.");
       }
-      const fresh = cache && Date.now() - cache.at < CACHE_MS;
-      if (fresh && !request.data?.force) return cache.data;
+      const range = parseRange(request.data);
+      const key = `${range.from}|${range.to}`;
+      const hit = cache.get(key);
+      const fresh = hit && Date.now() - hit.at < CACHE_MS;
+      if (fresh && !request.data?.force) return hit.data;
 
       const tok = await accessToken();
       // Una fonte che fallisce non ferma l'altra: la console mostra l'errore
       // solo in quella sezione.
-      const [sc, ga] = await Promise.allSettled([searchConsole(tok), ga4(tok)]);
+      const [sc, ga] = await Promise.allSettled([
+        searchConsole(tok, range),
+        ga4(tok, range),
+      ]);
       const err = (r) => ({error: String(r.reason?.message || r.reason)});
       const data = {
         computedAt: Date.now(),
+        range,
         searchConsole: sc.status === "fulfilled" ? sc.value : err(sc),
         ga4: ga.status === "fulfilled" ? ga.value : err(ga),
       };
@@ -183,7 +216,8 @@ exports.build = ({ADMIN_UIDS}) => onCall(
         logger.warn("getLandingStats: GA4", data.ga4);
       }
       if (sc.status === "fulfilled" && ga.status === "fulfilled") {
-        cache = {at: Date.now(), data};
+        cache.set(key, {at: Date.now(), data});
+        if (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value);
       }
       return data;
     });

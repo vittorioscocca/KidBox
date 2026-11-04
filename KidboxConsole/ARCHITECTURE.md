@@ -59,7 +59,7 @@ python3 -m http.server 8080
 |---|---|
 | `initStorageUsageAdmin` | ricalcolo storage di tutte le famiglie |
 | `runAnalyticsRollup` | ricalcolo rollup utenti attivi (oggi + ieri) |
-| `getLandingStats` | Google Search e GA4 della landing (gira come `ga4-reader`, risultato tenuto 30 min) |
+| `getLandingStats` | Google Search e GA4 della landing per il periodo scelto (gira come `ga4-reader`, risultato tenuto 30 min per periodo) |
 
 > `ai_usage` e `ai_costs` sono popolati da `askAI`; `metrics` da
 > `analyticsRollupDaily`. Vedi `functions/ARCHITECTURE.md` e
