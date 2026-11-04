@@ -107,7 +107,7 @@ Disegno completo in `internal/notizie.md`. Qui le regole e le trappole.
 Una famiglia in prova usa le Notizie **una volta sola**: un giorno di edizioni, rileggibili fino a sera, offerte comprese. Il blocco è nel server (`trialAccess` in `functions/news/index.js`, documento `news_trial_use/{familyId}`), così vale anche per le versioni già installate: risponde `permission-denied` con `reason: "plan"`, che tutti i client mostrano come «incluse nei piani Pro e Max».
 
 - `seen` si scrive solo quando l'edizione è arrivata davvero. Chi ha aperto e se n'è andato mentre si preparava (`seen: false`) il giorno dopo riceve quella già pronta (`previousEditions`), senza generarne un'altra.
-- Le letture della prova non scrivono `lastReadAt`, quindi non fanno preparare la zona ogni mattina.
+- Le letture della prova e degli account di test (`config/internalUsers`) non scrivono `lastReadAt`, quindi non fanno preparare la zona ogni mattina: chi legge così aspetta la generazione alla prima apertura del giorno. L'addebito è uno per famiglia, quindi conta chi apre per primo.
 - I piani Pro e Max veri, compresi gli override dalla console, non passano da qui.
 
 ## Misurare l'uso (aggiunto il 09/10/2026)

@@ -556,6 +556,23 @@ function build(deps) {
   }
 
   /**
+   * Account di test dello sviluppatore (`config/internalUsers.uids`). Se il
+   * documento non si legge si risponde no: una lettura vera non va mai persa.
+   * @param {string} uid
+   * @return {Promise<boolean>}
+   */
+  async function isInternalUser(uid) {
+    try {
+      const snap = await db().collection("config").doc("internalUsers").get();
+      const uids = snap.get("uids");
+      return Array.isArray(uids) && uids.includes(uid);
+    } catch (e) {
+      logger.warn("news: config/internalUsers non leggibile", {error: e.message});
+      return false;
+    }
+  }
+
+  /**
    * Scala dalla quota AI della famiglia le edizioni che non ha ancora pagato.
    * Prima la prenotazione (`create` fallisce se un altro dispositivo della
    * famiglia l'ha appena fatta), poi il contatore: se la quota non basta le
@@ -610,13 +627,14 @@ function build(deps) {
       }
       const batch = db().batch();
       const now = admin.firestore.FieldValue.serverTimestamp();
+      // `lastReadAt` fa preparare la zona ogni mattina (prepareNewsEditions):
+      // né chi ha un uso solo né gli account di test devono tenerla accesa.
+      const keepsZoneAlive = quota.period !== "trial" && !(await isInternalUser(uid));
       for (const t of claimed) {
         batch.update(t.ref, {status: "paid"});
-        // `lastReadAt` fa preparare la zona ogni mattina (prepareNewsEditions):
-        // chi ha un uso solo non deve tenere accesa la generazione.
         batch.update(db().collection(EDITIONS).doc(t.edition.id), {
           readers: admin.firestore.FieldValue.increment(1),
-          ...(quota.period === "trial" ? {} : {lastReadAt: now}),
+          ...(keepsZoneAlive ? {lastReadAt: now} : {}),
         });
       }
       await batch.commit().catch((e) => logger.warn("news: aggiornamento lettori fallito", {error: e.message}));
