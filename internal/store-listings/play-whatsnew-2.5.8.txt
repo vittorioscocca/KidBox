@@ -1,0 +1,23 @@
+<it-IT>
+• Notizie: l'edizione del giorno resta sul telefono e si riapre subito fino alla mattina dopo. Mentre si prepara vedi un conto alla rovescia e cosa sta cercando.
+• KidBox negli altri calendari: dalle impostazioni dei calendari crei un link solo tuo e vedi gli eventi di famiglia in Google Calendar o Outlook, in sola lettura.
+• Viaggi: la copertina è una foto del posto, non più stemmi o mappe. Nel budget «Voli» diventa «Trasporti».
+</it-IT>
+<en-US>
+• News: today's edition stays on your phone and reopens instantly until the next morning. While it's being prepared, a countdown shows what it's looking for.
+• KidBox in other calendars: from the calendar settings create a private link and see family events in Google Calendar or Outlook, read-only.
+• Trips: a photo of the place as the cover, the right town in History and land, and "Transport" in the budget.
+• Passwords, treatments and chat are now in English.
+</en-US>
+<fr-FR>
+• Actualités : l'édition du jour reste sur le téléphone et se rouvre aussitôt jusqu'au lendemain matin. Pendant sa préparation, un compte à rebours montre ce qu'elle cherche.
+• KidBox dans vos autres calendriers : créez un lien privé depuis les réglages et voyez les événements de la famille dans Google Agenda ou Outlook, en lecture seule.
+• Voyages : une photo du lieu en couverture, la bonne ville dans Histoire et territoire.
+• Mots de passe, traitements et discussion sont en français.
+</fr-FR>
+<es-ES>
+• Noticias: la edición del día se queda en el teléfono y se reabre al instante hasta la mañana siguiente. Mientras se prepara, una cuenta atrás muestra lo que busca.
+• KidBox en otros calendarios: desde los ajustes creas un enlace privado y ves los eventos de la familia en Google Calendar u Outlook, solo lectura.
+• Viajes: una foto del lugar como portada y la ciudad correcta en Historia y territorio.
+• Contraseñas, tratamientos y chat ya están en español.
+</es-ES>
