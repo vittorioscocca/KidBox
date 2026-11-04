@@ -100,3 +100,4 @@ dashboard/
 # parte da qui, quindi i quattro spot in KidboxLanding/public/assets/video non
 # esistono in un checkout pulito. Tolti dal tracciamento il 04/11/2026.
 *.mp4
+*.m4a
