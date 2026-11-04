@@ -169,6 +169,182 @@
         }
       }
     },
+    "Cerco bonus e agevolazioni per le famiglie…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking for family grants and benefits…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busco ayudas y bonificaciones para familias…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je cherche les aides pour les familles…"
+          }
+        }
+      }
+    },
+    "Cerco consigli su crescita ed educazione…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking for advice on growth and parenting…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busco consejos sobre crianza y educación…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je cherche des conseils sur l'éducation des enfants…"
+          }
+        }
+      }
+    },
+    "Cerco eventi per famiglie entro 60 km…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking for family events within 60 km…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busco eventos para familias a menos de 60 km…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je cherche des événements familiaux à moins de 60 km…"
+          }
+        }
+      }
+    },
+    "Cerco le notizie di %@…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking for news from %@…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busco las noticias de %@…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je cherche les actualités de %@…"
+          }
+        }
+      }
+    },
+    "Cerco vaccinazioni, prevenzione e prodotti richiamati…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking for vaccinations, prevention and product recalls…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busco vacunación, prevención y productos retirados…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je cherche vaccins, prévention et rappels de produits…"
+          }
+        }
+      }
+    },
+    "Controllo avvisi su acqua e luce…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking water and power notices…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reviso avisos de agua y luz…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je vérifie les avis sur l'eau et l'électricité…"
+          }
+        }
+      }
+    },
+    "Controllo bollette, prezzi e tasse di casa…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking bills, prices and household taxes…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reviso facturas, precios e impuestos del hogar…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je vérifie factures, prix et impôts du foyer…"
+          }
+        }
+      }
+    },
+    "Controllo calendario, iscrizioni e mense…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking school calendars, enrolment and canteens…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reviso calendario escolar, matrículas y comedores…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je vérifie calendrier scolaire, inscriptions et cantines…"
+          }
+        }
+      }
+    },
     "Controllo fughe (HIBP)" : {
       "localizations" : {
         "en" : {
@@ -235,6 +411,28 @@
         }
       }
     },
+    "Guardo le nuove leggi che toccano le famiglie…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking at new laws that affect families…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Miro las nuevas leyes que afectan a las familias…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je regarde les nouvelles lois qui touchent les familles…"
+          }
+        }
+      }
+    },
     "Pomeriggio" : {
       "localizations" : {
         "en" : {
@@ -253,6 +451,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Après-midi"
+          }
+        }
+      }
+    },
+    "Quasi pronte…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Almost ready…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casi listas…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Presque prêtes…"
           }
         }
       }
@@ -319,6 +539,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L'opération n'a pas abouti. Réessayez."
+          }
+        }
+      }
+    },
+    "Scarto le notizie vecchie e i doppioni…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Removing old news and duplicates…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descarto noticias antiguas y duplicados…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'écarte les actualités anciennes et les doublons…"
           }
         }
       }

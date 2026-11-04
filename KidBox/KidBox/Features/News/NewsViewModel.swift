@@ -34,6 +34,10 @@ final class NewsViewModel: ObservableObject {
     @Published private(set) var isSearchingOffers = false
     @Published private(set) var offersError: String?
 
+    /// Da quando si aspetta l'edizione: sta qui e non nella card, che nella
+    /// lista esce dalla gerarchia scorrendo e ripartirebbe da capo.
+    @Published private(set) var preparingSince: Date?
+
     private var pollTask: Task<Void, Never>?
     private var loadedKey: String?
 
@@ -54,7 +58,10 @@ final class NewsViewModel: ObservableObject {
             phase = .ready
         }
         pollTask?.cancel()
-        if feed == nil { phase = .loading }
+        if feed == nil {
+            phase = .loading
+            preparingSince = preparingSince ?? Date()
+        }
         do {
             let fresh = try await NewsService.shared.fetchFeed(familyId: familyId, family: family, prefs: prefs)
             apply(fresh, key: key)
@@ -71,6 +78,7 @@ final class NewsViewModel: ObservableObject {
         feed = fresh
         loadedKey = key
         phase = .ready
+        preparingSince = fresh.isPreparing ? (preparingSince ?? Date()) : nil
         if let saved = fresh.offers { offers = saved }
     }
 

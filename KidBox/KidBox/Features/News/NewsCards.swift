@@ -306,3 +306,109 @@ struct NewsOfferCard: View {
         .buttonStyle(.plain)
     }
 }
+
+// MARK: - Attesa dell'edizione
+
+/// La prima edizione del giorno si genera in circa 50 secondi: conto alla
+/// rovescia e, sotto, gli argomenti che l'edizione cerca davvero. Le ricerche
+/// girano sul server e il telefono non le vede in diretta: le frasi seguono
+/// quello che chiedono i prompt (`functions/news/prompts.js`), non i singoli passi.
+struct NewsPreparingCard: View {
+
+    let pending: [String]
+    let city: String
+    let startedAt: Date
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private let expectedSeconds = 60.0
+    private let secondsPerStep = 5.0
+    private let accent = Color(red: 0.95, green: 0.38, blue: 0.10)
+
+    private var hasCountry: Bool { pending.contains("country") }
+    private var hasLocal: Bool { pending.contains("local") && !city.isEmpty }
+
+    private var steps: [LocalizedStringKey] {
+        let local: [LocalizedStringKey] = hasLocal
+            ? ["Cerco le notizie di \(city)…", "Cerco eventi per famiglie entro 60 km…", "Controllo avvisi su acqua e luce…"]
+            : []
+        let filter: LocalizedStringKey = "Scarto le notizie vecchie e i doppioni…"
+        guard hasCountry else { return local + [filter] }
+        let country: [LocalizedStringKey] = [
+            "Cerco bonus e agevolazioni per le famiglie…",
+            "Controllo bollette, prezzi e tasse di casa…",
+            "Controllo calendario, iscrizioni e mense…",
+            "Cerco vaccinazioni, prevenzione e prodotti richiamati…",
+            "Guardo le nuove leggi che toccano le famiglie…",
+            "Cerco consigli su crescita ed educazione…",
+        ]
+        // Alternati: in un minuto compaiono sia il paese sia la città.
+        var mixed: [LocalizedStringKey] = []
+        for (i, step) in country.enumerated() {
+            mixed.append(step)
+            if i < local.count { mixed.append(local[i]) }
+        }
+        return mixed + [filter]
+    }
+
+    var body: some View {
+        TimelineView(.periodic(from: startedAt, by: 1)) { context in
+            let elapsed = max(0, context.date.timeIntervalSince(startedAt))
+            let left = max(0, Int((expectedSeconds - elapsed).rounded(.up)))
+            let list = steps
+            let index = Int(elapsed / secondsPerStep) % max(list.count, 1)
+
+            HStack(alignment: .center, spacing: 14) {
+                ring(left: left)
+                VStack(alignment: .leading, spacing: 3) {
+                    Group {
+                        if left == 0 {
+                            Text("Quasi pronte…")
+                        } else if hasCountry {
+                            Text("Sto cercando le notizie di oggi…")
+                        } else {
+                            Text("Sto cercando le notizie della tua zona e gli eventi vicini…")
+                        }
+                    }
+                    .font(.subheadline.weight(.semibold))
+
+                    Text(list[index])
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(accent)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, minHeight: 36, alignment: .topLeading)
+                        .id(index)
+                        .transition(.opacity)
+
+                    Text("La prima edizione del giorno richiede circa un minuto. Puoi uscire: la ritrovi pronta.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .animation(.easeInOut(duration: 0.4), value: index)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 16).fill(KBTheme.cardBackground(colorScheme)))
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    private func ring(left: Int) -> some View {
+        ZStack {
+            Circle().stroke(Color.primary.opacity(0.08), lineWidth: 5)
+            if left > 0 {
+                Circle()
+                    .trim(from: 0, to: max(0.001, Double(left) / expectedSeconds))
+                    .stroke(accent, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .animation(.linear(duration: 1), value: left)
+                Text(verbatim: "\(left) s")
+                    .font(.system(.footnote, design: .rounded).weight(.bold))
+                    .monospacedDigit()
+            } else {
+                ProgressView()
+            }
+        }
+        .frame(width: 58, height: 58)
+    }
+}

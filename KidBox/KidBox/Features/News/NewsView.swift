@@ -268,24 +268,11 @@ struct NewsView: View {
     // MARK: Stati
 
     private func preparingBanner(pending: [String]) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            ProgressView()
-            VStack(alignment: .leading, spacing: 3) {
-                if pending.contains("local") && !pending.contains("country") {
-                    Text("Sto cercando le notizie della tua zona e gli eventi vicini…")
-                        .font(.subheadline.weight(.semibold))
-                } else {
-                    Text("Sto cercando le notizie di oggi…")
-                        .font(.subheadline.weight(.semibold))
-                }
-                Text("La prima edizione del giorno richiede circa un minuto. Puoi uscire: la ritrovi pronta.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 16).fill(KBTheme.cardBackground(colorScheme)))
+        NewsPreparingCard(
+            pending: pending,
+            city: vm.feed?.place.city ?? family.effectivePlace.city,
+            startedAt: vm.preparingSince ?? Date()
+        )
     }
 
     private var skeleton: some View {
