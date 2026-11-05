@@ -379,6 +379,8 @@ final class DocumentIntelligenceExecutor {
             documentId = doc.id
             return String(localized: "File allegato.")
         }
+        // Scelto da Documenti di KidBox: è già lì, niente doppione.
+        if documentId != nil { return nil }
         // Nessuna scheda lo prende (o l'allegato non è riuscito): in Documenti.
         let folderVM = DocumentFolderViewModel(familyId: familyId, folderId: nil)
         folderVM.bind(modelContext: modelContext)

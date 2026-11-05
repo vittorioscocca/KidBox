@@ -664,7 +664,7 @@ struct AssistantQuota: Equatable {
 extension PlanningAIChatViewModel {
 
     /// File scelto da File (PDF o immagine).
-    func importDocument(fileURL: URL, displayName: String? = nil) async {
+    func importDocument(fileURL: URL, displayName: String? = nil, kidBoxDocumentId: String? = nil) async {
         let ok = fileURL.startAccessingSecurityScopedResource()
         defer { if ok { fileURL.stopAccessingSecurityScopedResource() } }
         guard let data = try? Data(contentsOf: fileURL), !data.isEmpty else {
@@ -672,7 +672,11 @@ extension PlanningAIChatViewModel {
             return
         }
         let name = displayName.flatMap { $0.isEmpty ? nil : $0 } ?? fileURL.lastPathComponent
-        await stageImported(data: data, fileName: name, mimeType: Self.mimeType(forExtension: fileURL.pathExtension))
+        await stageImported(
+            data: data, fileName: name,
+            mimeType: Self.mimeType(forExtension: fileURL.pathExtension),
+            kidBoxDocumentId: kidBoxDocumentId
+        )
     }
 
     /// Foto dalla libreria.
@@ -721,7 +725,7 @@ extension PlanningAIChatViewModel {
 
     /// Mette il documento nel campo di testo, pronto per l'invio: la lettura
     /// (e il messaggio AI che costa) parte solo quando l'utente preme invio.
-    private func stageImported(data: Data, fileName: String, mimeType: String) async {
+    private func stageImported(data: Data, fileName: String, mimeType: String, kidBoxDocumentId: String? = nil) async {
         guard !isAnalyzingDocument else { return }
         errorMessage = nil
 
@@ -740,7 +744,8 @@ extension PlanningAIChatViewModel {
         discardAttachment()
         attachment = StagedAttachment(
             fileURL: fileURL, fileName: fileName, mimeType: mimeType,
-            thumbnail: StagedAttachment.makeThumbnail(data: data, mimeType: mimeType)
+            thumbnail: StagedAttachment.makeThumbnail(data: data, mimeType: mimeType),
+            kidBoxDocumentId: kidBoxDocumentId
         )
     }
 
@@ -785,7 +790,7 @@ extension PlanningAIChatViewModel {
             }
             KBLog.ai.kbInfo("PlanningAIChatVM document analyzed category=\(result.category ?? "-") actions=\(result.actions.count)")
             docIntelPayload = DocIntelPayload(
-                result: result, sourceFile: fileURL,
+                result: result, documentId: staged.kidBoxDocumentId, sourceFile: fileURL,
                 children: refs.persons, vehicles: refs.vehicles
             )
         } catch DocumentIntelligenceService.AnalyzeError.unreadable {
@@ -826,6 +831,8 @@ struct StagedAttachment {
     let fileName: String
     let mimeType: String
     let thumbnail: UIImage?
+    /// Scelto da Documenti di KidBox: il file è già lì, non va ricaricato.
+    var kidBoxDocumentId: String? = nil
 
     static func makeThumbnail(data: Data, mimeType: String) -> UIImage? {
         let size = CGSize(width: 160, height: 160)

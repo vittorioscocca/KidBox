@@ -297,6 +297,7 @@ private struct PlanningAIChatInnerView: View {
     @State private var showPhotoPicker = false
     @State private var photoItem: PhotosPickerItem?
     @State private var showFileImporter = false
+    @State private var showKidBoxPicker = false
 
     // ── Scroll proxy ──────────────────────────────────────────────
     @Namespace private var bottomID
@@ -516,6 +517,19 @@ private struct PlanningAIChatInnerView: View {
             guard case .success(let urls) = result, let url = urls.first else { return }
             Task { await vm.importDocument(fileURL: url) }
         }
+        .sheet(isPresented: $showKidBoxPicker) {
+            KidBoxDocumentPickerSheet(
+                familyId: familyId,
+                hidesIdentityDocuments: true,
+                onPickDocument: { url, documentId in
+                    Task {
+                        await vm.importDocument(fileURL: url, kidBoxDocumentId: documentId)
+                        // Copia in chiaro del selettore: il ViewModel ha già la sua.
+                        try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+                    }
+                }
+            )
+        }
         .sheet(item: $vm.docIntelPayload) { payload in
             DocumentIntelligenceSheet(
                 payload: payload,
@@ -561,6 +575,11 @@ private struct PlanningAIChatInnerView: View {
                 showFileImporter = true
             } label: {
                 Label("File", systemImage: "folder")
+            }
+            Button {
+                showKidBoxPicker = true
+            } label: {
+                Label("Da documenti KidBox", systemImage: "tray.full")
             }
         } label: {
             ZStack {

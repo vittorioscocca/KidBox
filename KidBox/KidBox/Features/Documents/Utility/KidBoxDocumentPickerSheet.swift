@@ -31,8 +31,12 @@ struct KidBoxDocumentPickerSheet: View {
     var pdfOnly: Bool = false
     /// Se valorizzato (es. Garage/Casa `#FF6B00`), tinta toolbar e controlli della navigazione.
     var accentTint: Color? = nil
+    /// Se `true`, nasconde i documenti d'identità del Wallet (es. per l'assistente AI).
+    var hidesIdentityDocuments: Bool = false
     /// Chiamata con la URL del file decriptato pronto per l'upload come allegato.
-    let onPick: (URL) -> Void
+    var onPick: (URL) -> Void = { _ in }
+    /// Al posto di `onPick`, per chi deve sapere anche quale documento è stato scelto.
+    var onPickDocument: ((URL, String) -> Void)? = nil
     
     @State private var isLoading = false
     @State private var errorText: String?
@@ -44,6 +48,7 @@ struct KidBoxDocumentPickerSheet: View {
                 folderId: nil,
                 folderTitle: String(localized: "Documenti"),
                 pdfOnly: pdfOnly,
+                hidesIdentityDocuments: hidesIdentityDocuments,
                 isLoading: $isLoading,
                 errorText: $errorText,
                 onPick: { doc in
@@ -103,7 +108,11 @@ struct KidBoxDocumentPickerSheet: View {
             let namedURL = try namedURL(from: rawURL, doc: doc)
             KBLog.data.kbInfo("KidBoxDocumentPickerSheet pick ready fileName=\(namedURL.lastPathComponent)")
             dismiss()
-            onPick(namedURL)
+            if let onPickDocument {
+                onPickDocument(namedURL, doc.id)
+            } else {
+                onPick(namedURL)
+            }
         } catch {
             errorText = "Impossibile aprire il documento: \(error.localizedDescription)"
             KBLog.data.kbError("KidBoxDocumentPickerSheet pick failed docId=\(doc.id): \(error.localizedDescription)")
@@ -155,6 +164,7 @@ private struct KidBoxFolderPickerLevel: View {
     let folderId:    String?
     let folderTitle: String
     let pdfOnly: Bool
+    let hidesIdentityDocuments: Bool
     @Binding var isLoading: Bool
     @Binding var errorText: String?
     let onPick: (KBDocument) -> Void
@@ -175,6 +185,7 @@ private struct KidBoxFolderPickerLevel: View {
                                 folderId: folder.id,
                                 folderTitle: folder.title,
                                 pdfOnly: pdfOnly,
+                                hidesIdentityDocuments: hidesIdentityDocuments,
                                 isLoading: $isLoading,
                                 errorText: $errorText,
                                 onPick: onPick
@@ -312,6 +323,9 @@ private struct KidBoxFolderPickerLevel: View {
             docs = docs.filteredToVisibleDocuments(currentUid: uid)
             if pdfOnly {
                 docs = docs.filter { Self.docIsPdf($0) }
+            }
+            if hidesIdentityDocuments {
+                docs = docs.filter { $0.walletDocumentKind == nil }
             }
         } catch {
             KBLog.data.kbError("KidBoxFolderPickerLevel loadContent failed: \(error.localizedDescription)")

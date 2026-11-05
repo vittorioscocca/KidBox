@@ -96,12 +96,10 @@ struct DocumentIntelligenceSheet: View {
 
                     Section {
                         Group {
-                            if payload.sourceFile != nil {
-                                if let attachLabel {
-                                    Text("Il file verrà allegato a: \(attachLabel).")
-                                } else {
-                                    Text("Il file verrà salvato in Documenti.")
-                                }
+                            if let attachLabel {
+                                Text("Il file verrà allegato a: \(attachLabel).")
+                            } else if payload.sourceFile != nil, payload.documentId == nil {
+                                Text("Il file verrà salvato in Documenti.")
                             } else {
                                 Text("Le azioni selezionate verranno create nelle rispettive sezioni dell'app. Il documento resta allegato dove pertinente.")
                             }
