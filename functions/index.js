@@ -8381,6 +8381,18 @@ exports.getAuthUsersData = onCall(
         const t = lastOpenByUid[row.uid];
         row.lastOpenAt = t && typeof t.toMillis === "function" ? t.toMillis() : 0;
       }
+
+      // Chi usa la web app: `users/{uid}.platform` lo scrivono solo le app
+      // mobili. La sessione web esiste dal 02/10/2026, chi l'ha usata solo
+      // prima di quella data resta senza dispositivo.
+      try {
+        const sessions = await admin.firestore().collectionGroup("sessions")
+            .where("platform", "==", "web").select().get();
+        const webUids = new Set(sessions.docs.map((d) => d.ref.parent.parent.id));
+        for (const row of result) row.web = webUids.has(row.uid);
+      } catch (e) {
+        logger.warn("getAuthUsersData: sessioni web non disponibili", {error: e.message});
+      }
       return {users: result};
     },
 );

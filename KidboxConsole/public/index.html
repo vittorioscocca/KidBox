@@ -941,6 +941,7 @@ function renderFamiliesTable(rows) {
     const platforms = [
       r.iosCount     ? `<span title="${r.iosCount} da iOS">🍎 ${r.iosCount}</span>`     : '',
       r.androidCount ? `<span title="${r.androidCount} da Android">🤖 ${r.androidCount}</span>` : '',
+      r.webCount     ? `<span title="${r.webCount} dal web">🌐 ${r.webCount}</span>`     : '',
     ].filter(Boolean).join(' ') || '<span class="dim">—</span>';
     return `
     <tr>
@@ -1532,7 +1533,7 @@ const repDate = d => d ? new Date(d).toLocaleDateString('it-IT') : '—';
 function reportFamilies() {
   const rows = [..._familyRows].sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0)).map(r => [
     r.fid.slice(0, 8), (r.fname || '—') + (r.internal ? ' (prova)' : ''), r.planLabel || r.plan, r.realMembers,
-    `iOS ${r.iosCount} · Android ${r.androidCount}`, fmtBytes(r.storageBytes), r.aiMonth,
+    `iOS ${r.iosCount} · Android ${r.androidCount} · Web ${r.webCount || 0}`, fmtBytes(r.storageBytes), r.aiMonth,
     repDate(r.createdAtMs), repDate(r.lastOpenAt)]);
   return `\nTutte le ${rows.length} famiglie, dalla più recente (senza email).\n` +
     reportMdTable(['ID', 'Famiglia', 'Piano', 'Membri', 'Dispositivi', 'Storage', 'AI mese', 'Creata', 'Ultima apertura'], rows);
@@ -1542,7 +1543,7 @@ function reportUsers() {
   const rows = [..._allUsersRows].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map(u => {
     const f = famById.get(_familyByUid[u.uid]);
     return [u.uid.slice(0, 8) + (u.internal ? ' (test)' : ''), f ? (f.fname || '—') : '—', f ? (f.planLabel || f.plan) : '—',
-      u.platform || '—', repDate(u.createdAt), repDate(u.lastOpenAt), repDate(u.lastActiveAt)];
+      [u.platform, u.web ? 'web' : ''].filter(Boolean).join(' + ') || '—', repDate(u.createdAt), repDate(u.lastOpenAt), repDate(u.lastActiveAt)];
   });
   return `\nTutti i ${rows.length} utenti, dal più recente (senza email né nomi).\n` +
     reportMdTable(['Utente', 'Famiglia', 'Piano', 'Dispositivo', 'Registrato', 'Ultima apertura', 'App viva'], rows);
@@ -1647,7 +1648,10 @@ function renderUsersTable(rows) {
     const famName = fam ? ((fam.fname && fam.fname !== '—') ? fam.fname : fam.fid.slice(0,14)+'…') : '—';
     const plan = fam ? fam.plan : '';
     const emailShort = u.email.length > 30 ? u.email.slice(0,28)+'…' : u.email;
-    const platformBadge = u.platform === 'ios' ? '🍎 iOS' : u.platform === 'android' ? '🤖 Android' : '<span class="dim">—</span>';
+    const platformBadge = [
+      u.platform === 'ios' ? '🍎 iOS' : u.platform === 'android' ? '🤖 Android' : '',
+      u.web ? '🌐 Web' : '',
+    ].filter(Boolean).join(' · ') || '<span class="dim">—</span>';
     const createdStr = u.createdAt ? u.createdAt.toLocaleDateString('it-IT') : '—';
     const lastActiveStr = fmtLastActive(u.lastActiveAt);
     const lastActiveTitle = u.lastActiveAt ? u.lastActiveAt.toLocaleString('it-IT') : '';
@@ -1766,6 +1770,7 @@ async function loadUsers() {
         email,
         name,
         platform: p || '',
+        web: !!auth.web,
         updatedAt: u.updatedAt?.toDate(),
         createdAt: auth.createdAt ? new Date(auth.createdAt) : null,
         lastActiveAt: auth.lastActiveAt ? new Date(auth.lastActiveAt) : null,
@@ -1830,7 +1835,7 @@ async function loadFamilies() {
     // Ultimo accesso: la più recente «Ultima apertura» (session_start, solo
     // iOS e Android) fra i membri, come nella tabella degli utenti.
     let lastOpenAt=null, openedMembers7d=0;
-    let storageBytes=0, ownerEmail='—', iosCount=0, androidCount=0, totalMemberCount=0, activeCount14d=0, hasInternal=false;
+    let storageBytes=0, ownerEmail='—', iosCount=0, androidCount=0, webCount=0, totalMemberCount=0, activeCount14d=0, hasInternal=false;
     // Membro vero = non cancellato e con un ruolo, come rules e server.
     let realMemberCount=0;
     const joins = [];
@@ -1853,6 +1858,7 @@ async function loadFamilies() {
         if (p === 'ios') iosCount++;
         else if (p === 'android') androidCount++;
         const userRow = userByUid.get(m.id);
+        if (userRow?.web) webCount++;
         // lastActiveAt da Auth (login o rinnovo token, tutti i client).
         // `users/{uid}.updatedAt` resta solo come ripiego se la callable
         // fallisce: si muove col profilo e col token FCM, non con l'uso.
@@ -1870,7 +1876,7 @@ async function loadFamilies() {
       if (em && em !== '—') ownerEmail = em;
     } catch {}
     const fname = d.name || '—';
-    return { fid, fname, plan, trial, manual, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: d.updatedAt?.toDate(), totalMembers: totalMemberCount, realMembers: realMemberCount, activeMembers14d: activeCount14d, lastOpenAt, openedMembers7d, createdAtMs: d.createdAt?.toDate?.().getTime() || 0, joins, internal: hasInternal || fid.startsWith('ZZZ-TEST') };
+    return { fid, fname, plan, trial, manual, planLabel, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, webCount, updatedAt: d.updatedAt?.toDate(), totalMembers: totalMemberCount, realMembers: realMemberCount, activeMembers14d: activeCount14d, lastOpenAt, openedMembers7d, createdAtMs: d.createdAt?.toDate?.().getTime() || 0, joins, internal: hasInternal || fid.startsWith('ZZZ-TEST') };
   }));
   renderFamilyViews(rows);
 }
