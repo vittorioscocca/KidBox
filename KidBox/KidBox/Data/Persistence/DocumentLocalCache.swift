@@ -10,6 +10,7 @@ import SwiftData
 import FirebaseStorage
 import OSLog
 import FirebaseAuth
+import Network
 
 /// Local encrypted document cache utilities.
 ///
@@ -191,6 +192,51 @@ enum DocumentLocalCache {
         
         KBLog.storage.kbInfo("TEMP file ready docId=\(doc.id)")
         return tempURL
+    }
+    
+    // MARK: - Local copy -> TEMP decrypted file
+    
+    /// TEMP decrypted file from the persistent cache, without touching the network.
+    ///
+    /// Returns `nil` when this device has no copy of the document or the copy cannot be
+    /// decrypted: the caller then falls back to `downloadToLocal`.
+    static func decryptedCopyFromCache(doc: KBDocument) -> URL? {
+        guard let localPath = doc.localPath, !localPath.isEmpty,
+              exists(localPath: localPath) != nil else { return nil }
+        do {
+            let cipherData = try readEncrypted(localPath: localPath)
+            let plainData = try DocumentCryptoService.decryptStoredKBDocumentPayload(
+                cipherData,
+                storagePath: doc.storagePath,
+                notes: doc.notes,
+                familyId: doc.familyId,
+                userId: Auth.auth().currentUser?.uid ?? "local"
+            )
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("\(doc.id)_\(doc.fileName)")
+            try plainData.write(to: tempURL, options: .atomic)
+            KBLog.storage.kbInfo("TEMP file ready from cache docId=\(doc.id)")
+            return tempURL
+        } catch {
+            KBLog.storage.kbError("decryptedCopyFromCache failed docId=\(doc.id): \(error.localizedDescription)")
+            return nil
+        }
+    }
+    
+    /// Whether the device has a network route right now.
+    ///
+    /// Firebase Storage does not fail when offline: it retries for up to 10 minutes.
+    /// Whoever keeps the user waiting on a download must ask this first.
+    nonisolated static func hasNetworkRoute() async -> Bool {
+        await withCheckedContinuation { continuation in
+            let monitor = NWPathMonitor()
+            monitor.pathUpdateHandler = { path in
+                monitor.pathUpdateHandler = nil
+                monitor.cancel()
+                continuation.resume(returning: path.status == .satisfied)
+            }
+            monitor.start(queue: DispatchQueue(label: "kidbox.documents.network-check"))
+        }
     }
     
     // MARK: - Delete

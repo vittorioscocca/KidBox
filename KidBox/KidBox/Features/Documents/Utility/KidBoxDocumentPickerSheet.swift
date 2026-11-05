@@ -40,6 +40,7 @@ struct KidBoxDocumentPickerSheet: View {
     
     @State private var isLoading = false
     @State private var errorText: String?
+    @State private var pickTask: Task<Void, Never>?
     
     var body: some View {
         NavigationStack {
@@ -52,7 +53,7 @@ struct KidBoxDocumentPickerSheet: View {
                 isLoading: $isLoading,
                 errorText: $errorText,
                 onPick: { doc in
-                    Task { await pick(doc) }
+                    pickTask = Task { await pick(doc) }
                 }
             )
             .navigationTitle(pdfOnly ? "Scegli PDF" : "Scegli da KidBox")
@@ -71,6 +72,11 @@ struct KidBoxDocumentPickerSheet: View {
                             Text("Preparazione allegato…")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
+                            Button("Annulla") {
+                                pickTask?.cancel()
+                                isLoading = false
+                            }
+                            .font(.subheadline)
                         }
                         .padding(20)
                         .background(.ultraThinMaterial)
@@ -99,12 +105,24 @@ struct KidBoxDocumentPickerSheet: View {
             return
         }
         isLoading = true
-        defer { isLoading = false }
+        defer { if !Task.isCancelled { isLoading = false } }
         
         KBLog.data.kbInfo("KidBoxDocumentPickerSheet pick docId=\(doc.id) title=\(doc.title)")
         
         do {
-            let rawURL   = try await DocumentLocalCache.downloadToLocal(doc: doc, modelContext: modelContext)
+            let rawURL: URL
+            if let cached = DocumentLocalCache.decryptedCopyFromCache(doc: doc) {
+                rawURL = cached
+            } else if await DocumentLocalCache.hasNetworkRoute() {
+                rawURL = try await DocumentLocalCache.downloadToLocal(doc: doc, modelContext: modelContext)
+            } else {
+                KBLog.data.kbInfo("KidBoxDocumentPickerSheet pick offline without local copy docId=\(doc.id)")
+                if !Task.isCancelled {
+                    errorText = String(localized: "Nessuna connessione. Controlla Wi‑Fi o dati mobili.")
+                }
+                return
+            }
+            guard !Task.isCancelled else { return }
             let namedURL = try namedURL(from: rawURL, doc: doc)
             KBLog.data.kbInfo("KidBoxDocumentPickerSheet pick ready fileName=\(namedURL.lastPathComponent)")
             dismiss()
@@ -114,6 +132,7 @@ struct KidBoxDocumentPickerSheet: View {
                 onPick(namedURL)
             }
         } catch {
+            guard !Task.isCancelled else { return }
             errorText = "Impossibile aprire il documento: \(error.localizedDescription)"
             KBLog.data.kbError("KidBoxDocumentPickerSheet pick failed docId=\(doc.id): \(error.localizedDescription)")
         }
