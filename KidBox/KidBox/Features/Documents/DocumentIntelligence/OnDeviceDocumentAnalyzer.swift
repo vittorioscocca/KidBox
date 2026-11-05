@@ -188,7 +188,8 @@ enum OnDeviceDocumentAnalyzer {
             utility=\(bill.utility) ok=\(bill.utility.subtype != nil) \
             total=\(bill.total) ok=\(DocumentGrounding.containsAmount(bill.total, in: text)) \
             dueDate=\(bill.dueDate) ok=\(DocumentGrounding.isDueDate(bill.dueDate, in: text)) \
-            righeScadenza=\(DocumentGrounding.dueLines(in: text))
+            nelTesto=\(DocumentGrounding.containsDate(bill.dueDate, in: text)) \
+            righeData=\(DocumentGrounding.linesAround(bill.dueDate, in: text))
             """)
         #endif
         guard let subtype = bill.utility.subtype,
@@ -396,39 +397,51 @@ enum DocumentGrounding {
     }
 
     /// Una bolletta ha almeno due date (emissione e scadenza), e questo scarta lo
-    /// scontrino preso per bolletta. La scadenza è l'ultima, oppure sta accanto a
-    /// una parola che la dice: una bolletta vera ha anche date più lontane, come
-    /// la validità dell'offerta o le rate.
+    /// scontrino preso per bolletta. La scadenza è l'ultima, oppure sta vicino a
+    /// una parola del pagamento: una bolletta vera ha date più lontane, come la
+    /// validità dell'offerta, e se è domiciliata parla di addebito. La data della
+    /// fattura o del periodo non vale, anche se la riga accanto parla di scadenza.
     static func isDueDate(_ iso: String, in text: String) -> Bool {
         guard let date = parseISO(iso) else { return false }
         let all = Set(dates(in: text))
         guard all.count >= 2, all.contains(date) else { return false }
-        return all.max() == date || isNextToDueWord(date, in: text)
+        return all.max() == date || isNearPaymentWord(date, in: text)
+    }
+
+    private static let paymentWords = [
+        "scadenz", "scade ", "entro", "pagare", "pagamento", "addebit",
+        "due date", "due by", "payment", "pay by", "direct debit",
+        "echeance", "payer", "prelevement", "date limite",
+        "vencimiento", "pagar", "fecha limite", "domiciliacion", "cargo",
+    ]
+    private static let notDueWords = [
+        "fattura", "emess", "emissione", "periodo", "dal ",
+        "invoice", "issued", "period",
+        "facture", "emise", "periode",
+        "factura", "emitida",
+    ]
+
+    /// La parola e la data possono stare su righe vicine, come nelle tabelle.
+    private static func isNearPaymentWord(_ date: DateComponentsKey, in text: String) -> Bool {
+        let lines = text.components(separatedBy: .newlines).map(folded)
+        return lines.indices.contains { index in
+            guard dates(in: lines[index]).contains(date),
+                  !notDueWords.contains(where: lines[index].contains) else { return false }
+            let near = lines[max(index - 2, 0)...min(index + 1, lines.count - 1)]
+            return near.contains { line in paymentWords.contains(where: line.contains) }
+        }
     }
 
     #if DEBUG
     /// Solo per capire nel log perché una bolletta vera non passa.
-    static func dueLines(in text: String) -> [String] {
-        text.components(separatedBy: .newlines).filter { line in
-            dueWords.contains(where: folded(line).contains)
+    static func linesAround(_ iso: String, in text: String) -> [String] {
+        guard let date = parseISO(iso) else { return [] }
+        let lines = text.components(separatedBy: .newlines)
+        return lines.indices.filter { dates(in: lines[$0]).contains(date) }.flatMap {
+            lines[max($0 - 1, 0)...$0]
         }
     }
     #endif
-
-    private static let dueWords = [
-        "scadenza", "scade il", "entro il", "due date", "payment due", "pay by", "due by",
-        "echeance", "payer avant", "date limite", "vencimiento", "pagar antes", "fecha limite",
-    ]
-
-    /// La parola e il valore possono stare su due righe, come nelle tabelle.
-    private static func isNextToDueWord(_ date: DateComponentsKey, in text: String) -> Bool {
-        let lines = text.components(separatedBy: .newlines)
-        return lines.indices.contains { index in
-            let line = folded(lines[index])
-            guard dueWords.contains(where: line.contains) else { return false }
-            return lines[index...min(index + 1, lines.count - 1)].contains { dates(in: $0).contains(date) }
-        }
-    }
 
     /// Righe con un intervallo di riferimento: tante quante i valori da leggere.
     static func referenceRangeCount(in text: String) -> Int {
@@ -496,8 +509,36 @@ enum DocumentGrounding {
             guard let year = Int(g[1]), let month = Int(g[2]), let day = Int(g[3]) else { return nil }
             return DateComponentsKey(year: year, month: month, day: day).validated
         }
+        out += matches(
+            of: #"\b(\d{1,2})(?:°|º|er)?\s+(?:de\s+)?(\p{L}+)\s+(?:de\s+|del\s+)?(\d{4})\b"#,
+            in: folded(text)
+        ).compactMap { g -> DateComponentsKey? in
+            guard let day = Int(g[1]), let month = monthNumbers[g[2]], let year = Int(g[3]) else { return nil }
+            return DateComponentsKey(year: year, month: month, day: day).validated
+        }
         return out
     }
+
+    /// Mesi a lettere nelle quattro lingue, già senza accenti.
+    private static let monthNumbers: [String: Int] = {
+        let names = [
+            ["gennaio", "january", "janvier", "enero"],
+            ["febbraio", "february", "fevrier", "febrero"],
+            ["marzo", "march", "mars"],
+            ["aprile", "april", "avril", "abril"],
+            ["maggio", "may", "mai", "mayo"],
+            ["giugno", "june", "juin", "junio"],
+            ["luglio", "july", "juillet", "julio"],
+            ["agosto", "august", "aout"],
+            ["settembre", "september", "septembre", "septiembre"],
+            ["ottobre", "october", "octobre", "octubre"],
+            ["novembre", "november", "noviembre"],
+            ["dicembre", "december", "decembre", "diciembre"],
+        ]
+        return Dictionary(uniqueKeysWithValues: names.enumerated().flatMap { index, words in
+            words.map { ($0, index + 1) }
+        })
+    }()
 
     private static func parseISO(_ iso: String) -> DateComponentsKey? {
         let parts = iso.split(separator: "-").compactMap { Int($0) }

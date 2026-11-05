@@ -63,6 +63,23 @@ final class DocumentGroundingTests: XCTestCase {
         XCTAssertFalse(DocumentGrounding.isDueDate("2026-11-05", in: "Scadenza 05/11/2026"))
     }
 
+    func testDirectDebitBillIsDueOnTheDebitDate() {
+        let text = "Bolletta del 10/09/2026\nPeriodo dal 01/07/2026 al 31/08/2026\nAddebito sul conto\n29/09/2026\nOfferta: scade il 31/12/2026"
+        XCTAssertTrue(DocumentGrounding.isDueDate("2026-09-29", in: text))
+        XCTAssertFalse(DocumentGrounding.isDueDate("2026-08-31", in: text))
+        XCTAssertFalse(DocumentGrounding.isDueDate("2026-09-30", in: text))
+    }
+
+    func testMonthNamesInTheFourLanguages() {
+        let text = "Offerta valida fino al 31/12/2027\nDa pagare entro il 29 settembre 2026"
+        XCTAssertTrue(DocumentGrounding.containsDate("2026-09-29", in: text))
+        XCTAssertTrue(DocumentGrounding.isDueDate("2026-09-29", in: text))
+        XCTAssertTrue(DocumentGrounding.containsDate("2026-09-29", in: "Pay by 29 September 2026"))
+        XCTAssertTrue(DocumentGrounding.containsDate("2026-08-01", in: "Échéance le 1er août 2026"))
+        XCTAssertTrue(DocumentGrounding.containsDate("2026-09-29", in: "Vence el 29 de septiembre de 2026"))
+        XCTAssertFalse(DocumentGrounding.containsDate("2026-09-29", in: "29 bollette 2026"))
+    }
+
     func testGroundingIgnoresCaseAndAccentsButNotNewFacts() {
         let text = "Diagnostic : otite moyenne aiguë gauche"
         XCTAssertTrue(DocumentGrounding.isGrounded("OTITE MOYENNE AIGUE", in: text))
