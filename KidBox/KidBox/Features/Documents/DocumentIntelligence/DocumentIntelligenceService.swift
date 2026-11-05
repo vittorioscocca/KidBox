@@ -73,6 +73,15 @@ enum DocumentIntelligenceService {
             throw AnalyzeError.unreadable
         }
 
+        // Se il telefono ce la fa, il documento non esce dal dispositivo.
+        if let local = await OnDeviceDocumentAnalyzer.analyze(
+            pages: images,
+            pdfData: mimeType.hasPrefix("image/") ? nil : data,
+            persons: children.map { .init(id: $0.id, name: $0.name) }
+        ) {
+            return local
+        }
+
         var blocks: [[String: Any]] = []
         for jpeg in images {
             blocks.append([

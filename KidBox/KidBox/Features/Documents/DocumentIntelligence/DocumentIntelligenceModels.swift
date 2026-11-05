@@ -66,6 +66,11 @@ struct DocIntelAction: Decodable, Identifiable {
         case paymentType, subtype, provider
     }
 
+    /// Azione nata sul telefono (`OnDeviceDocumentAnalyzer`), non dal JSON.
+    init(type: String) {
+        self.type = type
+    }
+
     /// Azioni che riguardano una persona (figlio o adulto) di Salute.
     var needsPerson: Bool {
         ["medical_visit", "exam_add", "treatment_add", "vaccine_add"].contains(type)
@@ -124,6 +129,12 @@ struct DocIntelResult: Decodable {
     /// Titolo pulito suggerito per il documento.
     let suggestedTitle: String?
     var actions: [DocIntelAction]
+    /// Letto sul telefono: niente messaggi AI consumati.
+    var onDevice = false
+
+    private enum CodingKeys: String, CodingKey {
+        case documentType, category, suggestedTitle, actions
+    }
 }
 
 /// Cosa serve alla scheda di conferma: il risultato, le persone e i veicoli

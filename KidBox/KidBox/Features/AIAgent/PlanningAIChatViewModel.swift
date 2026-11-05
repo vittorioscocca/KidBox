@@ -780,7 +780,9 @@ extension PlanningAIChatViewModel {
                     result.actions[i].childId = personId
                 }
             }
-            AppAnalytics.aiMessageSent(agentType: "documento", plan: KBSubscriptionManager.shared.currentPlan.rawValue)
+            if !result.onDevice {
+                AppAnalytics.aiMessageSent(agentType: "documento", plan: KBSubscriptionManager.shared.currentPlan.rawValue)
+            }
             KBLog.ai.kbInfo("PlanningAIChatVM document analyzed category=\(result.category ?? "-") actions=\(result.actions.count)")
             docIntelPayload = DocIntelPayload(
                 result: result, sourceFile: fileURL,
