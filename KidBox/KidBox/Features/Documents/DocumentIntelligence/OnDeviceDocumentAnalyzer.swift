@@ -32,7 +32,7 @@ enum OnDeviceDocumentAnalyzer {
     private static let enabledKey = "kb_docintel_ondevice"
     /// Sotto questa soglia il testo letto non basta a dire che documento è.
     private static let minTextLength = 80
-    /// Il modello ha 4.096 token in tutto, risposta compresa.
+    /// Il modello ha 4.096 token in tutto, risposta compresa: oltre, legge solo la testa.
     private static let maxTextLength = 6000
     private static let maxPages = 3
 
@@ -58,21 +58,28 @@ enum OnDeviceDocumentAnalyzer {
         }
 
         let text = await readableText(pages: pages, pdfData: pdfData)
-        guard text.count >= minTextLength, text.count <= maxTextLength else {
-            KBLog.ai.kbInfo("DocIntel on-device: testo fuori misura chars=\(text.count)")
+        guard text.count >= minTextLength else {
+            KBLog.ai.kbInfo("DocIntel on-device: testo troppo corto chars=\(text.count)")
             return nil
         }
+        let head = String(text.prefix(maxTextLength))
 
         do {
             var kind = try await respond(
-                to: text, instructions: classifyInstructions, generating: DocKind.self
+                to: head, instructions: classifyInstructions, generating: DocKind.self
             )
             // Il modello prende le analisi per referti: i valori con
             // l'intervallo di riferimento invece non lasciano dubbi.
-            if kind == .medicalReport, DocumentGrounding.referenceRangeCount(in: text) >= 2 {
+            if kind == .medicalReport, DocumentGrounding.referenceRangeCount(in: head) >= 2 {
                 kind = .labResults
             }
-            let result = try await extract(kind: kind, text: text, persons: persons)
+            // Bollette e scontrini hanno i dati in testa e il resto è dettaglio. Di
+            // analisi e referti invece non si legge a metà: mancherebbero valori.
+            guard head.count == text.count || kind == .bill || kind == .receipt else {
+                KBLog.ai.kbInfo("DocIntel on-device: testo lungo per kind=\(kind.rawValue) chars=\(text.count)")
+                return nil
+            }
+            let result = try await extract(kind: kind, text: head, persons: persons)
             KBLog.ai.kbInfo("DocIntel on-device: kind=\(kind.rawValue) risultato=\(result != nil)")
             return result
         } catch {
@@ -378,12 +385,30 @@ enum DocumentGrounding {
         return dates(in: text).contains(date)
     }
 
-    /// Una bolletta ha almeno due date (emissione e scadenza) e la scadenza è
-    /// l'ultima. Scarta anche lo scontrino preso per bolletta, che ne ha una sola.
+    /// Una bolletta ha almeno due date (emissione e scadenza), e questo scarta lo
+    /// scontrino preso per bolletta. La scadenza è l'ultima, oppure sta accanto a
+    /// una parola che la dice: una bolletta vera ha anche date più lontane, come
+    /// la validità dell'offerta o le rate.
     static func isDueDate(_ iso: String, in text: String) -> Bool {
         guard let date = parseISO(iso) else { return false }
         let all = Set(dates(in: text))
-        return all.count >= 2 && all.max() == date
+        guard all.count >= 2, all.contains(date) else { return false }
+        return all.max() == date || isNextToDueWord(date, in: text)
+    }
+
+    private static let dueWords = [
+        "scadenza", "scade il", "entro il", "due date", "payment due", "pay by", "due by",
+        "echeance", "payer avant", "date limite", "vencimiento", "pagar antes", "fecha limite",
+    ]
+
+    /// La parola e il valore possono stare su due righe, come nelle tabelle.
+    private static func isNextToDueWord(_ date: DateComponentsKey, in text: String) -> Bool {
+        let lines = text.components(separatedBy: .newlines)
+        return lines.indices.contains { index in
+            let line = folded(lines[index])
+            guard dueWords.contains(where: line.contains) else { return false }
+            return lines[index...min(index + 1, lines.count - 1)].contains { dates(in: $0).contains(date) }
+        }
     }
 
     /// Righe con un intervallo di riferimento: tante quante i valori da leggere.

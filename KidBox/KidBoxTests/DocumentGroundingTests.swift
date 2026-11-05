@@ -51,6 +51,18 @@ final class DocumentGroundingTests: XCTestCase {
         XCTAssertFalse(DocumentGrounding.isDueDate("2026-10-18", in: "TOTAL 13,30\n18/10/2026 17:42"))
     }
 
+    func testDueDateNextToItsWordEvenWithLaterDates() {
+        let long = "Fattura del 12/10/2026\nOfferta valida fino al 31/12/2027\nScadenza 05/11/2026"
+        XCTAssertTrue(DocumentGrounding.isDueDate("2026-11-05", in: long))
+        XCTAssertFalse(DocumentGrounding.isDueDate("2026-10-12", in: long))
+        // Parola e data su due righe, nelle quattro lingue e con gli accenti.
+        XCTAssertTrue(DocumentGrounding.isDueDate("2026-11-05", in: "Échéance\n05/11/2026\n12/10/2026\n31/12/2027"))
+        XCTAssertTrue(DocumentGrounding.isDueDate("2026-11-05", in: "Fecha límite de pago\n05/11/2026\n31/12/2027"))
+        XCTAssertTrue(DocumentGrounding.isDueDate("2026-11-05", in: "Payment due 05/11/2026\n31/12/2027"))
+        // Una data sola resta uno scontrino, anche con la parola.
+        XCTAssertFalse(DocumentGrounding.isDueDate("2026-11-05", in: "Scadenza 05/11/2026"))
+    }
+
     func testGroundingIgnoresCaseAndAccentsButNotNewFacts() {
         let text = "Diagnostic : otite moyenne aiguë gauche"
         XCTAssertTrue(DocumentGrounding.isGrounded("OTITE MOYENNE AIGUE", in: text))
