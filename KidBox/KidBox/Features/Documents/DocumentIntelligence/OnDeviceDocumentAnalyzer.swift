@@ -181,6 +181,16 @@ enum OnDeviceDocumentAnalyzer {
     // MARK: - Da campi letti a scheda (solo se il testo li conferma)
 
     static func billResult(_ bill: BillFields, text: String) -> DocIntelResult? {
+        #if DEBUG
+        KBLog.ai.kbInfo("""
+            DocIntel on-device: bolletta supplier=\(bill.supplier) \
+            ok=\(DocumentGrounding.isGrounded(bill.supplier, in: text)) \
+            utility=\(bill.utility) ok=\(bill.utility.subtype != nil) \
+            total=\(bill.total) ok=\(DocumentGrounding.containsAmount(bill.total, in: text)) \
+            dueDate=\(bill.dueDate) ok=\(DocumentGrounding.isDueDate(bill.dueDate, in: text)) \
+            righeScadenza=\(DocumentGrounding.dueLines(in: text))
+            """)
+        #endif
         guard let subtype = bill.utility.subtype,
               DocumentGrounding.containsAmount(bill.total, in: text),
               DocumentGrounding.isDueDate(bill.dueDate, in: text),
@@ -395,6 +405,15 @@ enum DocumentGrounding {
         guard all.count >= 2, all.contains(date) else { return false }
         return all.max() == date || isNextToDueWord(date, in: text)
     }
+
+    #if DEBUG
+    /// Solo per capire nel log perché una bolletta vera non passa.
+    static func dueLines(in text: String) -> [String] {
+        text.components(separatedBy: .newlines).filter { line in
+            dueWords.contains(where: folded(line).contains)
+        }
+    }
+    #endif
 
     private static let dueWords = [
         "scadenza", "scade il", "entro il", "due date", "payment due", "pay by", "due by",
