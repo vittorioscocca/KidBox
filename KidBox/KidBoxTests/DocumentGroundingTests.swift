@@ -44,30 +44,14 @@ final class DocumentGroundingTests: XCTestCase {
         XCTAssertFalse(DocumentGrounding.containsDate("", in: bill))
     }
 
-    func testDueDateIsTheLastOfAtLeastTwo() {
+    func testDueDateNeedsAtLeastTwoDates() {
         XCTAssertTrue(DocumentGrounding.isDueDate("2026-11-05", in: bill))
-        XCTAssertFalse(DocumentGrounding.isDueDate("2026-10-12", in: bill))
+        // Quale sia la scadenza lo controlla l'utente: la scheda lo chiede.
+        XCTAssertTrue(DocumentGrounding.isDueDate("2026-10-12", in: bill))
         // Scontrino preso per bolletta: una data sola.
         XCTAssertFalse(DocumentGrounding.isDueDate("2026-10-18", in: "TOTAL 13,30\n18/10/2026 17:42"))
-    }
-
-    func testDueDateNextToItsWordEvenWithLaterDates() {
-        let long = "Fattura del 12/10/2026\nOfferta valida fino al 31/12/2027\nScadenza 05/11/2026"
-        XCTAssertTrue(DocumentGrounding.isDueDate("2026-11-05", in: long))
-        XCTAssertFalse(DocumentGrounding.isDueDate("2026-10-12", in: long))
-        // Parola e data su due righe, nelle quattro lingue e con gli accenti.
-        XCTAssertTrue(DocumentGrounding.isDueDate("2026-11-05", in: "Échéance\n05/11/2026\n12/10/2026\n31/12/2027"))
-        XCTAssertTrue(DocumentGrounding.isDueDate("2026-11-05", in: "Fecha límite de pago\n05/11/2026\n31/12/2027"))
-        XCTAssertTrue(DocumentGrounding.isDueDate("2026-11-05", in: "Payment due 05/11/2026\n31/12/2027"))
-        // Una data sola resta uno scontrino, anche con la parola.
-        XCTAssertFalse(DocumentGrounding.isDueDate("2026-11-05", in: "Scadenza 05/11/2026"))
-    }
-
-    func testDirectDebitBillIsDueOnTheDebitDate() {
-        let text = "Bolletta del 10/09/2026\nPeriodo dal 01/07/2026 al 31/08/2026\nAddebito sul conto\n29/09/2026\nOfferta: scade il 31/12/2026"
-        XCTAssertTrue(DocumentGrounding.isDueDate("2026-09-29", in: text))
-        XCTAssertFalse(DocumentGrounding.isDueDate("2026-08-31", in: text))
-        XCTAssertFalse(DocumentGrounding.isDueDate("2026-09-30", in: text))
+        // La data deve stare nel documento.
+        XCTAssertFalse(DocumentGrounding.isDueDate("2026-09-15", in: bill))
     }
 
     func testMonthNamesInTheFourLanguages() {

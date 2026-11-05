@@ -3,13 +3,13 @@
 //  KidBox
 //
 //  Prototipo: Document Intelligence sul telefono, con Vision e il modello di
-//  Apple Intelligence. Il documento non esce dal dispositivo e non consuma
-//  messaggi AI.
+//  Apple Intelligence, quando Claude non c'è (`OnDeviceAI.shouldUseDevice`). Il
+//  documento non esce dal dispositivo e non consuma messaggi AI.
 //
-//  Regola di fondo: nel dubbio si ritorna `nil` e il documento segue la strada
-//  di sempre verso Claude. Il modello può sbagliare, quindi date, importi e
-//  testi si riscontrano nel testo del documento; la persona non la sceglie il
-//  modello ma il confronto coi nomi della famiglia.
+//  Il modello può sbagliare, quindi date, importi e testi si riscontrano nel
+//  testo del documento, e la scheda dice che li ha letti il telefono; la persona
+//  non la sceglie il modello ma il confronto coi nomi della famiglia. Quello che
+//  qui non torna ritorna `nil` e segue la strada di sempre verso Claude.
 //
 //  Spento nelle build di rilascio (`isEnabled`). Niente lettura da immagine: il
 //  modello di Apple sulle foto inventa dati, si passa sempre dal testo.
@@ -181,17 +181,6 @@ enum OnDeviceDocumentAnalyzer {
     // MARK: - Da campi letti a scheda (solo se il testo li conferma)
 
     static func billResult(_ bill: BillFields, text: String) -> DocIntelResult? {
-        #if DEBUG
-        KBLog.ai.kbInfo("""
-            DocIntel on-device: bolletta supplier=\(bill.supplier) \
-            ok=\(DocumentGrounding.isGrounded(bill.supplier, in: text)) \
-            utility=\(bill.utility) ok=\(bill.utility.subtype != nil) \
-            total=\(bill.total) ok=\(DocumentGrounding.containsAmount(bill.total, in: text)) \
-            dueDate=\(bill.dueDate) ok=\(DocumentGrounding.isDueDate(bill.dueDate, in: text)) \
-            nelTesto=\(DocumentGrounding.containsDate(bill.dueDate, in: text)) \
-            righeData=\(DocumentGrounding.linesAround(bill.dueDate, in: text))
-            """)
-        #endif
         guard let subtype = bill.utility.subtype,
               DocumentGrounding.containsAmount(bill.total, in: text),
               DocumentGrounding.isDueDate(bill.dueDate, in: text),
@@ -397,51 +386,13 @@ enum DocumentGrounding {
     }
 
     /// Una bolletta ha almeno due date (emissione e scadenza), e questo scarta lo
-    /// scontrino preso per bolletta. La scadenza è l'ultima, oppure sta vicino a
-    /// una parola del pagamento: una bolletta vera ha date più lontane, come la
-    /// validità dell'offerta, e se è domiciliata parla di addebito. La data della
-    /// fattura o del periodo non vale, anche se la riga accanto parla di scadenza.
+    /// scontrino preso per bolletta. Quale delle due sia la scadenza non si decide
+    /// qui: una bolletta vera ne ha tante, e la scheda chiede di controllarla.
     static func isDueDate(_ iso: String, in text: String) -> Bool {
         guard let date = parseISO(iso) else { return false }
         let all = Set(dates(in: text))
-        guard all.count >= 2, all.contains(date) else { return false }
-        return all.max() == date || isNearPaymentWord(date, in: text)
+        return all.count >= 2 && all.contains(date)
     }
-
-    private static let paymentWords = [
-        "scadenz", "scade ", "entro", "pagare", "pagamento", "addebit",
-        "due date", "due by", "payment", "pay by", "direct debit",
-        "echeance", "payer", "prelevement", "date limite",
-        "vencimiento", "pagar", "fecha limite", "domiciliacion", "cargo",
-    ]
-    private static let notDueWords = [
-        "fattura", "emess", "emissione", "periodo", "dal ",
-        "invoice", "issued", "period",
-        "facture", "emise", "periode",
-        "factura", "emitida",
-    ]
-
-    /// La parola e la data possono stare su righe vicine, come nelle tabelle.
-    private static func isNearPaymentWord(_ date: DateComponentsKey, in text: String) -> Bool {
-        let lines = text.components(separatedBy: .newlines).map(folded)
-        return lines.indices.contains { index in
-            guard dates(in: lines[index]).contains(date),
-                  !notDueWords.contains(where: lines[index].contains) else { return false }
-            let near = lines[max(index - 2, 0)...min(index + 1, lines.count - 1)]
-            return near.contains { line in paymentWords.contains(where: line.contains) }
-        }
-    }
-
-    #if DEBUG
-    /// Solo per capire nel log perché una bolletta vera non passa.
-    static func linesAround(_ iso: String, in text: String) -> [String] {
-        guard let date = parseISO(iso) else { return [] }
-        let lines = text.components(separatedBy: .newlines)
-        return lines.indices.filter { dates(in: lines[$0]).contains(date) }.flatMap {
-            lines[max($0 - 1, 0)...$0]
-        }
-    }
-    #endif
 
     /// Righe con un intervallo di riferimento: tante quante i valori da leggere.
     static func referenceRangeCount(in text: String) -> Int {
@@ -546,15 +497,11 @@ enum DocumentGrounding {
         return DateComponentsKey(year: parts[0], month: parts[1], day: parts[2]).validated
     }
 
-    private struct DateComponentsKey: Hashable, Comparable {
+    private struct DateComponentsKey: Hashable {
         let year: Int, month: Int, day: Int
 
         var validated: DateComponentsKey? {
             (1...12).contains(month) && (1...31).contains(day) ? self : nil
-        }
-
-        static func < (a: Self, b: Self) -> Bool {
-            (a.year, a.month, a.day) < (b.year, b.month, b.day)
         }
     }
 }

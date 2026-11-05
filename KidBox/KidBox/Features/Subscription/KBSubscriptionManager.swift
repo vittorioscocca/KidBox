@@ -179,6 +179,8 @@ final class KBSubscriptionManager: ObservableObject {
     /// true = l'assistente AI è utilizzabile ORA dalla famiglia corrente,
     /// tenendo conto anche dell'esaurimento del bonus una tantum su Free.
     var isAIAccessible: Bool { !aiAccessBlocked }
+    /// A bonus finito l'assistente si apre lo stesso se risponde il telefono.
+    var canOpenAssistant: Bool { isAIAccessible || OnDeviceAI.isAvailable }
 
     /// true = abbonamento attivo ma cancellato (non si rinnoverà)
     var isCancelledButActive: Bool {

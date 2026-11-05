@@ -26,6 +26,10 @@ struct DocumentIntelligenceSheet: View {
     @State private var isExecuting = false
     @State private var resultText: String?
     @State private var createdSummary: String?
+    @State private var result: DocIntelResult
+    @State private var canReread = false
+    @State private var isRereading = false
+    @State private var rereadError: String?
 
     init(payload: DocIntelPayload,
          familyId: String,
@@ -35,6 +39,7 @@ struct DocumentIntelligenceSheet: View {
         self.familyId = familyId
         self.modelContext = modelContext
         self.onDone = onDone
+        _result = State(initialValue: payload.result)
         _actions = State(initialValue: payload.result.actions)
         _selected = State(initialValue: Set(payload.result.actions.map { $0.id }))
     }
@@ -65,14 +70,40 @@ struct DocumentIntelligenceSheet: View {
                             .font(.title2)
                             .foregroundStyle(KBTheme.tint)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(payload.result.documentType ?? String(localized: "Documento analizzato"))
+                            Text(result.documentType ?? String(localized: "Documento analizzato"))
                                 .font(.headline)
-                            if let t = payload.result.suggestedTitle {
+                            if let t = result.suggestedTitle {
                                 Text(t).font(.subheadline).foregroundStyle(.secondary)
                             }
                         }
                     }
                     .listRowBackground(cardBackground)
+                    if result.onDevice, resultText == nil {
+                        Label("Letto sul telefono: controlla i dati prima di confermare.", systemImage: "iphone")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .listRowBackground(cardBackground)
+                        if canReread {
+                            Button {
+                                Task { await reread() }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Rileggi con Claude")
+                                    Text("Usa i tuoi messaggi AI gratuiti: uno per pagina.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .disabled(isRereading || isExecuting)
+                            .listRowBackground(cardBackground)
+                        }
+                    }
+                    if let rereadError {
+                        Text(rereadError)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .listRowBackground(cardBackground)
+                    }
                 }
 
                 if let resultText {
@@ -130,11 +161,42 @@ struct DocumentIntelligenceSheet: View {
                     ProgressView("Creazione…")
                         .padding(20)
                         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                } else if isRereading {
+                    ProgressView()
+                        .padding(20)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
                 }
             }
         }
-        .interactiveDismissDisabled(isExecuting)
+        .interactiveDismissDisabled(isExecuting || isRereading)
+        .task {
+            guard payload.result.onDevice, payload.rereadWithClaude != nil,
+                  KBSubscriptionManager.shared.isAIAccessible else { return }
+            canReread = await DocumentLocalCache.hasNetworkRoute()
+        }
         .onAppear { AppAnalytics.screenView(name: "document_intelligence") }
+    }
+
+    /// Se Claude non trova niente da proporre resta quello letto dal telefono.
+    private func reread() async {
+        guard let rereadWithClaude = payload.rereadWithClaude else { return }
+        rereadError = nil
+        isRereading = true
+        defer { isRereading = false }
+        do {
+            let fresh = try await rereadWithClaude()
+            guard !fresh.actions.isEmpty else {
+                rereadError = NSLocalizedString("Non sono riuscito a leggere il documento. Riprova con una foto più nitida.", comment: "Assistant document import")
+                return
+            }
+            result = fresh
+            actions = fresh.actions
+            selected = Set(fresh.actions.map { $0.id })
+            expanded = nil
+            canReread = false
+        } catch {
+            rereadError = error.localizedDescription
+        }
     }
 
     @ViewBuilder

@@ -1374,7 +1374,7 @@ private struct HomeCardGrid: View {
             }
 
         case .expert:
-            let aiAvailable = subscriptionManager.isAIAccessible
+            let aiAvailable = subscriptionManager.canOpenAssistant
             ZStack(alignment: .topTrailing) {
                 HomeCardView(
                     title: "Assistente",

@@ -35,7 +35,7 @@ struct HealthAskAIButton: View {
     }
 
     private func handleTap() {
-        guard KBSubscriptionManager.shared.isAIAccessible else {
+        guard KBSubscriptionManager.shared.canOpenAssistant else {
             showUpgrade = true
             AppAnalytics.aiPaywallShown(context: "ai_upgrade_health_home")
             return

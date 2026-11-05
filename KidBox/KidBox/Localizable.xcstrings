@@ -140,6 +140,94 @@
         }
       }
     },
+    "Il telefono non riesce a rispondere a questa domanda." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your phone can't answer this question."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El teléfono no puede responder a esta pregunta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le téléphone ne peut pas répondre à cette question."
+          }
+        }
+      }
+    },
+    "Letto sul telefono: controlla i dati prima di confermare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read on your phone: check the details before confirming."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leído en el teléfono: comprueba los datos antes de confirmar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lu sur le téléphone : vérifiez les données avant de confirmer."
+          }
+        }
+      }
+    },
+    "Rileggi con Claude" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read again with Claude"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a leer con Claude"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Relire avec Claude"
+          }
+        }
+      }
+    },
+    "Usa i tuoi messaggi AI gratuiti: uno per pagina." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uses your free AI messages: one per page."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa tus mensajes de IA gratuitos: uno por página."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilise vos messages IA gratuits : un par page."
+          }
+        }
+      }
+    },
     "button.done" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -920,6 +1008,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un lien rien qu'à vous, avec les événements de famille que vous voyez, à ajouter au calendrier que vous utilisez déjà."
+          }
+        }
+      }
+    },
+    "· Risponde il telefono: legge ma non modifica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· Answered by your phone: it reads but doesn't change anything"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· Responde el teléfono: lee pero no modifica nada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· Le téléphone répond : il lit mais ne modifie rien"
           }
         }
       }

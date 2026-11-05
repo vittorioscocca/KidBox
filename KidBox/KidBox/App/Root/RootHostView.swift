@@ -238,7 +238,7 @@ struct RootHostView: View {
     /// (`HomeAIFloatingButton`, `HealthAskAIButton`, `AskAIButton`,
     /// `ExamsAskAIButton`): quota del Free, proprietario, consenso.
     private func openAssistantFromTabBar() {
-        guard KBSubscriptionManager.shared.isAIAccessible else {
+        guard KBSubscriptionManager.shared.canOpenAssistant else {
             if KBSubscriptionManager.shared.isFamilyOwner {
                 showTabBarUpgrade = true
                 AppAnalytics.aiPaywallShown(context: "tab_bar")

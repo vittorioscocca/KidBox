@@ -64,7 +64,8 @@ enum DocumentIntelligenceService {
         fileName: String,
         mimeType: String,
         children: [ChildRef],
-        vehicles: [VehicleRef]
+        vehicles: [VehicleRef],
+        rereadWithClaude: Bool = false
     ) async throws -> DocIntelResult {
 
         let images = renderImages(data: data, mimeType: mimeType)
@@ -73,12 +74,14 @@ enum DocumentIntelligenceService {
             throw AnalyzeError.unreadable
         }
 
-        // Se il telefono ce la fa, il documento non esce dal dispositivo.
-        if let local = await OnDeviceDocumentAnalyzer.analyze(
-            pages: images,
-            pdfData: mimeType.hasPrefix("image/") ? nil : data,
-            persons: children.map { .init(id: $0.id, name: $0.name) }
-        ) {
+        // Pro e Max leggono con Claude, il Free dal telefono per non bruciare i messaggi.
+        if !rereadWithClaude,
+           await OnDeviceAI.shouldReadDocumentOnDevice(),
+           let local = await OnDeviceDocumentAnalyzer.analyze(
+               pages: images,
+               pdfData: mimeType.hasPrefix("image/") ? nil : data,
+               persons: children.map { .init(id: $0.id, name: $0.name) }
+           ) {
             return local
         }
 

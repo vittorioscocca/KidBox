@@ -74,7 +74,8 @@ Android 2.4.8). Il mese si aggiorna dopo una risposta con la differenza del
 giorno, e `getAIUsage` lo rilegge all'apertura: l'`askAI` non lo restituisce.
 
 I **5 messaggi bonus del Free sono una tantum e non si ricaricano mai**: esauriti,
-l'app torna esattamente com'era prima del bonus. Il contatore è doppio —
+l'app torna esattamente com'era prima del bonus (salvo il prototipo iOS solo Debug
+`OnDeviceAI`: a bonus finito e senza rete risponde il modello di Apple, vedi `FEATURES.md`). Il contatore è doppio —
 `ai_usage/family_{familyId}/lifetime/free` e `ai_usage/user_{uid}/lifetime/free`
 — e blocca sul **più alto dei due**, perché senza il contatore per-uid bastava
 creare una famiglia nuova per rigenerare il bonus. Effetto collaterale accettato:

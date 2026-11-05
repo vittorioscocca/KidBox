@@ -69,7 +69,7 @@ struct ExamsAskAIButton: View {
     
     private func handleTap() {
         guard !isEmpty else { return }
-        guard KBSubscriptionManager.shared.isAIAccessible else {
+        guard KBSubscriptionManager.shared.canOpenAssistant else {
             showUpgrade = true
             switch scope {
             case .single: AppAnalytics.aiPaywallShown(context: "ai_upgrade_exam_detail")

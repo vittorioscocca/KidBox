@@ -92,7 +92,7 @@ struct AISettingsView: View {
             }
             
             // MARK: - Toggle (solo se la famiglia può ancora usare l'AI)
-            if subscriptionManager.isAIAccessible {
+            if subscriptionManager.canOpenAssistant {
                 Section {
                     Toggle(isOn: Binding(
                         get: { viewModel.aiEnabled },

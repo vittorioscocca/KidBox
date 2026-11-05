@@ -147,4 +147,6 @@ struct DocIntelPayload: Identifiable {
     var sourceFile: URL? = nil
     let children: [DocumentIntelligenceService.ChildRef]
     let vehicles: [DocumentIntelligenceService.VehicleRef]
+    /// Letto sul telefono: la scheda può chiedere a Claude di rileggerlo.
+    var rereadWithClaude: (() async throws -> DocIntelResult)? = nil
 }

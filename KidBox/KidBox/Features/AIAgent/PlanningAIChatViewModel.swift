@@ -41,6 +41,8 @@ final class PlanningAIChatViewModel: ObservableObject {
     /// Messaggi usati e tetto, per il contatore sopra il campo di testo
     /// (nil finché il server non risponde).
     @Published private(set) var quota: AssistantQuota?
+    /// La prossima risposta la dà il telefono (`OnDeviceAI.shouldUseDevice`).
+    @Published private(set) var answersFromDevice = false
 
     // Scelta «accurata / ridotta» quando il quaderno non sta in un messaggio.
     @Published var showContextModeChoice = false
@@ -128,6 +130,7 @@ final class PlanningAIChatViewModel: ObservableObject {
             // Quanti messaggi restano: decide se il contesto ridotto parte da solo.
             Task { [weak self] in await self?.refreshQuota() }
 
+            answersFromDevice = await OnDeviceAI.shouldUseDevice()
             contextPrepared = true
             KBLog.ai.kbInfo("PlanningAIChatVM ready docs=\(snap.documents.count) events=\(snap.events.count) facts=\(snap.memoryFacts.count)")
         } catch {
@@ -199,6 +202,12 @@ final class PlanningAIChatViewModel: ObservableObject {
         guard !trimmed.isEmpty, !isLoading, contextPrepared, conversation != nil else { return }
         inputText = ""
         errorMessage = nil
+
+        answersFromDevice = await OnDeviceAI.shouldUseDevice()
+        if answersFromDevice {
+            await performDeviceSend(text: trimmed)
+            return
+        }
 
         let plan = prepareContext(question: trimmed)
         guard let reduced = plan.reducedPrompt, plan.fullUnits > 1 else {
@@ -345,6 +354,47 @@ final class PlanningAIChatViewModel: ObservableObject {
             isLoading = false
             errorMessage = error.localizedDescription
             KBLog.ai.kbError("PlanningAIChatVM send FAILED: \(error)")
+        }
+    }
+
+    /// Senza rete, o a bonus finito: risponde il telefono. Non consuma messaggi,
+    /// non è un messaggio AI per le statistiche e non esegue azioni.
+    private func performDeviceSend(text: String) async {
+        guard let conversation else {
+            errorMessage = NSLocalizedString("Conversazione non inizializzata.", comment: "Assistant error")
+            return
+        }
+        let history = messages.map { OnDeviceAssistant.Turn(isUser: $0.role == .user, text: $0.content) }
+        let userMessage = makeMessage(role: .user, text: text)
+        conversation.messages.append(userMessage)
+        messages.append(userMessage)
+        try? modelContext.save()
+        SyncCenter.shared.pushAIConversation(conversation, modelContext: modelContext)
+
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let snap = AgentMemorySnapshot.load(familyId: familyId, familyName: familyName, modelContext: modelContext)
+            snapshot = snap
+            let reply = try await OnDeviceAssistant.reply(
+                question: text,
+                history: history,
+                book: AgentMemoryBookBuilder(snapshot: snap).build(docAllowance: nil),
+                focus: focus
+            )
+            let assistantMessage = makeMessage(role: .assistant, text: reply)
+            conversation.messages.append(assistantMessage)
+            messages.append(assistantMessage)
+            AIChatStreamingDelivery.beginAssistantReveal(
+                messageId: assistantMessage.id,
+                streamingMessageId: &streamingMessageId
+            )
+            try? modelContext.save()
+            SyncCenter.shared.pushAIConversation(conversation, modelContext: modelContext)
+            KBLog.ai.kbInfo("PlanningAIChatVM device reply chars=\(reply.count)")
+        } catch {
+            errorMessage = error.localizedDescription
+            KBLog.ai.kbError("PlanningAIChatVM device send FAILED: \(error)")
         }
     }
 
@@ -775,23 +825,33 @@ extension PlanningAIChatViewModel {
         isAnalyzingDocument = true
         defer { isAnalyzingDocument = false }
         do {
-            var result = try await DocumentIntelligenceService.analyzeThrowing(
-                data: data, fileName: fileName, mimeType: mimeType,
-                children: refs.persons, vehicles: refs.vehicles
-            )
-            // Con il focus di Salute la persona è già scelta.
-            if let personId = focus?.personId, refs.persons.contains(where: { $0.id == personId }) {
-                for i in result.actions.indices where result.actions[i].needsPerson && result.actions[i].childId == nil {
-                    result.actions[i].childId = personId
+            let analyze: (Bool) async throws -> DocIntelResult = { [weak self] reread in
+                var result = try await DocumentIntelligenceService.analyzeThrowing(
+                    data: data, fileName: fileName, mimeType: mimeType,
+                    children: refs.persons, vehicles: refs.vehicles,
+                    rereadWithClaude: reread
+                )
+                // Con il focus di Salute la persona è già scelta.
+                if let personId = self?.focus?.personId, refs.persons.contains(where: { $0.id == personId }) {
+                    for i in result.actions.indices where result.actions[i].needsPerson && result.actions[i].childId == nil {
+                        result.actions[i].childId = personId
+                    }
                 }
+                if !result.onDevice {
+                    AppAnalytics.aiMessageSent(agentType: "documento", plan: KBSubscriptionManager.shared.currentPlan.rawValue)
+                }
+                return result
             }
-            if !result.onDevice {
-                AppAnalytics.aiMessageSent(agentType: "documento", plan: KBSubscriptionManager.shared.currentPlan.rawValue)
-            }
+            let result = try await analyze(false)
             KBLog.ai.kbInfo("PlanningAIChatVM document analyzed category=\(result.category ?? "-") actions=\(result.actions.count)")
             docIntelPayload = DocIntelPayload(
                 result: result, documentId: staged.kidBoxDocumentId, sourceFile: fileURL,
-                children: refs.persons, vehicles: refs.vehicles
+                children: refs.persons, vehicles: refs.vehicles,
+                rereadWithClaude: { [weak self] in
+                    let fresh = try await analyze(true)
+                    await self?.refreshQuota()
+                    return fresh
+                }
             )
         } catch DocumentIntelligenceService.AnalyzeError.unreadable {
             errorMessage = NSLocalizedString("Si leggono solo PDF e immagini.", comment: "Assistant document import")

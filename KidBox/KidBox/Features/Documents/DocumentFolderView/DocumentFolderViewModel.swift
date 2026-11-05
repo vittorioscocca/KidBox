@@ -1202,7 +1202,13 @@ final class DocumentFolderViewModel: ObservableObject {
             return
         }
         docIntelPayload = DocIntelPayload(
-            result: result, documentId: documentId, children: children, vehicles: vehicles
+            result: result, documentId: documentId, children: children, vehicles: vehicles,
+            rereadWithClaude: {
+                try await DocumentIntelligenceService.analyzeThrowing(
+                    data: plaintext, fileName: fileName, mimeType: mimeType,
+                    children: children, vehicles: vehicles, rereadWithClaude: true
+                )
+            }
         )
     }
 

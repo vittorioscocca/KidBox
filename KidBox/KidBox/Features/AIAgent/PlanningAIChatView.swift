@@ -70,7 +70,7 @@ struct PlanningAIChatView: View {
 
     var body: some View {
         Group {
-            if !subscriptionManager.isAIAccessible {
+            if !subscriptionManager.canOpenAssistant {
                 // ── Piano Free: schermata locked ─────────────────────
                 aiLockedView
             } else if let vm {
@@ -97,7 +97,7 @@ struct PlanningAIChatView: View {
             Task { await consumeSharedFileIfAny(into: vm) }
         }
         .task(id: "\(familyId)|\(subscriptionManager.currentPlan.rawValue)") {
-            guard subscriptionManager.isAIAccessible else { return }
+            guard subscriptionManager.canOpenAssistant else { return }
             guard !familyId.isEmpty else { return }
             guard vm == nil else { return }
             let newVM = PlanningAIChatViewModel(
@@ -605,9 +605,15 @@ private struct PlanningAIChatInnerView: View {
                 .foregroundStyle(tint)
             Text("Assistente AI KidBox")
                 .font(.caption.bold())
-            Text("· Calendario, salute, documenti e altro")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            if vm.answersFromDevice {
+                Text("· Risponde il telefono: legge ma non modifica")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("· Calendario, salute, documenti e altro")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
