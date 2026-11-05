@@ -63,7 +63,7 @@ filtro dinamico), in `functions/news/`. Tre tipi di generazione:
 | | Chiave | Contenuto | Rinnovo | Sforzo / ricerche |
 |---|---|---|---|---|
 | Nazionale | `c-{CC}-{lingua}` | due ricerche parallele: bonus+economia+società, scuola+salute+crescita+tempo libero | ogni giorno | medium, 7 + 7 |
-| Locale | `l-{CC}-{regione}-{città}-{lingua}` | notizie di regione e comune + eventi entro ~60 km nei 14 giorni | ogni 2 giorni | medium, 10 |
+| Locale | `l-{CC}-{regione}-{città}-{lingua}` | notizie di regione e comune + eventi entro ~60 km nei 14 giorni (richiesta a parte) | ogni 2 giorni | medium, 8 + 6 per gli eventi |
 | Offerte su misura | per utente | luce/gas (verdetto anche «restare conviene»), acqua, internet, spesa | solo su richiesta, max ogni 6 ore | medium, 6 |
 
 Nazionale e locale sono **condivise**: tutte le famiglie della stessa zona e

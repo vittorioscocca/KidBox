@@ -197,29 +197,38 @@ function itemSpec(cats = CATEGORIES) {
 }
 
 /**
+ * La consegna degli eventi: vive nella richiesta dedicata di `buildEventsPrompt`.
+ * @param {{city: string, maxEvents: number}} p
+ * @return {string}
+ */
+function eventsBrief(p) {
+  return `EVENTI (fino a ${p.maxEvents}) — da oggi ai ${EVENTS_HORIZON_DAYS} giorni successivi, entro circa ${EVENTS_RADIUS_KM} km da ${p.city}, anche negli altri comuni della zona: sagre, feste, mostre, spettacoli, laboratori, visite e attività adatti a una famiglia con bambini. Solo eventi con date certe lette nella fonte (calendari dei comuni, pro loco, musei, teatri, giornali e portali locali di eventi). Cerca in più posti diversi; se una pagina elenca molti eventi, prendine più d'uno. Prima quelli del prossimo fine settimana, poi i più vicini e i più adatti ai bambini.`;
+}
+
+/**
+ * Le regole sui campi di un evento.
+ * @param {{city: string}} p
+ * @return {string}
+ */
+function eventsFieldSpec(p) {
+  return `- events: place è il comune dell'evento; distanceKm la distanza stimata da ${p.city} (0 se è in città); endDate uguale a startDate se dura un giorno; free true/false, null se non si sa; summary al massimo 200 caratteri.`;
+}
+
+/**
  * Edizione locale: regione e città (o paese) dell'utente, con gli eventi nel
  * raggio. È la stessa per tutte le famiglie di quella città e lingua.
- * @param {{countryCode: string, countryName: string, region: string, province?: string, city: string, lang: string, today: {dateKey: string, label: string}, already?: string[], maxItems: number, maxEvents: number, withEvents: boolean}} p
+ * @param {{countryCode: string, countryName: string, region: string, province?: string, city: string, lang: string, today: {dateKey: string, label: string}, already?: string[], maxItems: number}} p
  * @return {{system: string, user: string}}
  */
 function buildLocalPrompt(p) {
   const where = [p.city, p.province && p.province !== p.city ? p.province : null, p.region, p.countryName].filter(Boolean).join(", ");
-  const eventsPart = p.withEvents ? `
-
-EVENTI (fino a ${p.maxEvents}) — da oggi ai ${EVENTS_HORIZON_DAYS} giorni successivi, entro circa ${EVENTS_RADIUS_KM} km da ${p.city}, anche negli altri comuni della zona: sagre, feste, mostre, spettacoli, laboratori, visite e attività adatti a una famiglia con bambini. Solo eventi con date certe lette nella fonte (calendari dei comuni, pro loco, musei, teatri, giornali e portali locali di eventi). Cerca in più posti diversi; se una pagina elenca molti eventi, prendine più d'uno. Prima quelli del prossimo fine settimana, poi i più vicini e i più adatti ai bambini.` : "";
-  const eventsFormat = p.withEvents ?
-    `,"events":[{"title":"…","summary":"…","place":"…","distanceKm":0,"startDate":"YYYY-MM-DD","endDate":"YYYY-MM-DD","free":true,"source":"…","url":"https://…"}]` :
-    "";
-  const eventsSpec = p.withEvents ?
-    `\n- events: place è il comune dell'evento; distanceKm la distanza stimata da ${p.city} (0 se è in città); endDate uguale a startDate se dura un giorno; free true/false, null se non si sa; summary al massimo 200 caratteri.` :
-    "";
   const system = `Sei la redazione di «Notizie» di KidBox, l'app delle famiglie. Prepari l'edizione locale di oggi per le famiglie con figli che vivono a ${where}.
 
 Oggi è ${p.today.label} (${p.today.dateKey}).
 
-NOTIZIE (fino a ${p.maxItems}: metà della regione ${p.region}, metà della città ${p.city} e della sua provincia) — non quelle nazionali: bonus e contributi regionali e comunali per le famiglie, scuola (calendario regionale, mense, trasporti, chiusure, allerte meteo per le scuole), sanità regionale e servizi dell'azienda sanitaria locale, servizi del comune per l'infanzia, trasporti, iniziative per famiglie, e per la categoria utilities gli avvisi su acqua ed elettricità (e gas) nella zona: interruzioni programmate o per guasto, lavori sulla rete, razionamenti e ordinanze per siccità o crisi idrica, divieti d'uso dell'acqua, acqua non potabile, blackout e distacchi — cerca presso il gestore idrico e il distributore elettrico locale (per esempio e-distribuzione in Italia), il comune e la protezione civile; la data chiave è l'inizio o la fine dell'interruzione (keyDateKind "start" o "deadline"), il campo action dice cosa fare (fare scorta d'acqua, evitare certi orari), mai l'elenco di vie o numeri di utenza. Categorie: ${CATEGORIES.join(", ")}. Una notizia vale se è uscita negli ultimi ${NEWS_MAX_AGE_DAYS} giorni, oppure se è uscita al massimo ${OPEN_MEASURE_MAX_AGE_DAYS} giorni fa e la sua data chiave (una scadenza, un inizio, un pagamento) deve ancora arrivare.${eventsPart}
+NOTIZIE (fino a ${p.maxItems}: metà della regione ${p.region}, metà della città ${p.city} e della sua provincia) — non quelle nazionali: bonus e contributi regionali e comunali per le famiglie, scuola (calendario regionale, mense, trasporti, chiusure, allerte meteo per le scuole), sanità regionale e servizi dell'azienda sanitaria locale, servizi del comune per l'infanzia, trasporti, iniziative per famiglie, e per la categoria utilities gli avvisi su acqua ed elettricità (e gas) nella zona: interruzioni programmate o per guasto, lavori sulla rete, razionamenti e ordinanze per siccità o crisi idrica, divieti d'uso dell'acqua, acqua non potabile, blackout e distacchi — cerca presso il gestore idrico e il distributore elettrico locale (per esempio e-distribuzione in Italia), il comune e la protezione civile; la data chiave è l'inizio o la fine dell'interruzione (keyDateKind "start" o "deadline"), il campo action dice cosa fare (fare scorta d'acqua, evitare certi orari), mai l'elenco di vie o numeri di utenza. Categorie: ${CATEGORIES.join(", ")}. Una notizia vale se è uscita negli ultimi ${NEWS_MAX_AGE_DAYS} giorni, oppure se è uscita al massimo ${OPEN_MEASURE_MAX_AGE_DAYS} giorni fa e la sua data chiave (una scadenza, un inizio, un pagamento) deve ancora arrivare.
 
-COME LAVORARE: lancia insieme le ricerche (regione, città, eventi), guarda titoli, date e prime righe dei risultati, poi approfondisci solo quello che scegli.
+COME LAVORARE: lancia insieme le ricerche (regione, città), guarda titoli, date e prime righe dei risultati, poi approfondisci solo quello che scegli.
 
 ${commonRules(p.lang)}
 
@@ -227,11 +236,65 @@ ${alreadyBlock(p.already)}
 
 FORMATO — finite le ricerche, scrivi SOLO questo blocco, senza altro testo dopo:
 <kidbox_news>
-{"items":[{"category":"bonus","level":"region","title":"…","summary":"…","action":"…","keyDate":"YYYY-MM-DD","keyDateKind":"start","publishedAt":"YYYY-MM-DD","source":"…","url":"https://…"}]${eventsFormat}}
+{"items":[{"category":"bonus","level":"region","title":"…","summary":"…","action":"…","keyDate":"YYYY-MM-DD","keyDateKind":"start","publishedAt":"YYYY-MM-DD","source":"…","url":"https://…"}]}
 </kidbox_news>
 - level: "region" per la regione, "city" per la città o la provincia.
-${itemSpec()}${eventsSpec}`;
+${itemSpec()}`;
   return {system, user: "Prepara l'edizione locale di oggi."};
+}
+
+/**
+ * Gli eventi della zona, in una richiesta tutta loro. Dentro l'edizione locale
+ * dividevano le ricerche con le notizie e ne restavano due o tre: il 04/11/2026
+ * Benevento è uscita con zero eventi, nessuno scartato. Stessa trappola
+ * dell'edizione nazionale, stesso rimedio (`COUNTRY_GROUPS`).
+ * @param {{countryName: string, region?: string, province?: string, city: string, lang: string, today: {dateKey: string, label: string}, maxEvents: number}} p
+ * @return {{system: string, user: string}}
+ */
+function buildEventsPrompt(p) {
+  const where = [p.city, p.province && p.province !== p.city ? p.province : null, p.region, p.countryName].filter(Boolean).join(", ");
+  const system = `Sei la redazione di «Notizie» di KidBox, l'app delle famiglie. Prepari la pagina degli eventi di oggi per le famiglie con figli che vivono a ${where}.
+
+Oggi è ${p.today.label} (${p.today.dateKey}).
+
+${eventsBrief(p)}
+
+COME LAVORARE: lancia insieme ricerche diverse (sagre e feste della provincia, eventi del prossimo fine settimana, laboratori e spettacoli per bambini, i comuni vicini), poi apri solo le pagine che promettono date certe. Una ricerca che non porta eventi non va ripetuta uguale.
+
+${commonRules(p.lang)}
+
+FORMATO — finite le ricerche, scrivi SOLO questo blocco, senza altro testo dopo:
+<kidbox_news>
+{"events":[{"title":"…","summary":"…","place":"…","distanceKm":0,"startDate":"YYYY-MM-DD","endDate":"YYYY-MM-DD","free":true,"source":"…","url":"https://…"}]}
+</kidbox_news>
+${eventsFieldSpec(p)}`;
+  return {system, user: "Prepara gli eventi di oggi."};
+}
+
+/**
+ * Gli eventi trovati oggi più quelli delle edizioni scorse non ancora finiti:
+ * un evento valido non sparisce perché l'ultima ricerca non l'ha ripescato, e
+ * non si paga di nuovo. Prima quelli di oggi, che sono i più aggiornati.
+ * @param {object[]} fresh
+ * @param {object[]} history le edizioni precedenti, dalla più recente
+ * @param {{todayKey: string, max: number}} o
+ * @return {object[]}
+ */
+function mergeEvents(fresh, history, o) {
+  const key = (e) => `${e.startDate}|${String(e.title || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()}`;
+  const seen = new Set();
+  const out = [];
+  const inRange = (e) => daysBetween(o.todayKey, e.endDate || e.startDate) >= 0 &&
+    daysBetween(o.todayKey, e.startDate) <= EVENTS_HORIZON_DAYS + 1;
+  for (const e of [...(fresh || []), ...(history || []).flatMap((h) => h.events || [])]) {
+    if (!e?.title || !e?.startDate || !e?.url || !inRange(e)) continue;
+    const k = key(e);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(e);
+    if (out.length >= o.max) break;
+  }
+  return out.sort((a, b) => a.startDate.localeCompare(b.startDate) || (a.distanceKm ?? 99) - (b.distanceKm ?? 99));
 }
 
 /**
@@ -608,5 +671,7 @@ module.exports = {
   collectSearchUrls,
   sanitizeItems,
   sanitizeEvents,
+  mergeEvents,
+  buildEventsPrompt,
   sanitizeOffers,
 };

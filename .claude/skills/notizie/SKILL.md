@@ -82,6 +82,8 @@ Disegno completo in `internal/notizie.md`. Qui le regole e le trappole.
     `NewsFamilyStore.settled()`, o un «Attiva» appena toccato arriva dopo la
     richiesta e il server risponde `news-off`.
 
+14. **Gli eventi hanno una richiesta tutta loro** (05/11/2026). Dentro l'edizione locale dividevano 10 ricerche con le notizie e il filtro dinamico ne sprecava parecchie: Benevento il 04/11 è uscita con 0 eventi e 0 scartati, cioè il setaccio non c'entrava. Con la richiesta dedicata (`buildEventsPrompt`, `eventsMaxUses`) 3 ricerche hanno trovato 5 eventi. In più `mergeEvents` riporta gli eventi delle edizioni scorse non ancora finiti: senza, ogni edizione nuova cancellava quelli validi della precedente. Se tornano pochi eventi, prima guarda `droppedReasons`: 0 scartati vuol dire che non li ha trovati.
+
 ## Regole
 
 - **Il piano**: tre presidi (`gate()` server, `ensurePaidPlan` nei servizi,

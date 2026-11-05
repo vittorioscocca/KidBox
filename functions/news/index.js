@@ -104,7 +104,9 @@ const DEFAULTS = {
   countryEffort: "medium",
   countryMaxUses: 7,
   localEffort: "medium",
-  localMaxUses: 10,
+  localMaxUses: 8,
+  /** Ricerche della richiesta dedicata agli eventi di un'edizione locale. */
+  eventsMaxUses: 6,
   offersEffort: "medium",
   offersMaxUses: 6,
   /** Stima del costo delle offerte su misura, prenotata prima di generarle e poi conguagliata. */
@@ -126,6 +128,7 @@ const BOUNDS = {
   localRefreshDays: [1, 7],
   countryMaxUses: [2, 20],
   localMaxUses: [2, 20],
+  eventsMaxUses: [2, 10],
   offersMaxUses: [2, 10],
   offersEstimateUsd: [0.01, 2],
   editionEstimateUsd: [0.01, 2],
@@ -831,10 +834,16 @@ function build(deps) {
       })) :
       [P.buildLocalPrompt({
         countryCode: place.countryCode, countryName: place.country, region: place.region, province: place.province,
-        city: place.city, lang: ed.lang, today, already, maxItems: LOCAL_MAX_ITEMS, maxEvents: LOCAL_MAX_EVENTS, withEvents: true,
+        city: place.city, lang: ed.lang, today, already, maxItems: LOCAL_MAX_ITEMS,
+      }), P.buildEventsPrompt({
+        countryName: place.country, region: place.region, province: place.province,
+        city: place.city, lang: ed.lang, today, maxEvents: LOCAL_MAX_EVENTS,
       })];
-    const settled = await Promise.allSettled(prompts.map((pr) => run(
-        pr, isCountry ? cfg.countryMaxUses : cfg.localMaxUses, isCountry ? cfg.countryEffort : cfg.localEffort,
+    // Locale: la prima richiesta è per le notizie, la seconda per gli eventi.
+    const settled = await Promise.allSettled(prompts.map((pr, n) => run(
+        pr,
+        isCountry ? cfg.countryMaxUses : (n === 0 ? cfg.localMaxUses : cfg.eventsMaxUses),
+        isCountry ? cfg.countryEffort : cfg.localEffort,
     )));
 
     const spend = {costUsd: 0, searches: 0, ms: 0, calls: 0, model: MODEL_SONNET};
@@ -873,7 +882,7 @@ function build(deps) {
         urls.add(key);
         items.push(it);
       }
-      if (!isCountry) {
+      if (!isCountry && Array.isArray(json.events)) {
         const ev = P.sanitizeEvents(json.events, {allowedUrls: allowed, todayKey: ed.dateKey, max: LOCAL_MAX_EVENTS});
         events = ev.events;
         dropped.push(...ev.dropped);
@@ -894,7 +903,7 @@ function build(deps) {
     return {
       ...spend,
       items: items.slice(0, isCountry ? COUNTRY_MAX_ITEMS : LOCAL_MAX_ITEMS),
-      events,
+      events: isCountry ? [] : P.mergeEvents(events, history, {todayKey: ed.dateKey, max: LOCAL_MAX_EVENTS}),
       expectedReaders: Math.round(expectedReaders * 100) / 100,
       priceUsd: spend.costUsd / expectedReaders,
       droppedCount: dropped.length,
