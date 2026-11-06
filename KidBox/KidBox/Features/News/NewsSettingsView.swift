@@ -50,7 +50,7 @@ struct NewsSettingsView: View {
                 .tint(KBTheme.bubbleTint)
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Le ricerche si pagano in messaggi AI, dalla quota della famiglia: ogni edizione al massimo 6 messaggi, e meno quando la leggono anche altre famiglie della tua zona. Incluse nei piani Pro e Max.")
+                    Text("Le ricerche si pagano in messaggi AI, dalla quota della famiglia: ogni edizione al massimo 10 messaggi, e meno quando la leggono anche altre famiglie della tua zona. Incluse nei piani Pro e Max.")
                     Text("Accensione e città valgono per tutta la famiglia: le notizie trovate per uno le leggono tutti, e si pagano una volta sola.")
                 }
             }

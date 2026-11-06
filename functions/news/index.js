@@ -27,7 +27,7 @@
 // zona negli ultimi giorni (almeno 1), fissato quando l'edizione nasce. Ogni
 // famiglia paga un'edizione una volta sola (`news_charges`), anche se la
 // rileggono più membri o la stessa edizione locale vale due giorni. La parte di
-// ciascuno ha un tetto (`maxUnitsPerEdition`, 6): con pochi lettori sarebbe
+// ciascuno ha un tetto (`maxUnitsPerEdition`, 10): con pochi lettori sarebbe
 // quasi tutto il costo, e il primo giorno si mangerebbe la quota di un Pro.
 //
 // LE NOTIZIE SONO DELLA FAMIGLIA (richiesta dell'utente del 03/10/2026: quelle
@@ -117,7 +117,7 @@ const DEFAULTS = {
    * 03/10/2026): senza tetto, il primo giorno le Notizie si mangerebbero la
    * quota di un Pro. Sopra il tetto il costo resta a KidBox.
    */
-  maxUnitsPerEdition: 6,
+  maxUnitsPerEdition: 10,
   maxUnitsOffers: 8,
   /** Stima di un'edizione mai vista, per il messaggio «costa circa N messaggi». */
   editionEstimateUsd: 0.25,

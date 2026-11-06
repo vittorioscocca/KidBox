@@ -235,7 +235,7 @@ comuni (per zona e lingua): accensione e città stavano su
 
 Stati della scheda: Free → invito a Pro; scelte della famiglia non ancora
 arrivate → attesa; famiglia che non le ha mai accese → presentazione con il
-costo («al massimo 6 messaggi per edizione») e «Attiva le notizie»: prima non
+costo («al massimo 10 messaggi per edizione») e «Attiva le notizie»: prima non
 parte nessuna ricerca né si scala nulla; accese da un qualunque membro →
 edizione del giorno.
 

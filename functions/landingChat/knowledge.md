@@ -226,7 +226,7 @@ KidBox ha diversi agenti AI, ognuno nella sezione che conosce:
   fonte, e se non ci sono novità l'edizione è più corta. Su richiesta cerca
   offerte su misura (luce, gas, acqua, spesa) partendo dalle bollette in Casa e
   dalla lista della spesa. Le ricerche costano messaggi AI: ogni edizione al
-  massimo 6 messaggi, e meno quando la leggono anche altre famiglie della stessa
+  massimo 10 messaggi, e meno quando la leggono anche altre famiglie della stessa
   zona. Gli argomenti da seguire si scelgono in Impostazioni → Notizie.
 - **Farmacie di turno** (solo Pro e Max): un riquadro in Salute e una scorciatoia
   in Home. Mostra le farmacie di turno del comune della famiglia (lo stesso

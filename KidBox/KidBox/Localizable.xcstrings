@@ -42716,24 +42716,24 @@
         }
       }
     },
-    "Le ricerche si pagano in messaggi AI, dalla quota della famiglia: ogni edizione al massimo 6 messaggi, e meno quando la leggono anche altre famiglie della tua zona. Incluse nei piani Pro e Max." : {
+    "Le ricerche si pagano in messaggi AI, dalla quota della famiglia: ogni edizione al massimo 10 messaggi, e meno quando la leggono anche altre famiglie della tua zona. Incluse nei piani Pro e Max." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Searches are paid for in AI messages from the family's allowance: at most 6 messages per edition, and fewer when other families in your area read it too. Included in the Pro and Max plans."
+            "value" : "Searches are paid for in AI messages from the family's allowance: at most 10 messages per edition, and fewer when other families in your area read it too. Included in the Pro and Max plans."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las búsquedas se pagan en mensajes de IA, de la cuota de la familia: como máximo 6 mensajes por edición, y menos cuando también la leen otras familias de tu zona. Incluidas en los planes Pro y Max."
+            "value" : "Las búsquedas se pagan en mensajes de IA, de la cuota de la familia: como máximo 10 mensajes por edición, y menos cuando también la leen otras familias de tu zona. Incluidas en los planes Pro y Max."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les recherches se paient en messages IA, sur le quota de la famille : au maximum 6 messages par édition, et moins quand d'autres familles de votre zone la lisent aussi. Incluses dans les forfaits Pro et Max."
+            "value" : "Les recherches se paient en messages IA, sur le quota de la famille : au maximum 10 messages par édition, et moins quand d'autres familles de votre zone la lisent aussi. Incluses dans les forfaits Pro et Max."
           }
         }
       }

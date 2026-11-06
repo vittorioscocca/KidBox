@@ -68,7 +68,7 @@ struct NewsView: View {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if !family.enabled {
-                NewsIntroView(place: family.effectivePlace, maxUnits: vm.feed?.maxUnitsPerEdition ?? 6) {
+                NewsIntroView(place: family.effectivePlace, maxUnits: vm.feed?.maxUnitsPerEdition ?? 10) {
                     showSettings = true
                 } onActivate: {
                     familyStore.update { $0.enabled = true }
