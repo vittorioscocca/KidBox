@@ -8342,7 +8342,8 @@ async function loadLastOpenByUid() {
  * `lastOpenAt` è invece l'ultima apertura vera dell'app iOS o Android
  * (`session_start`), tenuta dal trigger `analyticsLastOpen` in un solo
  * documento. Se il documento manca lo ricostruisce una volta dagli eventi
- * grezzi (90 giorni di TTL).
+ * grezzi (90 giorni di TTL). Il web vi entra con `lastSeenAt` della sessione,
+ * aggiornato a ogni caricamento della pagina.
  */
 exports.getAuthUsersData = onCall(
     {region: "europe-west1", maxInstances: 20},
@@ -8384,12 +8385,23 @@ exports.getAuthUsersData = onCall(
 
       // Chi usa la web app: `users/{uid}.platform` lo scrivono solo le app
       // mobili. La sessione web esiste dal 02/10/2026, chi l'ha usata solo
-      // prima di quella data resta senza dispositivo.
+      // prima di quella data resta senza dispositivo. `lastSeenAt` si aggiorna
+      // a ogni caricamento della pagina: è l'apertura del web, e conta in
+      // `lastOpenAt` insieme a quella delle app.
       try {
         const sessions = await admin.firestore().collectionGroup("sessions")
-            .where("platform", "==", "web").select().get();
-        const webUids = new Set(sessions.docs.map((d) => d.ref.parent.parent.id));
-        for (const row of result) row.web = webUids.has(row.uid);
+            .where("platform", "==", "web").select("lastSeenAt").get();
+        const webSeen = new Map();
+        for (const d of sessions.docs) {
+          const uid = d.ref.parent.parent.id;
+          const at = d.get("lastSeenAt");
+          const ms = at && typeof at.toMillis === "function" ? at.toMillis() : 0;
+          webSeen.set(uid, Math.max(webSeen.get(uid) || 0, ms));
+        }
+        for (const row of result) {
+          row.web = webSeen.has(row.uid);
+          row.lastOpenAt = Math.max(row.lastOpenAt || 0, webSeen.get(row.uid) || 0);
+        }
       } catch (e) {
         logger.warn("getAuthUsersData: sessioni web non disponibili", {error: e.message});
       }

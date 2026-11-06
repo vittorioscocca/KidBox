@@ -297,7 +297,7 @@ function renderUserCharts() {
   const pctOf = (a, b) => b ? ` (${Math.round(a / b * 100)}%)` : '';
   const o7 = opened(7), o30 = opened(30);
   setVal('stat-open-7', fmtNum(o7));
-  setVal('stat-open-7-sub', `su ${users.length} utenti${pctOf(o7, users.length)} · solo app iOS/Android`);
+  setVal('stat-open-7-sub', `su ${users.length} utenti${pctOf(o7, users.length)} · app e web`);
   setVal('stat-open-30', fmtNum(o30));
   setVal('stat-open-30-sub', `su ${users.length} utenti${pctOf(o30, users.length)}`);
   const multi = fams.filter(r => r.realMembers >= 2).length;
@@ -1620,10 +1620,11 @@ function renderUsersTable(rows) {
   setVal('stat-users', fmtNum(real.length));
   setVal('stat-users-sub', filtered.length > real.length ? `profili su Firestore · senza ${filtered.length - real.length} account di test` : 'profili su Firestore');
   setVal('users-table-count', `(${filtered.length})`);
-  let ios=0, android=0;
-  real.forEach(u => { if(u.platform==='ios') ios++; else if(u.platform==='android') android++; });
+  let ios=0, android=0, web=0;
+  real.forEach(u => { if(u.platform==='ios') ios++; else if(u.platform==='android') android++; if(u.web) web++; });
   setVal('stat-platform-ios',     fmtNum(ios));
   setVal('stat-platform-android', fmtNum(android));
+  setVal('stat-platform-web',     fmtNum(web));
 
   if (filtered.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" class="empty">Nessun utente nel periodo selezionato</td></tr>';
@@ -1656,7 +1657,7 @@ function renderUsersTable(rows) {
     const lastActiveStr = fmtLastActive(u.lastActiveAt);
     const lastActiveTitle = u.lastActiveAt ? u.lastActiveAt.toLocaleString('it-IT') : '';
     const lastOpenStr = fmtLastActive(u.lastOpenAt);
-    const lastOpenTitle = u.lastOpenAt ? u.lastOpenAt.toLocaleString('it-IT') : 'Nessuna apertura registrata negli ultimi 90 giorni (o solo dal web)';
+    const lastOpenTitle = u.lastOpenAt ? u.lastOpenAt.toLocaleString('it-IT') : 'Nessuna apertura registrata negli ultimi 90 giorni (web solo dal 02/10)';
     return `
     <tr>
       <td data-label="Email" class="dim" style="font-size:12px" title="${u.email}">${emailShort}</td>
@@ -1788,7 +1789,7 @@ async function loadUsers() {
         _usersCache.map(u => `<option value="${u.uid}" data-fid="${u.fid}">${u.email}</option>`).join('');
     }
     if (typeof window.bcRenderPicker === 'function') window.bcRenderPicker();
-  } catch { setVal('stat-users','N/A'); setVal('stat-platform-ios','N/A'); setVal('stat-platform-android','N/A'); }
+  } catch { setVal('stat-users','N/A'); setVal('stat-platform-ios','N/A'); setVal('stat-platform-android','N/A'); setVal('stat-platform-web','N/A'); }
 }
 
 // Quattro letture in parallelo invece di 4 per famiglia in fila (con 293
@@ -3355,7 +3356,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         </div>
       </div>
 
-      <div class="grid-2" style="margin-top:12px">
+      <div class="grid-3" style="margin-top:12px">
         <div class="card">
           <div class="card-lbl">🍎 Dispositivi Apple</div>
           <div class="card-val c-blue" id="stat-platform-ios">—</div>
@@ -3365,6 +3366,11 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
           <div class="card-lbl">🤖 Dispositivi Android</div>
           <div class="card-val c-green" id="stat-platform-android">—</div>
           <div class="card-sub">utenti collegati da Android</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">🌐 Web</div>
+          <div class="card-val c-orange" id="stat-platform-web">—</div>
+          <div class="card-sub">utenti collegati almeno una volta dal web · dal 02/10</div>
         </div>
       </div>
 
@@ -3949,7 +3955,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
               <th>Piano</th>
               <th>Dispositivo</th>
               <th data-usort="createdAt" onclick="sortUsers('createdAt')" style="cursor:pointer">Registrato<span class="sort-arrow"> ↕</span></th>
-              <th data-usort="lastOpenAt" onclick="sortUsers('lastOpenAt')" style="cursor:pointer" title="Ultima volta che l'utente ha aperto l'app iOS o Android (portata in primo piano; rientri entro 30 minuti contano come la stessa apertura). Il web non è contato. Storico: 90 giorni.">Ultima apertura<span class="sort-arrow"> ↓</span></th>
+              <th data-usort="lastOpenAt" onclick="sortUsers('lastOpenAt')" style="cursor:pointer" title="Ultima volta che l'utente ha aperto l'app iOS o Android (portata in primo piano; rientri entro 30 minuti contano come la stessa apertura) o ha caricato la web app. Storico: 90 giorni.">Ultima apertura<span class="sort-arrow"> ↓</span></th>
               <th data-usort="lastActiveAt" onclick="sortUsers('lastActiveAt')" style="cursor:pointer" title="Ultimo login o rinnovo del token, su qualsiasi client. Include l'attività in background (es. posizione condivisa): dice che l'app è installata e accesa, non che è stata aperta.">App viva<span class="sort-arrow"> ↕</span></th>
             </tr>
           </thead>
