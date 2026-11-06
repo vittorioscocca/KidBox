@@ -68,19 +68,31 @@ def text(img, lang, x, y_mid, max_w, t_size, s_size, gap):
         y += lh2
 
 
-# Nei risultati di ricerca l'App Store mostra solo una fascia larga 3:1, e
-# non è centrata: parte dall'alto (y ~0–1740 su 2950). Visto il 22/10/2026 in
-# due tentativi: centrando nella fascia di mezzo tagliava ancora sottotitolo e
-# fondo dei Duo. Tutto sta fra ~650 e ~1700, dentro sia la fascia alta sia
-# quella centrale.
-SEARCH_MID = 1175
-SEARCH_BAND = 960
+# Nei risultati di ricerca la scheda dell'iPhone (3:2) mostra solo un ritaglio
+# dell'immagine. Misurato su uno screenshot reale il 06/11/2026: x ~1570–3670
+# (centrato in orizzontale), y ~450–1850 (NON centrato: parte dall'alto).
+# Prima testo e dispositivi arrivavano fino a x 560 e 4850: la scheda tagliava
+# «KidBox,» e il Duo aperto. Ora tutto sta in un gruppo largo ~1850 px fra
+# x 1700 e 3550, intorno a y 1150, con margine su ogni lato; niente sottotitolo
+# (nella scheda starebbe sotto i 7 pt). Il Duo chiuso e quello aperto restano
+# vicini, il titolo a sinistra.
+SEARCH_X0, SEARCH_X1 = 1700, 3550
+SEARCH_MID = 1150
+SEARCH_TEXT_W = 860
 
 
 def make(lang):
     img = header.background()
-    place(img, lang, 2750, 4850, SEARCH_MID, SEARCH_BAND, 40, 30)
-    text(img, lang, 560, SEARCH_MID, 1900, 220, 84, 70)
+    place(img, lang, SEARCH_X0 + SEARCH_TEXT_W + 70, SEARCH_X1, SEARCH_MID, 620, 26, 20)
+    title, _ = header.TEXTS[lang]
+    d = ImageDraw.Draw(img)
+    f1 = header.fit_block(title, SEARCH_TEXT_W, 150, header.HEAVY)
+    l1 = title.split("\n")
+    lh1 = int(f1.size * 1.08)
+    y = SEARCH_MID - lh1 * len(l1) // 2
+    for line in l1:
+        d.text((SEARCH_X0, y), line, font=f1, fill=header.INK, anchor="la")
+        y += lh1
     os.makedirs(f"header-duo/{lang}", exist_ok=True)
     img.save(f"header-duo/{lang}/header.png")
 

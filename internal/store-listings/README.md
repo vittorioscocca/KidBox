@@ -108,6 +108,13 @@ intestazione e ricerca. L'API non lo permette ancora per noi: la relazione `plac
 della localizzazione esiste (`appAssetLibraryPlacements`, tipi `PRODUCT_PAGE_HEADER_ASSET`
 e `APP_STORE_SEARCH_RESULTS_ASSET`) ma non è documentata come caricare il file.
 
+**Risultati di ricerca: la scheda ritaglia molto** (misurato il 06/11/2026 su uno screenshot dell'App Store
+sul telefono). Della 5244×2950 si vede solo un 3:2 di circa x 1570–3670 e y 450–1850: centrato in
+orizzontale ma **non** in verticale. Per questo `header/` (iPhone) e `header-duo/` sono un gruppo compatto
+(titolo + dispositivi) fra x 1700 e 3550 intorno a y 1150, senza sottotitolo (nella scheda starebbe sotto i
+7 pt). Prima, con il testo a x 560 e i dispositivi fino a 4850, la scheda tagliava «KidBox,» e il Duo aperto.
+Dopo ogni modifica simulare il ritaglio (`crop((1573,450,3675,1854))`) prima di caricare.
+
 **Intestazione della pagina prodotto** (diversa da quella della ricerca): `screenshots/header-pagina/<lingua>/header.png`.
 L'anteprima di ASC ritaglia i lati e copre il fondo con la scheda dell'app, quindi testo e telefoni
 stanno in un gruppo più piccolo verso il centro. Si caricano in «Intestazione»; in «Risultati della

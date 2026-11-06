@@ -98,6 +98,32 @@ def make(lang):
     img.save(f"header/{lang}/header.png")
 
 
+def make_search(lang):
+    """Risultati di ricerca: la scheda mostra solo x ~1570–3670, y ~450–1850 (misurato
+    il 06/11/2026), quindi un gruppo compatto fra x 1700 e 3550 intorno a y 1150,
+    solo titolo (il sottotitolo nella scheda sarebbe illeggibile)."""
+    title, _ = TEXTS[lang]
+    img = background()
+    d = ImageDraw.Draw(img)
+    back = phone(Image.open(f"raw/{lang}/02-calendar.png").convert("RGB"), 300).rotate(7, resample=Image.BICUBIC, expand=True)
+    front = phone(Image.open(f"raw/{lang}/01-home.png").convert("RGB"), 320).rotate(-8, resample=Image.BICUBIC, expand=True)
+    x1, mid = 3550, 1150
+    bx = x1 - back.width
+    fx = bx - int(front.width * 0.62)
+    shadowed(img, back, (bx, mid - back.height // 2 - 20), blur=28, dy=22)
+    shadowed(img, front, (fx, mid - front.height // 2 + 30), blur=28, dy=22)
+    text_w = fx - 70 - 1700
+    f1 = fit_block(title, text_w, 150, HEAVY)
+    l1 = title.split("\n")
+    lh1 = int(f1.size * 1.08)
+    y = mid - lh1 * len(l1) // 2
+    for line in l1:
+        d.text((1700, y), line, font=f1, fill=INK, anchor="la")
+        y += lh1
+    os.makedirs(f"header/{lang}", exist_ok=True)
+    img.save(f"header/{lang}/header.png")
+
+
 def make_compact(lang):
     """Pagina prodotto: l'App Store ritaglia i lati e copre il fondo con la scheda dell'app,
     quindi testo e telefoni stanno in un gruppo più piccolo, spostato verso il centro."""
@@ -127,6 +153,6 @@ def make_compact(lang):
 
 
 for lang in TEXTS:
-    make(lang)
+    make_search(lang)
     make_compact(lang)
 print("ok")
