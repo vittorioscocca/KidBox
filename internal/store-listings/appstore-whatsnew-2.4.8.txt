@@ -1,0 +1,31 @@
+# Novità iOS 2.4.8 — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 06/11/2026 sulle modifiche dopo la build 163 della 2.4.7: «Fatto» sui promemoria dei to-do, documenti già in KidBox dal «+» dell'assistente, copia locale nella scelta da KidBox, attesa delle Notizie e edizione tenuta sul telefono. L'AI sul telefono è spenta in Release e non compare.
+
+## it
+
+• Promemoria dei to-do: premi «Fatto» sulla notifica o sulla sveglia urgente e il to-do si chiude, senza aprire l'app.
+• Assistente: con il «+» puoi scegliere anche i documenti che hai già in KidBox, senza caricarli di nuovo. Quelli d'identità restano fuori.
+• Scegliendo un documento da KidBox si usa la copia già sul telefono, e senza rete te lo dice subito invece di farti aspettare.
+• Notizie: mentre l'edizione si prepara vedi un conto alla rovescia e cosa sta cercando, e fino a sera si riapre subito.
+
+## en-GB
+
+• To-do reminders: tap "Done" on the notification or the urgent alarm and the to-do is closed, without opening the app.
+• Assistant: the "+" now also lets you pick documents you already have in KidBox, without uploading them again. Identity documents stay out.
+• When you choose a document from KidBox, the copy already on your iPhone is used, and with no connection you're told straight away instead of being kept waiting.
+• News: while the edition is being prepared you see a countdown and what it's searching for, and it reopens instantly for the rest of the day.
+
+## es-ES
+
+• Recordatorios de tareas: pulsa «Hecho» en la notificación o en la alarma urgente y la tarea se cierra, sin abrir la app.
+• Asistente: con el «+» también puedes elegir los documentos que ya tienes en KidBox, sin volver a subirlos. Los de identidad quedan fuera.
+• Al elegir un documento desde KidBox se usa la copia que ya está en el iPhone y, sin conexión, te lo dice enseguida en lugar de hacerte esperar.
+• Noticias: mientras se prepara la edición ves una cuenta atrás y lo que está buscando, y durante el resto del día se vuelve a abrir al instante.
+
+## fr-FR
+
+• Rappels des tâches : touchez « Fait » sur la notification ou sur l'alarme urgente et la tâche est terminée, sans ouvrir l'app.
+• Assistant : le « + » permet aussi de choisir les documents déjà présents dans KidBox, sans les importer à nouveau. Les pièces d'identité restent à l'écart.
+• Quand vous choisissez un document depuis KidBox, la copie déjà présente sur l'iPhone est utilisée et, sans connexion, vous êtes prévenu tout de suite au lieu d'attendre.
+• Actualités : pendant la préparation de l'édition, vous voyez un compte à rebours et ce qui est recherché, et elle se rouvre aussitôt pour le reste de la journée.
