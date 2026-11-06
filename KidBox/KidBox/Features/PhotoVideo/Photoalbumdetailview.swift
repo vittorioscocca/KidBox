@@ -85,6 +85,9 @@ struct PhotoAlbumDetailView: View {
                 uploadBanner
             }
             
+        }
+        // Inset e non overlay: lo scroll si ferma sopra la barra di selezione.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             if isSelectMode { selectionToolbar }
         }
         .navigationTitle(isSelectMode
@@ -175,7 +178,7 @@ struct PhotoAlbumDetailView: View {
         .background(.ultraThinMaterial)
         .background(Color.pink.opacity(0.75))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .padding(.horizontal, 20).padding(.bottom, isSelectMode ? 90 : 24)
+        .padding(.horizontal, 20).padding(.bottom, 24)
         .transition(.move(edge: .bottom).combined(with: .opacity))
         .animation(.spring, value: isUploading)
     }

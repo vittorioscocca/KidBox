@@ -146,9 +146,13 @@ struct FamilyPhotosView: View {
                 case .albums:  albumsContent
                 }
             }
+            // Le barre di selezione sono un inset, non un overlay: lo scroll si
+            // ferma sopra di loro e le ultime foto restano raggiungibili.
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if isSelectMode { selectionToolbar }
+                else if isAlbumSelectMode { albumSelectionToolbar }
+            }
             if isUploading { uploadBanner }
-            if isSelectMode { selectionToolbar }
-            if isAlbumSelectMode { albumSelectionToolbar }
         }
         .familyKeyMissingGate(familyId: familyId)
         .navigationTitle({
