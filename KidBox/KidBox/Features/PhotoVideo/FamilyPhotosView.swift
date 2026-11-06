@@ -100,6 +100,8 @@ struct FamilyPhotosView: View {
     @State private var isSelectMode = false
     @State private var selectedIds: Set<String> = []
     @State private var isPreparingShare = false
+    @State private var showDeleteSelectedConfirm = false
+    @State private var showDeleteAlbumsConfirm = false
     @State private var shareItems: [Any] = []
     @State private var showShareSheet = false
     @State private var isSendingToChat = false
@@ -173,6 +175,20 @@ struct FamilyPhotosView: View {
             maxSelectionCount: 30,
             matching: .any(of: [.images, .videos])
         )
+        .alert(deleteSelectedTitle, isPresented: $showDeleteSelectedConfirm) {
+            Button("Annulla", role: .cancel) {}
+            Button("Elimina", role: .destructive) { deleteSelectedPhotos() }
+        } message: {
+            if selectedIds.count == 1 {
+                Text("La foto verrà rimossa da tutti i dispositivi.")
+            } else {
+                Text("Gli elementi verranno rimossi da tutti i dispositivi.")
+            }
+        }
+        .alert(deleteAlbumsTitle, isPresented: $showDeleteAlbumsConfirm) {
+            Button("Annulla", role: .cancel) {}
+            Button("Elimina", role: .destructive) { deleteSelectedAlbums() }
+        }
         .onChange(of: tab) { _, _ in
             withAnimation(.snappy) {
                 isSelectMode = false; selectedIds = []
@@ -936,11 +952,8 @@ struct FamilyPhotosView: View {
             .disabled(selectedIds.isEmpty)
             
             Button(role: .destructive) {
-                let toDelete = photos.filter { selectedIds.contains($0.id) }
-                withAnimation(.snappy) {
-                    toDelete.forEach { softDeletePhoto($0) }
-                    isSelectMode = false; selectedIds = []
-                }
+                // Elimina per tutti i dispositivi: prima si chiede conferma.
+                showDeleteSelectedConfirm = true
             } label: {
                 VStack(spacing: 4) {
                     Image(systemName: "trash").font(.system(size: 22))
@@ -962,11 +975,7 @@ struct FamilyPhotosView: View {
     private var albumSelectionToolbar: some View {
         HStack(spacing: 0) {
             Button(role: .destructive) {
-                let toDelete = albums.filter { selectedAlbumIds.contains($0.id) }
-                withAnimation(.snappy) {
-                    toDelete.forEach { softDeleteAlbum($0) }
-                    isAlbumSelectMode = false; selectedAlbumIds = []
-                }
+                showDeleteAlbumsConfirm = true
             } label: {
                 VStack(spacing: 4) {
                     Image(systemName: "trash").font(.system(size: 22))
@@ -981,6 +990,32 @@ struct FamilyPhotosView: View {
         .background(.ultraThinMaterial)
         .overlay(alignment: .top) { Divider() }
         .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+    
+    /// Titoli con il singolare: due letterali in un ternario diventerebbero `String`
+    /// e salterebbero il catalogo, quindi il tipo `LocalizedStringKey` è esplicito.
+    private var deleteSelectedTitle: LocalizedStringKey {
+        selectedIds.count == 1 ? "Eliminare questa foto?" : "Eliminare \(selectedIds.count) elementi?"
+    }
+    
+    private var deleteAlbumsTitle: LocalizedStringKey {
+        selectedAlbumIds.count == 1 ? "Eliminare questo album?" : "Eliminare \(selectedAlbumIds.count) album?"
+    }
+    
+    private func deleteSelectedPhotos() {
+        let toDelete = photos.filter { selectedIds.contains($0.id) }
+        withAnimation(.snappy) {
+            toDelete.forEach { softDeletePhoto($0) }
+            isSelectMode = false; selectedIds = []
+        }
+    }
+    
+    private func deleteSelectedAlbums() {
+        let toDelete = albums.filter { selectedAlbumIds.contains($0.id) }
+        withAnimation(.snappy) {
+            toDelete.forEach { softDeleteAlbum($0) }
+            isAlbumSelectMode = false; selectedAlbumIds = []
+        }
     }
     
     private func toggleSelection(_ id: String) {

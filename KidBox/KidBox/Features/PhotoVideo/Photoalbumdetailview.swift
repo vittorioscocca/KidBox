@@ -25,6 +25,7 @@ struct PhotoAlbumDetailView: View {
     @State private var isSelectMode = false
     @State private var selectedIds: Set<String> = []
     @State private var showRemoveConfirm = false
+    @State private var showDeleteSelectedConfirm = false
     
     // ── Camera ──────────────────────────────────────────────────────────────
     @State private var showCamera = false
@@ -126,6 +127,16 @@ struct PhotoAlbumDetailView: View {
         )) { Button("OK") { uploadError = nil } } message: { Text(uploadError ?? "") }
             .storageUpgradeSheet($showStorageUpgrade)
         // ────────────────────────────────────────────────────────────────────
+            .alert(deleteSelectedTitle, isPresented: $showDeleteSelectedConfirm) {
+                Button("Annulla", role: .cancel) {}
+                Button("Elimina", role: .destructive) { deleteSelectedPhotos() }
+            } message: {
+                if selectedIds.count == 1 {
+                    Text("La foto verrà rimossa da tutti i dispositivi.")
+                } else {
+                    Text("Gli elementi verranno rimossi da tutti i dispositivi.")
+                }
+            }
             .confirmationDialog(
                 "Rimuovi \(selectedIds.count) foto dall'album?",
                 isPresented: $showRemoveConfirm,
@@ -319,11 +330,8 @@ struct PhotoAlbumDetailView: View {
             .disabled(selectedIds.isEmpty)
             
             Button(role: .destructive) {
-                let toDelete = photos.filter { selectedIds.contains($0.id) }
-                withAnimation(.snappy) {
-                    toDelete.forEach { softDeletePhoto($0) }
-                    isSelectMode = false; selectedIds = []
-                }
+                // Elimina per tutti i dispositivi: prima si chiede conferma.
+                showDeleteSelectedConfirm = true
             } label: {
                 VStack(spacing: 4) {
                     Image(systemName: "trash")
@@ -389,6 +397,18 @@ struct PhotoAlbumDetailView: View {
         }
         Task { await SyncCenter.shared.flush(modelContext: modelContext, remote: TodoRemoteStore()) }
         withAnimation(.snappy) { isSelectMode = false; selectedIds = [] }
+    }
+    
+    private var deleteSelectedTitle: LocalizedStringKey {
+        selectedIds.count == 1 ? "Eliminare questa foto?" : "Eliminare \(selectedIds.count) elementi?"
+    }
+    
+    private func deleteSelectedPhotos() {
+        let toDelete = photos.filter { selectedIds.contains($0.id) }
+        withAnimation(.snappy) {
+            toDelete.forEach { softDeletePhoto($0) }
+            isSelectMode = false; selectedIds = []
+        }
     }
     
     private func softDeletePhoto(_ photo: KBFamilyPhoto) {

@@ -259,11 +259,12 @@ struct PhotoFullscreenView: View {
                 .ignoresSafeArea()
         }
         // Conferma elimina
-        .confirmationDialog("Eliminare questa foto?",
-                            isPresented: $showDeleteConfirm,
-                            titleVisibility: .visible) {
-            Button("Elimina", role: .destructive) { deleteCurrentPhoto() }
+        // `.alert` e non `.confirmationDialog`: su iOS 26 il dialog sul viewer
+        // appare come una nuvoletta senza il pulsante Annulla.
+        .alert("Eliminare questa foto?",
+               isPresented: $showDeleteConfirm) {
             Button("Annulla", role: .cancel) {}
+            Button("Elimina", role: .destructive) { deleteCurrentPhoto() }
         } message: {
             Text("La foto verrà rimossa da tutti i dispositivi.")
         }
