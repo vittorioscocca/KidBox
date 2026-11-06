@@ -117,10 +117,16 @@ enum KBUrgentAlarmService {
             return false
         }
 
+        // Solo un to-do si può chiudere dalla sveglia: un evento non ha uno
+        // stato «fatto». Senza questo pulsante resta soltanto quello di sistema,
+        // che spegne la sveglia e lascia il to-do aperto.
+        let isTodo = kind == .todo
         let alert = AlarmPresentation.Alert(
             title: LocalizedStringResource(stringLiteral: title),
-            secondaryButton: nil,
-            secondaryButtonBehavior: nil
+            secondaryButton: isTodo
+                ? AlarmButton(text: "Fatto", textColor: .white, systemImageName: "checkmark")
+                : nil,
+            secondaryButtonBehavior: isTodo ? .custom : nil
         )
         let attributes = AlarmAttributes(
             presentation: AlarmPresentation(alert: alert),
@@ -136,6 +142,15 @@ enum KBUrgentAlarmService {
         let configuration = AlarmManager.AlarmConfiguration(
             schedule: .fixed(fireAt),
             attributes: attributes,
+            secondaryIntent: isTodo
+                ? CompleteTodoFromAlarmIntent(
+                    todoId: entityId,
+                    familyId: familyId,
+                    childId: childId ?? "",
+                    listId: listId ?? "",
+                    todoTitle: title
+                )
+                : nil,
             sound: .default
         )
 

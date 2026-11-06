@@ -86,6 +86,8 @@ enum TodoReminderService {
         // Urgente senza sveglia: resta l'unica leva che attraversa una full
         // immersion, se l'utente consente le notifiche critiche per tempo.
         content.interruptionLevel = isUrgent ? .timeSensitive : .active
+        // Il pulsante «Fatto» sotto la notifica.
+        content.categoryIdentifier = TodoReminderNotificationCategory.identifier
         // ── Payload completo per il deep link ──────────────────────────────
         // NotificationManager.handleNotificationUserInfo() usa questi campi
         // per costruire il DeepLink.todo e navigare direttamente al todo.

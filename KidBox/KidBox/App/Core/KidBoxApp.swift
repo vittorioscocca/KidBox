@@ -42,6 +42,7 @@ struct KidBoxApp: App {
         KBDemoSeed.runIfRequested(container: container)
         #endif
         _appDelegate.wrappedValue.modelContainer = container
+        TodoReminderDoneAction.container = container
         // Motore proattivo: gira a ogni salvataggio dei dati locali.
         KBInsightRunner.shared.start(container: container)
         if ModelContainerProvider.didQuarantineCorruptedStoreThisLaunch {

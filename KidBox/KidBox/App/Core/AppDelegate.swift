@@ -339,6 +339,13 @@ final class AppDelegate: NSObject,
         }
         // ──────────────────────────────────────────────────────────────────
 
+        // ── Quick action promemoria to-do: Fatto ───────────────────────────
+        if await TodoReminderActionHandler.handle(response: response) {
+            KBLog.auth.kbInfo("Todo reminder quick action handled — skipping deep link")
+            return
+        }
+        // ──────────────────────────────────────────────────────────────────
+
         // ── Tap normale sulla notifica → deep link ─────────────────────────
         let notifType = userInfo["type"] as? String ?? "unknown"
         let notifKeys = userInfo.keys.map { "\($0)" }.sorted().joined(separator: ",")

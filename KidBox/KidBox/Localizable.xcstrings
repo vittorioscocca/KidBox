@@ -184,6 +184,28 @@
         }
       }
     },
+    "Non segnato come fatto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not marked as done"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No marcado como hecho"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non marqué comme fait"
+          }
+        }
+      }
+    },
     "Rileggi con Claude" : {
       "localizations" : {
         "en" : {

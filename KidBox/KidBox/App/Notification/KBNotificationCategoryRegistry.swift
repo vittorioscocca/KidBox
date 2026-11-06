@@ -19,7 +19,8 @@ enum KBNotificationCategoryRegistry {
             TreatmentNotificationCategory.category,
             FitnessPlanNotificationCategory.category,
             FamilyRequestNotificationCategory.category,
+            TodoReminderNotificationCategory.category,
         ] + KBInsightNotificationCategory.categories))
-        KBLog.app.kbDebug("Notification categories registered: terapie, piano fitness, richieste, insight")
+        KBLog.app.kbDebug("Notification categories registered: terapie, piano fitness, richieste, promemoria to-do, insight")
     }
 }
