@@ -360,7 +360,7 @@ struct FamilyPhotosView: View {
                                 }
                             }
                         }
-                        .padding(.bottom, isSelectMode ? 24 : 86)
+                        .padding(.bottom, isSelectMode ? 24 : 74)
                         .background(
                             GeometryReader { geo in
                                 Color.clear.preference(key: GridWidthKey.self, value: geo.size.width)
@@ -444,7 +444,7 @@ struct FamilyPhotosView: View {
         .background(.ultraThinMaterial, in: Capsule())
         .overlay(Capsule().strokeBorder(.primary.opacity(0.08)))
         .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
-        .padding(.bottom, 14)
+        .padding(.bottom, 2)
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
