@@ -120,6 +120,8 @@ Una famiglia in prova usa le Notizie **una volta sola**: un giorno di edizioni, 
 - Le letture della prova e degli account di test (`config/internalUsers`) non scrivono `lastReadAt`, quindi non fanno preparare la zona ogni mattina: chi legge così aspetta la generazione alla prima apertura del giorno (circa 50 secondi). L'addebito è uno per famiglia, quindi conta chi apre per primo.
 - I piani Pro e Max veri, compresi gli override dalla console, non passano da qui.
 
+**Il limite vale solo per prova e account interni** (verificato sul codice e su `news_editions` il 06/11/2026). `keepsZoneAlive` esclude solo `quota.period === "trial"` e `config/internalUsers`: una lettura di un piano Pro o Max scrive ancora `lastReadAt`, e `prepareNewsEditions` (05:30) prepara la zona per i 3 giorni dopo. Le edizioni del mattino non aperte non scalano messaggi: un Pro unico lettore che apre ogni 3 giorni fa generare circa 13 $ al mese contro un netto di 2,86 € (IVA e commissione 30%). Il Free col bonus non è escluso dal codice: non è verificato se riesce a leggere, perché un'edizione costa fino a 6 messaggi e il bonus è 5.
+
 ## Misurare l'uso (aggiunto il 09/10/2026)
 
 **GA4, sei eventi** (iOS e Android, stessi nomi): `news_opened` (con `items`, `events`, `units`, `preparing`), `news_item_opened` (`kind`, `category`, `level`), `news_item_saved` (`category`, `level`, `from`), `news_event_add`, `news_offers_searched` (`offers`, `units`), `news_activated`. I parametri sono dimensioni custom **non registrate in GA4**: si leggono gli eventi, non le spaccature. Per usarle vanno registrate (gli eventi passati restano «(not set)»).
