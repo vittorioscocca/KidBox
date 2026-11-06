@@ -1627,7 +1627,7 @@ function renderUsersTable(rows) {
   setVal('stat-platform-web',     fmtNum(web));
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty">Nessun utente nel periodo selezionato</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">Nessun utente nel periodo selezionato</td></tr>';
     renderPagination('user', 0, 1, 'userGoPage');
     return;
   }
@@ -1659,7 +1659,7 @@ function renderUsersTable(rows) {
     const lastOpenStr = fmtLastActive(u.lastOpenAt);
     const lastOpenTitle = u.lastOpenAt ? u.lastOpenAt.toLocaleString('it-IT') : 'Nessuna apertura registrata negli ultimi 90 giorni (web solo dal 02/10)';
     return `
-    <tr onclick="openUserActivity('${u.uid}')" style="cursor:pointer" title="Vedi cosa ha fatto su KidBox">
+    <tr class="ua-row" onclick="openUserActivity('${u.uid}')" title="Vedi cosa ha fatto su KidBox">
       <td data-label="Email" class="dim" style="font-size:12px" title="${u.email}">${emailShort}</td>
       <td data-label="Nome" style="font-size:13px;font-weight:500">${u.name}</td>
       <td data-label="Famiglia" class="dim" style="font-size:12px" title="${fid}">${famName}</td>
@@ -1668,6 +1668,7 @@ function renderUsersTable(rows) {
       <td data-label="Registrato" class="dim mono" style="font-size:11px">${createdStr}</td>
       <td data-label="Ultima apertura" class="mono" style="font-size:11px;white-space:nowrap" title="${lastOpenTitle}">${lastOpenStr}</td>
       <td data-label="App viva" class="dim mono" style="font-size:11px;white-space:nowrap" title="${lastActiveTitle}">${lastActiveStr}</td>
+      <td data-label="Attività" style="white-space:nowrap"><span class="ua-open">📊 Vedi ›</span></td>
     </tr>`;
   }).join('');
 }
@@ -2908,6 +2909,10 @@ nav.sidebar-nav {
 /* ── TABLE CARD ──────────────────────── */
 .tcard{background:var(--color-card);border:1px solid var(--color-brd);border-radius:var(--radius);overflow:clip;box-shadow:var(--shadow)}
 .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ua-row{cursor:pointer}
+.ua-row:hover td{background:var(--color-bg)}
+.ua-open{font-size:11px;font-weight:600;color:var(--color-orange);border:1px solid var(--color-brd);border-radius:999px;padding:3px 9px}
+.ua-row:hover .ua-open{border-color:var(--color-orange)}
 .tcard-hdr{padding:14px 18px;border-bottom:1px solid var(--color-brd);font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:space-between}
 .fam-search{background:var(--color-muted);border:1px solid var(--color-brd);border-radius:6px;color:var(--color-text);font-size:12px;font-weight:400;padding:6px 10px;width:220px;max-width:55%}
 .tcard-hdr .sub{font-weight:400;color:var(--color-dim);font-size:11px}
@@ -3981,9 +3986,10 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
               <th data-usort="createdAt" onclick="sortUsers('createdAt')" style="cursor:pointer">Registrato<span class="sort-arrow"> ↕</span></th>
               <th data-usort="lastOpenAt" onclick="sortUsers('lastOpenAt')" style="cursor:pointer" title="Ultima volta che l'utente ha aperto l'app iOS o Android (portata in primo piano; rientri entro 30 minuti contano come la stessa apertura) o ha caricato la web app. Storico: 90 giorni.">Ultima apertura<span class="sort-arrow"> ↓</span></th>
               <th data-usort="lastActiveAt" onclick="sortUsers('lastActiveAt')" style="cursor:pointer" title="Ultimo login o rinnovo del token, su qualsiasi client. Include l'attività in background (es. posizione condivisa): dice che l'app è installata e accesa, non che è stata aperta.">App viva<span class="sort-arrow"> ↕</span></th>
+              <th>Attività</th>
             </tr>
           </thead>
-          <tbody id="user-tbody"><tr><td colspan="8" class="empty">Caricamento…</td></tr></tbody>
+          <tbody id="user-tbody"><tr><td colspan="9" class="empty">Caricamento…</td></tr></tbody>
         </table></div>
         <div class="pagination" id="user-pagination" style="display:none">
           <span class="pag-info" id="user-pag-info"></span>
