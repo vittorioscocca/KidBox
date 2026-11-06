@@ -52,233 +52,6 @@
     " Meteo" : {
 
     },
-    "%lld tappa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld stop"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld parada"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld étape"
-          }
-        }
-      }
-    },
-    "%lld tappe" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld stops"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld paradas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld étapes"
-          }
-        }
-      }
-    },
-    "Anteprima AI" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI preview"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vista previa IA"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aperçu IA"
-          }
-        }
-      }
-    },
-    "Arrivo a %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Arriving in %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Llegada a %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Arrivée à %@"
-          }
-        }
-      }
-    },
-    "Il telefono non riesce a rispondere a questa domanda." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your phone can't answer this question."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El teléfono no puede responder a esta pregunta."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le téléphone ne peut pas répondre à cette question."
-          }
-        }
-      }
-    },
-    "Letto sul telefono: controlla i dati prima di confermare." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Read on your phone: check the details before confirming."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leído en el teléfono: comprueba los datos antes de confirmar."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lu sur le téléphone : vérifiez les données avant de confirmer."
-          }
-        }
-      }
-    },
-    "Non segnato come fatto" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not marked as done"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No marcado como hecho"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non marqué comme fait"
-          }
-        }
-      }
-    },
-    "Rileggi con Claude" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Read again with Claude"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volver a leer con Claude"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Relire avec Claude"
-          }
-        }
-      }
-    },
-    "Usa i tuoi messaggi AI gratuiti: uno per pagina." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uses your free AI messages: one per page."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usa tus mensajes de IA gratuitos: uno por página."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utilise vos messages IA gratuits : un par page."
-          }
-        }
-      }
-    },
-    "button.done" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Done"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hecho"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Terminé"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fine"
-          }
-        }
-      }
-    },
     "Cerco bonus e agevolazioni per le famiglie…" : {
       "localizations" : {
         "en" : {
@@ -455,72 +228,6 @@
         }
       }
     },
-    "Controllo fughe (HIBP)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Breach check (HIBP)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Control de filtraciones (HIBP)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contrôle des fuites (HIBP)"
-          }
-        }
-      }
-    },
-    "Giorno %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Day %lld"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Día %lld"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jour %lld"
-          }
-        }
-      }
-    },
-    "Google, Outlook e Apple" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Google, Outlook and Apple"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Google, Outlook y Apple"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Google, Outlook et Apple"
-          }
-        }
-      }
-    },
     "Guardo le nuove leggi che toccano le famiglie…" : {
       "localizations" : {
         "en" : {
@@ -543,24 +250,68 @@
         }
       }
     },
-    "Pomeriggio" : {
+    "Il telefono non riesce a rispondere a questa domanda." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afternoon"
+            "value" : "Your phone can't answer this question."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tarde"
+            "value" : "El teléfono no puede responder a esta pregunta."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Après-midi"
+            "value" : "Le téléphone ne peut pas répondre à cette question."
+          }
+        }
+      }
+    },
+    "Letto sul telefono: controlla i dati prima di confermare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read on your phone: check the details before confirming."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leído en el teléfono: comprueba los datos antes de confirmar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lu sur le téléphone : vérifiez les données avant de confirmer."
+          }
+        }
+      }
+    },
+    "Non segnato come fatto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not marked as done"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No marcado como hecho"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non marqué comme fait"
           }
         }
       }
@@ -587,68 +338,24 @@
         }
       }
     },
-    "Rigenera il link" : {
+    "Rileggi con Claude" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Regenerate link"
+            "value" : "Read again with Claude"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Regenerar enlace"
+            "value" : "Volver a leer con Claude"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Régénérer le lien"
-          }
-        }
-      }
-    },
-    "Disattiva" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Turn off"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desactivar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Désactiver"
-          }
-        }
-      }
-    },
-    "Non è stato possibile completare l'operazione. Riprova." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Something went wrong. Please try again."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se ha podido completar la operación. Inténtalo de nuevo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'opération n'a pas abouti. Réessayez."
+            "value" : "Relire avec Claude"
           }
         }
       }
@@ -675,361 +382,24 @@
         }
       }
     },
-    "Trasporti" : {
+    "Usa i tuoi messaggi AI gratuiti: uno per pagina." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transport"
+            "value" : "Uses your free AI messages: one per page."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transporte"
+            "value" : "Usa tus mensajes de IA gratuitos: uno por página."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transports"
-          }
-        }
-      }
-    },
-    "travel.period.evening" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Evening"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Noche"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Soir"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sera"
-          }
-        }
-      }
-    },
-    "Un link solo tuo: Google Calendar, Outlook o il Calendario di Apple lo leggono e mostrano gli eventi di famiglia che vedi tu. È in sola lettura: gli eventi si creano e si cambiano in KidBox." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A link just for you: Google Calendar, Outlook or Apple Calendar read it and show the family events you can see. It's read-only: events are created and changed in KidBox."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un enlace solo tuyo: Google Calendar, Outlook o el Calendario de Apple lo leen y muestran los eventos de familia que tú ves. Es de solo lectura: los eventos se crean y se cambian en KidBox."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un lien rien qu'à vous : Google Agenda, Outlook ou le Calendrier d'Apple le lisent et affichent les événements de famille que vous voyez. Il est en lecture seule : les événements se créent et se modifient dans KidBox."
-          }
-        }
-      }
-    },
-    "Crea il mio link" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create my link"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Crear mi enlace"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Créer mon lien"
-          }
-        }
-      }
-    },
-    "Aggiungi al Calendario dell'iPhone" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to iPhone Calendar"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir al Calendario del iPhone"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter au Calendrier de l'iPhone"
-          }
-        }
-      }
-    },
-    "Aggiungi a Google Calendar" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to Google Calendar"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir a Google Calendar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter à Google Agenda"
-          }
-        }
-      }
-    },
-    "Aggiungi a Outlook.com" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to Outlook.com"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir a Outlook.com"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter à Outlook.com"
-          }
-        }
-      }
-    },
-    "Outlook di lavoro (Microsoft 365)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Work Outlook (Microsoft 365)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Outlook del trabajo (Microsoft 365)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Outlook professionnel (Microsoft 365)"
-          }
-        }
-      }
-    },
-    "Se Google Calendar non si apre dal telefono, aggiungilo dal computer: calendar.google.com › Altri calendari › + › Da URL, e incolla il link." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "If Google Calendar doesn't open from your phone, add it from a computer: calendar.google.com › Other calendars › + › From URL, and paste the link."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si Google Calendar no se abre desde el móvil, añádelo desde el ordenador: calendar.google.com › Otros calendarios › + › Desde URL, y pega el enlace."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si Google Agenda ne s'ouvre pas depuis le téléphone, ajoutez-le depuis un ordinateur : calendar.google.com › Autres agendas › + › À partir de l'URL, et collez le lien."
-          }
-        }
-      }
-    },
-    "Il link attuale smetterà subito di funzionare: andrà aggiunto di nuovo in Google o Outlook." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The current link will stop working right away and will need to be added again in Google or Outlook."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El enlace actual dejará de funcionar enseguida: habrá que volver a añadirlo en Google u Outlook."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le lien actuel cessera aussitôt de fonctionner : il faudra l'ajouter à nouveau dans Google ou Outlook."
-          }
-        }
-      }
-    },
-    "Il link smetterà di funzionare e gli eventi spariranno da Google o Outlook al prossimo aggiornamento." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The link will stop working and the events will disappear from Google or Outlook at the next refresh."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El enlace dejará de funcionar y los eventos desaparecerán de Google u Outlook en la próxima actualización."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le lien cessera de fonctionner et les événements disparaîtront de Google ou Outlook à la prochaine mise à jour."
-          }
-        }
-      }
-    },
-    "Google rilegge i calendari iscritti quando vuole lui, di solito ogni 12-24 ore: un evento nuovo può comparire lì il giorno dopo. Outlook e Apple sono più rapidi." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Google refreshes subscribed calendars on its own schedule, usually every 12-24 hours: a new event may show up there the next day. Outlook and Apple are quicker."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Google vuelve a leer los calendarios suscritos cuando él decide, normalmente cada 12-24 horas: un evento nuevo puede aparecer allí al día siguiente. Outlook y Apple son más rápidos."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Google relit les calendriers abonnés quand il le décide, en général toutes les 12 à 24 heures : un nouvel événement peut y apparaître le lendemain. Outlook et Apple sont plus rapides."
-          }
-        }
-      }
-    },
-    "Chi ha questo link vede i tuoi eventi di famiglia. Se l'hai condiviso per sbaglio, rigeneralo: il vecchio smette subito di funzionare." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Anyone with this link can see your family events. If you shared it by mistake, regenerate it: the old one stops working right away."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quien tenga este enlace ve tus eventos de familia. Si lo compartiste por error, regéneralo: el anterior deja de funcionar enseguida."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toute personne qui a ce lien voit vos événements de famille. Si vous l'avez partagé par erreur, régénérez-le : l'ancien cesse aussitôt de fonctionner."
-          }
-        }
-      }
-    },
-    "Vedi KidBox in Google, Outlook e Apple" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See KidBox in Google, Outlook and Apple"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ver KidBox en Google, Outlook y Apple"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voir KidBox dans Google, Outlook et Apple"
-          }
-        }
-      }
-    },
-    "KidBox negli altri calendari" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KidBox in other calendars"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KidBox en otros calendarios"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KidBox dans les autres calendriers"
-          }
-        }
-      }
-    },
-    "Un link solo tuo, con gli eventi di famiglia che vedi tu, da aggiungere al calendario che usi già." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A link just for you, with the family events you can see, to add to the calendar you already use."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un enlace solo tuyo, con los eventos de familia que tú ves, para añadir al calendario que ya usas."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un lien rien qu'à vous, avec les événements de famille que vous voyez, à ajouter au calendrier que vous utilisez déjà."
+            "value" : "Utilise vos messages IA gratuits : un par page."
           }
         }
       }
@@ -4019,6 +3389,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld sur %lld"
+          }
+        }
+      }
+    },
+    "%lld tappa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld stop"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld parada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld étape"
+          }
+        }
+      }
+    },
+    "%lld tappe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld stops"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld paradas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld étapes"
           }
         }
       }
@@ -7160,6 +6574,28 @@
         }
       }
     },
+    "Aggiungi a Google Calendar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Google Calendar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir a Google Calendar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter à Google Agenda"
+          }
+        }
+      }
+    },
     "Aggiungi a lista spesa" : {
       "localizations" : {
         "en" : {
@@ -7200,6 +6636,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter aux Notes"
+          }
+        }
+      }
+    },
+    "Aggiungi a Outlook.com" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Outlook.com"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir a Outlook.com"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter à Outlook.com"
           }
         }
       }
@@ -7332,6 +6790,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter au calendrier"
+          }
+        }
+      }
+    },
+    "Aggiungi al Calendario dell'iPhone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to iPhone Calendar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir al Calendario del iPhone"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter au Calendrier de l'iPhone"
           }
         }
       }
@@ -10579,6 +10059,28 @@
         }
       }
     },
+    "Anteprima AI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI preview"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vista previa IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aperçu IA"
+          }
+        }
+      }
+    },
     "Anteprima import" : {
       "localizations" : {
         "en" : {
@@ -11811,6 +11313,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Arrivée"
+          }
+        }
+      }
+    },
+    "Arrivo a %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arriving in %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llegada a %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrivée à %@"
           }
         }
       }
@@ -13815,6 +13339,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "sachets"
+          }
+        }
+      }
+    },
+    "button.done" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hecho"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fine"
           }
         }
       }
@@ -16084,6 +15637,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Celui qui ouvre le lien rejoint la famille et reçoit la clé de chiffrement."
+          }
+        }
+      }
+    },
+    "Chi ha questo link vede i tuoi eventi di famiglia. Se l'hai condiviso per sbaglio, rigeneralo: il vecchio smette subito di funzionare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anyone with this link can see your family events. If you shared it by mistake, regenerate it: the old one stops working right away."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quien tenga este enlace ve tus eventos de familia. Si lo compartiste por error, regéneralo: el anterior deja de funcionar enseguida."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toute personne qui a ce lien voit vos événements de famille. Si vous l'avez partagé par erreur, régénérez-le : l'ancien cesse aussitôt de fonctionner."
           }
         }
       }
@@ -20779,6 +20354,28 @@
         }
       }
     },
+    "Controllo fughe (HIBP)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Breach check (HIBP)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Control de filtraciones (HIBP)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contrôle des fuites (HIBP)"
+          }
+        }
+      }
+    },
     "Controllo in corso…" : {
       "localizations" : {
         "en" : {
@@ -21711,6 +21308,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Créer une famille"
+          }
+        }
+      }
+    },
+    "Crea il mio link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create my link"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear mi enlace"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créer mon lien"
           }
         }
       }
@@ -24741,6 +24360,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Taille"
+          }
+        }
+      }
+    },
+    "Disattiva" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn off"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactiver"
           }
         }
       }
@@ -33423,6 +33064,28 @@
         }
       }
     },
+    "Giorno %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day %lld"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Día %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jour %lld"
+          }
+        }
+      }
+    },
     "Giorno %lld di %lld" : {
       "localizations" : {
         "en" : {
@@ -33886,6 +33549,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Google Agenda, depuis un ordinateur : calendar.google.com › Paramètres › choisissez l'agenda à gauche › « Intégrer l'agenda » › copiez l'« Adresse secrète au format iCal »."
+          }
+        }
+      }
+    },
+    "Google rilegge i calendari iscritti quando vuole lui, di solito ogni 12-24 ore: un evento nuovo può comparire lì il giorno dopo. Outlook e Apple sono più rapidi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google refreshes subscribed calendars on its own schedule, usually every 12-24 hours: a new event may show up there the next day. Outlook and Apple are quicker."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google vuelve a leer los calendarios suscritos cuando él decide, normalmente cada 12-24 horas: un evento nuevo puede aparecer allí al día siguiente. Outlook y Apple son más rápidos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google relit les calendriers abonnés quand il le décide, en général toutes les 12 à 24 heures : un nouvel événement peut y apparaître le lendemain. Outlook et Apple sont plus rapides."
+          }
+        }
+      }
+    },
+    "Google, Outlook e Apple" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google, Outlook and Apple"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google, Outlook y Apple"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google, Outlook et Apple"
           }
         }
       }
@@ -35818,6 +35525,28 @@
         }
       }
     },
+    "Il link attuale smetterà subito di funzionare: andrà aggiunto di nuovo in Google o Outlook." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The current link will stop working right away and will need to be added again in Google or Outlook."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El enlace actual dejará de funcionar enseguida: habrá que volver a añadirlo en Google u Outlook."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lien actuel cessera aussitôt de fonctionner : il faudra l'ajouter à nouveau dans Google ou Outlook."
+          }
+        }
+      }
+    },
     "Il link contiene la chiave: chi lo riceve può entrare. Resta nella chat o nella posta finché non viene usato. Vale 7 giorni, una volta sola, e puoi annullarlo qui sotto." : {
       "localizations" : {
         "en" : {
@@ -36059,6 +35788,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le lien ne mène pas à un calendrier (.ics)."
+          }
+        }
+      }
+    },
+    "Il link smetterà di funzionare e gli eventi spariranno da Google o Outlook al prossimo aggiornamento." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The link will stop working and the events will disappear from Google or Outlook at the next refresh."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El enlace dejará de funcionar y los eventos desaparecerán de Google u Outlook en la próxima actualización."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lien cessera de fonctionner et les événements disparaîtront de Google ou Outlook à la prochaine mise à jour."
           }
         }
       }
@@ -40116,6 +39867,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "KidBox lit les calendriers déjà configurés sur cet appareil (Google, iCloud, Outlook) et se met à jour tout seul quand ils changent. Les événements restent sur le téléphone : votre famille ne les voit pas, sauf si vous en copiez un dans KidBox."
+          }
+        }
+      }
+    },
+    "KidBox negli altri calendari" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox in other calendars"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox en otros calendarios"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox dans les autres calendriers"
           }
         }
       }
@@ -48125,6 +47898,28 @@
         }
       }
     },
+    "Nessun’altra voce nella famiglia usa la stessa password." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No other entry in the family uses the same password."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguna otra entrada de la familia usa la misma contraseña."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune autre entrée de la famille n'utilise le même mot de passe."
+          }
+        }
+      }
+    },
     "Nessuna" : {
       "comment" : "Event recurrence: none",
       "localizations" : {
@@ -49072,28 +48867,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Personne ne s'en occupe"
-          }
-        }
-      }
-    },
-    "Nessun’altra voce nella famiglia usa la stessa password." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No other entry in the family uses the same password."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ninguna otra entrada de la familia usa la misma contraseña."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune autre entrée de la famille n'utilise le même mot de passe."
           }
         }
       }
@@ -50288,6 +50061,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impossible de prévenir la personne qui a créé la famille : ses notifications sont peut-être désactivées. Demandez-le-lui de vive voix."
+          }
+        }
+      }
+    },
+    "Non è stato possibile completare l'operazione. Riprova." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong. Please try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido completar la operación. Inténtalo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'opération n'a pas abouti. Réessayez."
           }
         }
       }
@@ -55194,6 +54989,28 @@
         }
       }
     },
+    "Outlook di lavoro (Microsoft 365)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work Outlook (Microsoft 365)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outlook del trabajo (Microsoft 365)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outlook professionnel (Microsoft 365)"
+          }
+        }
+      }
+    },
     "Outlook, dal computer: outlook.com › Impostazioni › Calendario › Calendari condivisi › «Pubblica un calendario» › scegli il calendario e «Può visualizzare tutti i dettagli» › Pubblica › copia il link ICS." : {
       "localizations" : {
         "en" : {
@@ -58317,6 +58134,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Poudre"
+          }
+        }
+      }
+    },
+    "Pomeriggio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afternoon"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarde"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Après-midi"
           }
         }
       }
@@ -64697,6 +64536,28 @@
         }
       }
     },
+    "Rigenera il link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regenerate link"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regenerar enlace"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Régénérer le lien"
+          }
+        }
+      }
+    },
     "Rigenera piano" : {
       "localizations" : {
         "en" : {
@@ -68762,6 +68623,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Si les Echo de la maison sont sur le même compte Amazon, ils fonctionnent déjà et vous n'avez rien à faire. Reliez le vôtre uniquement si vous avez un compte Amazon distinct : ce que vous dictez apparaîtra alors comme ajouté par vous."
+          }
+        }
+      }
+    },
+    "Se Google Calendar non si apre dal telefono, aggiungilo dal computer: calendar.google.com › Altri calendari › + › Da URL, e incolla il link." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If Google Calendar doesn't open from your phone, add it from a computer: calendar.google.com › Other calendars › + › From URL, and paste the link."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si Google Calendar no se abre desde el móvil, añádelo desde el ordenador: calendar.google.com › Otros calendarios › + › Desde URL, y pega el enlace."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si Google Agenda ne s'ouvre pas depuis le téléphone, ajoutez-le depuis un ordinateur : calendar.google.com › Autres agendas › + › À partir de l'URL, et collez le lien."
           }
         }
       }
@@ -75397,6 +75280,28 @@
         }
       }
     },
+    "Trasporti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transport"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transporte"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transports"
+          }
+        }
+      }
+    },
     "Trasporto" : {
       "localizations" : {
         "en" : {
@@ -75415,6 +75320,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Transport"
+          }
+        }
+      }
+    },
+    "travel.period.evening" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Evening"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noche"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soir"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sera"
           }
         }
       }
@@ -76508,6 +76442,50 @@
         }
       }
     },
+    "Un link solo tuo, con gli eventi di famiglia che vedi tu, da aggiungere al calendario che usi già." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A link just for you, with the family events you can see, to add to the calendar you already use."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un enlace solo tuyo, con los eventos de familia que tú ves, para añadir al calendario que ya usas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un lien rien qu'à vous, avec les événements de famille que vous voyez, à ajouter au calendrier que vous utilisez déjà."
+          }
+        }
+      }
+    },
+    "Un link solo tuo: Google Calendar, Outlook o il Calendario di Apple lo leggono e mostrano gli eventi di famiglia che vedi tu. È in sola lettura: gli eventi si creano e si cambiano in KidBox." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A link just for you: Google Calendar, Outlook or Apple Calendar read it and show the family events you can see. It's read-only: events are created and changed in KidBox."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un enlace solo tuyo: Google Calendar, Outlook o el Calendario de Apple lo leen y muestran los eventos de familia que tú ves. Es de solo lectura: los eventos se crean y se cambian en KidBox."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un lien rien qu'à vous : Google Agenda, Outlook ou le Calendrier d'Apple le lisent et affichent les événements de famille que vous voyez. Il est en lecture seule : les événements se créent et se modifient dans KidBox."
+          }
+        }
+      }
+    },
     "Un membro della famiglia" : {
       "localizations" : {
         "en" : {
@@ -76659,6 +76637,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un seul horaire : une dose tous les %lld jours."
+          }
+        }
+      }
+    },
+    "Un’altra voce usa la stessa password." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Another entry uses the same password."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otra entrada usa la misma contraseña."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une autre entrée utilise le même mot de passe."
           }
         }
       }
@@ -76859,28 +76859,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unité"
-          }
-        }
-      }
-    },
-    "Un’altra voce usa la stessa password." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Another entry uses the same password."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otra entrada usa la misma contraseña."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une autre entrée utilise le même mot de passe."
           }
         }
       }
@@ -77812,6 +77790,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Voir l'image du document"
+          }
+        }
+      }
+    },
+    "Vedi KidBox in Google, Outlook e Apple" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See KidBox in Google, Outlook and Apple"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver KidBox en Google, Outlook y Apple"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir KidBox dans Google, Outlook et Apple"
           }
         }
       }
@@ -79205,6 +79205,7 @@
       }
     },
     "Voli" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
