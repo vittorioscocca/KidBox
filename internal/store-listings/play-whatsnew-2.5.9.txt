@@ -1,0 +1,20 @@
+<it-IT>
+• Promemoria dei to-do: premi «Fatto» sulla notifica o sulla sveglia urgente e il to-do si chiude, senza aprire l'app.
+• Assistente: con il «+» puoi scegliere anche i documenti che hai già in KidBox, senza caricarli di nuovo. Quelli d'identità restano fuori.
+• Scegliendo un documento da KidBox senza rete e senza copia sul telefono, te lo dice subito invece di farti aspettare.
+</it-IT>
+<en-US>
+• To-do reminders: tap "Done" on the notification or the urgent alarm and the to-do is closed, without opening the app.
+• Assistant: the "+" now also lets you pick documents you already have in KidBox, without uploading them again. Identity documents stay out.
+• If you choose a document from KidBox with no connection and no copy on your phone, you're told straight away instead of being kept waiting.
+</en-US>
+<fr-FR>
+• Rappels des tâches : touchez « Fait » sur la notification ou l'alarme urgente et la tâche est terminée, sans ouvrir l'app.
+• Assistant : le « + » permet aussi de choisir les documents déjà présents dans KidBox, sans les importer à nouveau. Les pièces d'identité restent à l'écart.
+• Si vous choisissez un document depuis KidBox sans connexion ni copie sur le téléphone, vous êtes prévenu tout de suite au lieu d'attendre.
+</fr-FR>
+<es-ES>
+• Recordatorios de tareas: pulsa «Hecho» en la notificación o en la alarma urgente y la tarea se cierra, sin abrir la app.
+• Asistente: con el «+» también puedes elegir los documentos que ya tienes en KidBox, sin volver a subirlos. Los de identidad quedan fuera.
+• Si eliges un documento desde KidBox sin conexión y sin copia en el teléfono, te lo dice enseguida en lugar de hacerte esperar.
+</es-ES>
