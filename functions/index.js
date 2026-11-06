@@ -8409,6 +8409,63 @@ exports.getAuthUsersData = onCall(
     },
 );
 
+/**
+ * Cosa ha fatto un utente, per la scheda della console: quante azioni per
+ * sezione oggi, in 7 e in 30 giorni. Solo conteggi: gli eventi non contengono
+ * titoli né contenuti. Legge i grezzi di quell'utente all'apertura della
+ * scheda, una lettura per evento degli ultimi 30 giorni.
+ */
+exports.getUserActivity = onCall(
+    {region: "europe-west1", maxInstances: 5},
+    async (request) => {
+      const caller = request.auth?.uid;
+      if (!caller) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+      if (!ADMIN_UIDS.includes(caller)) throw new HttpsError("permission-denied", "Non autorizzato.");
+      const uid = String(request.data?.uid || "");
+      if (!uid) throw new HttpsError("invalid-argument", "Utente mancante.");
+
+      const DAY = 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      const romeDay = (ms) => new Intl.DateTimeFormat("en-CA", {timeZone: "Europe/Rome"}).format(ms);
+      const today = romeDay(now);
+      const snap = await admin.firestore().collection("analyticsEvents")
+          .where("uid", "==", uid)
+          .where("ts", ">=", admin.firestore.Timestamp.fromMillis(now - 30 * DAY))
+          .select("name", "feature", "ts", "props").get();
+
+      const ACTIONS = {
+        content_created: "created",
+        content_updated: "updated",
+        content_completed: "completed",
+        content_retrieved: "retrieved",
+        ai_interaction: "ai",
+      };
+      const rows = new Map();
+      const add = (key, feature, action, ms, n) => {
+        if (!rows.has(key)) rows.set(key, {feature, action, today: 0, d7: 0, d30: 0});
+        const r = rows.get(key);
+        r.d30 += n;
+        if (now - ms < 7 * DAY) r.d7 += n;
+        if (romeDay(ms) === today) r.today += n;
+      };
+      for (const doc of snap.docs) {
+        const e = doc.data();
+        const ms = e.ts?.toMillis?.() || 0;
+        if (!ms) continue;
+        if (e.name === "session_start") {
+          add("session", "app", "opened", ms, 1);
+        } else if (ACTIONS[e.name]) {
+          // `content_retrieved` arriva a lotti: `count` sono le letture del lotto.
+          const count = e.props?.count;
+          const n = e.name === "content_retrieved" && typeof count === "number" && count > 0 ? count : 1;
+          const feature = e.feature || "unknown";
+          add(`${feature}:${ACTIONS[e.name]}`, feature, ACTIONS[e.name], ms, n);
+        }
+      }
+      return {rows: [...rows.values()], events: snap.size};
+    },
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // BROADCAST — invio manuale di notifiche dalla console admin
 //

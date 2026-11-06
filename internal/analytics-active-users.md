@@ -440,6 +440,10 @@ sarebbero 0 e leggerebbero come un fallimento del prodotto. `retrievedTotal` e
 `days` giorni a partire da `date`. Idempotente. Serve per il primo giorno, per i
 backfill dopo un cambio di definizione, e per il bottone ↻ della console.
 
+La scheda di un utente in console (`getUserActivity`, dal 06/11/2026, scelta dell'utente) è
+l'eccezione: legge i grezzi di quell'uid degli ultimi 30 giorni, solo all'apertura, e mostra
+conteggi per sezione, Salute e Password comprese. Nessun titolo o contenuto.
+
 La console legge i rollup, non scansiona mai `analyticsEvents`: costo di lettura
 costante mentre gli eventi crescono. TTL 90gg sui grezzi.
 

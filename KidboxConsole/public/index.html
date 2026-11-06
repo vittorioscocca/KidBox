@@ -1659,7 +1659,7 @@ function renderUsersTable(rows) {
     const lastOpenStr = fmtLastActive(u.lastOpenAt);
     const lastOpenTitle = u.lastOpenAt ? u.lastOpenAt.toLocaleString('it-IT') : 'Nessuna apertura registrata negli ultimi 90 giorni (web solo dal 02/10)';
     return `
-    <tr>
+    <tr onclick="openUserActivity('${u.uid}')" style="cursor:pointer" title="Vedi cosa ha fatto su KidBox">
       <td data-label="Email" class="dim" style="font-size:12px" title="${u.email}">${emailShort}</td>
       <td data-label="Nome" style="font-size:13px;font-weight:500">${u.name}</td>
       <td data-label="Famiglia" class="dim" style="font-size:12px" title="${fid}">${famName}</td>
@@ -1671,6 +1671,30 @@ function renderUsersTable(rows) {
     </tr>`;
   }).join('');
 }
+
+// Scheda di un utente: conteggi per sezione, senza titoli né contenuti.
+const UA_FEATURES = { app:'App', documents:'Documenti', chat:'Chat', photoVideo:'Foto e video', health:'Salute', todo:'To-do', grocery:'Spesa', note:'Note', calendar:'Calendario', expenses:'Spese', wallet:'Wallet', passwords:'Password', vehicles:'Veicoli', homeItems:'Casa', pets:'Animali', familyLocation:'Posizione', travel:'Viaggi' };
+const UA_ACTIONS = { opened:'aperture', created:'creati', updated:'modificati', completed:'completati', retrieved:'aperti', ai:'messaggi AI' };
+window.openUserActivity = async function openUserActivity(uid) {
+  const modal = document.getElementById('user-activity-modal');
+  const body = document.getElementById('user-activity-body');
+  const u = _allUsersRows.find(x => x.uid === uid);
+  document.getElementById('user-activity-title').textContent = u ? `${u.name} · ${u.email}` : uid;
+  body.innerHTML = '<div class="dim small">Caricamento…</div>';
+  modal.style.display = 'flex';
+  try {
+    const { data } = await httpsCallable(functions, 'getUserActivity')({ uid });
+    const rows = (data.rows || []).sort((a, b) => (b.action === 'opened') - (a.action === 'opened') || b.d30 - a.d30);
+    const label = r => `${UA_FEATURES[r.feature] || r.feature} · ${UA_ACTIONS[r.action] || r.action}`;
+    const cell = n => n ? fmtNum(n) : '<span class="dim">—</span>';
+    body.innerHTML = rows.length
+      ? tableCard(['Cosa', 'Oggi', '7 giorni', '30 giorni'], rows.map(r => [label(r), cell(r.today), cell(r.d7), cell(r.d30)]))
+      : '<div class="dim small">Nessuna azione negli ultimi 30 giorni.</div>';
+  } catch (e) {
+    body.innerHTML = '';
+    body.textContent = `Errore: ${e.message}`;
+  }
+};
 
 // ── load ──────────────────────────────────
 let _planData = { free:0, pro:0, max:0 };
@@ -4122,6 +4146,17 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 
 <!-- MODAL DETTAGLIO TICKET -->
 <!-- GLOSSARIO UTENTI ATTIVI -->
+<div class="modal-overlay" id="user-activity-modal" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" style="max-width:640px">
+    <style>#user-activity-body th,#user-activity-body td{color:#f0ede8}#user-activity-body .dim{color:var(--color-dim)}#user-activity-body{color:#f0ede8}</style>
+    <button class="modal-close" onclick="document.getElementById('user-activity-modal').style.display='none'">✕</button>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--color-orange);margin-bottom:6px">Cosa ha fatto su KidBox</div>
+    <div id="user-activity-title" style="font-size:16px;font-weight:600;margin-bottom:14px;color:#f0ede8"></div>
+    <div id="user-activity-body"></div>
+    <div style="font-size:11px;color:var(--color-dim);margin-top:14px;line-height:1.6">Solo conteggi, senza titoli né contenuti. Le aperture contano le app iOS e Android; il web compare con le azioni che fa. Le letture non sono registrate in tutte le sezioni.</div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="au-info-modal" onclick="if(event.target===this)this.style.display='none'">
   <div class="modal-box" style="max-width:640px">
     <button class="modal-close" onclick="document.getElementById('au-info-modal').style.display='none'">✕</button>
