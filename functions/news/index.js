@@ -1066,15 +1066,16 @@ function build(deps) {
 
   // ── prepareNewsEditions (ogni mattina) ─────────────────────────────────────
 
-  // Le edizioni delle zone lette negli ultimi giorni si preparano all'alba,
-  // così chi apre la scheda trova tutto pronto. Le zone che nessuno legge da
-  // tre giorni non si preparano più: si rigenerano alla prossima apertura.
+  // Le edizioni delle zone lette nelle ultime 24 ore si preparano all'alba,
+  // così chi apre ogni giorno trova tutto pronto. Le altre si generano alla
+  // prossima apertura: un'edizione del mattino non aperta non scala messaggi,
+  // quindi una finestra più lunga fa pagare a noi edizioni che nessuno legge.
   const prepareNewsEditions = onSchedule(
       {schedule: "every day 05:30", timeZone: "Europe/Rome", region: REGION, maxInstances: 1, timeoutSeconds: 300},
       async () => {
         const cfg = await loadNewsConfig();
         if (!cfg.enabled) return;
-        const cutoff = admin.firestore.Timestamp.fromMillis(Date.now() - 3 * DAY_MS);
+        const cutoff = admin.firestore.Timestamp.fromMillis(Date.now() - DAY_MS);
         const snap = await db().collection(EDITIONS).where("lastReadAt", ">=", cutoff).get();
         const scopes = new Map();
         for (const doc of snap.docs) {

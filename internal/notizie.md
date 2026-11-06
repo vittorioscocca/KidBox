@@ -71,7 +71,8 @@ lingua leggono la stessa. Si generano **in coda** (`news_jobs` → trigger
 `buildNewsEdition`, 540 s), non dentro la callable: una generazione dura 40-100 s.
 `getFamilyNews` mette in coda ciò che manca, serve ciò che c'è e risponde
 `status: "preparing"`; il client richiama ogni 6 s. Alle 05:30
-`prepareNewsEditions` prepara le zone lette negli ultimi 3 giorni. Contano solo le
+`prepareNewsEditions` prepara le zone lette nelle ultime 24 ore (3 giorni fino al
+06/11/2026). Contano solo le
 letture che scrivono `lastReadAt`: quelle dei piani a pagamento sì, quelle della prova
 Pro e degli account interni no. Le edizioni del mattino non aperte non scalano messaggi.
 
