@@ -8765,6 +8765,8 @@ exports.landingPing = require("./landingTraffic").landingPing;
 exports.getLandingStats = require("./landingStats").build({ADMIN_UIDS});
 // Snapshot giornaliero di Search Console e GA4 su Firestore (reportSnapshots).
 exports.reportSnapshotDaily = require("./reportSnapshots").reportSnapshotDaily;
+// Play (crash, ANR, recensioni) e billing: stesso modulo, altro service account.
+exports.reportSnapshotStoreDaily = require("./reportSnapshots").reportSnapshotStoreDaily;
 
 // «Mi piace l'idea» della landing: un like per IP, IP mai salvato. Il perché in
 // `landingLikes.js`.

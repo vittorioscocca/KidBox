@@ -31,6 +31,9 @@ const path = require("node:path");
 
 const PACKAGE = "it.vittorioscocca.kidbox";
 const BUCKET = "pubsite_prod_rev_00873204915190884037";
+const { readSnapshot } = require("./lib/snapshot");
+const C = require("../functions/reportCollectors/play");
+const { errorCounts, reviews } = C;
 const SA = "play-purchase-validator@kidbox-42cd7.iam.gserviceaccount.com";
 const TZ = "Europe/Rome";
 
@@ -89,60 +92,6 @@ async function readMonths(tok, kind, dimension, months) {
 }
 
 // ------------------------------------------------------------ Reporting API
-
-async function errorCounts(tok, startIso, endIso) {
-  const day = (iso) => {
-    const [y, m, d] = iso.split("-").map(Number);
-    return { year: y, month: m, day: d, timeZone: { id: "America/Los_Angeles" } };
-  };
-  const res = await fetch(
-    `https://playdeveloperreporting.googleapis.com/v1beta1/apps/${PACKAGE}/errorCountMetricSet:query`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        timelineSpec: { aggregationPeriod: "DAILY", startTime: day(startIso), endTime: day(endIso) },
-        metrics: ["errorReportCount", "distinctUsers"],
-        dimensions: ["reportType"],
-        pageSize: 1000,
-      }),
-    }
-  );
-  const json = await res.json();
-  if (!res.ok) throw new Error(`Reporting API: ${json.error?.message || res.status}`);
-  return (json.rows || []).map((r) => {
-    const t = r.startTime;
-    const metrics = Object.fromEntries(r.metrics.map((m) => [m.metric, Number(m.decimalValue?.value || 0)]));
-    return {
-      date: `${t.year}-${String(t.month).padStart(2, "0")}-${String(t.day).padStart(2, "0")}`,
-      type: r.dimensions?.[0]?.stringValue || "?",
-      reports: metrics.errorReportCount || 0,
-      users: metrics.distinctUsers || 0,
-    };
-  });
-}
-
-// ------------------------------------------------------------ Recensioni
-
-async function reviews(tok) {
-  const res = await fetch(
-    `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE}/reviews?maxResults=20`,
-    { headers: { Authorization: `Bearer ${tok}` } }
-  );
-  const json = await res.json();
-  if (!res.ok) throw new Error(`Publisher API: ${json.error?.message || res.status}`);
-  return (json.reviews || []).map((r) => {
-    const c = r.comments?.[0]?.userComment || {};
-    return {
-      date: new Date(Number(c.lastModified?.seconds || 0) * 1000).toISOString().slice(0, 10),
-      stars: c.starRating,
-      version: c.appVersionName,
-      lang: c.reviewerLanguage,
-      text: (c.text || "").replace(/\s+/g, " ").trim().slice(0, 160),
-      replied: (r.comments || []).some((x) => x.developerComment),
-    };
-  });
-}
 
 // ------------------------------------------------------------ main
 
@@ -237,14 +186,20 @@ async function main() {
   const lastRating = ratings.sort((a, b) => a.Date.localeCompare(b.Date)).at(-1);
   out.rating = lastRating ? { date: lastRating.Date, total: Number(lastRating["Total Average Rating"]) } : null;
 
-  // Crash e ANR, freschi.
-  const rtok = saToken("playdeveloperreporting");
-  const errs = await errorCounts(rtok, shiftDay(yesterday, -13), yesterday);
-  out.errors = errs;
-
-  // Recensioni.
-  const ptok = saToken("androidpublisher");
-  out.reviews = await reviews(ptok);
+  // Crash, ANR e recensioni: dallo snapshot di `reportSnapshotStoreDaily`
+  // (stessa raccolta, functions/reportCollectors/play.js), altrimenti dal vivo.
+  // `--live` forza il vivo. Le installazioni restano sempre locali (export
+  // manuale e bucket).
+  let snap = process.argv.includes("--live") ? { reason: "richiesto" } : await readSnapshot("play");
+  if (snap.payload) {
+    out.errors = snap.payload.errors;
+    out.reviews = snap.payload.reviews;
+    out.origin = `crash/ANR e recensioni da snapshot Firestore delle ${new Date(snap.computedAt).toLocaleTimeString("it-IT", { timeZone: "Europe/Rome", hour: "2-digit", minute: "2-digit" })} (${Math.round(snap.ageH)} h fa)`;
+  } else {
+    out.errors = await errorCounts(saToken("playdeveloperreporting"), shiftDay(yesterday, -13), yesterday);
+    out.reviews = await reviews(saToken("androidpublisher"));
+    out.origin = `crash/ANR e recensioni dal vivo (${snap.reason})`;
+  }
 
   if (asJson) {
     process.stdout.write(JSON.stringify(out, null, 2) + "\n");
@@ -258,6 +213,7 @@ const pad = (s, n) => String(s ?? "-").padEnd(n);
 function print(o) {
   const L = [];
   L.push(`# Google Play KidBox — ieri ${o.yesterday} (${o.package})`);
+  if (o.origin) L.push(`Fonte: ${o.origin}.`);
   L.push("");
   if (o.manualBase) {
     const s0 = o.manualBase.series;

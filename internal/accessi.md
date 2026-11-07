@@ -70,6 +70,7 @@ Dopo un deploy delle funzioni: warning ed errori recenti con
 |---|---|
 | `kidbox-42cd7@appspot.gserviceaccount.com` | identità di runtime di default delle funzioni |
 | `firebase-adminsdk-fbsvc@kidbox-42cd7.iam.gserviceaccount.com` | Admin SDK di Firebase |
+| `report-snapshotter@kidbox-42cd7.iam.gserviceaccount.com` | creato il 07/11/2026: esegue `reportSnapshotStoreDaily` (snapshot di Play e billing su Firestore). Ruoli: `datastore.user`, `bigquery.jobUser`, lettore del dataset `billing_export` (ACL del dataset, non IAM di progetto), `tokenCreator` su `play-purchase-validator`. Il service agent di Scheduler ha `tokenCreator` su di lui |
 | `play-purchase-validator@kidbox-42cd7.iam.gserviceaccount.com` | validazione ricevute Play; lo si **impersona** (scope `androidpublisher`) per leggere e modificare abbonamenti e scheda Play |
 | `ga4-reader@kidbox-42cd7.iam.gserviceaccount.com` | lettura di GA4 e Search Console (scope `analytics.readonly`, `webmasters.readonly`). Dal 07/11/2026 ha anche `roles/datastore.user` perché la funzione `reportSnapshotDaily` gira come lui e scrive su Firestore (`reportSnapshots`). Il service agent di Cloud Scheduler ha `roles/iam.serviceAccountTokenCreator` su di lui (concesso il 07/11/2026): senza, il job `reportSnapshotDaily` fallisce con codice 7 |
 | `52613538008-compute@developer.gserviceaccount.com`, `ais-gemini-key-…` | di default o legati a una chiave Gemini; non usati dal lavoro quotidiano |

@@ -19,14 +19,14 @@ Deploy, funzioni, Firebase, Apple, Play, Google Ads e GitHub sono in
 | Search Console | `search-console-daily-report.js` (da snapshot Firestore) | SA `ga4-reader` | 2-3 giorni |
 | Console (Auth + Firestore) | `console-daily-report.js` | token utente gcloud | tempo reale |
 | App Store Connect | `appstore-daily-report.js` | chiave API `asc-api-key` | 1-2 giorni |
-| Google Play | `play-daily-report.js` | utente gcloud (bucket) + SA `play-purchase-validator` | crash/ANR freschi; installazioni **da export manuale** |
+| Google Play | `play-daily-report.js` (crash/ANR e recensioni da snapshot Firestore; installazioni locali) | utente gcloud (bucket) + SA `play-purchase-validator`; lo snapshot lo scrive `report-snapshotter` | crash/ANR freschi; installazioni **da export manuale** |
 | Meta Ads | `meta-ads-daily-report.js` | `meta-ads-token` | 1 giorno |
 | Anthropic | `anthropic-daily-report.js` | `anthropic-admin-key` | 1 giorno |
-| Google Cloud billing | `gcloud-billing-daily-report.js` | utente gcloud (BigQuery) | arriva il giorno dopo, spesso dopo le 08:30 |
+| Google Cloud billing | `gcloud-billing-daily-report.js` (da snapshot Firestore) | utente gcloud (`bq`) dal vivo; lo snapshot lo scrive `report-snapshotter` | le righe di ieri arrivano in mattinata (ultima volta alle 06:57) |
 | App Check | `appcheck-daily-report.js` | utente gcloud (Monitoring) | 1 giorno |
 | Google Ads | **nessuno** | nessun accesso | solo screenshot dell'utente + sezione «Google Ads» di GA4 |
 
-**Snapshot Firestore.** Per GA4 e Search Console il report legge
+**Snapshot Firestore.** Per GA4, Search Console (07:30), Play (crash, ANR, recensioni) e billing (11:00) il report legge
 `reportSnapshots/{fonte}_{YYYY-MM-DD}` (scritto ogni giorno alle 07:30 da
 `reportSnapshotDaily`, raccolta in `functions/reportCollectors/`), con
 ripiego sul vivo se manca. Lo storico resta lì: le API ne tengono poco.
