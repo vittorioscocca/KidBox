@@ -38,6 +38,8 @@ Esegui in bash, dalla cartella `/Users/vscocca/KidBox`:
     node scripts/search-console-daily-report.js
     node scripts/appcheck-daily-report.js
 
+**Snapshot su Firestore (dal 07/11/2026).** GA4 e Search Console non si interrogano più a ogni report: la funzione `reportSnapshotDaily` (07:30, Roma) li legge e scrive il risultato in `reportSnapshots/{fonte}_{data}` (campo `payloadJson` = lo stesso oggetto di `--json`). I due script **leggono lo snapshot di oggi** e lo dichiarano nella riga `Fonte:` in testa; se manca, è fallito (`ok:false`) o ha più di 30 ore ripiegano da soli sul vivo e dicono perché. `--live` forza il vivo; `--day` e `--insights-from` (GA4) vanno sempre dal vivo. Il codice di raccolta è unico, in `functions/reportCollectors/`, usato da funzione e script: una modifica alle query si fa lì. Se la riga `Fonte:` dice «dal vivo (snapshot … non ancora scritto)» prima delle 07:35, è normale; dopo, guarda i log della funzione.
+
 **GA4** (`ga4-daily-report.js`): interroga la GA4 Data API (property 523225071, unica per app iOS, app Android, web app e landing) e stampa: serie di 14 giorni per piattaforma, eventi chiave di ieri e dell'altro ieri contro la media dei 7 giorni precedenti, spaccature per parametro, pagine e sorgenti web, paesi. Prende il token impersonando il service account `ga4-reader@kidbox-42cd7.iam.gserviceaccount.com` (Visualizzatore della property).
 
 **Console** (`console-daily-report.js`): legge alla fonte quello che mostra la console admin — Firebase Auth (account, registrazioni, «app viva»), Firestore (famiglie e membri, piani, rollup `metrics/{date}` con DAU/WAU/MAU e cross-member read, per feature, costi AI del mese, ticket «new»). Usa il token gcloud dell'utente. Il report contiene solo aggregati.

@@ -22,10 +22,10 @@
  *
  * Solo lettura.
  */
-
 const { execFileSync } = require("node:child_process");
-
-const SITE = "sc-domain:kidboxapp.com";
+const { readSnapshot } = require("./lib/snapshot");
+const C = require("../functions/reportCollectors/searchConsole");
+const { SITE } = C;
 
 /**
  * Obiettivi concordati il 16/09/2026, partendo da 11 impressioni/giorno, 0
@@ -40,18 +40,7 @@ const GOALS = [
   { by: "2026-11-15", brandPosition: 1, impressionsPerDay: 100, clicksPerDay: 5, pagesWithImpressions: 80, nonBrandShare: 0.7, storeFromGoogle: 1 },
   { by: "2026-12-31", brandPosition: 1, impressionsPerDay: 300, clicksPerDay: 15, pagesWithImpressions: 150, nonBrandShare: 0.8, storeFromGoogle: 3 },
 ];
-const API = `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(SITE)}`;
 const SERVICE_ACCOUNT = "ga4-reader@kidbox-42cd7.iam.gserviceaccount.com";
-const TZ = "Europe/Rome";
-
-function romeDate(d = new Date()) {
-  return d.toLocaleDateString("sv-SE", { timeZone: TZ });
-}
-function shiftDay(iso, n) {
-  const d = new Date(`${iso}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-}
 
 function token() {
   try {
@@ -76,111 +65,15 @@ function token() {
   }
 }
 
-async function call(tok, path, body) {
-  const res = await fetch(`${API}/${path}`, {
-    method: body ? "POST" : "GET",
-    headers: { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const e = json.error || {};
-    const err = new Error(`${path}: ${e.message || res.status}`);
-    err.status = res.status;
-    throw err;
-  }
-  return json;
-}
-
-async function query(tok, startDate, endDate, dimensions, extra = {}) {
-  const json = await call(tok, "searchAnalytics/query", {
-    startDate,
-    endDate,
-    dimensions,
-    rowLimit: 250,
-    dataState: "final",
-    ...extra,
-  });
-  return (json.rows || []).map((r) => ({
-    keys: r.keys || [],
-    clicks: r.clicks || 0,
-    impressions: r.impressions || 0,
-    ctr: r.ctr || 0,
-    position: r.position || 0,
-  }));
-}
-
-const sum = (rows, k) => rows.reduce((a, r) => a + r[k], 0);
-function totals(rows) {
-  const clicks = sum(rows, "clicks");
-  const impressions = sum(rows, "impressions");
-  // Posizione media pesata sulle impressioni, come fa la UI.
-  const position = impressions ? rows.reduce((a, r) => a + r.position * r.impressions, 0) / impressions : 0;
-  return { clicks, impressions, ctr: impressions ? clicks / impressions : 0, position };
-}
-
-async function main() {
-  const asJson = process.argv.includes("--json");
-  const tok = token();
-  const out = { site: SITE, notes: [] };
-
-  // Ultimo giorno disponibile: si chiedono gli ultimi 10 giorni per data e si
-  // prende il più recente con almeno un'impressione.
-  const today = romeDate();
-  const probe = await query(tok, shiftDay(today, -10), today, ["date"]);
-  const days = probe.map((r) => r.keys[0]).sort();
-  const last = days[days.length - 1];
-  if (!last) {
-    out.notes.push("Nessun dato negli ultimi 10 giorni: property vuota o service account senza accesso.");
-    out.empty = true;
-    if (asJson) process.stdout.write(JSON.stringify(out, null, 2) + "\n");
-    else print(out);
-    return;
-  }
-  out.lastDay = last;
-  out.lagDays = Math.round((Date.parse(today) - Date.parse(last)) / 86400000);
-
-  const d7s = shiftDay(last, -6);
-  const p7s = shiftDay(last, -13);
-  const p7e = shiftDay(last, -7);
-  const d28s = shiftDay(last, -27);
-  const p28s = shiftDay(last, -55);
-  const p28e = shiftDay(last, -28);
-
-  // Serie giornaliera 28 gg (per il grafico) e totali con confronto.
-  const series = await query(tok, d28s, last, ["date"]);
-  const byDate = Object.fromEntries(series.map((r) => [r.keys[0], r]));
-  out.series = [...Array(28)].map((_, i) => {
-    const d = shiftDay(d28s, i);
-    const r = byDate[d] || { clicks: 0, impressions: 0, ctr: 0, position: 0 };
-    return { date: d, clicks: r.clicks, impressions: r.impressions, position: r.position };
-  });
-  out.last = byDate[last] ? totals([byDate[last]]) : totals([]);
-  out.last7 = totals(series.filter((r) => r.keys[0] >= d7s));
-  out.prev7 = totals(await query(tok, p7s, p7e, ["date"]));
-  out.last28 = totals(series);
-  out.prev28 = totals(await query(tok, p28s, p28e, ["date"]));
-
-  // Top query e pagine, 28 gg (le 7 gg sono troppo poche a questi volumi).
-  const top = (rows, n) => rows.sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions).slice(0, n);
-  out.topQueries = top(await query(tok, d28s, last, ["query"]), 15).map((r) => ({ query: r.keys[0], ...r, keys: undefined }));
-  out.topPages = top(await query(tok, d28s, last, ["page"]), 15).map((r) => ({ page: r.keys[0].replace(/^https?:\/\/(www\.)?kidboxapp\.com/, "") || "/", ...r, keys: undefined }));
-  out.byCountry = top(await query(tok, d28s, last, ["country"]), 8).map((r) => ({ country: r.keys[0].toUpperCase(), ...r, keys: undefined }));
-  out.byDevice = (await query(tok, d28s, last, ["device"])).map((r) => ({ device: r.keys[0].toLowerCase(), ...r, keys: undefined }));
-  // Query con più impressioni ma senza click: dove si compare e nessuno clicca.
-  out.impressionsNoClicks = (await query(tok, d28s, last, ["query"]))
-    .filter((r) => r.clicks === 0)
-    .sort((a, b) => b.impressions - a.impressions)
-    .slice(0, 8)
-    .map((r) => ({ query: r.keys[0], impressions: r.impressions, position: r.position }));
-  // Query «brand» (kidbox): quanto del traffico è gente che ci cerca per nome.
-  const brand = (await query(tok, d28s, last, ["query"])).filter((r) => /kid\s?box/i.test(r.keys[0]));
-  out.brand28 = totals(brand);
-  // La query brand pura: la sua posizione è l'indicatore della canonica.
-  const brandQuery = brand.find((r) => r.keys[0].toLowerCase() === "kidbox");
-  out.brandKidbox = brandQuery ? { impressions: brandQuery.impressions, clicks: brandQuery.clicks, position: brandQuery.position } : null;
-  out.pagesWithImpressions28 = (await query(tok, d28s, last, ["page"], { rowLimit: 1000 })).filter((r) => r.impressions > 0).length;
-
+/**
+ * Di default legge lo snapshot scritto stamattina da `reportSnapshotDaily`
+ * (stesso codice di raccolta: functions/reportCollectors/searchConsole.js).
+ * `--live` forza la lettura dal vivo; se lo snapshot manca, è fallito o ha più
+ * di 30 ore, ripiega sul vivo e lo dice nell'intestazione.
+ */
+function addGoals(out) {
+  if (out.empty) return;
+  const last = out.lastDay;
   // Stato contro gli obiettivi: la prima scadenza non passata (o l'ultima).
   const goal = GOALS.find((g) => g.by >= last) || GOALS[GOALS.length - 1];
   out.goals = {
@@ -195,24 +88,26 @@ async function main() {
     storeFromGoogle: goal.storeFromGoogle,
   };
 
-  // Sitemap.
-  try {
-    const sm = await call(tok, "sitemaps");
-    out.sitemaps = (sm.sitemap || []).map((s) => ({
-      path: s.path.replace(/^https?:\/\/(www\.)?kidboxapp\.com/, ""),
-      lastSubmitted: (s.lastSubmitted || "").slice(0, 10),
-      lastDownloaded: (s.lastDownloaded || "").slice(0, 10),
-      errors: Number(s.errors || 0),
-      warnings: Number(s.warnings || 0),
-      submitted: (s.contents || []).reduce((a, c) => a + Number(c.submitted || 0), 0),
-      indexed: (s.contents || []).reduce((a, c) => a + Number(c.indexed || 0), 0),
-      pending: !!s.isPending,
-    }));
-  } catch (e) {
-    out.sitemaps = [];
-    out.notes.push(`Sitemap non leggibili: ${e.message}`);
-  }
+}
 
+async function main() {
+  const asJson = process.argv.includes("--json");
+  let out = null;
+  let origin;
+  if (!process.argv.includes("--live")) {
+    const s = await readSnapshot("searchConsole");
+    if (s.payload) {
+      out = s.payload;
+      origin = `snapshot Firestore delle ${new Date(s.computedAt).toLocaleTimeString("it-IT", { timeZone: "Europe/Rome", hour: "2-digit", minute: "2-digit" })} (${Math.round(s.ageH)} h fa)`;
+    } else {
+      origin = `dal vivo (${s.reason})`;
+    }
+  } else {
+    origin = "dal vivo (richiesto)";
+  }
+  if (!out) out = await C.collect(token());
+  out.origin = origin;
+  addGoals(out);
   if (asJson) {
     process.stdout.write(JSON.stringify(out, null, 2) + "\n");
     return;
@@ -234,6 +129,7 @@ function print(o) {
     process.stdout.write(L.join("\n") + "\n");
     return;
   }
+  if (o.origin) L.push(`Fonte: ${o.origin}.`);
   L.push(`Ultimo giorno disponibile: ${o.lastDay} (Search Console pubblica con ${o.lagDays} gg di ritardo). Le finestre partono da lì.`);
   L.push("");
   L.push(line("Ultimo giorno", o.last));

@@ -15,8 +15,8 @@ Deploy, funzioni, Firebase, Apple, Play, Google Ads e GitHub sono in
 
 | Fonte | Script | Identità | Ritardo dei dati |
 |---|---|---|---|
-| Google Analytics 4 | `ga4-daily-report.js`, `ga4-invite-page-funnel.js` | SA `ga4-reader` (impersonato) | consolida in 24-48 h |
-| Search Console | `search-console-daily-report.js` | SA `ga4-reader` | 2-3 giorni |
+| Google Analytics 4 | `ga4-daily-report.js` (da snapshot Firestore), `ga4-invite-page-funnel.js` (vivo) | SA `ga4-reader`; la funzione `reportSnapshotDaily` lo usa per scrivere `reportSnapshots` | consolida in 24-48 h |
+| Search Console | `search-console-daily-report.js` (da snapshot Firestore) | SA `ga4-reader` | 2-3 giorni |
 | Console (Auth + Firestore) | `console-daily-report.js` | token utente gcloud | tempo reale |
 | App Store Connect | `appstore-daily-report.js` | chiave API `asc-api-key` | 1-2 giorni |
 | Google Play | `play-daily-report.js` | utente gcloud (bucket) + SA `play-purchase-validator` | crash/ANR freschi; installazioni **da export manuale** |
@@ -25,6 +25,12 @@ Deploy, funzioni, Firebase, Apple, Play, Google Ads e GitHub sono in
 | Google Cloud billing | `gcloud-billing-daily-report.js` | utente gcloud (BigQuery) | arriva il giorno dopo, spesso dopo le 08:30 |
 | App Check | `appcheck-daily-report.js` | utente gcloud (Monitoring) | 1 giorno |
 | Google Ads | **nessuno** | nessun accesso | solo screenshot dell'utente + sezione «Google Ads» di GA4 |
+
+**Snapshot Firestore.** Per GA4 e Search Console il report legge
+`reportSnapshots/{fonte}_{YYYY-MM-DD}` (scritto ogni giorno alle 07:30 da
+`reportSnapshotDaily`, raccolta in `functions/reportCollectors/`), con
+ripiego sul vivo se manca. Lo storico resta lì: le API ne tengono poco.
+Dettagli e permessi in `functions/ARCHITECTURE.md` e in `/report-giornaliero`.
 
 Gli script di sola scrittura sugli store (`asc-whatsnew.js`,
 `asc-descrizione.js`, `asc-screenshots.js`) usano la stessa chiave
