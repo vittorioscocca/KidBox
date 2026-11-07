@@ -7,9 +7,11 @@ repo.** Ci sono solo identificativi pubblici, nomi di voci del Portachiavi e
 comandi. I segreti stanno nel Portachiavi macOS (account `kidbox`), in Secret
 Manager, o si ottengono impersonando un service account.
 
-Verificato il 21/10/2026 su questa macchina. Per le fonti dei report
-(GA4, Search Console, Meta, Anthropic, billing) il dettaglio è in
-`analytics-accessi.md`: qui c'è il resto e i rimandi.
+Verificato il 07/11/2026 su questa macchina (login gcloud, tre voci del
+Portachiavi, nove script di report in OK). Per le fonti dei report (GA4,
+Search Console, Console, App Store, Play, Meta, Anthropic, billing, App
+Check) il dettaglio e la tabella «fonte → script → identità → ritardo» sono
+in `analytics-accessi.md`: qui c'è il resto e i rimandi.
 
 ## Identità di base
 
@@ -112,7 +114,7 @@ Nessun file JSON di service account esiste né deve esistere.
 | App | `it.vittorioscocca.kidbox` |
 | Come si entra via API | impersonando `play-purchase-validator` (già collegato in Play Console), scope `androidpublisher`. **Può** leggere e modificare abbonamenti e scheda (anche en-US, testi lunghi e brevi). **Non può** creare release né pubblicare |
 | Trappola | il commit di una modifica di scheda richiede `Content-Length: 0` esplicito, altrimenti la risposta è vuota e la modifica si perde senza errore. Salvare la scheda mentre una release è in revisione la aggiunge a quella revisione |
-| Statistiche | CSV in un bucket `gs://pubsite_prod_rev_…/stats/` letto col token utente `gcloud`; 5-7 giorni di ritardo e buchi. Crash e ANR dalla Play Developer Reporting API |
+| Statistiche | **Il bucket `gs://pubsite_prod_rev_…/stats/` non viene più scritto dal 13/09/2026**: le installazioni arrivano da un export scaricato a mano in `internal/play-export/` (ultimo: 02/11/2026; procedura nel README lì). Crash e ANR (freschi) e recensioni dalla Play Developer Reporting API / Android Publisher API |
 | Pubblicazione | l'utente, da Play Console o Android Studio. La chiave di firma/caricamento **non è nel repo né accessibile a Claude** |
 
 ## Google Ads (nuovo, 15-21/10/2026)
@@ -155,7 +157,7 @@ Portachiavi (`meta-ads-token`). Dettagli e come rigenerarlo in
 |---|---|---|
 | Gmail (connettore) | `passboxcontact@gmail.com` | leggere, creare bozze, inviare. **Inviare solo con l'ok esplicito dell'utente.** Le mail partono da questo indirizzo, diverso da quello di firma |
 | Artifact (cruscotto) | account dell'utente | `https://claude.ai/artifact/UVf8RrK61zVSeu2Cj1GGzJ`: `read`, poi publish con `url`; mai `force` |
-| Task pianificati | `~/.claude/scheduled-tasks/` | `kidbox-ga4-daily` (report, solo su richiesta), `kidbox-ticket-triage`, più alcuni una tantum |
+| Task pianificati | `~/.claude/scheduled-tasks/` | `kidbox-ga4-daily` (report, solo su richiesta: rimanda a `/report-giornaliero`), `kidbox-ticket-triage`, `kidbox-gc-in-policy`, `kidbox-promemoria-avviso-prova`, più verifiche e promemoria una tantum (`kidbox-verifica-scommessa-9`, `kidbox-ricontrollo-regressioni-0110`, `meta-spesa-per-paese-0211`, `promemoria-chiave-byteplus-0212`, `asl-report`) |
 
 ## Cosa Claude NON può fare
 

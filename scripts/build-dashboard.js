@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Cruscotto del mattino: una pagina HTML, generata in modo deterministico dai
- * sette script di report, che la routine `kidbox-ga4-daily` pubblica ogni
+ * otto script di report, che la routine `kidbox-ga4-daily` pubblica ogni
  * giorno allo stesso link.
  *
  *   node scripts/build-dashboard.js                       # → dashboard/kidbox-dashboard.html

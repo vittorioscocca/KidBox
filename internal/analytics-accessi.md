@@ -6,9 +6,29 @@ ottiene il token, cosa fare se smette di funzionare. **Nessun segreto in
 questo file né nel repo**: i segreti stanno nel Portachiavi macOS (account
 `kidbox`) o passano dall'impersonazione di service account con `gcloud`.
 
-Aggiornato al 20/09/2026. Deploy, funzioni, Firebase, Apple, Play, Google Ads e
-GitHub sono in `accessi.md`. Progetto Firebase/GCP: `kidbox-42cd7`. Utente
-gcloud: `ing.vittorioscocca@gmail.com` (Owner del progetto).
+Aggiornato e verificato il 07/11/2026 (tutti e nove gli script rispondono).
+Deploy, funzioni, Firebase, Apple, Play, Google Ads e GitHub sono in
+`accessi.md`. Progetto Firebase/GCP: `kidbox-42cd7`. Utente gcloud:
+`ing.vittorioscocca@gmail.com` (Owner del progetto).
+
+## Colpo d'occhio: fonte → script → identità → ritardo
+
+| Fonte | Script | Identità | Ritardo dei dati |
+|---|---|---|---|
+| Google Analytics 4 | `ga4-daily-report.js`, `ga4-invite-page-funnel.js` | SA `ga4-reader` (impersonato) | consolida in 24-48 h |
+| Search Console | `search-console-daily-report.js` | SA `ga4-reader` | 2-3 giorni |
+| Console (Auth + Firestore) | `console-daily-report.js` | token utente gcloud | tempo reale |
+| App Store Connect | `appstore-daily-report.js` | chiave API `asc-api-key` | 1-2 giorni |
+| Google Play | `play-daily-report.js` | utente gcloud (bucket) + SA `play-purchase-validator` | crash/ANR freschi; installazioni **da export manuale** |
+| Meta Ads | `meta-ads-daily-report.js` | `meta-ads-token` | 1 giorno |
+| Anthropic | `anthropic-daily-report.js` | `anthropic-admin-key` | 1 giorno |
+| Google Cloud billing | `gcloud-billing-daily-report.js` | utente gcloud (BigQuery) | arriva il giorno dopo, spesso dopo le 08:30 |
+| App Check | `appcheck-daily-report.js` | utente gcloud (Monitoring) | 1 giorno |
+| Google Ads | **nessuno** | nessun accesso | solo screenshot dell'utente + sezione «Google Ads» di GA4 |
+
+Gli script di sola scrittura sugli store (`asc-whatsnew.js`,
+`asc-descrizione.js`, `asc-screenshots.js`) usano la stessa chiave
+`asc-api-key`: procedura in `/release-client`.
 
 ## Portachiavi macOS
 
@@ -58,7 +78,14 @@ impersonando un service account.
   scope `https://www.googleapis.com/auth/webmasters.readonly`. API
   `searchconsole.googleapis.com` abilitata sul progetto.
 - Dati con 2-3 giorni di ritardo; il campo «indexed» delle sitemap nell'API
-  è inaffidabile (0). Per lo stato reale di un URL: URL Inspection API.
+  è inaffidabile (0). Per lo stato reale di un URL: URL Inspection API
+  (`POST https://searchconsole.googleapis.com/v1/urlInspection/index:inspect`,
+  body `{"inspectionUrl":…,"siteUrl":"sc-domain:kidboxapp.com"}`, stesso token
+  del SA, scope `webmasters.readonly`; l'output va letto per intero: un
+  token vuoto dà una risposta non JSON). Esempio completo nella skill
+  `/report-giornaliero`.
+- La console admin legge Search Console e GA4 della landing con lo stesso SA
+  (`getLandingStats`, vedi `KidboxConsole/ARCHITECTURE.md`).
 
 ### Console admin (Auth + Firestore) — `scripts/console-daily-report.js`
 
@@ -74,6 +101,12 @@ impersonando un service account.
   `gs://pubsite_prod_rev_00873204915190884037/stats/{installs,crashes,ratings}/`
   (UTF-16LE + gzip, **5-7 giorni di ritardo, con buchi**), letti col token
   utente di gcloud (l'utente è proprietario dell'account Play).
+- **Dal 13/09/2026 Google non scrive più nel bucket.** La base installata
+  arriva da un export scaricato a mano da Play Console in
+  `internal/play-export/` (procedura nel README lì; l'ultimo è del
+  02/11/2026). Lo script prende il file più recente e lo dichiara. Se ha più
+  di due settimane, ricordarlo all'utente. Crash/ANR e recensioni non
+  dipendono dal bucket.
 - Crash/ANR freschi: Play Developer Reporting API (abilitata 15/09/2026;
   `errorCountMetricSet`, non `crashRateMetricSet`; `timeZone America/Los_Angeles`).
   Recensioni: Android Publisher API. Entrambe impersonando
@@ -133,7 +166,7 @@ impersonando un service account.
 
 ### Cruscotto — `scripts/build-dashboard.js`
 
-- Rilancia gli script in `--json` e scrive `dashboard/kidbox-dashboard.html`
+- Rilancia gli otto script in `--json` (tutti tranne App Check) e scrive `dashboard/kidbox-dashboard.html`
   (cartella ignorata da git). Pubblicato come artefatto
   https://claude.ai/artifact/UVf8RrK61zVSeu2Cj1GGzJ (stesso link ogni
   giorno: `read` e poi publish con `url`). Anteprima locale: `launch.json`
@@ -141,9 +174,14 @@ impersonando un service account.
 
 ## Verifica rapida che tutto risponda
 
-    for s in ga4 console meta-ads play appstore anthropic gcloud-billing search-console; do
+    for s in ga4 console meta-ads play appstore anthropic gcloud-billing search-console appcheck; do
       node scripts/$s-daily-report.js --json >/dev/null && echo "OK  $s" || echo "KO  $s"
     done
+
+Su questo Mac **`timeout` non esiste**: non anteporlo, il ciclo darebbe KO per
+tutti. «OK» dice solo che lo script non è uscito con errore: per sapere se i
+dati sono freschi leggere l'intestazione di ogni report («ultimo giorno
+disponibile», «export aggiornato al …»).
 
 Ogni script, se manca la sua credenziale, stampa da solo cosa serve e come
 salvarla.
