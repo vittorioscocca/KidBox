@@ -1610,10 +1610,10 @@ function fmtLastActive(d) {
   return d.toLocaleDateString('it-IT');
 }
 
-function userSearchChanged() {
+window.userSearchChanged = function userSearchChanged() {
   _userPage = 1;
   renderUsersTable(_allUsersRows);
-}
+};
 
 function renderUsersTable(rows) {
   const tbody = document.getElementById('user-tbody');
