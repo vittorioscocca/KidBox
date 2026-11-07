@@ -1610,6 +1610,11 @@ function fmtLastActive(d) {
   return d.toLocaleDateString('it-IT');
 }
 
+function userSearchChanged() {
+  _userPage = 1;
+  renderUsersTable(_allUsersRows);
+}
+
 function renderUsersTable(rows) {
   const tbody = document.getElementById('user-tbody');
   if (!tbody) return;
@@ -1619,21 +1624,27 @@ function renderUsersTable(rows) {
   const real = filtered.filter(u => !u.internal);
   setVal('stat-users', fmtNum(real.length));
   setVal('stat-users-sub', filtered.length > real.length ? `profili su Firestore · senza ${filtered.length - real.length} account di test` : 'profili su Firestore');
-  setVal('users-table-count', `(${filtered.length})`);
+  const q = (document.getElementById('user-search')?.value || '').trim().toLowerCase();
+  const famLabel = u => {
+    const f = _familyRows.find(x => x.fid === _familyByUid[u.uid]);
+    return f ? `${f.fname || ''} ${f.fid}`.toLowerCase() : '';
+  };
+  const shown = q ? filtered.filter(u => (u.email || '').toLowerCase().includes(q) || famLabel(u).includes(q)) : filtered;
+  setVal('users-table-count', q ? `(${shown.length} di ${filtered.length})` : `(${filtered.length})`);
   let ios=0, android=0, web=0;
   real.forEach(u => { if(u.platform==='ios') ios++; else if(u.platform==='android') android++; if(u.web) web++; });
   setVal('stat-platform-ios',     fmtNum(ios));
   setVal('stat-platform-android', fmtNum(android));
   setVal('stat-platform-web',     fmtNum(web));
 
-  if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty">Nessun utente nel periodo selezionato</td></tr>';
+  if (shown.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty">${q ? 'Nessun utente corrisponde alla ricerca' : 'Nessun utente nel periodo selezionato'}</td></tr>`;
     renderPagination('user', 0, 1, 'userGoPage');
     return;
   }
   const storageByFid = new Map(_familyRows.map(f => [f.fid, f.storageBytes || 0]));
   const storageOf = u => storageByFid.get(_familyByUid[u.uid]) || 0;
-  const sorted = [...filtered].sort((a, b) => {
+  const sorted = [...shown].sort((a, b) => {
     let va, vb;
     if (_userSort.col === 'createdAt') { va = a.createdAt?.getTime()||0; vb = b.createdAt?.getTime()||0; }
     else if (_userSort.col === 'storage') { va = storageOf(a); vb = storageOf(b); }
@@ -3974,6 +3985,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       <div class="tcard">
         <div class="tcard-hdr">
           Utenti <span class="sub" id="users-table-count"></span>
+          <input type="search" id="user-search" placeholder="Cerca per email o famiglia…" oninput="userSearchChanged()" autocomplete="off" style="margin-left:auto;min-width:220px;padding:6px 10px;border:1px solid var(--border,#ddd);border-radius:8px;font-size:13px;background:transparent;color:inherit">
         </div>
         <div class="tbl-scroll"><table>
           <thead>
