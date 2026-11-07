@@ -101,6 +101,16 @@ async function check(nome, promessa) {
       assertFails(anonimo.doc("config/plans").set({version: 2})));
   await check("altri config: restano chiusi agli anonimi",
       assertFails(anonimo.doc("config/nudges").get()));
+  const adminDb = env.authenticatedContext("efw85HN41nb1rmslevC3wkFpVUo1").firestore();
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc("reportSnapshots/ga4_2026-11-07").set({ok: true});
+  });
+  await check("reportSnapshots: l'admin li legge",
+      assertSucceeds(adminDb.doc("reportSnapshots/ga4_2026-11-07").get()));
+  await check("reportSnapshots: un utente qualsiasi NON li legge",
+      assertFails(db.doc("reportSnapshots/ga4_2026-11-07").get()));
+  await check("reportSnapshots: nemmeno l'admin li scrive dal client",
+      assertFails(adminDb.doc("reportSnapshots/ga4_2026-11-07").set({ok: false})));
 
   console.log("\n── LIMITE 2 FAMIGLIE ──────────────────────────────");
   await check("2ª famiglia: consentita (ne possiede 1)",

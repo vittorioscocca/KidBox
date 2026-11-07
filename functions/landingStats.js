@@ -169,6 +169,9 @@ async function ga4(tok, range) {
   return {daily, pages, channels, countries, devices, events};
 }
 
+// Usati anche da reportSnapshots.js: stesso token, stesse POST.
+exports._helpers = {accessToken, postJson, dayAgo};
+
 /**
  * La callable, con la lista degli admin presa da index.js.
  * @param {{ADMIN_UIDS: string[]}} deps

@@ -98,6 +98,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Snapshot giornalieri delle fonti esterne (Search Console, GA4): scritti
+    // dalla funzione `reportSnapshotDaily`, letti dalla console admin.
+    match /reportSnapshots/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     function isMember(familyId) {
       // `get('isDeleted', false)` e non `.isDeleted`: su un documento senza il
       // campo l'accesso diretto va in ERRORE di valutazione, e l'errore nega.

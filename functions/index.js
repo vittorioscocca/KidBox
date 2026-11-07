@@ -8763,6 +8763,8 @@ exports.landingPing = require("./landingTraffic").landingPing;
 // Google Search e GA4 della landing per la console admin. Il perché in
 // `landingStats.js`.
 exports.getLandingStats = require("./landingStats").build({ADMIN_UIDS});
+// Snapshot giornaliero di Search Console e GA4 su Firestore (reportSnapshots).
+exports.reportSnapshotDaily = require("./reportSnapshots").reportSnapshotDaily;
 
 // «Mi piace l'idea» della landing: un like per IP, IP mai salvato. Il perché in
 // `landingLikes.js`.
