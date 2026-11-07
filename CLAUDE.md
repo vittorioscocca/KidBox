@@ -12,6 +12,7 @@ i suoi commit si vedono solo con `git -C KidBoxAndroid`.
 - `KidboxWebApp/` web app (`app.kidboxapp.com`) · `KidboxLanding/` sito e blog · `KidboxConsole/` console admin
 - `functions/` Cloud Functions (`ARCHITECTURE.md` dentro) · `firestore.rules` (+ `firestore-tests/`)
 - `scripts/` report analytics e utilità · `internal/` procedure e diagnosi · `FEATURES.md` mappa funzionale
+- Report analytics: GA4, Search Console, Play (crash/ANR/recensioni) e billing passano da **snapshot giornalieri su Firestore** (`reportSnapshots`, funzioni `reportSnapshotDaily` 07:30 e `reportSnapshotStoreDaily` 11:00). Come funziona, i permessi IAM e come rifarlo da zero: `internal/report-snapshot.md`
 
 **Prima di cercare col grep, leggere `FEATURES.md`**: il README descrive l'MVP
 2025 ed è superato.

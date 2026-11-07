@@ -30,7 +30,7 @@ Deploy, funzioni, Firebase, Apple, Play, Google Ads e GitHub sono in
 `reportSnapshots/{fonte}_{YYYY-MM-DD}` (scritto ogni giorno alle 07:30 da
 `reportSnapshotDaily`, raccolta in `functions/reportCollectors/`), con
 ripiego sul vivo se manca. Lo storico resta lì: le API ne tengono poco.
-Dettagli e permessi in `functions/ARCHITECTURE.md` e in `/report-giornaliero`.
+Architettura completa, permessi IAM e ricostruzione da zero in `report-snapshot.md`; qui e in `functions/ARCHITECTURE.md` solo i riassunti.
 
 Gli script di sola scrittura sugli store (`asc-whatsnew.js`,
 `asc-descrizione.js`, `asc-screenshots.js`) usano la stessa chiave

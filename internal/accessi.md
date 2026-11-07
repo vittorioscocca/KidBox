@@ -8,7 +8,7 @@ comandi. I segreti stanno nel Portachiavi macOS (account `kidbox`), in Secret
 Manager, o si ottengono impersonando un service account.
 
 Verificato il 07/11/2026 su questa macchina (login gcloud, tre voci del
-Portachiavi, nove script di report in OK). Per le fonti dei report (GA4,
+Portachiavi, nove script di report in OK). Gli snapshot dei report su Firestore (funzioni, service account, permessi, come rifarli) sono in `report-snapshot.md`. Per le fonti dei report (GA4,
 Search Console, Console, App Store, Play, Meta, Anthropic, billing, App
 Check) il dettaglio e la tabella «fonte → script → identità → ritardo» sono
 in `analytics-accessi.md`: qui c'è il resto e i rimandi.
