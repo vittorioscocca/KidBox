@@ -91,6 +91,12 @@ struct KBHomeWidgetView: View {
     }
 }
 
+/// Stesso nome e descrizione per tutte le pagine: iOS li mostra anche in
+/// «Modifica widget», e lì un widget nato «Calendario» e passato a To-do
+/// restava intitolato «Calendario». Le pagine si distinguono dall'anteprima.
+private let kbHomeDescription: LocalizedStringResource =
+    "Calendario, to-do, spesa, cure, piano fitness o foto: scegli cosa mostrare da «Modifica widget»."
+
 /// Le sei pagine della galleria. L'ordine conta: la prima è quella che iOS
 /// usa quando l'icona dell'app diventa un widget. I kind sono nuovi rispetto
 /// alla prima build (KidBoxCalendarWidget, KidBoxTodoWidget, …): riusarli
@@ -110,47 +116,47 @@ struct KBHomeWidget: Widget {
     static let kind = "KidBoxHomeWidget"
     var body: some WidgetConfiguration {
         kbHomeConfiguration(kind: Self.kind, intent: KidBoxWidgetIntent.self,
-                            name: "Calendario",
-                            description: "Gli eventi di oggi. Da «Modifica widget» puoi mostrare anche to-do, spesa, cure, piano fitness o foto.")
+                            name: "KidBox",
+                            description: kbHomeDescription)
     }
 }
 
 struct KBTodoHomeWidget: Widget {
     var body: some WidgetConfiguration {
         kbHomeConfiguration(kind: "KidBoxHomeWidget.todo", intent: KidBoxTodoWidgetIntent.self,
-                            name: "To-do",
-                            description: "I to-do della famiglia, di una lista a tua scelta.")
+                            name: "KidBox",
+                            description: kbHomeDescription)
     }
 }
 
 struct KBGroceryHomeWidget: Widget {
     var body: some WidgetConfiguration {
         kbHomeConfiguration(kind: "KidBoxHomeWidget.grocery", intent: KidBoxGroceryWidgetIntent.self,
-                            name: "Lista della spesa",
-                            description: "Cosa resta da comprare.")
+                            name: "KidBox",
+                            description: kbHomeDescription)
     }
 }
 
 struct KBCareHomeWidget: Widget {
     var body: some WidgetConfiguration {
         kbHomeConfiguration(kind: "KidBoxHomeWidget.care", intent: KidBoxCareWidgetIntent.self,
-                            name: "Cure",
-                            description: "La prossima dose di un membro della famiglia, da segnare come presa.")
+                            name: "KidBox",
+                            description: kbHomeDescription)
     }
 }
 
 struct KBFitnessHomeWidget: Widget {
     var body: some WidgetConfiguration {
         kbHomeConfiguration(kind: "KidBoxHomeWidget.fitness", intent: KidBoxFitnessWidgetIntent.self,
-                            name: "Piano Fitness",
-                            description: "L'allenamento di oggi dal piano di un membro della famiglia.")
+                            name: "KidBox",
+                            description: kbHomeDescription)
     }
 }
 
 struct KBPhotosHomeWidget: Widget {
     var body: some WidgetConfiguration {
         kbHomeConfiguration(kind: "KidBoxHomeWidget.photos", intent: KidBoxPhotosWidgetIntent.self,
-                            name: "Foto",
-                            description: "Le foto della famiglia, una diversa ogni ora. Puoi scegliere un album.")
+                            name: "KidBox",
+                            description: kbHomeDescription)
     }
 }
