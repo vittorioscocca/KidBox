@@ -111,6 +111,16 @@ struct KidBoxApp: App {
                     }
                 // ──────────────────────────────────────────────────────────
                 
+                // MARK: Handoff da un altro iPhone, iPad o Mac
+                // Si mette da parte: la apre `KBHandoffModifier` su `RootHostView`,
+                // che sa se la shell è a barra laterale (e c'è solo dopo il login).
+                    .onContinueUserActivity(KBHandoff.activityType) { activity in
+                        guard let target = KBHandoffTarget(userInfo: activity.userInfo) else { return }
+                        KBLog.navigation.kbInfo("Handoff ricevuto section=\(target.section.rawValue)")
+                        KBHandoff.pending = target
+                        NotificationCenter.default.post(name: .kbHandoffReceived, object: nil)
+                    }
+
                 // MARK: Universal Link — invito famiglia
                 //
                 // Il link viene solo messo da parte, non applicato qui: chi lo
