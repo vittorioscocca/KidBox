@@ -2,10 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSUserActivityTypes</key>
-	<array>
-		<string>it.vittorioscocca.kidbox.browse</string>
-	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>it.vittorioscocca.kidbox.password-security-refresh</string>
@@ -61,6 +57,10 @@
 		<string>fb-messenger-share-api</string>
 		<string>fbauth2</string>
 		<string>App-Prefs</string>
+	</array>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>it.vittorioscocca.kidbox.browse</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>
