@@ -86,7 +86,14 @@ struct KBCareWidgetView: View {
         .buttonStyle(.plain)
     }
 
+    @Environment(\.widgetFamily) private var family
+
     var body: some View {
+        if family == .systemMedium { mediumBody } else { smallBody }
+    }
+
+    @ViewBuilder
+    private var smallBody: some View {
         Group {
             if entry.snapshot != nil {
                 VStack(alignment: .leading, spacing: 1) {
@@ -135,6 +142,98 @@ struct KBCareWidgetView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .widgetURL(deepLink)
+        .containerBackground(.background, for: .widget)
+    }
+}
+
+// MARK: - Largo: la prossima dose coi pulsanti a sinistra, le successive a destra
+
+extension KBCareWidgetView {
+
+    var mediumBody: some View {
+        Group {
+            if entry.snapshot != nil {
+                HStack(alignment: .top, spacing: 14) {
+                    // Sinistra: come il quadrato.
+                    VStack(alignment: .leading, spacing: 1) {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(title)
+                                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                                .foregroundStyle(Color.kbCare)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.75)
+                            Spacer(minLength: 4)
+                            let p = todayProgress
+                            if p.total > 0 {
+                                Text("\(p.done)/\(p.total)")
+                                    .font(.system(.caption, design: .rounded).weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        if doses.isEmpty {
+                            KBWidgetMessage(systemImage: "pills", text: "Nessuna cura attiva", color: .kbCare)
+                        } else if let dose = pending.first {
+                            Text(dose.time, format: .dateTime.hour().minute())
+                                .font(.system(size: 26, weight: .bold, design: .rounded))
+                                .foregroundStyle(dose.time < entry.date ? Color.kbCalendar : Color.kbCare)
+                            Text(dose.drugName)
+                                .font(.system(.footnote, design: .rounded).weight(.semibold))
+                                .lineLimit(1)
+                            let detail = [dose.dosage, name(of: dose.childId) ?? ""].filter { !$0.isEmpty }
+                            if !detail.isEmpty {
+                                Text(detail.joined(separator: " · "))
+                                    .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                            }
+                            Spacer(minLength: 4)
+                            HStack(spacing: 6) {
+                                actionButton(dose, taken: true)
+                                actionButton(dose, taken: false)
+                            }
+                        } else {
+                            KBWidgetMessage(systemImage: "checkmark.circle", text: "Tutto fatto per oggi", color: .kbCare)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
+                    // Destra: le dosi dopo, di oggi e di domani.
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Poi")
+                            .textCase(.uppercase)
+                            .font(.system(.caption, design: .rounded).weight(.bold))
+                            .foregroundStyle(.secondary)
+                        let later = Array(pending.dropFirst().prefix(4))
+                        if later.isEmpty {
+                            Text("Nient'altro in programma")
+                                .font(.system(.footnote, design: .rounded))
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(later) { d in
+                                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                    Group {
+                                        if Calendar.current.isDate(d.time, inSameDayAs: entry.date) {
+                                            Text(d.time, format: .dateTime.hour().minute())
+                                        } else {
+                                            Text(d.time, format: .dateTime.weekday(.abbreviated).hour().minute())
+                                        }
+                                    }
+                                    .font(.system(.caption, design: .rounded).weight(.bold))
+                                    .foregroundStyle(Color.kbCare)
+                                    .fixedSize()
+                                    Text(d.drugName)
+                                        .font(.system(.caption, design: .rounded))
+                                        .lineLimit(1)
+                                }
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+            } else {
+                KBWidgetSignedOut()
+            }
+        }
         .widgetURL(deepLink)
         .containerBackground(.background, for: .widget)
     }

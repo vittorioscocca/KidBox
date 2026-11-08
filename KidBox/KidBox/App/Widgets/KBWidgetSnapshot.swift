@@ -175,8 +175,8 @@ enum KBWidgetStore {
 // MARK: - Miniature delle foto
 
 /// Le foto della famiglia sono cifrate: il widget non può né scaricarle né
-/// leggerle. L'app ne scrive qui una copia piccola (JPEG, lato lungo ~520 px)
-/// per le sole foto che il widget può mostrare; il resto non esce dall'app.
+/// leggerle. L'app ne scrive qui una copia piccola (JPEG)
+/// per le sole foto che il widget può mostrare (lato lungo ~1000 px: basta anche al widget largo); il resto non esce dall'app.
 enum KBWidgetPhotoFiles {
 
     static var directory: URL? {
@@ -185,8 +185,12 @@ enum KBWidgetPhotoFiles {
             .appendingPathComponent("widget-photos", isDirectory: true)
     }
 
+    /// Suffisso della misura: le prime miniature (520 px, solo quadrato) si
+    /// chiamavano «id.jpg» e vengono tolte e rifatte più grandi per il largo.
+    static func fileName(for photoId: String) -> String { "\(photoId)_1000.jpg" }
+
     static func url(for photoId: String) -> URL? {
-        directory?.appendingPathComponent("\(photoId).jpg")
+        directory?.appendingPathComponent(fileName(for: photoId))
     }
 
     static func clear() {

@@ -421,3 +421,33 @@ func kbNextMidnight(after date: Date) -> Date {
     return cal.nextDate(after: date, matching: DateComponents(hour: 0, minute: 0),
                         matchingPolicy: .nextTime) ?? date.addingTimeInterval(86_400)
 }
+
+// MARK: - Colonna sinistra dei widget larghi (come Promemoria di Apple)
+
+/// Icona tonda in alto, numero grande e titolo colorato in basso.
+struct KBWidgetCountColumn: View {
+    let systemImage: String
+    let color: Color
+    let count: Int
+    let title: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Image(systemName: systemImage)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 40, height: 40)
+                .background(Circle().fill(color))
+            Spacer(minLength: 4)
+            Text("\(count)")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+                .foregroundStyle(.primary)
+            Text(title)
+                .font(.system(.headline, design: .rounded).weight(.bold))
+                .foregroundStyle(color)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxHeight: .infinity, alignment: .leading)
+    }
+}

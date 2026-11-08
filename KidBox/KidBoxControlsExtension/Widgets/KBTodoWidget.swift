@@ -48,7 +48,14 @@ struct KBTodoWidgetView: View {
                        count: snap.todoLists.reduce(0) { $0 + $1.openCount }, items: all)
     }
 
+    @Environment(\.widgetFamily) private var family
+
     var body: some View {
+        if family == .systemMedium { mediumBody } else { smallBody }
+    }
+
+    @ViewBuilder
+    private var smallBody: some View {
         Group {
             if let content {
                 VStack(alignment: .leading, spacing: 6) {
@@ -94,6 +101,67 @@ struct KBTodoWidgetView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .widgetURL(URL(string: "kidbox://widget/todo"))
+        .containerBackground(.background, for: .widget)
+    }
+}
+
+// MARK: - Largo: numero e nome a sinistra, le righe a destra (come Promemoria)
+
+extension KBTodoWidgetView {
+
+    private func row(_ item: KBWidgetSnapshot.TodoItem) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Button(intent: KBMarkTodoDoneIntent(todoId: item.id)) {
+                Image(systemName: "circle")
+                    .font(.system(size: 20, weight: .light))
+                    .foregroundStyle(item.isUrgent ? Color.kbCalendar : .secondary)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(item.title)
+                    .font(.system(.subheadline, design: .rounded))
+                    .lineLimit(1)
+                if let due = item.due {
+                    Group {
+                        if item.hasTime {
+                            Text(due, format: .dateTime.day().month(.abbreviated).hour().minute())
+                        } else {
+                            Text(due, format: .dateTime.day().month(.abbreviated))
+                        }
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(due < entry.date ? Color.kbCalendar : .secondary)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    @ViewBuilder
+    var mediumBody: some View {
+        Group {
+            if let content {
+                HStack(alignment: .top, spacing: 12) {
+                    KBWidgetCountColumn(systemImage: "checklist", color: .kbTodo,
+                                        count: content.count, title: content.title)
+                        .frame(width: 110, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 8) {
+                        if content.items.isEmpty {
+                            KBWidgetMessage(systemImage: "checkmark.circle", text: "Niente da fare", color: .kbTodo)
+                        } else {
+                            let rows = content.items.prefix(4).contains { $0.due != nil } ? 3 : 4
+                            ForEach(content.items.prefix(rows)) { row($0) }
+                            Spacer(minLength: 0)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+            } else {
+                KBWidgetSignedOut()
+            }
+        }
         .widgetURL(URL(string: "kidbox://widget/todo"))
         .containerBackground(.background, for: .widget)
     }

@@ -22,8 +22,9 @@ import UniformTypeIdentifiers
 @MainActor
 enum KBWidgetPhotos {
 
-    /// Lato lungo della miniatura: un quadrato piccolo è ~170 punti a 3x.
-    nonisolated static let maxDimension: CGFloat = 520
+    /// Lato lungo della miniatura: il widget largo è ~360 punti a 3x; 1000 px
+    /// bastano e restano sotto il limite di memoria dell'estensione.
+    nonisolated static let maxDimension: CGFloat = 1000
     private static let recentCount = 30
     private static let perAlbumCount = 10
     private static let downloadsPerRun = 12
@@ -83,7 +84,7 @@ enum KBWidgetPhotos {
         try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
 
         // Via le miniature di foto non più fra quelle scelte (cancellate, uscite dalle recenti).
-        let wanted = Set(photos.map { "\($0.id).jpg" })
+        let wanted = Set(photos.map { KBWidgetPhotoFiles.fileName(for: $0.id) })
         for name in (try? fm.contentsOfDirectory(atPath: dir.path)) ?? [] where !wanted.contains(name) {
             try? fm.removeItem(at: dir.appendingPathComponent(name))
         }
@@ -126,7 +127,7 @@ enum KBWidgetPhotos {
     private static func cachedPreview(_ photoId: String) -> Data? {
         let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("KBPhotoPreviews", isDirectory: true)
-        for bucket in [800, 1200, 512] {
+        for bucket in [1200, 800] {
             if let d = try? Data(contentsOf: dir.appendingPathComponent("\(photoId)_\(bucket).jpg")) { return d }
         }
         return nil

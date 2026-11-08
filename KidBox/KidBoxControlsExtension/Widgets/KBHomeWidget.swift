@@ -109,7 +109,7 @@ private func kbHomeConfiguration<I: KBContentIntent>(
     }
     .configurationDisplayName(Text(name))
     .description(Text(description))
-    .supportedFamilies([.systemSmall])
+    .supportedFamilies([.systemSmall, .systemMedium])
 }
 
 struct KBHomeWidget: Widget {
