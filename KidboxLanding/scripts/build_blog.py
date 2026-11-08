@@ -133,6 +133,9 @@ BLOG_CSS = """
   .b-art-head h1 { font-size:clamp(1.9rem,4.4vw,3rem); font-weight:800; letter-spacing:-0.035em; line-height:1.08; text-wrap:balance; margin-bottom:16px; }
   .b-art-meta { display:flex; flex-wrap:wrap; gap:10px; color:var(--muted); font-size:0.9rem; align-items:center; }
   .b-art-meta .sep { color:var(--faint); }
+  .b-shot { margin:28px auto 32px; max-width:300px; text-align:center; }
+  .b-shot img { width:100%; height:auto; border-radius:34px; box-shadow:var(--shadow); border:1px solid var(--border); }
+  .b-shot figcaption { color:var(--muted); font-size:0.88rem; margin-top:10px; }
   .b-art .t-hero { margin:8px 0 40px; padding:36px; grid-template-columns:220px 1fr; gap:32px; }
   /* Il telefono è disegnato per 300px: restringerlo fa andare a capo le tessere e lo
      allunga; lo si rimpicciolisce intero, proporzioni comprese. */
@@ -175,7 +178,12 @@ def md_to_html(body):
     for block in blocks:
         lines = block.strip("\n").split("\n")
         first = lines[0]
-        if first.startswith("### "):
+        shot = re.fullmatch(r"!\[([^\]]*)\]\(([^)\s]+)\)", block.strip())
+        if shot:
+            # Screenshot dell'app: `![alt](/assets/app/<lingua>/x.webp)`, 600×1304.
+            alt, src = html.escape(shot[1]), html.escape(shot[2])
+            out.append(f'<figure class="b-shot"><img src="{src}" alt="{alt}" width="600" height="1304" loading="lazy" decoding="async"><figcaption>{alt}</figcaption></figure>')
+        elif first.startswith("### "):
             out.append(f"<h3>{inline(first[4:])}</h3>")
         elif first.startswith("## "):
             out.append(f"<h2>{inline(first[3:])}</h2>")

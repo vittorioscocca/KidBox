@@ -251,6 +251,8 @@
   .an-card.done .an-t { color:var(--green); }
   .an-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
   .an-note b { color:var(--text); }
+  .an .mini-list a { color:var(--accent); font-weight:700; text-decoration:none; white-space:nowrap; }
+  .an .mini-list a:hover { text-decoration:underline; text-underline-offset:3px; }
   @media (max-width:860px){ .an { grid-template-columns:1fr; gap:28px; } }
   .band-visual { display:flex; justify-content:center; }
 
@@ -470,6 +472,9 @@
   .b-art-head h1 { font-size:clamp(1.9rem,4.4vw,3rem); font-weight:800; letter-spacing:-0.035em; line-height:1.08; text-wrap:balance; margin-bottom:16px; }
   .b-art-meta { display:flex; flex-wrap:wrap; gap:10px; color:var(--muted); font-size:0.9rem; align-items:center; }
   .b-art-meta .sep { color:var(--faint); }
+  .b-shot { margin:28px auto 32px; max-width:300px; text-align:center; }
+  .b-shot img { width:100%; height:auto; border-radius:34px; box-shadow:var(--shadow); border:1px solid var(--border); }
+  .b-shot figcaption { color:var(--muted); font-size:0.88rem; margin-top:10px; }
   .b-art .t-hero { margin:8px 0 40px; padding:36px; grid-template-columns:220px 1fr; gap:32px; }
   /* Il telefono è disegnato per 300px: restringerlo fa andare a capo le tessere e lo
      allunga; lo si rimpicciolisce intero, proporzioni comprese. */
@@ -525,6 +530,11 @@
   <p>A shared grocery list, the week&#x27;s menu and a fridge that never runs empty by surprise.</p>
 </div>
 <div class="b-grid">
+  <a class="b-card rv" href="shared-grocery-list">
+    <h3>The shared grocery list: how to make it actually work in a family</h3>
+    <p>Why a list on paper or in notes fails with two people, and the four rules for a family list that empties at the supermarket and fills itself at home.</p>
+    <span class="b-meta"><span>5 min read</span><span>·</span><span>8 Nov 2026</span></span>
+  </a>
   <a class="b-card rv" href="family-meals-on-a-budget">
     <h3>Planning family meals on a budget, without eating worse</h3>
     <p>Food is the family expense you can control best, and the one you control least. A five-step method to spend less without cutting quality.</p>
@@ -549,11 +559,6 @@
     <h3>Picky eaters: planning meals without cooking three different menus</h3>
     <p>One child eats only plain pasta, the other refuses anything green. How to plan meals that work for the whole family without turning every dinner into a negotiation.</p>
     <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="shared-grocery-list">
-    <h3>The shared grocery list: how to make it actually work in a family</h3>
-    <p>Why a list on paper or in notes fails with two people, and the four rules for a family list that empties at the supermarket and fills itself at home.</p>
-    <span class="b-meta"><span>4 min read</span><span>·</span><span>11 Sep 2026</span></span>
   </a>
   <a class="b-card rv" href="family-weekly-menu">
     <h3>The family weekly menu: do it in ten minutes (or let the AI do it)</h3>

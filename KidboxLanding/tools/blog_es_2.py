@@ -237,6 +237,14 @@ Leche, pan, fruta: vuelven cada semana. Merece la pena no tachar a ciegas: al vo
 
 La cena del sábado con amigos, el cumpleaños: los productos van a la misma lista, quizá con una nota. Quien hace la compra no debería tener que adivinar si el salmón es para esta noche o para el sábado.
 
+## La lista ordenada por pasillos
+
+Una lista larga se lee mal entre los estantes: la leche arriba, el yogur abajo, y vuelves atrás dos veces. Por eso en KidBox los productos **se colocan solos en su pasillo**: fruta y verdura, carne y pescado, lácteos, pan y cereales, congelados, bebidas, dulces y snacks, limpieza, cuidado personal. En el súper recorres la lista igual que recorres los pasillos.
+
+![La lista de la compra de KidBox ordenada por pasillos](/assets/app/es/grocery-aisles.webp)
+
+El pasillo lo elige la app cuando añades un producto desde el iPhone, el iPad o el Mac: los productos de siempre los reconoce con una lista de palabras en cuatro idiomas, y los menos comunes los entiende **Apple Intelligence**, directamente en el dispositivo, donde está disponible. No gasta mensajes de IA y no envía la lista a ninguna parte. Si un producto acaba en el pasillo equivocado lo cambias desde su ficha, y quien usa la lista desde Android o desde el navegador la ve ordenada igual.
+
 ## La relación con las comidas
 
 La lista funciona todavía mejor si nace de un **menú semanal**: decides lo que vais a comer y los ingredientes que faltan van a la lista. Es un paso más que no todas las familias quieren dar, pero para quien lo da convierte la compra de «¿qué compro?» en «compro esto». Lo contamos en el artículo sobre el [menú semanal](/es/blog/menu-della-settimana-in-famiglia).

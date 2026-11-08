@@ -4,7 +4,7 @@
 ARTICLES = [
     {
         "slug": "lista-della-spesa-condivisa",
-        "category": "pasti-e-spesa", "date": "2026-09-11",
+        "category": "pasti-e-spesa", "date": "2026-11-08",
         "tools": ["lista-della-spesa", "alexa"], "related": ["menu-della-settimana-in-famiglia", "spesa-con-alexa", "lista-condivisa-per-coppie"],
         "it": {
             "title": "La lista della spesa condivisa: come farla funzionare davvero in famiglia",
@@ -61,6 +61,14 @@ Latte, pane, frutta: tornano ogni settimana. Meglio non affidarli a un abbonamen
 ### La spesa per un evento
 
 La cena di sabato con gli amici, il compleanno: le voci si aggiungono alla stessa lista, magari con una nota. Chi fa la spesa non deve indovinare se il salmone serve per stasera o per sabato.
+
+## La lista divisa per reparti
+
+Una lista lunga si legge male tra gli scaffali: il latte in cima, lo yogurt in fondo, e si torna indietro due volte. Per questo in KidBox i prodotti **si mettono da soli nel loro reparto**: frutta e verdura, carne e pesce, latticini, pane e cereali, surgelati, bevande, dolci e snack, pulizia, cura personale. Al supermercato si scende la lista come si percorrono le corsie.
+
+![La lista della spesa di KidBox divisa per reparti](/assets/app/it/grocery-aisles.webp)
+
+Il reparto lo sceglie l'app quando aggiungi un prodotto da iPhone, iPad o Mac: i prodotti di tutti i giorni li riconosce da un elenco di parole in quattro lingue, quelli meno comuni li capisce **Apple Intelligence**, direttamente sul dispositivo, dove è disponibile. Non consuma messaggi AI e non manda la lista da nessuna parte. Se un prodotto finisce nel reparto sbagliato lo sposti dalla sua scheda, e chi usa la lista da Android o dal browser la vede divisa allo stesso modo.
 
 ## Il legame con i pasti
 
@@ -126,6 +134,14 @@ Milk, bread, fruit: they come back every week. Better not to hand them to an aut
 ### Shopping for an event
 
 Saturday's dinner with friends, the birthday: items go on the same list, maybe with a note. Whoever does the shopping shouldn't have to guess whether the salmon is for tonight or for Saturday.
+
+## The list sorted by aisle
+
+A long list is hard to read between the shelves: milk at the top, yogurt at the bottom, and you double back twice. That's why in KidBox items **sort themselves into their aisle**: fruit and vegetables, meat and fish, dairy, bread and cereals, frozen, drinks, sweets and snacks, cleaning, personal care. At the supermarket you go down the list the way you walk the aisles.
+
+![The KidBox grocery list sorted by aisle](/assets/app/en/grocery-aisles.webp)
+
+The app picks the aisle when you add an item from iPhone, iPad or Mac: everyday products it recognises from a word list in four languages, less common ones are understood by **Apple Intelligence**, right on the device, where it's available. It uses no AI messages and doesn't send the list anywhere. If an item lands in the wrong aisle you move it from its card, and whoever uses the list on Android or in the browser sees it sorted the same way.
 
 ## The link with meals
 

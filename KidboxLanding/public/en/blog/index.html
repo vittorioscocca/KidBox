@@ -251,6 +251,8 @@
   .an-card.done .an-t { color:var(--green); }
   .an-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
   .an-note b { color:var(--text); }
+  .an .mini-list a { color:var(--accent); font-weight:700; text-decoration:none; white-space:nowrap; }
+  .an .mini-list a:hover { text-decoration:underline; text-underline-offset:3px; }
   @media (max-width:860px){ .an { grid-template-columns:1fr; gap:28px; } }
   .band-visual { display:flex; justify-content:center; }
 
@@ -470,6 +472,9 @@
   .b-art-head h1 { font-size:clamp(1.9rem,4.4vw,3rem); font-weight:800; letter-spacing:-0.035em; line-height:1.08; text-wrap:balance; margin-bottom:16px; }
   .b-art-meta { display:flex; flex-wrap:wrap; gap:10px; color:var(--muted); font-size:0.9rem; align-items:center; }
   .b-art-meta .sep { color:var(--faint); }
+  .b-shot { margin:28px auto 32px; max-width:300px; text-align:center; }
+  .b-shot img { width:100%; height:auto; border-radius:34px; box-shadow:var(--shadow); border:1px solid var(--border); }
+  .b-shot figcaption { color:var(--muted); font-size:0.88rem; margin-top:10px; }
   .b-art .t-hero { margin:8px 0 40px; padding:36px; grid-template-columns:220px 1fr; gap:32px; }
   /* Il telefono è disegnato per 300px: restringerlo fa andare a capo le tessere e lo
      allunga; lo si rimpicciolisce intero, proporzioni comprese. */
@@ -651,6 +656,11 @@
   <div class="b-cat-title">Meals and groceries: planning without losing your mind</div>
   <p class="b-cat-desc">A shared grocery list, the week&#x27;s menu and a fridge that never runs empty by surprise.</p>
   <div class="b-grid">
+  <a class="b-card rv" href="shared-grocery-list">
+    <h3>The shared grocery list: how to make it actually work in a family</h3>
+    <p>Why a list on paper or in notes fails with two people, and the four rules for a family list that empties at the supermarket and fills itself at home.</p>
+    <span class="b-meta"><span>5 min read</span><span>·</span><span>8 Nov 2026</span></span>
+  </a>
   <a class="b-card rv" href="family-meals-on-a-budget">
     <h3>Planning family meals on a budget, without eating worse</h3>
     <p>Food is the family expense you can control best, and the one you control least. A five-step method to spend less without cutting quality.</p>
@@ -666,11 +676,6 @@
     <p>The question arrives every day at six, when you&#x27;re most tired. A four-part system — rotation, basic pantry, emergency dishes, list — that makes it disappear.</p>
     <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
   </a>
-  <a class="b-card rv" href="meal-prep-two-hour-method">
-    <h3>Meal prep when you&#x27;re short on time: the two-hour method</h3>
-    <p>Two hours on Sunday for dinners ready in twenty minutes all week. What to cook ahead, what not to, how to store it and how to share the work as a family.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
   </div>
   <p class="b-more"><a href="meals-and-groceries">All articles on Meals and groceries →</a></p>
 </section>
@@ -678,6 +683,16 @@
   <div class="b-cat-title">Getting organised at home: routines, time and clarity for parents</div>
   <p class="b-cat-desc">Routines that hold, reminders that land at the right moment and less mental load for whoever keeps the family together.</p>
   <div class="b-grid">
+  <a class="b-card rv" href="kidbox-home-screen-widgets">
+    <h3>KidBox widgets: the family&#x27;s day on your Home Screen</h3>
+    <p>Calendar, to-dos, groceries, treatments, photos and fitness plan on the iPhone and iPad Home Screen, in three sizes. Tick things off straight from the widget, without opening the app.</p>
+    <span class="b-meta"><span>3 min read</span><span>·</span><span>8 Nov 2026</span></span>
+  </a>
+  <a class="b-card rv" href="handoff-iphone-ipad-mac">
+    <h3>Handoff in KidBox: start on iPhone, finish on Mac</h3>
+    <p>The to-do, event or doctor&#x27;s visit you&#x27;re writing moves from iPhone to iPad or Mac already filled in, right where you were. How it works and what it carries.</p>
+    <span class="b-meta"><span>3 min read</span><span>·</span><span>8 Nov 2026</span></span>
+  </a>
   <a class="b-card rv" href="time-blocking-with-kids-at-home">
     <h3>Time blocking with kids at home: getting more done in less time</h3>
     <p>With children around, time arrives in twenty-minute pieces. Time blocking adapted for parents: realistic blocks, tasks ready to go and a calendar shared with your partner.</p>
@@ -686,16 +701,6 @@
   <a class="b-card rv" href="family-morning-routine">
     <h3>The family morning routine: out of the door on time without shouting</h3>
     <p>Between the alarm and the front door there are forty minutes and twenty things to do. How to build a morning that works even when everyone&#x27;s running late.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="household-budget-shared-expenses">
-    <h3>A household budget as a couple: tracking shared expenses without arguing</h3>
-    <p>Money is one of the top causes of arguments in couples, and usually for lack of information, not lack of money. A simple system to know what the home costs and who paid for what.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="sunday-reset">
-    <h3>The Sunday reset: 30 minutes as a family to start Monday well</h3>
-    <p>Home, calendar, fridge and school bags: a four-block weekly reset done together on Sunday, turning Monday morning from an emergency into a normal day.</p>
     <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
   </a>
   </div>

@@ -251,6 +251,8 @@
   .an-card.done .an-t { color:var(--green); }
   .an-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
   .an-note b { color:var(--text); }
+  .an .mini-list a { color:var(--accent); font-weight:700; text-decoration:none; white-space:nowrap; }
+  .an .mini-list a:hover { text-decoration:underline; text-underline-offset:3px; }
   @media (max-width:860px){ .an { grid-template-columns:1fr; gap:28px; } }
   .band-visual { display:flex; justify-content:center; }
 
@@ -470,6 +472,9 @@
   .b-art-head h1 { font-size:clamp(1.9rem,4.4vw,3rem); font-weight:800; letter-spacing:-0.035em; line-height:1.08; text-wrap:balance; margin-bottom:16px; }
   .b-art-meta { display:flex; flex-wrap:wrap; gap:10px; color:var(--muted); font-size:0.9rem; align-items:center; }
   .b-art-meta .sep { color:var(--faint); }
+  .b-shot { margin:28px auto 32px; max-width:300px; text-align:center; }
+  .b-shot img { width:100%; height:auto; border-radius:34px; box-shadow:var(--shadow); border:1px solid var(--border); }
+  .b-shot figcaption { color:var(--muted); font-size:0.88rem; margin-top:10px; }
   .b-art .t-hero { margin:8px 0 40px; padding:36px; grid-template-columns:220px 1fr; gap:32px; }
   /* Il telefono è disegnato per 300px: restringerlo fa andare a capo le tessere e lo
      allunga; lo si rimpicciolisce intero, proporzioni comprese. */
@@ -523,7 +528,7 @@
 <article class="b-art">
   <header class="b-art-head rv">
     <h1>La lista de la compra compartida: cómo hacer que funcione de verdad en familia</h1>
-    <div class="b-art-meta"><span>El equipo de KidBox</span><span class="sep">·</span><span>Actualizado el 11 sept 2026</span><span class="sep">·</span><span>4 min de lectura</span></div>
+    <div class="b-art-meta"><span>El equipo de KidBox</span><span class="sep">·</span><span>Actualizado el 8 nov 2026</span><span class="sep">·</span><span>5 min de lectura</span></div>
   </header>
   
 <div class="t-hero rv">
@@ -564,6 +569,10 @@
 <p>Leche, pan, fruta: vuelven cada semana. Merece la pena no tachar a ciegas: al volver de la compra, un vistazo a lo que falta en la despensa y los productos habituales vuelven a la lista antes de que se acaben.</p>
 <h3>La compra para un evento</h3>
 <p>La cena del sábado con amigos, el cumpleaños: los productos van a la misma lista, quizá con una nota. Quien hace la compra no debería tener que adivinar si el salmón es para esta noche o para el sábado.</p>
+<h2>La lista ordenada por pasillos</h2>
+<p>Una lista larga se lee mal entre los estantes: la leche arriba, el yogur abajo, y vuelves atrás dos veces. Por eso en KidBox los productos <strong>se colocan solos en su pasillo</strong>: fruta y verdura, carne y pescado, lácteos, pan y cereales, congelados, bebidas, dulces y snacks, limpieza, cuidado personal. En el súper recorres la lista igual que recorres los pasillos.</p>
+<figure class="b-shot"><img src="/assets/app/es/grocery-aisles.webp" alt="La lista de la compra de KidBox ordenada por pasillos" width="600" height="1304" loading="lazy" decoding="async"><figcaption>La lista de la compra de KidBox ordenada por pasillos</figcaption></figure>
+<p>El pasillo lo elige la app cuando añades un producto desde el iPhone, el iPad o el Mac: los productos de siempre los reconoce con una lista de palabras en cuatro idiomas, y los menos comunes los entiende <strong>Apple Intelligence</strong>, directamente en el dispositivo, donde está disponible. No gasta mensajes de IA y no envía la lista a ninguna parte. Si un producto acaba en el pasillo equivocado lo cambias desde su ficha, y quien usa la lista desde Android o desde el navegador la ve ordenada igual.</p>
 <h2>La relación con las comidas</h2>
 <p>La lista funciona todavía mejor si nace de un <strong>menú semanal</strong>: decides lo que vais a comer y los ingredientes que faltan van a la lista. Es un paso más que no todas las familias quieren dar, pero para quien lo da convierte la compra de «¿qué compro?» en «compro esto». Lo contamos en el artículo sobre el <a href="../../es/blog/menu-semanal-en-familia">menú semanal</a>.</p>
 <h2>La señal de que funciona</h2>
@@ -632,6 +641,6 @@
 </script>
 <!-- Il cuore della barra, copiata dalla home: stesso contatore di tutto il sito. -->
 <script defer src="/assets/like.js?v=1"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "La lista de la compra compartida: cómo hacer que funcione de verdad en familia", "description": "Por qué una lista en papel o en las notas falla con dos personas, y las cuatro reglas para una lista familiar que se vacía en el súper y se llena sola en casa.", "datePublished": "2026-09-11", "dateModified": "2026-09-11", "inLanguage": "es", "author": {"@type": "Organization", "name": "KidBox"}, "publisher": {"@type": "Organization", "name": "KidBox", "logo": {"@type": "ImageObject", "url": "https://kidboxapp.com/icon.png"}}, "mainEntityOfPage": "https://kidboxapp.com/es/blog/lista-de-la-compra-compartida"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "La lista de la compra compartida: cómo hacer que funcione de verdad en familia", "description": "Por qué una lista en papel o en las notas falla con dos personas, y las cuatro reglas para una lista familiar que se vacía en el súper y se llena sola en casa.", "datePublished": "2026-11-08", "dateModified": "2026-11-08", "inLanguage": "es", "author": {"@type": "Organization", "name": "KidBox"}, "publisher": {"@type": "Organization", "name": "KidBox", "logo": {"@type": "ImageObject", "url": "https://kidboxapp.com/icon.png"}}, "mainEntityOfPage": "https://kidboxapp.com/es/blog/lista-de-la-compra-compartida"}</script>
 </body>
 </html>

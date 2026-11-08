@@ -264,6 +264,8 @@
   .an-card.done .an-t { color:var(--green); }
   .an-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
   .an-note b { color:var(--text); }
+  .an .mini-list a { color:var(--accent); font-weight:700; text-decoration:none; white-space:nowrap; }
+  .an .mini-list a:hover { text-decoration:underline; text-underline-offset:3px; }
   @media (max-width:860px){ .an { grid-template-columns:1fr; gap:28px; } }
   .band-visual { display:flex; justify-content:center; }
 
@@ -785,22 +787,24 @@
 <section id="novita-apple" class="wrap" style="padding-top:0;">
   <div class="an rv">
     <div class="an-copy">
-      <div class="an-eyebrow">🍎 New · iPhone, iPad and Mac</div>
+      <div class="an-eyebrow">🍎 New on iPhone, iPad and Mac</div>
       <h3>KidBox on your Home Screen, and from one device to the next.</h3>
-      <p>Today's plans without opening the app, the to-do you started on your phone finished on your Mac, a shopping list that sorts itself.</p>
+      <p>Today's plans without opening the app, the to-do you started on your phone and finish on your Mac, the grocery list that sorts itself. Available now in the latest version.</p>
       <ul class="mini-list">
-        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Widgets</b> in three sizes for Calendar, To-dos, Shopping, Treatments, Photos and Fitness Plan: the largest adds up to six shortcuts to the sections you choose</span></li>
-        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Handoff</b>: start a to-do, an event, an expense, a message or a doctor's visit on one device and pick it up on the other, already filled in, right where you left off</span></li>
-        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>A tidy shopping list</b>: Apple Intelligence puts every item in its aisle, right on the device</span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Widgets</b> in three sizes for Calendar, To-do, Groceries, Treatments, Photos and Fitness plan: tick things off right from the widget, and the largest adds up to six shortcuts. <a href="/en/blog/kidbox-home-screen-widgets">How to use them ›</a></span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Handoff</b>: start a to-do, an event, an expense, a message or a doctor's visit on one device and find it on the other, already written, right where you were. <a href="/en/blog/handoff-iphone-ipad-mac">How it works ›</a></span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Groceries by aisle</b>: every item sorts itself into its aisle, with on-device Apple Intelligence for the less common ones. <a href="/en/blog/shared-grocery-list">The list that works ›</a></span></li>
       </ul>
     </div>
-    <div class="an-panel">
-      <div class="an-card"><div class="an-app">Widget · Home Screen</div><div class="an-t">Today</div><div class="an-b">Marco's football 5:30 PM · Pediatrician 6:15 PM</div><div class="an-acts"><span>Small</span><span>Medium</span><span>Large</span></div></div>
-      <div class="an-card"><div class="an-app">Handoff · Mac</div><div class="an-t">Continue from iPhone</div><div class="an-b">To-do · Book the minibus for the school trip</div><div class="an-acts"><span>Already filled in</span></div></div>
-      <div class="an-card done"><div class="an-app">Shopping list · now</div><div class="an-t">Yogurt → Dairy</div><div class="an-b">Apples → Fruit &amp; Veg · Detergent → Cleaning</div></div>
+    <div class="band-visual">
+      <div class="carousel" data-carousel role="group" aria-roledescription="carousel" aria-label="Screens of the widgets and the grocery list">
+        <div class="device tilt"><div class="screen"><div class="car-track"><figure class="car-slide" data-cap="KidBox widgets on the Home Screen"><img class="shot" src="/assets/app/en/widgets.webp" alt="KidBox widgets on the Home Screen: to-dos and calendar with shortcuts" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></figure><figure class="car-slide" data-cap="Groceries sorted by aisle, on their own"><img class="shot" src="/assets/app/en/grocery-aisles.webp" alt="The grocery list sorted by aisle: fruit and vegetables, dairy, bread and cereals" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></figure></div></div></div>
+        <p class="car-cap" aria-live="polite">KidBox widgets on the Home Screen</p>
+        <div class="car-nav"><div class="car-dots" role="tablist"><button class="car-dot" type="button" role="tab" aria-label="KidBox widgets on the Home Screen"></button><button class="car-dot" type="button" role="tab" aria-label="Groceries sorted by aisle, on their own"></button></div><button class="car-play" type="button" aria-label="Pause" data-pause="Pause" data-play="Play"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11a.8.8 0 0 0 1.2.7l9-5.5a.8.8 0 0 0 0-1.4l-9-5.5A.8.8 0 0 0 3 1.5z"/></svg></button></div>
+      </div>
     </div>
   </div>
-  <p class="an-note rv">Coming with the next update, <b>on every plan</b>. Widgets on iPhone and iPad; Handoff between iPhone, iPad and Mac on the same Apple Account. Shopping categories use Apple Intelligence where available, otherwise a keyword list: no AI messages used.</p>
+  <p class="an-note rv">In <b>every plan</b>. Widgets on iPhone and iPad; Handoff between iPhone, iPad and Mac with the same Apple Account. Grocery aisles use no AI messages and the list never leaves the device.</p>
 </section>
 
 <!-- AI -->

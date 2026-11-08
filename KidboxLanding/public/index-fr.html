@@ -264,6 +264,8 @@
   .an-card.done .an-t { color:var(--green); }
   .an-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
   .an-note b { color:var(--text); }
+  .an .mini-list a { color:var(--accent); font-weight:700; text-decoration:none; white-space:nowrap; }
+  .an .mini-list a:hover { text-decoration:underline; text-underline-offset:3px; }
   @media (max-width:860px){ .an { grid-template-columns:1fr; gap:28px; } }
   .band-visual { display:flex; justify-content:center; }
 
@@ -785,22 +787,24 @@
 <section id="novita-apple" class="wrap" style="padding-top:0;">
   <div class="an rv">
     <div class="an-copy">
-      <div class="an-eyebrow">🍎 Nouveau · iPhone, iPad et Mac</div>
+      <div class="an-eyebrow">🍎 Nouveau sur iPhone, iPad et Mac</div>
       <h3>KidBox sur l'écran d'accueil, et d'un appareil à l'autre.</h3>
-      <p>Le programme du jour sans ouvrir l'app, la tâche commencée sur le téléphone que tu termines sur le Mac, une liste de courses qui se range toute seule.</p>
+      <p>Les rendez-vous du jour sans ouvrir l'app, la tâche commencée sur le téléphone que vous terminez sur le Mac, la liste de courses qui se range toute seule. Déjà disponibles dans la dernière version.</p>
       <ul class="mini-list">
-        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Widgets</b> en trois tailles pour Calendrier, Tâches, Courses, Traitements, Photos et Programme fitness : le plus grand ajoute jusqu'à six raccourcis vers les sections de ton choix</span></li>
-        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Handoff</b> : commence une tâche, un événement, une dépense, un message ou une visite médicale sur un appareil et reprends-le sur l'autre, déjà rempli, là où tu t'étais arrêté</span></li>
-        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Des courses bien rangées</b> : Apple Intelligence place chaque produit dans son rayon, directement sur l'appareil</span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Widgets</b> en trois tailles pour Calendrier, Tâches, Courses, Traitements, Photos et Programme fitness : on coche directement depuis le widget, et le plus grand ajoute jusqu'à six raccourcis. <a href="/fr/blog/widgets-kidbox-ecran-d-accueil">Comment les utiliser ›</a></span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Handoff</b> : commencez une tâche, un événement, une dépense, un message ou une consultation sur un appareil et retrouvez-la sur l'autre, déjà écrite, là où vous en étiez. <a href="/fr/blog/handoff-iphone-ipad-mac">Comment ça marche ›</a></span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Courses par rayon</b> : chaque produit se range tout seul dans son rayon, avec Apple Intelligence sur l'appareil pour les moins courants. <a href="/fr/blog/liste-de-courses-partagee">La liste qui marche ›</a></span></li>
       </ul>
     </div>
-    <div class="an-panel">
-      <div class="an-card"><div class="an-app">Widget · écran d'accueil</div><div class="an-t">Aujourd'hui</div><div class="an-b">Foot de Marco 17h30 · Pédiatre 18h15</div><div class="an-acts"><span>Petit</span><span>Moyen</span><span>Grand</span></div></div>
-      <div class="an-card"><div class="an-app">Handoff · Mac</div><div class="an-t">Continuer depuis l'iPhone</div><div class="an-b">Tâche · Réserver le minibus pour la sortie scolaire</div><div class="an-acts"><span>Déjà rempli</span></div></div>
-      <div class="an-card done"><div class="an-app">Liste de courses · maintenant</div><div class="an-t">Yaourt → Produits laitiers</div><div class="an-b">Pommes → Fruits et légumes · Lessive → Entretien</div></div>
+    <div class="band-visual">
+      <div class="carousel" data-carousel role="group" aria-roledescription="carousel" aria-label="Écrans des widgets et de la liste de courses">
+        <div class="device tilt"><div class="screen"><div class="car-track"><figure class="car-slide" data-cap="Les widgets KidBox sur l'écran d'accueil"><img class="shot" src="/assets/app/fr/widgets.webp" alt="Les widgets KidBox sur l'écran d'accueil : tâches et calendrier avec raccourcis" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></figure><figure class="car-slide" data-cap="Les courses rangées par rayon, toutes seules"><img class="shot" src="/assets/app/fr/grocery-aisles.webp" alt="La liste de courses rangée par rayon : fruits et légumes, produits laitiers, pain et céréales" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></figure></div></div></div>
+        <p class="car-cap" aria-live="polite">Les widgets KidBox sur l'écran d'accueil</p>
+        <div class="car-nav"><div class="car-dots" role="tablist"><button class="car-dot" type="button" role="tab" aria-label="Les widgets KidBox sur l'écran d'accueil"></button><button class="car-dot" type="button" role="tab" aria-label="Les courses rangées par rayon, toutes seules"></button></div><button class="car-play" type="button" aria-label="Mettre en pause" data-pause="Mettre en pause" data-play="Lire"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11a.8.8 0 0 0 1.2.7l9-5.5a.8.8 0 0 0 0-1.4l-9-5.5A.8.8 0 0 0 3 1.5z"/></svg></button></div>
+      </div>
     </div>
   </div>
-  <p class="an-note rv">Arrive avec la prochaine mise à jour, <b>dans toutes les formules</b>. Widgets sur iPhone et iPad ; Handoff entre iPhone, iPad et Mac avec le même compte Apple. Les catégories de courses utilisent Apple Intelligence quand elle est disponible, sinon une liste de mots-clés : aucun message IA utilisé.</p>
+  <p class="an-note rv">Dans <b>toutes les formules</b>. Widgets sur iPhone et iPad ; Handoff entre iPhone, iPad et Mac avec le même compte Apple. Les rayons des courses ne consomment aucun message IA et la liste ne quitte pas l'appareil.</p>
 </section>
 
 <!-- AI -->

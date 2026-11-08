@@ -251,6 +251,8 @@
   .an-card.done .an-t { color:var(--green); }
   .an-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
   .an-note b { color:var(--text); }
+  .an .mini-list a { color:var(--accent); font-weight:700; text-decoration:none; white-space:nowrap; }
+  .an .mini-list a:hover { text-decoration:underline; text-underline-offset:3px; }
   @media (max-width:860px){ .an { grid-template-columns:1fr; gap:28px; } }
   .band-visual { display:flex; justify-content:center; }
 
@@ -470,6 +472,9 @@
   .b-art-head h1 { font-size:clamp(1.9rem,4.4vw,3rem); font-weight:800; letter-spacing:-0.035em; line-height:1.08; text-wrap:balance; margin-bottom:16px; }
   .b-art-meta { display:flex; flex-wrap:wrap; gap:10px; color:var(--muted); font-size:0.9rem; align-items:center; }
   .b-art-meta .sep { color:var(--faint); }
+  .b-shot { margin:28px auto 32px; max-width:300px; text-align:center; }
+  .b-shot img { width:100%; height:auto; border-radius:34px; box-shadow:var(--shadow); border:1px solid var(--border); }
+  .b-shot figcaption { color:var(--muted); font-size:0.88rem; margin-top:10px; }
   .b-art .t-hero { margin:8px 0 40px; padding:36px; grid-template-columns:220px 1fr; gap:32px; }
   /* Il telefono è disegnato per 300px: restringerlo fa andare a capo le tessere e lo
      allunga; lo si rimpicciolisce intero, proporzioni comprese. */
@@ -523,7 +528,7 @@
 <article class="b-art">
   <header class="b-art-head rv">
     <h1>The shared grocery list: how to make it actually work in a family</h1>
-    <div class="b-art-meta"><span>The KidBox team</span><span class="sep">·</span><span>Updated 11 Sep 2026</span><span class="sep">·</span><span>4 min read</span></div>
+    <div class="b-art-meta"><span>The KidBox team</span><span class="sep">·</span><span>Updated 8 Nov 2026</span><span class="sep">·</span><span>5 min read</span></div>
   </header>
   
 <div class="t-hero rv">
@@ -564,6 +569,10 @@
 <p>Milk, bread, fruit: they come back every week. Better not to hand them to an automatic subscription, which ends up filling the fridge with things you don't need: a glance at the pantry when you get back from the shop is enough, and the usual items go back on the list before they run out.</p>
 <h3>Shopping for an event</h3>
 <p>Saturday's dinner with friends, the birthday: items go on the same list, maybe with a note. Whoever does the shopping shouldn't have to guess whether the salmon is for tonight or for Saturday.</p>
+<h2>The list sorted by aisle</h2>
+<p>A long list is hard to read between the shelves: milk at the top, yogurt at the bottom, and you double back twice. That's why in KidBox items <strong>sort themselves into their aisle</strong>: fruit and vegetables, meat and fish, dairy, bread and cereals, frozen, drinks, sweets and snacks, cleaning, personal care. At the supermarket you go down the list the way you walk the aisles.</p>
+<figure class="b-shot"><img src="/assets/app/en/grocery-aisles.webp" alt="The KidBox grocery list sorted by aisle" width="600" height="1304" loading="lazy" decoding="async"><figcaption>The KidBox grocery list sorted by aisle</figcaption></figure>
+<p>The app picks the aisle when you add an item from iPhone, iPad or Mac: everyday products it recognises from a word list in four languages, less common ones are understood by <strong>Apple Intelligence</strong>, right on the device, where it's available. It uses no AI messages and doesn't send the list anywhere. If an item lands in the wrong aisle you move it from its card, and whoever uses the list on Android or in the browser sees it sorted the same way.</p>
 <h2>The link with meals</h2>
 <p>The list works even better if it comes from a <strong>weekly menu</strong>: you decide what you'll eat, and the missing ingredients go on the list. It's an extra step not every family wants to take, but for those who do it turns shopping from "what do I buy?" into "I buy this". We cover it in the article on the <a href="../../en/blog/family-weekly-menu">weekly menu</a>.</p>
 <h2>The sign it's working</h2>
@@ -637,6 +646,6 @@
 </script>
 <!-- Il cuore della barra, copiata dalla home: stesso contatore di tutto il sito. -->
 <script defer src="/assets/like.js?v=1"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "The shared grocery list: how to make it actually work in a family", "description": "Why a list on paper or in notes fails with two people, and the four rules for a family list that empties at the supermarket and fills itself at home.", "datePublished": "2026-09-11", "dateModified": "2026-09-11", "inLanguage": "en", "author": {"@type": "Organization", "name": "KidBox"}, "publisher": {"@type": "Organization", "name": "KidBox", "logo": {"@type": "ImageObject", "url": "https://kidboxapp.com/icon.png"}}, "mainEntityOfPage": "https://kidboxapp.com/en/blog/shared-grocery-list"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "The shared grocery list: how to make it actually work in a family", "description": "Why a list on paper or in notes fails with two people, and the four rules for a family list that empties at the supermarket and fills itself at home.", "datePublished": "2026-11-08", "dateModified": "2026-11-08", "inLanguage": "en", "author": {"@type": "Organization", "name": "KidBox"}, "publisher": {"@type": "Organization", "name": "KidBox", "logo": {"@type": "ImageObject", "url": "https://kidboxapp.com/icon.png"}}, "mainEntityOfPage": "https://kidboxapp.com/en/blog/shared-grocery-list"}</script>
 </body>
 </html>

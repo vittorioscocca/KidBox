@@ -237,6 +237,14 @@ Lait, pain, fruits : ils reviennent chaque semaine. Mieux vaut ne pas cocher à
 
 Le dîner entre amis de samedi, l'anniversaire : les articles vont sur la même liste, éventuellement avec une note. Celui qui fait les courses ne devrait pas avoir à deviner si le saumon est pour ce soir ou pour samedi.
 
+## La liste rangée par rayons
+
+Une longue liste se lit mal entre les étagères : le lait en haut, le yaourt en bas, et on revient deux fois sur ses pas. C'est pourquoi dans KidBox les produits **se rangent tout seuls dans leur rayon** : fruits et légumes, viande et poisson, produits laitiers, pain et céréales, surgelés, boissons, sucreries et snacks, entretien, hygiène. Au supermarché, on descend la liste comme on parcourt les allées.
+
+![La liste de courses de KidBox rangée par rayons](/assets/app/fr/grocery-aisles.webp)
+
+C'est l'app qui choisit le rayon quand vous ajoutez un produit depuis l'iPhone, l'iPad ou le Mac : les produits courants, elle les reconnaît grâce à une liste de mots en quatre langues, et les moins courants sont compris par **Apple Intelligence**, directement sur l'appareil, là où elle est disponible. Cela ne consomme aucun message IA et la liste n'est envoyée nulle part. Si un produit tombe dans le mauvais rayon, vous le déplacez depuis sa fiche, et ceux qui utilisent la liste sur Android ou dans le navigateur la voient rangée de la même façon.
+
 ## Le lien avec les repas
 
 La liste marche encore mieux si elle découle d'un **menu de la semaine** : on décide ce qu'on va manger, et les ingrédients manquants partent sur la liste. C'est une étape de plus que toutes les familles ne veulent pas franchir, mais pour celles qui le font, les courses passent de « qu'est-ce que j'achète ? » à « j'achète ça ». Nous en parlons dans l'article sur le [menu de la semaine](/fr/blog/menu-della-settimana-in-famiglia).

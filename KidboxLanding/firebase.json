@@ -589,6 +589,11 @@
         "type": 301
       },
       {
+        "source": "/en/blog/widget-kidbox-schermata-home",
+        "destination": "/en/blog/kidbox-home-screen-widgets",
+        "type": 301
+      },
+      {
         "source": "/en/blog/zone-di-arrivo-scuola-e-casa",
         "destination": "/en/blog/arrival-zones-school-and-home",
         "type": 301
@@ -904,6 +909,11 @@
         "type": 301
       },
       {
+        "source": "/es/blog/widget-kidbox-schermata-home",
+        "destination": "/es/blog/widgets-kidbox-pantalla-de-inicio",
+        "type": 301
+      },
+      {
         "source": "/fr/blog/app-di-famiglia-gratis-cosa-guardare",
         "destination": "/fr/blog/applis-familiales-gratuites",
         "type": 301
@@ -1211,6 +1221,11 @@
       {
         "source": "/fr/blog/tempo-davanti-agli-schermi-in-famiglia",
         "destination": "/fr/blog/ecrans-en-famille",
+        "type": 301
+      },
+      {
+        "source": "/fr/blog/widget-kidbox-schermata-home",
+        "destination": "/fr/blog/widgets-kidbox-ecran-d-accueil",
         "type": 301
       }
     ],

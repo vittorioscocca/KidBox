@@ -251,6 +251,8 @@
   .an-card.done .an-t { color:var(--green); }
   .an-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
   .an-note b { color:var(--text); }
+  .an .mini-list a { color:var(--accent); font-weight:700; text-decoration:none; white-space:nowrap; }
+  .an .mini-list a:hover { text-decoration:underline; text-underline-offset:3px; }
   @media (max-width:860px){ .an { grid-template-columns:1fr; gap:28px; } }
   .band-visual { display:flex; justify-content:center; }
 
@@ -470,6 +472,9 @@
   .b-art-head h1 { font-size:clamp(1.9rem,4.4vw,3rem); font-weight:800; letter-spacing:-0.035em; line-height:1.08; text-wrap:balance; margin-bottom:16px; }
   .b-art-meta { display:flex; flex-wrap:wrap; gap:10px; color:var(--muted); font-size:0.9rem; align-items:center; }
   .b-art-meta .sep { color:var(--faint); }
+  .b-shot { margin:28px auto 32px; max-width:300px; text-align:center; }
+  .b-shot img { width:100%; height:auto; border-radius:34px; box-shadow:var(--shadow); border:1px solid var(--border); }
+  .b-shot figcaption { color:var(--muted); font-size:0.88rem; margin-top:10px; }
   .b-art .t-hero { margin:8px 0 40px; padding:36px; grid-template-columns:220px 1fr; gap:32px; }
   /* Il telefono è disegnato per 300px: restringerlo fa andare a capo le tessere e lo
      allunga; lo si rimpicciolisce intero, proporzioni comprese. */
@@ -651,6 +656,11 @@
   <div class="b-cat-title">Comidas y compra: planificar sin volverse loco</div>
   <p class="b-cat-desc">Una lista de la compra compartida, el menú de la semana y una nevera que nunca se vacía por sorpresa.</p>
   <div class="b-grid">
+  <a class="b-card rv" href="lista-de-la-compra-compartida">
+    <h3>La lista de la compra compartida: cómo hacer que funcione de verdad en familia</h3>
+    <p>Por qué una lista en papel o en las notas falla con dos personas, y las cuatro reglas para una lista familiar que se vacía en el súper y se llena sola en casa.</p>
+    <span class="b-meta"><span>5 min de lectura</span><span>·</span><span>8 nov 2026</span></span>
+  </a>
   <a class="b-card rv" href="comidas-en-familia-con-presupuesto">
     <h3>Planificar las comidas en familia con presupuesto, sin comer peor</h3>
     <p>La comida es el gasto familiar que mejor se puede controlar, y el que menos se controla. Un método en cinco pasos para gastar menos sin renunciar a la calidad.</p>
@@ -666,11 +676,6 @@
     <p>La pregunta llega todos los días a las seis, cuando más cansado estás. Un sistema en cuatro partes (rotación, despensa básica, platos de emergencia, lista) que la hace desaparecer.</p>
     <span class="b-meta"><span>3 min de lectura</span><span>·</span><span>13 sept 2026</span></span>
   </a>
-  <a class="b-card rv" href="cocinar-por-adelantado">
-    <h3>Cocinar por adelantado cuando no hay tiempo: el método de las dos horas</h3>
-    <p>Dos horas el domingo para tener cenas listas en veinte minutos toda la semana. Qué preparar antes, qué no, cómo conservarlo y cómo repartir el trabajo en familia.</p>
-    <span class="b-meta"><span>3 min de lectura</span><span>·</span><span>13 sept 2026</span></span>
-  </a>
   </div>
   <p class="b-more"><a href="comidas-y-compra">Todos los artículos sobre Comidas y compra →</a></p>
 </section>
@@ -678,6 +683,16 @@
   <div class="b-cat-title">Organizarse en casa: rutinas, tiempo y claridad para los padres</div>
   <p class="b-cat-desc">Rutinas que se sostienen, recordatorios que llegan en el momento justo y menos carga mental para quien mantiene unida a la familia.</p>
   <div class="b-grid">
+  <a class="b-card rv" href="widgets-kidbox-pantalla-de-inicio">
+    <h3>Los widgets de KidBox: el día de la familia en la pantalla de inicio</h3>
+    <p>Calendario, tareas, compra, tratamientos, fotos y plan de fitness en la pantalla de inicio del iPhone y del iPad, en tres tamaños. Se marca directamente desde el widget, sin abrir la app.</p>
+    <span class="b-meta"><span>3 min de lectura</span><span>·</span><span>8 nov 2026</span></span>
+  </a>
+  <a class="b-card rv" href="handoff-iphone-ipad-mac">
+    <h3>Handoff en KidBox: empiezas en el iPhone, terminas en el Mac</h3>
+    <p>La tarea, el evento o la visita que estás escribiendo pasa del iPhone al iPad o al Mac ya rellenada, en el punto en que estabas. Cómo funciona y qué lleva consigo.</p>
+    <span class="b-meta"><span>3 min de lectura</span><span>·</span><span>8 nov 2026</span></span>
+  </a>
   <a class="b-card rv" href="trabajar-por-bloques-con-ninos-en-casa">
     <h3>Trabajar por bloques con niños en casa: hacer más en menos tiempo</h3>
     <p>Con niños alrededor, el tiempo llega en trozos de veinte minutos. El time blocking adaptado a los padres: bloques realistas, tareas preparadas y un calendario compartido con tu pareja.</p>
@@ -686,16 +701,6 @@
   <a class="b-card rv" href="rutina-de-la-manana-en-familia">
     <h3>La rutina de la mañana en familia: salir a tiempo y sin gritos</h3>
     <p>Entre el despertador y la puerta hay cuarenta minutos y veinte cosas que hacer. Cómo construir una mañana que funcione incluso cuando todos van tarde.</p>
-    <span class="b-meta"><span>3 min de lectura</span><span>·</span><span>13 sept 2026</span></span>
-  </a>
-  <a class="b-card rv" href="presupuesto-de-casa-en-pareja">
-    <h3>El presupuesto de casa en pareja: controlar los gastos comunes sin discutir</h3>
-    <p>El dinero es una de las primeras causas de discusión en pareja, y casi siempre por falta de información, no de dinero. Un sistema sencillo para saber cuánto cuesta la casa y quién ha pagado qué.</p>
-    <span class="b-meta"><span>3 min de lectura</span><span>·</span><span>13 sept 2026</span></span>
-  </a>
-  <a class="b-card rv" href="reseteo-del-domingo">
-    <h3>El reseteo del domingo: 30 minutos en familia para empezar bien el lunes</h3>
-    <p>Casa, calendario, nevera y mochilas: un reseteo semanal en cuatro bloques, hecho juntos el domingo, que convierte el lunes por la mañana de emergencia en un día normal.</p>
     <span class="b-meta"><span>3 min de lectura</span><span>·</span><span>13 sept 2026</span></span>
   </a>
   </div>

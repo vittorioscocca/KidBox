@@ -251,6 +251,8 @@
   .an-card.done .an-t { color:var(--green); }
   .an-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
   .an-note b { color:var(--text); }
+  .an .mini-list a { color:var(--accent); font-weight:700; text-decoration:none; white-space:nowrap; }
+  .an .mini-list a:hover { text-decoration:underline; text-underline-offset:3px; }
   @media (max-width:860px){ .an { grid-template-columns:1fr; gap:28px; } }
   .band-visual { display:flex; justify-content:center; }
 
@@ -470,6 +472,9 @@
   .b-art-head h1 { font-size:clamp(1.9rem,4.4vw,3rem); font-weight:800; letter-spacing:-0.035em; line-height:1.08; text-wrap:balance; margin-bottom:16px; }
   .b-art-meta { display:flex; flex-wrap:wrap; gap:10px; color:var(--muted); font-size:0.9rem; align-items:center; }
   .b-art-meta .sep { color:var(--faint); }
+  .b-shot { margin:28px auto 32px; max-width:300px; text-align:center; }
+  .b-shot img { width:100%; height:auto; border-radius:34px; box-shadow:var(--shadow); border:1px solid var(--border); }
+  .b-shot figcaption { color:var(--muted); font-size:0.88rem; margin-top:10px; }
   .b-art .t-hero { margin:8px 0 40px; padding:36px; grid-template-columns:220px 1fr; gap:32px; }
   /* Il telefono è disegnato per 300px: restringerlo fa andare a capo le tessere e lo
      allunga; lo si rimpicciolisce intero, proporzioni comprese. */
@@ -523,7 +528,7 @@
 <article class="b-art">
   <header class="b-art-head rv">
     <h1>La liste de courses partagée : comment la faire vraiment marcher en famille</h1>
-    <div class="b-art-meta"><span>L'équipe KidBox</span><span class="sep">·</span><span>Mis à jour le 11 sept. 2026</span><span class="sep">·</span><span>4 min de lecture</span></div>
+    <div class="b-art-meta"><span>L'équipe KidBox</span><span class="sep">·</span><span>Mis à jour le 8 nov. 2026</span><span class="sep">·</span><span>5 min de lecture</span></div>
   </header>
   
 <div class="t-hero rv">
@@ -564,6 +569,10 @@
 <p>Lait, pain, fruits : ils reviennent chaque semaine. Mieux vaut ne pas cocher à l'aveugle : au retour des courses, un coup d'œil à ce qui manque dans le placard, et les articles habituels retournent sur la liste avant d'être finis.</p>
 <h3>Les courses pour un événement</h3>
 <p>Le dîner entre amis de samedi, l'anniversaire : les articles vont sur la même liste, éventuellement avec une note. Celui qui fait les courses ne devrait pas avoir à deviner si le saumon est pour ce soir ou pour samedi.</p>
+<h2>La liste rangée par rayons</h2>
+<p>Une longue liste se lit mal entre les étagères : le lait en haut, le yaourt en bas, et on revient deux fois sur ses pas. C'est pourquoi dans KidBox les produits <strong>se rangent tout seuls dans leur rayon</strong> : fruits et légumes, viande et poisson, produits laitiers, pain et céréales, surgelés, boissons, sucreries et snacks, entretien, hygiène. Au supermarché, on descend la liste comme on parcourt les allées.</p>
+<figure class="b-shot"><img src="/assets/app/fr/grocery-aisles.webp" alt="La liste de courses de KidBox rangée par rayons" width="600" height="1304" loading="lazy" decoding="async"><figcaption>La liste de courses de KidBox rangée par rayons</figcaption></figure>
+<p>C'est l'app qui choisit le rayon quand vous ajoutez un produit depuis l'iPhone, l'iPad ou le Mac : les produits courants, elle les reconnaît grâce à une liste de mots en quatre langues, et les moins courants sont compris par <strong>Apple Intelligence</strong>, directement sur l'appareil, là où elle est disponible. Cela ne consomme aucun message IA et la liste n'est envoyée nulle part. Si un produit tombe dans le mauvais rayon, vous le déplacez depuis sa fiche, et ceux qui utilisent la liste sur Android ou dans le navigateur la voient rangée de la même façon.</p>
 <h2>Le lien avec les repas</h2>
 <p>La liste marche encore mieux si elle découle d'un <strong>menu de la semaine</strong> : on décide ce qu'on va manger, et les ingrédients manquants partent sur la liste. C'est une étape de plus que toutes les familles ne veulent pas franchir, mais pour celles qui le font, les courses passent de « qu'est-ce que j'achète ? » à « j'achète ça ». Nous en parlons dans l'article sur le <a href="../../fr/blog/menu-de-la-semaine-en-famille">menu de la semaine</a>.</p>
 <h2>Le signe que ça marche</h2>
@@ -632,6 +641,6 @@
 </script>
 <!-- Il cuore della barra, copiata dalla home: stesso contatore di tutto il sito. -->
 <script defer src="/assets/like.js?v=1"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "La liste de courses partagée : comment la faire vraiment marcher en famille", "description": "Pourquoi une liste sur papier ou dans les notes échoue à deux, et les quatre règles d'une liste familiale qui se vide au supermarché et se remplit toute seule à la maison.", "datePublished": "2026-09-11", "dateModified": "2026-09-11", "inLanguage": "fr", "author": {"@type": "Organization", "name": "KidBox"}, "publisher": {"@type": "Organization", "name": "KidBox", "logo": {"@type": "ImageObject", "url": "https://kidboxapp.com/icon.png"}}, "mainEntityOfPage": "https://kidboxapp.com/fr/blog/liste-de-courses-partagee"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "La liste de courses partagée : comment la faire vraiment marcher en famille", "description": "Pourquoi une liste sur papier ou dans les notes échoue à deux, et les quatre règles d'une liste familiale qui se vide au supermarché et se remplit toute seule à la maison.", "datePublished": "2026-11-08", "dateModified": "2026-11-08", "inLanguage": "fr", "author": {"@type": "Organization", "name": "KidBox"}, "publisher": {"@type": "Organization", "name": "KidBox", "logo": {"@type": "ImageObject", "url": "https://kidboxapp.com/icon.png"}}, "mainEntityOfPage": "https://kidboxapp.com/fr/blog/liste-de-courses-partagee"}</script>
 </body>
 </html>

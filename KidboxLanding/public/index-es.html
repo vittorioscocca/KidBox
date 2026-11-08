@@ -264,6 +264,8 @@
   .an-card.done .an-t { color:var(--green); }
   .an-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
   .an-note b { color:var(--text); }
+  .an .mini-list a { color:var(--accent); font-weight:700; text-decoration:none; white-space:nowrap; }
+  .an .mini-list a:hover { text-decoration:underline; text-underline-offset:3px; }
   @media (max-width:860px){ .an { grid-template-columns:1fr; gap:28px; } }
   .band-visual { display:flex; justify-content:center; }
 
@@ -785,22 +787,24 @@
 <section id="novita-apple" class="wrap" style="padding-top:0;">
   <div class="an rv">
     <div class="an-copy">
-      <div class="an-eyebrow">🍎 Novedad · iPhone, iPad y Mac</div>
+      <div class="an-eyebrow">🍎 Nuevo en iPhone, iPad y Mac</div>
       <h3>KidBox en la pantalla de inicio, y de un dispositivo a otro.</h3>
-      <p>Los planes de hoy sin abrir la app, la tarea que empezaste en el móvil y terminas en el Mac, una lista de la compra que se ordena sola.</p>
+      <p>Los planes de hoy sin abrir la app, la tarea que empiezas en el móvil y terminas en el Mac, la lista de la compra que se ordena sola. Ya disponibles en la última versión.</p>
       <ul class="mini-list">
-        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Widgets</b> en tres tamaños para Calendario, Tareas, Compra, Tratamientos, Fotos y Plan de fitness: el más grande añade hasta seis accesos a las secciones que elijas</span></li>
-        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Handoff</b>: empiezas una tarea, un evento, un gasto, un mensaje o una visita médica en un dispositivo y lo retomas en el otro, ya escrito, justo donde lo dejaste</span></li>
-        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>La compra en orden</b>: Apple Intelligence pone cada producto en su sección, directamente en el dispositivo</span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Widgets</b> en tres tamaños para Calendario, Tareas, Compra, Tratamientos, Fotos y Plan de fitness: se marca directamente desde el widget, y el más grande añade hasta seis accesos directos. <a href="/es/blog/widgets-kidbox-pantalla-de-inicio">Cómo se usan ›</a></span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Handoff</b>: empiezas una tarea, un evento, un gasto, un mensaje o una visita médica en un dispositivo y la encuentras en el otro, ya escrita, en el punto en que estabas. <a href="/es/blog/handoff-iphone-ipad-mac">Cómo funciona ›</a></span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>Compra por pasillos</b>: cada producto se coloca solo en su pasillo, con Apple Intelligence en el dispositivo para los menos comunes. <a href="/es/blog/lista-de-la-compra-compartida">La lista que funciona ›</a></span></li>
       </ul>
     </div>
-    <div class="an-panel">
-      <div class="an-card"><div class="an-app">Widget · pantalla de inicio</div><div class="an-t">Hoy</div><div class="an-b">Fútbol de Marco 17:30 · Pediatra 18:15</div><div class="an-acts"><span>Pequeño</span><span>Mediano</span><span>Grande</span></div></div>
-      <div class="an-card"><div class="an-app">Handoff · Mac</div><div class="an-t">Continuar desde el iPhone</div><div class="an-b">Tarea · Reservar el minibús para la excursión</div><div class="an-acts"><span>Ya escrito</span></div></div>
-      <div class="an-card done"><div class="an-app">Lista de la compra · ahora</div><div class="an-t">Yogur → Lácteos</div><div class="an-b">Manzanas → Fruta y verdura · Detergente → Limpieza</div></div>
+    <div class="band-visual">
+      <div class="carousel" data-carousel role="group" aria-roledescription="carousel" aria-label="Pantallas de los widgets y de la lista de la compra">
+        <div class="device tilt"><div class="screen"><div class="car-track"><figure class="car-slide" data-cap="Los widgets de KidBox en la pantalla de inicio"><img class="shot" src="/assets/app/es/widgets.webp" alt="Los widgets de KidBox en la pantalla de inicio: tareas y calendario con accesos directos" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></figure><figure class="car-slide" data-cap="La compra ordenada por pasillos, sola"><img class="shot" src="/assets/app/es/grocery-aisles.webp" alt="La lista de la compra ordenada por pasillos: fruta y verdura, lácteos, pan y cereales" width="600" height="1304" loading="lazy" decoding="async" draggable="false"></figure></div></div></div>
+        <p class="car-cap" aria-live="polite">Los widgets de KidBox en la pantalla de inicio</p>
+        <div class="car-nav"><div class="car-dots" role="tablist"><button class="car-dot" type="button" role="tab" aria-label="Los widgets de KidBox en la pantalla de inicio"></button><button class="car-dot" type="button" role="tab" aria-label="La compra ordenada por pasillos, sola"></button></div><button class="car-play" type="button" aria-label="Pausar" data-pause="Pausar" data-play="Reproducir"><svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg><svg class="i-play" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11a.8.8 0 0 0 1.2.7l9-5.5a.8.8 0 0 0 0-1.4l-9-5.5A.8.8 0 0 0 3 1.5z"/></svg></button></div>
+      </div>
     </div>
   </div>
-  <p class="an-note rv">Llega con la próxima actualización, <b>en todos los planes</b>. Widgets en iPhone y iPad; Handoff entre iPhone, iPad y Mac con la misma cuenta de Apple. Las categorías de la compra usan Apple Intelligence donde está disponible y, si no, una lista de palabras clave: no gastan mensajes de IA.</p>
+  <p class="an-note rv">En <b>todos los planes</b>. Widgets en iPhone y iPad; Handoff entre iPhone, iPad y Mac con la misma cuenta de Apple. Los pasillos de la compra no gastan mensajes de IA y la lista no sale del dispositivo.</p>
 </section>
 
 <!-- AI -->

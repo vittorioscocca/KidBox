@@ -251,6 +251,8 @@
   .an-card.done .an-t { color:var(--green); }
   .an-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
   .an-note b { color:var(--text); }
+  .an .mini-list a { color:var(--accent); font-weight:700; text-decoration:none; white-space:nowrap; }
+  .an .mini-list a:hover { text-decoration:underline; text-underline-offset:3px; }
   @media (max-width:860px){ .an { grid-template-columns:1fr; gap:28px; } }
   .band-visual { display:flex; justify-content:center; }
 
@@ -470,6 +472,9 @@
   .b-art-head h1 { font-size:clamp(1.9rem,4.4vw,3rem); font-weight:800; letter-spacing:-0.035em; line-height:1.08; text-wrap:balance; margin-bottom:16px; }
   .b-art-meta { display:flex; flex-wrap:wrap; gap:10px; color:var(--muted); font-size:0.9rem; align-items:center; }
   .b-art-meta .sep { color:var(--faint); }
+  .b-shot { margin:28px auto 32px; max-width:300px; text-align:center; }
+  .b-shot img { width:100%; height:auto; border-radius:34px; box-shadow:var(--shadow); border:1px solid var(--border); }
+  .b-shot figcaption { color:var(--muted); font-size:0.88rem; margin-top:10px; }
   .b-art .t-hero { margin:8px 0 40px; padding:36px; grid-template-columns:220px 1fr; gap:32px; }
   /* Il telefono è disegnato per 300px: restringerlo fa andare a capo le tessere e lo
      allunga; lo si rimpicciolisce intero, proporzioni comprese. */
@@ -651,6 +656,11 @@
   <div class="b-cat-title">Repas et courses : planifier sans perdre la tête</div>
   <p class="b-cat-desc">Une liste de courses partagée, le menu de la semaine et un frigo qui ne se vide jamais par surprise.</p>
   <div class="b-grid">
+  <a class="b-card rv" href="liste-de-courses-partagee">
+    <h3>La liste de courses partagée : comment la faire vraiment marcher en famille</h3>
+    <p>Pourquoi une liste sur papier ou dans les notes échoue à deux, et les quatre règles d&#x27;une liste familiale qui se vide au supermarché et se remplit toute seule à la maison.</p>
+    <span class="b-meta"><span>5 min de lecture</span><span>·</span><span>8 nov. 2026</span></span>
+  </a>
   <a class="b-card rv" href="repas-en-famille-avec-un-budget">
     <h3>Planifier les repas en famille avec un budget, sans manger moins bien</h3>
     <p>L&#x27;alimentation est la dépense familiale qu&#x27;on peut le mieux maîtriser, et celle qu&#x27;on maîtrise le moins. Une méthode en cinq étapes pour dépenser moins sans renoncer à la qualité.</p>
@@ -666,11 +676,6 @@
     <p>La question arrive tous les jours à 18 h, quand on est le plus fatigué. Un système en quatre parties (rotation, placard de base, plats de secours, liste) qui la fait disparaître.</p>
     <span class="b-meta"><span>3 min de lecture</span><span>·</span><span>13 sept. 2026</span></span>
   </a>
-  <a class="b-card rv" href="cuisiner-a-l-avance">
-    <h3>Cuisiner à l&#x27;avance quand on manque de temps : la méthode des deux heures</h3>
-    <p>Deux heures le dimanche pour des dîners prêts en vingt minutes toute la semaine. Ce qu&#x27;il faut préparer à l&#x27;avance, ce qu&#x27;il ne faut pas, comment conserver et comment répartir le travail en famille.</p>
-    <span class="b-meta"><span>3 min de lecture</span><span>·</span><span>13 sept. 2026</span></span>
-  </a>
   </div>
   <p class="b-more"><a href="repas-et-courses">Tous les articles sur Repas et courses →</a></p>
 </section>
@@ -678,6 +683,16 @@
   <div class="b-cat-title">S&#x27;organiser à la maison : routines, temps et clarté pour les parents</div>
   <p class="b-cat-desc">Des routines qui tiennent, des rappels qui arrivent au bon moment et moins de charge mentale pour celui qui fait tenir la famille.</p>
   <div class="b-grid">
+  <a class="b-card rv" href="widgets-kidbox-ecran-d-accueil">
+    <h3>Les widgets KidBox : la journée de la famille sur l&#x27;écran d&#x27;accueil</h3>
+    <p>Calendrier, tâches, courses, traitements, photos et programme fitness sur l&#x27;écran d&#x27;accueil de l&#x27;iPhone et de l&#x27;iPad, en trois tailles. On coche directement depuis le widget, sans ouvrir l&#x27;app.</p>
+    <span class="b-meta"><span>3 min de lecture</span><span>·</span><span>8 nov. 2026</span></span>
+  </a>
+  <a class="b-card rv" href="handoff-iphone-ipad-mac">
+    <h3>Handoff dans KidBox : commencez sur iPhone, terminez sur Mac</h3>
+    <p>La tâche, l&#x27;événement ou la consultation que vous êtes en train d&#x27;écrire passe de l&#x27;iPhone à l&#x27;iPad ou au Mac déjà rempli, là où vous en étiez. Comment ça marche et ce qui est transmis.</p>
+    <span class="b-meta"><span>3 min de lecture</span><span>·</span><span>8 nov. 2026</span></span>
+  </a>
   <a class="b-card rv" href="travailler-par-blocs-avec-des-enfants">
     <h3>Travailler par blocs avec des enfants à la maison : faire plus en moins de temps</h3>
     <p>Avec des enfants autour, le temps arrive par tranches de vingt minutes. Le time blocking adapté aux parents : des blocs réalistes, des tâches prêtes et un calendrier partagé avec votre conjoint.</p>
@@ -686,16 +701,6 @@
   <a class="b-card rv" href="routine-du-matin-en-famille">
     <h3>La routine du matin en famille : partir à l&#x27;heure sans crier</h3>
     <p>Entre le réveil et la porte, il y a quarante minutes et vingt choses à faire. Comment construire un matin qui fonctionne même quand tout le monde est en retard.</p>
-    <span class="b-meta"><span>3 min de lecture</span><span>·</span><span>13 sept. 2026</span></span>
-  </a>
-  <a class="b-card rv" href="budget-du-foyer-a-deux">
-    <h3>Le budget du foyer à deux : suivre les dépenses communes sans se disputer</h3>
-    <p>L&#x27;argent est l&#x27;une des premières causes de dispute dans un couple, et le plus souvent par manque d&#x27;informations, pas d&#x27;argent. Un système simple pour savoir ce que coûte la maison et qui a payé quoi.</p>
-    <span class="b-meta"><span>3 min de lecture</span><span>·</span><span>13 sept. 2026</span></span>
-  </a>
-  <a class="b-card rv" href="reset-du-dimanche">
-    <h3>Le reset du dimanche : 30 minutes en famille pour bien commencer le lundi</h3>
-    <p>Maison, calendrier, frigo et cartables : une remise à zéro hebdomadaire en quatre temps, faite ensemble le dimanche, qui transforme le lundi matin d&#x27;urgence en journée normale.</p>
     <span class="b-meta"><span>3 min de lecture</span><span>·</span><span>13 sept. 2026</span></span>
   </a>
   </div>

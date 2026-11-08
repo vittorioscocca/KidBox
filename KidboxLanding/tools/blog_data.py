@@ -2231,8 +2231,9 @@ from blog_produttivita import ARTICLES as _PR  # noqa: E402
 from blog_salute_documenti import ARTICLES as _SD  # noqa: E402
 from blog_viaggi import ARTICLES as _VI  # noqa: E402
 from blog_animali_auto import ARTICLES as _AA  # noqa: E402
+from blog_apple import ARTICLES as _AP  # noqa: E402
 
-ARTICLES += _GS + _CF + _OR + _PA + _PR + _SD + _VI + _AA
+ARTICLES += _GS + _CF + _OR + _PA + _PR + _SD + _VI + _AA + _AP
 
 # Nomi delle categorie in spagnolo e francese (gli articoli arrivano a lotti).
 _CAT_ES_FR = {
