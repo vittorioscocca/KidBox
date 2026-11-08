@@ -5,8 +5,11 @@ Other apps remember you. KidBox remembers the family: calendar, to-dos, shopping
 ASK THE FAMILY
 From the to-do editor, ask one or more family members, or someone without KidBox (grandparents, a babysitter) with a link that opens in the browser. The first to reply “I'll do it” takes the task, and the to-do is created with their name.
 
+WIDGETS AND HANDOFF
+Home Screen widgets in three sizes (calendar, to-dos, shopping, treatments, photos, fitness plan): tick things off without opening the app. With Handoff, the to-do, event or visit you write on iPhone carries on on iPad or Mac, already filled in.
+
 IT NOTICES BEFORE YOU DO (PRO AND MAX)
-If a to-do is about to fall due and nobody has taken it, or today's dose hasn't been recorded, KidBox lets you know. From the notification, without opening the app: “I'll do it” or “Ask the others” for the to-do, “Taken” for the dose. Turn on “Ask the others for me”: if nobody has taken one of your to-dos 12 hours before it's due, KidBox sends the request itself and tells you who's on it. Evening summary and quiet hours as you like; alerts don't use AI messages.
+If a to-do is about to fall due and nobody has taken it, or today's dose hasn't been recorded, KidBox lets you know. From the notification, without opening the app: “I'll do it” or “Ask the others” for the to-do, “Taken” for the dose. Turn on “Ask the others for me”: if nobody has taken one of your to-dos 12 hours before it's due, KidBox sends the request itself and tells you who's on it. Alerts don't use AI messages.
 
 AI ASSISTANT
 Ask: “when is Marco's next check-up?”, “what's missing from the shopping list?”. It knows everyone's calendar, to-dos, shopping, notes, expenses, documents and health, and answers with links that open the right item. It creates events, to-dos, notes, shopping items and reminders. Every morning at 8:00, a summary of the day's commitments and medication doses.
@@ -21,17 +24,16 @@ HEALTH
 Appointments, tests, vaccines and treatments for children and adults, with reminders for deadlines and the full health history always at hand.
 
 SHOPPING AND EXPENSES
-A shared shopping list updated in real time: when one person ticks an item, the other sees it at once. Dictate shopping and to-dos to Alexa: “Alexa, ask mio box to add milk”. Expenses by category, with receipts and photos attached.
+A shared shopping list that sorts itself by aisle and updates in real time: when one person ticks an item, the other sees it at once. Dictate shopping and to-dos to Alexa: “Alexa, ask mio box to add milk”. Expenses by category, with receipts and photos attached.
 
 DOCUMENTS THAT FILE THEMSELVES
-Snap a bill, a medical report or a prescription and hand it to the assistant with the “+”: KidBox works out what it is and puts it in the right place. The bill becomes a Home due date, the report a visit with the doctor's words, lab results a test with the values, the prescription a treatment. The file stays attached and you confirm with a tap. All in an encrypted archive with a key that stays with the family.
+Snap a bill, a medical report or a prescription and hand it to the assistant with the “+”: KidBox files it in the right place (Home due date, visit, test, treatment) with the file attached. You confirm. All encrypted with a key that stays with the family.
 
 NEWS (PRO AND MAX)
 Every day, the news that matters to your family, from your country down to your town, each with its source. Nearby events go into the calendar with a tap.
 
 AND MORE
 Encrypted family passwords with autofill and OTP codes · Wallet for tickets, cards and payment cards · Real-time location · Pets · Home and garage with deadlines and service history · Trips with an AI itinerary · Selective visibility: the whole family, some members or just you · Multiple families in one app.
-Open the KidBox camera from Control Centre without opening the app.
 
 — — —
 PLANS

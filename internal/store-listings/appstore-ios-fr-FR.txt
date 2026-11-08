@@ -5,8 +5,11 @@ D'autres apps se souviennent de vous. KidBox se souvient de la famille : calendr
 DEMANDEZ À LA FAMILLE
 Depuis l'éditeur de tâches, demandez à un ou plusieurs proches, ou à quelqu'un qui n'a pas KidBox (grands-parents, baby-sitter) avec un lien à ouvrir dans le navigateur. Le premier qui répond « Je m'en occupe » prend la tâche, créée à son nom.
 
+WIDGETS ET HANDOFF
+Widgets sur l'écran d'accueil en trois tailles (calendrier, tâches, courses, traitements, photos, programme fitness) : vous cochez sans ouvrir l'app. Avec Handoff, la tâche, l'événement ou la consultation commencés sur l'iPhone continuent sur l'iPad ou le Mac, déjà remplis.
+
 IL S'EN APERÇOIT AVANT VOUS (PRO ET MAX)
-Une tâche bientôt due sans personne, une dose du jour non enregistrée : KidBox vous prévient. Dans la notification : « Je m'en occupe » ou « Demander aux autres » pour la tâche, « Prise » pour la dose. Avec « Demander aux autres à ma place », 12 h avant l'échéance, KidBox demande lui-même et vous dit qui s'en charge. Récap du soir, heures de silence ; sans messages IA.
+Une tâche bientôt due sans personne, une dose du jour non enregistrée : KidBox vous prévient. Dans la notification : « Je m'en occupe » ou « Demander aux autres » pour la tâche, « Prise » pour la dose. Avec « Demander aux autres à ma place », 12 h avant l'échéance, KidBox demande lui-même et vous dit qui s'en charge. Sans messages IA.
 
 ASSISTANT IA
 Demandez : « quand est le prochain rendez-vous de Marco ? », « que manque-t-il sur la liste de courses ? ». Il connaît le calendrier, les tâches, les courses, les notes, les dépenses, les documents et la santé de chacun, et répond avec des liens vers le bon élément. Il crée événements, tâches, notes, courses et rappels. Chaque matin à 8 h, un résumé des engagements du jour et des doses à donner.
@@ -15,23 +18,22 @@ CALENDRIER ET TÂCHES
 Calendrier partagé avec récurrences et rappels, et les calendriers du téléphone à côté de ceux de la famille (lecture seule). Des tâches à attribuer à chacun ; un rappel urgent sonne comme un réveil.
 
 RECHERCHER DANS KIDBOX
-Une loupe dans l'Accueil cherche dans toute l'app, directement sur le téléphone, sans IA et sans coût : dépenses, documents, notes, calendrier, tâches, santé et plus.
+Une loupe dans l'Accueil cherche dans toute l'app, sur le téléphone, sans IA et sans coût.
 
 SANTÉ
 Rendez-vous, examens, vaccins et traitements des enfants et des adultes, avec rappels d'échéances et historique de santé à portée de main.
 
 COURSES ET DÉPENSES
-Liste de courses partagée en temps réel : quand l'un coche, l'autre le voit aussitôt. Dictez courses et tâches à Alexa : « Alexa, demande à mio box d'ajouter du lait ». Dépenses par catégorie, avec tickets et photos joints.
+Liste de courses partagée, rangée seule par rayon, en temps réel : quand l'un coche, l'autre le voit aussitôt. Dictez courses et tâches à Alexa : « Alexa, demande à mio box d'ajouter du lait ». Dépenses par catégorie, avec tickets et photos joints.
 
 DOCUMENTS BIEN RANGÉS
-Donnez à l'assistant, avec le « + », la photo d'une facture, d'un compte rendu ou d'une ordonnance : KidBox la range à sa place. La facture va dans Maison, le compte rendu dans une consultation, les analyses dans un examen, l'ordonnance dans un traitement, fichier joint. Vous confirmez. Le tout chiffré.
+Donnez à l'assistant, avec le « + », la photo d'une facture, d'un compte rendu ou d'une ordonnance : KidBox la range à sa place, fichier joint. Vous confirmez. Le tout chiffré.
 
 ACTUALITÉS (PRO ET MAX)
 Chaque jour, les actualités utiles à votre famille, de votre pays à votre ville, chacune avec sa source. Les événements proches s'ajoutent au calendrier d'un appui.
 
 ET AUSSI
 Mots de passe de famille chiffrés, avec saisie automatique et codes OTP · Wallet pour billets, cartes et cartes de paiement · Position en temps réel · Animaux · Maison et garage avec échéances et interventions · Voyages avec itinéraire IA · Visibilité sélective : toute la famille, certains membres ou vous seul · Plusieurs familles dans une seule app.
-Ouvrez l'appareil photo de KidBox depuis le Centre de contrôle sans ouvrir l'app.
 
 — — —
 FORMULES

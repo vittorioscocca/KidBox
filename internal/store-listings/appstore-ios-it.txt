@@ -5,8 +5,11 @@ Altre app ricordano te. KidBox ricorda la famiglia: calendario, to-do, spesa, sp
 CHIEDI ALLA FAMIGLIA
 Dall'editor del to-do chiedi a uno o più familiari, oppure a chi non ha KidBox (nonni, babysitter) con un link da aprire nel browser. Il primo che risponde «Ci penso io» si prende il compito e nasce il to-do, con il suo nome.
 
+WIDGET E HANDOFF
+Widget sulla schermata Home in tre misure (calendario, to-do, spesa, cure, foto, piano fitness): spunti senza aprire l'app. Con Handoff il to-do, l'evento o la visita che scrivi sull'iPhone continua sull'iPad o sul Mac, già compilato.
+
 SI ACCORGE PRIMA DI TE (PRO E MAX)
-Se un to-do sta per scadere e nessuno l'ha preso, o una dose di oggi non risulta registrata, KidBox ti avvisa. Dalla notifica, senza aprire l'app: «Ci penso io» o «Chiedi agli altri» per il to-do, «Presa» per la dose. Accendi «Chiedi agli altri al posto mio»: se 12 ore prima nessuno ha preso un tuo to-do, KidBox manda la richiesta da solo e ti dice chi se ne occupa. Riepilogo serale e orari di silenzio a scelta; gli avvisi non usano messaggi AI.
+Se un to-do sta per scadere e nessuno l'ha preso, o una dose di oggi non risulta registrata, KidBox ti avvisa. Dalla notifica, senza aprire l'app: «Ci penso io» o «Chiedi agli altri» per il to-do, «Presa» per la dose. Accendi «Chiedi agli altri al posto mio»: se 12 ore prima nessuno ha preso un tuo to-do, KidBox manda la richiesta da solo e ti dice chi se ne occupa. Gli avvisi non usano messaggi AI.
 
 ASSISTENTE AI
 Chiedi: «quando è la prossima visita di Marco?», «cosa manca nella lista della spesa?». Conosce il calendario, i to-do, la spesa, le note, le spese, i documenti e la salute di tutti, e risponde con link che aprono la voce giusta. Crea eventi, to-do, note, voci della spesa e promemoria. Ogni mattina alle 8:00 un riepilogo degli impegni del giorno e delle dosi da somministrare.
@@ -21,17 +24,16 @@ SALUTE
 Visite, esami, vaccini e cure di bambini e adulti, con promemoria per le scadenze e lo storico sanitario sempre a portata di mano.
 
 SPESA E SPESE
-Lista della spesa condivisa e aggiornata in tempo reale: quando uno la spunta, l'altro lo vede subito. Detti spesa e to-do ad Alexa: «Alexa, chiedi a mio box di aggiungere il latte». Spese per categoria, con scontrini e foto allegati.
+Lista della spesa condivisa, divisa da sola per reparti e aggiornata in tempo reale: quando uno la spunta, l'altro lo vede subito. Detti spesa e to-do ad Alexa: «Alexa, chiedi a mio box di aggiungere il latte». Spese per categoria, con scontrini e foto allegati.
 
 DOCUMENTI CHE SI SISTEMANO DA SOLI
-Fotografa una bolletta, un referto o una ricetta e dalla all'assistente con il «+»: KidBox capisce cos'è e la mette al posto giusto. La bolletta diventa una scadenza di Casa, il referto una visita con le parole del medico, le analisi un esame con i valori, la ricetta una cura. Il file resta allegato e tu confermi con un tocco. Tutto in un archivio cifrato con una chiave che resta alla famiglia.
+Fotografa una bolletta, un referto o una ricetta e dalla all'assistente con il «+»: KidBox la mette al posto giusto (scadenza di Casa, visita, esame, cura) con il file allegato. Tu confermi. Tutto cifrato con una chiave che resta alla famiglia.
 
 NOTIZIE (PRO E MAX)
 Ogni giorno le notizie utili alla tua famiglia, dal paese alla tua città, ciascuna con la sua fonte. Gli eventi vicini si aggiungono al calendario con un tocco.
 
 E ANCORA
 Password di famiglia cifrate, con autocompilazione e codici OTP · Wallet per biglietti, tessere e carte · Posizione in tempo reale · Animali domestici · Casa e garage con scadenze e storico interventi · Viaggi con itinerario AI · Visibilità selettiva: tutta la famiglia, alcuni membri o solo tu · Più famiglie in un'unica app.
-Apri la fotocamera di KidBox dal Centro di Controllo senza aprire l'app.
 
 — — —
 PIANI

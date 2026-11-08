@@ -5,6 +5,9 @@ KidBox is the agent for your family: calendar, to-dos, shopping, expenses, docum
 ASK THE FAMILY
 From the to-do editor, ask one or more family members, or someone without KidBox (grandparents, a babysitter) with a link that opens in the browser. The first to reply “I'll do it” takes the task, and the to-do is created with their name.
 
+HANDOFF
+The to-do, event or visit you start on iPhone or iPad carries on on the Mac already filled in, and the other way round.
+
 AI ASSISTANT
 Ask: “when is Marco's next check-up?”, “what's missing from the shopping list?”, “remind me to call the paediatrician tomorrow”. It knows everyone's calendar, to-dos, shopping, notes, expenses, documents and health, and answers with links that open the right item. It creates events, to-dos, notes, shopping items and reminders. Every morning at 8:00, a summary of the day's commitments and medication doses.
 
@@ -15,7 +18,7 @@ HEALTH
 Appointments, tests, vaccines and treatments for children and adults, with reminders for deadlines and the full health history always at hand.
 
 SHOPPING AND EXPENSES
-A shared shopping list updated in real time: when one person ticks an item, the other sees it at once. Dictate shopping and to-dos to Alexa: “Alexa, ask mio box to add milk”. Expenses by category, with receipts and photos attached.
+A shared shopping list that sorts itself by aisle and updates in real time: when one person ticks an item, the other sees it at once. Dictate shopping and to-dos to Alexa: “Alexa, ask mio box to add milk”. Expenses by category, with receipts and photos attached.
 
 DOCUMENTS
 Medical reports, prescriptions, certificates and photos in an encrypted archive with a key that stays with the family. Import an invoice, a prescription or a report: KidBox reads it and suggests the right actions (add the expense, create the event, log the visit, set the reminder). You choose what to confirm, with a tap.

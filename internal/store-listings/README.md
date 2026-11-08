@@ -150,3 +150,10 @@ sono più corti. Mac invariato (`{{iOS||Mac}}`). Novità 2.4.4 con due punti nuo
 giorno col porting Android dello smistamento documenti (commit Android 87f151f): documenti in testa,
 farmacie, storico fitness; la riga sugli avvisi è uscita per stare nei 500 caratteri. Landing e chat
 del sito dicono ancora «presto su Android»: da cambiare quando la build è in vendita.
+
+**2.4.9 (08/11/2026)**: note «Novità» applicate su iOS e Mac 2.4.9 (`PREPARE_FOR_SUBMISSION`, vuote prima):
+widget, Handoff con le bozze, spesa per reparti, riga veloce, to-do per lista e «To-do completati»,
+titolo «Spesa» non più «Expense» (solo EN/ES/FR). Il Mac senza widget. Descrizioni applicate sulla
+stessa versione: blocco «Widget e Handoff» (Mac: solo «Handoff») e reparti nella spesa; per far
+posto su iOS accorciati documenti e ricerca e tolta la riga sulla fotocamera dal Centro di Controllo.
+Sul Mac c'era il testo **iOS** (lente, fotocamera, avvisi proattivi): ora c'è quello Mac del generatore.

@@ -5,6 +5,9 @@ KidBox est l'agent de votre famille : calendrier, tâches, courses, dépenses, d
 DEMANDEZ À LA FAMILLE
 Depuis l'éditeur de tâches, demandez à un ou plusieurs proches, ou à quelqu'un qui n'a pas KidBox (grands-parents, baby-sitter) avec un lien à ouvrir dans le navigateur. Le premier qui répond « Je m'en occupe » prend la tâche, et la tâche est créée à son nom.
 
+HANDOFF
+La tâche, l'événement ou la consultation commencés sur l'iPhone ou l'iPad continuent sur le Mac déjà remplis, et inversement.
+
 ASSISTANT IA
 Demandez : « quand est le prochain rendez-vous de Marco ? », « que manque-t-il sur la liste de courses ? », « rappelle-moi d'appeler le pédiatre demain ». Il connaît le calendrier, les tâches, les courses, les notes, les dépenses, les documents et la santé de chacun, et répond avec des liens qui ouvrent le bon élément. Il crée des événements, des tâches, des notes, des articles de courses et des rappels. Chaque matin à 8 h, un résumé des engagements du jour et des doses à donner.
 
@@ -15,7 +18,7 @@ SANTÉ
 Rendez-vous, examens, vaccins et traitements des enfants et des adultes, avec des rappels d'échéances et tout l'historique de santé à portée de main.
 
 COURSES ET DÉPENSES
-Liste de courses partagée et mise à jour en temps réel : quand l'un la coche, l'autre le voit aussitôt. Dictez courses et tâches à Alexa : « Alexa, demande à mio box d'ajouter du lait ». Dépenses par catégorie, avec tickets et photos joints.
+Liste de courses partagée, rangée toute seule par rayon et mise à jour en temps réel : quand l'un la coche, l'autre le voit aussitôt. Dictez courses et tâches à Alexa : « Alexa, demande à mio box d'ajouter du lait ». Dépenses par catégorie, avec tickets et photos joints.
 
 DOCUMENTS
 Comptes rendus, ordonnances, certificats et photos dans une archive chiffrée avec une clé qui reste dans la famille. Importez une facture, une ordonnance ou un compte rendu : KidBox le lit et propose les bonnes actions (ajouter la dépense, créer l'événement, enregistrer la visite, programmer le rappel). Vous choisissez ce qu'il faut confirmer, d'un appui.

@@ -5,6 +5,9 @@ KidBox è l'agente della tua famiglia: calendario, to-do, spesa, spese, document
 CHIEDI ALLA FAMIGLIA
 Dall'editor del to-do chiedi a uno o più familiari, oppure a chi non ha KidBox (nonni, babysitter) con un link da aprire nel browser. Il primo che risponde «Ci penso io» si prende il compito e nasce il to-do, con il suo nome.
 
+HANDOFF
+Il to-do, l'evento o la visita che cominci sull'iPhone o sull'iPad continua sul Mac già compilato, e viceversa.
+
 ASSISTENTE AI
 Chiedi: «quando è la prossima visita di Marco?», «cosa manca nella lista della spesa?», «ricordami di chiamare il pediatra domani». Conosce il calendario, i to-do, la spesa, le note, le spese, i documenti e la salute di tutti, e risponde con link che aprono la voce giusta. Crea eventi, to-do, note, voci della spesa e promemoria. Ogni mattina alle 8:00 un riepilogo degli impegni del giorno e delle dosi da somministrare.
 
@@ -15,7 +18,7 @@ SALUTE
 Visite, esami, vaccini e cure di bambini e adulti, con promemoria per le scadenze e lo storico sanitario sempre a portata di mano.
 
 SPESA E SPESE
-Lista della spesa condivisa e aggiornata in tempo reale: quando uno la spunta, l'altro lo vede subito. Detti spesa e to-do ad Alexa: «Alexa, chiedi a mio box di aggiungere il latte». Spese per categoria, con scontrini e foto allegati.
+Lista della spesa condivisa, divisa da sola per reparti e aggiornata in tempo reale: quando uno la spunta, l'altro lo vede subito. Detti spesa e to-do ad Alexa: «Alexa, chiedi a mio box di aggiungere il latte». Spese per categoria, con scontrini e foto allegati.
 
 DOCUMENTI
 Referti, ricette, certificati e foto in un archivio cifrato con una chiave che resta alla famiglia. Importa una fattura, una ricetta o un referto: KidBox lo legge e propone le azioni giuste (aggiungere la spesa, creare l'evento, registrare la visita, impostare il promemoria). Tu scegli cosa confermare, con un tocco.

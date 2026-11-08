@@ -5,8 +5,11 @@ Otras apps te recuerdan a ti. KidBox recuerda a la familia: calendario, tareas, 
 PREGUNTA A LA FAMILIA
 Desde el editor de tareas pregunta a uno o varios familiares, o a quien no tiene KidBox (abuelos, canguro) con un enlace que se abre en el navegador. El primero que responde «Me encargo yo» se queda con la tarea y nace la tarea con su nombre.
 
+WIDGETS Y HANDOFF
+Widgets en la pantalla de inicio en tres tamaños (calendario, tareas, compra, tratamientos, fotos, plan de fitness): marcas sin abrir la app. Con Handoff, la tarea, el evento o la visita que escribes en el iPhone sigue en el iPad o en el Mac, ya rellenada.
+
 SE DA CUENTA ANTES QUE TÚ (PRO Y MAX)
-Si una tarea está a punto de vencer y nadie la ha cogido, o la dosis de hoy no está registrada, KidBox te avisa. Desde la notificación, sin abrir la app: «Me encargo yo» o «Pregunta a los demás» para la tarea, «Tomada» para la dosis. Activa «Pregunta a los demás por mí»: si 12 horas antes nadie ha cogido una de tus tareas, KidBox envía la solicitud solo y te dice quién se encarga. Resumen de la tarde y horas de silencio a tu gusto; los avisos no usan mensajes de IA.
+Si una tarea está a punto de vencer y nadie la ha cogido, o la dosis de hoy no está registrada, KidBox te avisa. Desde la notificación, sin abrir la app: «Me encargo yo» o «Pregunta a los demás» para la tarea, «Tomada» para la dosis. Activa «Pregunta a los demás por mí»: si 12 horas antes nadie ha cogido una de tus tareas, KidBox envía la solicitud solo y te dice quién se encarga. Los avisos no usan mensajes de IA.
 
 ASISTENTE DE IA
 Pregunta: «¿cuándo es la próxima visita de Marco?», «¿qué falta en la lista de la compra?». Conoce el calendario, las tareas, la compra, las notas, los gastos, los documentos y la salud de todos, y responde con enlaces que abren el elemento correcto. Crea eventos, tareas, notas, artículos de la compra y recordatorios. Cada mañana a las 8:00, un resumen de los compromisos del día y de las dosis de medicación.
@@ -15,23 +18,22 @@ CALENDARIO Y TAREAS
 Calendario compartido con eventos recurrentes y recordatorios, y los calendarios del teléfono junto a los de la familia (solo lectura). Tareas que se asignan a cada uno; un recordatorio urgente suena como una alarma.
 
 BUSCAR EN KIDBOX
-Una lupa en Inicio busca en toda la app directamente en el teléfono, sin IA y sin coste: gastos, documentos, notas, calendario, tareas, salud y más.
+Una lupa en Inicio busca en toda la app, en el teléfono, sin IA y sin coste.
 
 SALUD
 Visitas, pruebas, vacunas y tratamientos de niños y adultos, con recordatorios de plazos y el historial de salud siempre a mano.
 
 COMPRA Y GASTOS
-Lista de la compra compartida y actualizada en tiempo real: cuando uno la tacha, el otro lo ve al instante. Dicta compra y tareas a Alexa: «Alexa, pídele a mio box que añada leche». Gastos por categoría, con tickets y fotos adjuntos.
+Lista de la compra compartida, ordenada sola por pasillos y actualizada en tiempo real: cuando uno la tacha, el otro lo ve al instante. Dicta compra y tareas a Alexa: «Alexa, pídele a mio box que añada leche». Gastos por categoría, con tickets y fotos adjuntos.
 
 DOCUMENTOS EN SU SITIO
-Dale al asistente, con el «+», la foto de una factura, un informe o una receta: KidBox la guarda donde va. La factura pasa a Casa, el informe a una visita, los análisis a una prueba, la receta a un tratamiento, con el archivo adjunto. Tú confirmas. Todo cifrado con una clave de la familia.
+Dale al asistente, con el «+», la foto de una factura, un informe o una receta: KidBox la guarda donde va, con el archivo adjunto. Tú confirmas. Todo cifrado.
 
 NOTICIAS (PRO Y MAX)
 Cada día, las noticias útiles para tu familia, de tu país a tu ciudad, cada una con su fuente. Los eventos cercanos se añaden al calendario con un toque.
 
 Y MÁS
 Contraseñas de familia cifradas, con autorrelleno y códigos OTP · Wallet para entradas, tarjetas y tarjetas de pago · Ubicación en tiempo real · Mascotas · Casa y garaje con plazos e historial de intervenciones · Viajes con itinerario de IA · Visibilidad selectiva: toda la familia, algunos miembros o solo tú · Varias familias en una sola app.
-Abre la cámara de KidBox desde el Centro de control sin abrir la app.
 
 — — —
 PLANES

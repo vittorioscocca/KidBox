@@ -5,6 +5,9 @@ KidBox es el agente de tu familia: calendario, tareas, compra, gastos, documento
 PREGUNTA A LA FAMILIA
 Desde el editor de tareas pregunta a uno o varios familiares, o a quien no tiene KidBox (abuelos, canguro) con un enlace que se abre en el navegador. El primero que responde «Me encargo yo» se queda con la tarea y nace la tarea con su nombre.
 
+HANDOFF
+La tarea, el evento o la visita que empiezas en el iPhone o el iPad sigue en el Mac ya rellenada, y al revés.
+
 ASISTENTE DE IA
 Pregunta: «¿cuándo es la próxima visita de Marco?», «¿qué falta en la lista de la compra?», «recuérdame llamar al pediatra mañana». Conoce el calendario, las tareas, la compra, las notas, los gastos, los documentos y la salud de todos, y responde con enlaces que abren el elemento correcto. Crea eventos, tareas, notas, artículos de la compra y recordatorios. Cada mañana a las 8:00, un resumen de los compromisos del día y de las dosis de medicación.
 
@@ -15,7 +18,7 @@ SALUD
 Visitas, pruebas, vacunas y tratamientos de niños y adultos, con recordatorios de plazos y el historial de salud siempre a mano.
 
 COMPRA Y GASTOS
-Lista de la compra compartida y actualizada en tiempo real: cuando uno la tacha, el otro lo ve al instante. Dicta compra y tareas a Alexa: «Alexa, pídele a mio box que añada leche». Gastos por categoría, con tickets y fotos adjuntos.
+Lista de la compra compartida, ordenada sola por pasillos y actualizada en tiempo real: cuando uno la tacha, el otro lo ve al instante. Dicta compra y tareas a Alexa: «Alexa, pídele a mio box que añada leche». Gastos por categoría, con tickets y fotos adjuntos.
 
 DOCUMENTOS
 Informes médicos, recetas, certificados y fotos en un archivo cifrado con una clave que se queda en la familia. Importa una factura, una receta o un informe: KidBox lo lee y propone las acciones adecuadas (añadir el gasto, crear el evento, registrar la visita, programar el recordatorio). Tú eliges qué confirmar, con un toque.
