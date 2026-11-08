@@ -63,6 +63,13 @@ Non c'è una seconda copia da cui ripartire.
 `onboarding.js` sul web). **Un carattere diverso produce una chiave diversa**, e
 il risultato non è un errore: è testo illeggibile, scoperto dopo.
 
+⚠️ **L'escrow v1 è debole**: chi legge Firestore (admin, backup, una regola
+sbagliata) ricava la chiave di ogni famiglia. La sostituzione (cassaforte
+personale, codice di recupero, passkey, QR) è progettata in
+`internal/cifratura-chiave-di-riserva-v2.md`, con le decisioni dell'utente
+(sezione 8) e le regole per non rompere ingresso, revoca e login (sezione
+4 bis). **Leggerlo per intero prima di toccare l'escrow.**
+
 ## Come la chiave arriva a un nuovo membro
 
 Viaggia nel **frammento** del link d'invito (`…/join?familyId&inviteId#k=…`). Il
