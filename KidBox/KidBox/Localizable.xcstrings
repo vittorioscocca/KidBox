@@ -52,28 +52,6 @@
     " Meteo" : {
 
     },
-    "Automatica" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatic"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automática"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatique"
-          }
-        }
-      }
-    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -11894,6 +11872,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remplissage automatique"
+          }
+        }
+      }
+    },
+    "Automatica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automática"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatique"
           }
         }
       }
@@ -27998,6 +27998,7 @@
       }
     },
     "Es. Frutta e Verdura" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -69805,6 +69806,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sans la skill activée sur votre compte Amazon, les Echo ne savent pas ce qu’est « mio box » et le code ci-dessous n’a personne à joindre. Cela se fait une seule fois."
+          }
+        }
+      }
+    },
+    "Senza lista" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No list"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin lista"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sans liste"
           }
         }
       }

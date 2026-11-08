@@ -15,6 +15,7 @@ struct TodoSmartListView: View {
     @Query private var todos: [KBTodoItem]
     @State private var searchText = ""
     @Query private var members: [KBFamilyMember]
+    @Query private var lists: [KBTodoList]
     
     private let remote = TodoRemoteStore()
     private let familyId: String
@@ -35,6 +36,11 @@ struct TodoSmartListView: View {
         self.familyId = familyId
         self.childId = childId
         self.kind = kind
+        
+        _lists = Query(
+            filter: #Predicate<KBTodoList> { $0.familyId == familyId && $0.isDeleted == false },
+            sort: [SortDescriptor(\KBTodoList.createdAt)]
+        )
         
         // ✅ Query base: semplice, il compiler non impazzisce
         _todos = Query(
@@ -89,6 +95,24 @@ struct TodoSmartListView: View {
         }
     }
     
+    /// «Tutti» raggruppato per lista, come Promemoria di Apple: l'ordine è quello
+    /// di creazione delle liste, i to-do senza lista (o di una lista non più
+    /// visibile) vanno in coda. Dentro ogni gruppo resta l'ordine della query.
+    private var groupedTodos: [(id: String, name: String?, todos: [KBTodoItem])] {
+        var byList: [String: [KBTodoItem]] = [:]
+        for todo in filteredTodos { byList[todo.listId ?? "", default: []].append(todo) }
+        var result: [(id: String, name: String?, todos: [KBTodoItem])] = []
+        for list in lists {
+            if let items = byList.removeValue(forKey: list.id) {
+                result.append((id: list.id, name: list.name, todos: items))
+            }
+        }
+        let orphans = byList.values.flatMap { $0 }
+            .sorted { $0.updatedAt > $1.updatedAt }
+        if !orphans.isEmpty { result.append((id: "", name: nil, todos: orphans)) }
+        return result
+    }
+    
     // MARK: - Body
     
     var body: some View {
@@ -96,11 +120,33 @@ struct TodoSmartListView: View {
             if filteredTodos.isEmpty {
                 Text(searchText.isEmpty ? "Nessun elemento" : "Nessun risultato")
                     .foregroundStyle(.secondary)
+            } else if kind == .all {
+                ForEach(groupedTodos, id: \.id) { group in
+                    Section {
+                        ForEach(group.todos) { todo in
+                            row(todo)
+                        }
+                        .onDelete { offsets in
+                            deleteTodos(group.todos, at: offsets)
+                        }
+                    } header: {
+                        Group {
+                            if let name = group.name {
+                                Text(verbatim: name)
+                            } else {
+                                Text("Senza lista")
+                            }
+                        }
+                        .font(.title3.bold())
+                        .foregroundStyle(.primary)
+                        .textCase(nil)
+                    }
+                }
             } else {
                 ForEach(filteredTodos) { todo in
                     row(todo)
                 }
-                .onDelete(perform: deleteTodos)
+                .onDelete { deleteTodos(filteredTodos, at: $0) }
             }
         }
         .kbRefreshable {
@@ -293,14 +339,14 @@ struct TodoSmartListView: View {
         }
     }
     
-    private func deleteTodos(offsets: IndexSet) {
+    private func deleteTodos(_ source: [KBTodoItem], at offsets: IndexSet) {
         Task { @MainActor in
             let uid = KBUid.current ?? "local"
             
             let now = Date()
 
             for i in offsets {
-                let todo = filteredTodos[i]
+                let todo = source[i]
                 // Cancellato: via anche l'avviso, notifica o sveglia che sia.
                 TodoReminderService.cancel(todoId: todo.id)
                 todo.reminderEnabled = false
