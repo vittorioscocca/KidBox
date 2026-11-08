@@ -307,7 +307,10 @@ final class KBWidgetSync {
                 $0.familyId == familyId && $0.isDeleted == false && $0.isDone == false
             }
         ))) ?? []
-        let visible = items.filter { $0.isVisible(to: uid) }
+        // Nel widget solo i to-do assegnati a me: è la mia lista di cose da
+        // fare, non quella della famiglia. Le liste restano tutte sceglibili
+        // anche se vuote, così il widget configurato non perde la lista.
+        let visible = items.filter { $0.isVisible(to: uid) && $0.assignedTo == uid }
 
         func rows(_ list: [KBTodoItem]) -> (Int, [KBWidgetSnapshot.TodoItem]) {
             let sorted = list.sorted {
