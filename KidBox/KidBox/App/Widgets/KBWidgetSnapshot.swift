@@ -84,6 +84,12 @@ struct KBWidgetSnapshot: Codable, Equatable {
         var dosage: String
         var time: Date
         var taken: Bool
+        /// Segnata come saltata. Opzionale: le istantanee scritte prima
+        /// del campo devono restare leggibili.
+        var skipped: Bool? = nil
+
+        /// Ancora da gestire: né presa né saltata.
+        var isPending: Bool { !taken && skipped != true }
     }
 
     struct FitnessProfile: Codable, Equatable, Identifiable {
@@ -148,42 +154,62 @@ enum KBWidgetStore {
     }
 }
 
-// MARK: - «Presa» dal widget Cure
+// MARK: - «Presa» / «Saltata» dal widget Cure
 
-/// Dosi segnate come prese dal widget, in attesa che l'app le scriva davvero.
+/// Dosi gestite dal widget, in attesa che l'app le scriva davvero.
 ///
 /// Il pulsante del widget gira nell'estensione (a meno che il sistema non lo
 /// esegua nell'app): lì non c'è SwiftData né la sincronizzazione. L'estensione
-/// aggiorna subito l'istantanea, così il widget cambia, e mette l'id in coda;
-/// l'app la svuota appena può (`KBWidgetSync.drainPendingDoses`).
+/// aggiorna subito l'istantanea, così il widget passa alla dose dopo, e mette
+/// la voce in coda; l'app la svuota appena può (`KBWidgetSync.drainPendingDoses`).
 enum KBWidgetDoseQueue {
 
     private static let key = "kidbox.widget.pendingDoses"
+    private static let takenPrefix = "taken:"
+    private static let skippedPrefix = "skipped:"
 
     /// Impostato dall'app: se l'intent gira nel suo processo, svuota subito.
     nonisolated(unsafe) static var drainInApp: (@Sendable () async -> Void)?
 
     private static var defaults: UserDefaults? { UserDefaults(suiteName: KBWidgetStore.appGroupId) }
 
-    static func pending() -> [String] {
-        defaults?.stringArray(forKey: key) ?? []
+    private static var raw: [String] {
+        get { defaults?.stringArray(forKey: key) ?? [] }
+        set { defaults?.set(newValue, forKey: key) }
     }
 
-    static func enqueue(_ doseId: String) {
-        var list = pending()
-        if !list.contains(doseId) { list.append(doseId) }
-        defaults?.set(list, forKey: key)
+    /// Voci in coda: (id della dose, presa sì/no).
+    static func pending() -> [(doseId: String, taken: Bool)] {
+        raw.compactMap { item in
+            if item.hasPrefix(skippedPrefix) { return (String(item.dropFirst(skippedPrefix.count)), false) }
+            if item.hasPrefix(takenPrefix) { return (String(item.dropFirst(takenPrefix.count)), true) }
+            return (item, true)   // formato precedente: solo «presa»
+        }
+    }
+
+    private static func id(of item: String) -> String {
+        for prefix in [takenPrefix, skippedPrefix] where item.hasPrefix(prefix) {
+            return String(item.dropFirst(prefix.count))
+        }
+        return item
+    }
+
+    static func enqueue(_ doseId: String, taken: Bool) {
+        var list = raw.filter { id(of: $0) != doseId }
+        list.append((taken ? takenPrefix : skippedPrefix) + doseId)
+        raw = list
     }
 
     static func remove(_ doseId: String) {
-        defaults?.set(pending().filter { $0 != doseId }, forKey: key)
+        raw = raw.filter { id(of: $0) != doseId }
     }
 
     /// Aggiorna l'istantanea senza aspettare l'app.
-    static func markTakenInSnapshot(_ doseId: String) {
+    static func markInSnapshot(_ doseId: String, taken: Bool) {
         guard var snap = KBWidgetStore.read(),
               let i = snap.doses.firstIndex(where: { $0.id == doseId }) else { return }
-        snap.doses[i].taken = true
+        snap.doses[i].taken = taken
+        snap.doses[i].skipped = !taken
         KBWidgetStore.write(snap)
     }
 }

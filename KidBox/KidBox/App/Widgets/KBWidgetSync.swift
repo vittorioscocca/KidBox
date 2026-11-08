@@ -72,13 +72,13 @@ final class KBWidgetSync {
         let familyId = UserDefaults(suiteName: KBWidgetStore.appGroupId)?
             .string(forKey: "activeFamilyId") ?? ""
         guard !familyId.isEmpty else { return }
-        for id in ids {
+        for (id, taken) in ids {
             // «treatmentId|giorno|slot», vedi `doses(...)`.
             let parts = id.split(separator: "|").map(String.init)
             if parts.count == 3, let day = Int(parts[1]), let slot = Int(parts[2]) {
                 TreatmentDoseActionHandler.recordDose(
                     treatmentId: parts[0], familyId: familyId,
-                    dayOffset: day - 1, slotIndex: slot, taken: true,
+                    dayOffset: day - 1, slotIndex: slot, taken: taken,
                     modelContext: container.mainContext
                 )
             }
@@ -138,16 +138,27 @@ final class KBWidgetSync {
         snap.todoLists = todoLists(familyId: familyId, uid: uid, context: context)
         snap.grocery = grocery(familyId: familyId, context: context)
 
+        // Stessi soggetti del selettore della Salute: figli e membri adulti
+        // (per questi l'id è lo uid, come `childId` di cure e piano fitness).
         let children = (try? context.fetch(FetchDescriptor<KBChild>(
             predicate: #Predicate { $0.familyId == familyId },
             sortBy: [SortDescriptor(\.name)]
         ))) ?? []
+        let members = (try? context.fetch(FetchDescriptor<KBFamilyMember>(
+            predicate: #Predicate { $0.familyId == familyId && $0.isDeleted == false },
+            sortBy: [SortDescriptor(\.displayName)]
+        ))) ?? []
         snap.profiles = children.map { .init(id: $0.id, name: $0.name) }
+            + members.map { m in
+                let name = m.displayName?.trimmingCharacters(in: .whitespaces) ?? ""
+                let fallback = m.email?.split(separator: "@").first.map(String.init) ?? ""
+                return .init(id: m.userId, name: name.isEmpty ? fallback : name)
+            }
 
         snap.doses = doses(familyId: familyId, context: context, today: today, cal: cal)
 
         if fitnessUnlocked {
-            snap.fitness = children.compactMap { fitnessProfile(for: $0.id, today: today, cal: cal) }
+            snap.fitness = snap.profiles.compactMap { fitnessProfile(for: $0.id, today: today, cal: cal) }
         }
         return snap
     }
@@ -255,7 +266,7 @@ final class KBWidgetSync {
         ))) ?? []
         guard !treatments.isEmpty else { return [] }
         let logs = (try? context.fetch(FetchDescriptor<KBDoseLog>(
-            predicate: #Predicate { $0.familyId == familyId && $0.isDeleted == false && $0.taken == true }
+            predicate: #Predicate { $0.familyId == familyId && $0.isDeleted == false }
         ))) ?? []
 
         var out: [KBWidgetSnapshot.Dose] = []
@@ -274,16 +285,19 @@ final class KBWidgetSync {
                     guard parts.count == 2,
                           let time = cal.date(bySettingHour: parts[0], minute: parts[1], second: 0, of: day)
                     else { continue }
-                    let taken = logs.contains {
+                    // Riga presente con taken == false = saltata (come nel dettaglio cura).
+                    let log = logs.first {
                         $0.treatmentId == t.id && $0.dayNumber == dayNumber && $0.slotIndex == slot
                     }
+                    let taken = log?.taken == true
                     out.append(.init(
                         id: "\(t.id)|\(dayNumber)|\(slot)",
                         childId: t.childId,
                         drugName: t.drugName,
                         dosage: dosageLabel(t.dosageValue, t.dosageUnit),
                         time: time,
-                        taken: taken
+                        taken: taken,
+                        skipped: log != nil && !taken
                     ))
                 }
             }
@@ -293,6 +307,7 @@ final class KBWidgetSync {
     }
 
     private static func dosageLabel(_ value: Double, _ unit: String) -> String {
+        guard value > 0 else { return "" }   // «0 ml» non dice niente
         let number = value == value.rounded() ? String(Int(value)) : String(value)
         return unit.isEmpty ? number : "\(number) \(unit)"
     }

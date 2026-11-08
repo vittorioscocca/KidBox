@@ -2,7 +2,7 @@
 //  KBMarkDoseTakenIntent.swift
 //  KidBox + KidBoxControlsExtension
 //
-//  Pulsante «Presa» del widget Cure. Il file deve stare nel target app e
+//  Pulsanti «Presa» e «Saltata» del widget Cure. Il file deve stare nel target app e
 //  nell'estensione (vedi eccezione nel progetto Xcode): se l'intent è anche
 //  nell'app, il sistema può eseguirlo lì e la dose si scrive subito.
 //
@@ -17,12 +17,18 @@ struct KBMarkDoseTakenIntent: AppIntent {
     @Parameter(title: "Dose")
     var doseId: String
 
+    @Parameter(title: "Presa", default: true)
+    var taken: Bool
+
     init() {}
-    init(doseId: String) { self.doseId = doseId }
+    init(doseId: String, taken: Bool = true) {
+        self.doseId = doseId
+        self.taken = taken
+    }
 
     func perform() async throws -> some IntentResult {
-        KBWidgetDoseQueue.enqueue(doseId)
-        KBWidgetDoseQueue.markTakenInSnapshot(doseId)
+        KBWidgetDoseQueue.enqueue(doseId, taken: taken)
+        KBWidgetDoseQueue.markInSnapshot(doseId, taken: taken)
         WidgetCenter.shared.reloadAllTimelines()
         // Nell'app: scrive la dose e la sincronizza. Nell'estensione è nil e
         // la coda aspetta la prossima apertura.
