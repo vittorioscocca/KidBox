@@ -36,6 +36,14 @@ final class KBWidgetSync {
             await KBWidgetSync.shared.drainPendingTodos()
             await MainActor.run { KBWidgetSync.shared.drainPendingGrocery() }
         }
+        KBWidgetDoseQueue.refreshInApp = {
+            await MainActor.run {
+                KBWidgetSync.shared.drainPendingDoses()
+                KBWidgetSync.shared.drainPendingGrocery()
+            }
+            await KBWidgetSync.shared.drainPendingTodos()
+            await MainActor.run { KBWidgetSync.shared.refresh(force: true) }
+        }
 
         saveObserver = NotificationCenter.default.addObserver(
             forName: ModelContext.didSave, object: nil, queue: .main
@@ -181,12 +189,12 @@ final class KBWidgetSync {
         Task { await SyncCenter.shared.flushGrocery(modelContext: context) }
     }
 
-    func refresh() {
+    func refresh(force: Bool = false) {
         guard let container else { return }
         observePlanIfNeeded()
         drainPendingDoses()
         drainPendingGrocery()
-        if !KBWidgetTodoQueue.queue.pending().isEmpty {
+        if !force, !KBWidgetTodoQueue.queue.pending().isEmpty {
             // Il giro dopo (salvataggio → didSave) ricostruisce l'istantanea.
             Task { await drainPendingTodos() }
             return
@@ -207,7 +215,7 @@ final class KBWidgetSync {
             context: container.mainContext,
             fitnessUnlocked: KBSubscriptionManager.shared.currentPlan != .free
         )
-        if KBWidgetStore.write(snapshot) {
+        if KBWidgetStore.write(snapshot, force: force) || force {
             WidgetCenter.shared.reloadAllTimelines()
         }
         KBWidgetPhotos.prepareIfNeeded(familyId: familyId, uid: uid, context: container.mainContext)

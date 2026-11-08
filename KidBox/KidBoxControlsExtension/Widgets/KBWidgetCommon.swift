@@ -29,6 +29,8 @@ extension Color {
     static let kbCare     = Color(hex: "E8507A")
     static let kbFitness  = Color(hex: "F5821F")
     static let kbPhotos   = Color(hex: "AF52DE")
+    /// Arancione del marchio, lo stesso del web (`--accent`).
+    static let kbBrand    = Color(hex: "E8833A")
 }
 
 // MARK: - Intestazione (nome a sinistra, numero a destra, come Promemoria)
@@ -756,6 +758,45 @@ extension View {
 
 /// Due file da tre: icona sul quadrato del colore della sezione, nome sotto.
 /// Ogni casella è un `Link`, che nel widget vale più del `widgetURL` del contenuto.
+/// Piede del widget grande, come quello di Alexa: a sinistra il pulsante che
+/// aggiorna con l'ora dell'ultimo aggiornamento, a destra il marchio come sul
+/// web («Kid» nel colore del testo, «Box» arancione).
+struct KBWidgetFooter: View {
+    let updatedAt: Date
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Button(intent: KBRefreshWidgetsIntent()) {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.kbBrand)
+                    .frame(width: 28, height: 28)
+                    .background(Circle().fill(Color.kbBrand.opacity(0.14)))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Aggiorna"))
+
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Aggiornato")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text(updatedAt, format: .dateTime.weekday(.wide).day().month(.wide).hour().minute())
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+
+            Spacer(minLength: 6)
+
+            (Text(verbatim: "Kid").foregroundStyle(.primary)
+             + Text(verbatim: "Box").foregroundStyle(Color.kbBrand))
+                .font(.system(size: 19, weight: .heavy, design: .rounded))
+                .accessibilityLabel(Text(verbatim: "KidBox"))
+        }
+    }
+}
+
 struct KBShortcutGrid: View {
     let sections: [KBShortcutSection]
 
@@ -779,7 +820,7 @@ struct KBShortcutGrid: View {
             VStack(spacing: 4) {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(section.tint.gradient)
-                    .frame(height: 48)
+                    .frame(height: 42)
                     .overlay {
                         Image(systemName: section.systemImage)
                             .font(.system(size: 21, weight: .semibold))

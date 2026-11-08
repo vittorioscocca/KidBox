@@ -147,9 +147,10 @@ enum KBWidgetStore {
 
     /// `true` se il contenuto è cambiato (e quindi vale la pena ricaricare i widget).
     @discardableResult
-    static func write(_ snapshot: KBWidgetSnapshot) -> Bool {
+    static func write(_ snapshot: KBWidgetSnapshot, force: Bool = false) -> Bool {
         guard let url = fileURL else { return false }
-        if var old = read() {
+        // `force`: scrive anche a contenuto uguale, così «Aggiornato» segna l'ora del controllo.
+        if !force, var old = read() {
             old.updatedAt = snapshot.updatedAt
             if old == snapshot { return false }
         }
@@ -229,6 +230,9 @@ enum KBWidgetDoseQueue {
 
     /// Impostato dall'app: se l'intent gira nel suo processo, svuota subito.
     nonisolated(unsafe) static var drainInApp: (@Sendable () async -> Void)?
+    /// Pulsante «aggiorna» del widget grande: nell'app ricostruisce subito
+    /// l'istantanea; nell'estensione è nil e si ricarica solo quella che c'è.
+    nonisolated(unsafe) static var refreshInApp: (@Sendable () async -> Void)?
 
     private static var defaults: UserDefaults? { UserDefaults(suiteName: KBWidgetStore.appGroupId) }
 

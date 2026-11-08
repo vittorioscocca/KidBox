@@ -37,6 +37,21 @@ struct KBMarkDoseTakenIntent: AppIntent {
     }
 }
 
+/// Pulsante «aggiorna» in fondo al widget grande, come quello di Alexa.
+struct KBRefreshWidgetsIntent: AppIntent {
+    static let title: LocalizedStringResource = "Aggiorna i widget"
+    static let isDiscoverable: Bool = false
+
+    init() {}
+
+    func perform() async throws -> some IntentResult {
+        // Nell'app: rilegge i dati e riscrive l'istantanea (con l'ora nuova).
+        await KBWidgetDoseQueue.refreshInApp?()
+        WidgetCenter.shared.reloadAllTimelines()
+        return .result()
+    }
+}
+
 /// Cerchietto del widget To-do: segna il to-do come fatto.
 struct KBMarkTodoDoneIntent: AppIntent {
     static let title: LocalizedStringResource = "Segna come fatto"

@@ -86,11 +86,12 @@ struct KBHomeWidgetView: View {
 
     /// Grande: sopra lo stesso contenuto del largo, sotto le scorciatoie.
     private var largeBody: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             content(embedded: true)
                 .frame(maxHeight: .infinity)
-            if entry.snapshot != nil {
+            if let snapshot = entry.snapshot {
                 KBShortcutGrid(sections: KBShortcutSection.resolved(entry.shortcuts, content: entry.content))
+                KBWidgetFooter(updatedAt: snapshot.updatedAt)
             }
         }
         .containerBackground(.background, for: .widget)
