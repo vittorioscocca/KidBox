@@ -105,6 +105,9 @@ struct PediatricChildSelectorView: View {
                     .task(id: person.personId) {
                         guard !didAutoNavigate else { return }
                         didAutoNavigate = true
+                        // Pagine già aperte sopra (Handoff, link): non si toccano.
+                        let selector = Route.pediatricChildSelector(familyId: familyId)
+                        guard coordinator.path.isEmpty || coordinator.path.last == selector else { return }
                         coordinator.replaceTop(
                             with: .pediatricHome(familyId: familyId, childId: person.personId)
                         )

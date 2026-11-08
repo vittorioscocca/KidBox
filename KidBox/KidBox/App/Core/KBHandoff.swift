@@ -26,11 +26,15 @@ struct KBHandoffTarget: Hashable {
     var listId: String? = nil
     var albumId: String? = nil
     var albumTitle: String? = nil
+    /// Dentro Salute: persona e pagine aperte (scheda, visite, una visita…),
+    /// scritte da `KBHealthTrail`.
+    var healthTrail: String? = nil
     var draft: KBHandoffDraft? = nil
 
     private enum Key {
         static let section = "section", familyId = "familyId", childId = "childId"
         static let listId = "listId", albumId = "albumId", albumTitle = "albumTitle"
+        static let healthTrail = "healthTrail"
     }
 
     var userInfo: [String: String] {
@@ -39,6 +43,7 @@ struct KBHandoffTarget: Hashable {
         if let listId { info[Key.listId] = listId }
         if let albumId { info[Key.albumId] = albumId }
         if let albumTitle { info[Key.albumTitle] = albumTitle }
+        if let healthTrail { info[Key.healthTrail] = healthTrail }
         if let draft {
             info[KBHandoffDraft.kindKey] = draft.kind.rawValue
             for (k, v) in draft.fields { info[KBHandoffDraft.fieldPrefix + k] = v }
@@ -60,6 +65,7 @@ struct KBHandoffTarget: Hashable {
         listId = userInfo?[Key.listId] as? String
         albumId = userInfo?[Key.albumId] as? String
         albumTitle = userInfo?[Key.albumTitle] as? String
+        healthTrail = userInfo?[Key.healthTrail] as? String
         if let raw = userInfo?[KBHandoffDraft.kindKey] as? String, let kind = KBHandoffDraft.Kind(rawValue: raw) {
             var fields: [String: String] = [:]
             for (k, v) in userInfo ?? [:] {
@@ -91,6 +97,10 @@ enum KBHandoff {
         } else if let first = path.first,
                   let match = SidebarSection.main.first(where: { $0 != .dashboard && $0.route(familyId: fid) == first }) {
             section = match
+        } else if let first = path.first, KBHealthTrail.encode([first]) != nil {
+            // Con una persona sola il selettore di Salute si toglie dallo stack
+            // e la pila comincia dalla sua scheda.
+            section = .health
         } else if path.isEmpty, coordinator.rootTab == .news {
             section = .news
         } else if path.isEmpty {
@@ -115,6 +125,9 @@ enum KBHandoff {
             default:
                 break
             }
+        }
+        if target.section == .health {
+            target.healthTrail = KBHealthTrail.encode(path)
         }
         return target
     }
@@ -144,6 +157,22 @@ enum KBHandoff {
             } else {
                 coordinator.rootTab = .home
                 coordinator.path = [.notesHome(familyId: target.familyId), route]
+            }
+            return
+        }
+
+        if sameFamily, target.section == .health,
+           let trail = target.healthTrail.map({ KBHealthTrail.decode($0, familyId: target.familyId) }),
+           !trail.isEmpty {
+            if usesSidebar {
+                coordinator.path.removeAll()
+                coordinator.sidebarSection = .health
+                coordinator.path = trail
+            } else {
+                // Si parte dalla scheda della persona: il selettore, con una
+                // persona sola, si sostituirebbe da sé (e «Indietro» ci rientra).
+                coordinator.rootTab = .home
+                coordinator.path = trail
             }
             return
         }
@@ -179,12 +208,83 @@ enum KBHandoff {
     }
 }
 
+// MARK: - Salute
+
+/// Le pagine di Salute aperte, come testo: «home:cid,visits:cid,visit:cid:vid».
+/// Solo identificativi; la persona e la voce si ritrovano nei dati sincronizzati.
+enum KBHealthTrail {
+
+    static func encode(_ path: [Route]) -> String? {
+        let parts: [String] = path.compactMap { route in
+            switch route {
+            case .pediatricHome(_, let c):               return "home:\(c)"
+            case .pediatricMedicalRecord(_, let c):      return "record:\(c)"
+            case .appleHealthApp(_, let c):              return "apple:\(c)"
+            case .pediatricVisits(_, let c):             return "visits:\(c)"
+            case .pediatricVisitDetail(_, let c, let v): return "visit:\(c):\(v)"
+            case .pediatricVaccines(_, let c):           return "vaccines:\(c)"
+            case .pediatricTreatments(_, let c):         return "treatments:\(c)"
+            case .pediatricTreatmentDetail(_, let c, let t): return "treatment:\(c):\(t)"
+            case .pediatricExams(_, let c):              return "exams:\(c)"
+            case .examDetail(_, let c, let e):           return "exam:\(c):\(e)"
+            case .pediatricTimeline(_, let c):           return "timeline:\(c)"
+            case .pediatricClinicalRecord(_, let c):     return "clinical:\(c)"
+            case .pediatricMealPlan(_, let c):           return "meal:\(c)"
+            case .pediatricFitnessPlan(_, let c):        return "fitness:\(c)"
+            default:                                     return nil
+            }
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: ",")
+    }
+
+    static func decode(_ text: String, familyId f: String) -> [Route] {
+        var routes: [Route] = text.split(separator: ",").compactMap { part in
+            let p = part.split(separator: ":", omittingEmptySubsequences: false).map(String.init)
+            guard p.count >= 2, !p[1].isEmpty else { return nil }
+            let c = p[1], id = p.count > 2 ? p[2] : ""
+            switch p[0] {
+            case "home":       return .pediatricHome(familyId: f, childId: c)
+            case "record":     return .pediatricMedicalRecord(familyId: f, childId: c)
+            case "apple":      return .appleHealthApp(familyId: f, childId: c)
+            case "visits":     return .pediatricVisits(familyId: f, childId: c)
+            case "visit":      return id.isEmpty ? nil : .pediatricVisitDetail(familyId: f, childId: c, visitId: id)
+            case "vaccines":   return .pediatricVaccines(familyId: f, childId: c)
+            case "treatments": return .pediatricTreatments(familyId: f, childId: c)
+            case "treatment":  return id.isEmpty ? nil : .pediatricTreatmentDetail(familyId: f, childId: c, treatmentId: id)
+            case "exams":      return .pediatricExams(familyId: f, childId: c)
+            case "exam":       return id.isEmpty ? nil : .examDetail(familyId: f, childId: c, examId: id)
+            case "timeline":   return .pediatricTimeline(familyId: f, childId: c)
+            case "clinical":   return .pediatricClinicalRecord(familyId: f, childId: c)
+            case "meal":       return .pediatricMealPlan(familyId: f, childId: c)
+            case "fitness":    return .pediatricFitnessPlan(familyId: f, childId: c)
+            default:           return nil
+            }
+        }
+        // Senza la scheda della persona in fondo, «Indietro» non saprebbe dove andare.
+        if let first = routes.first, !isHome(first), let c = childId(of: first) {
+            routes.insert(.pediatricHome(familyId: f, childId: c), at: 0)
+        }
+        return routes
+    }
+
+    private static func isHome(_ r: Route) -> Bool {
+        if case .pediatricHome = r { return true }
+        return false
+    }
+
+    private static func childId(of r: Route) -> String? {
+        guard let text = encode([r]) else { return nil }
+        let p = text.split(separator: ":").map(String.init)
+        return p.count >= 2 ? p[1] : nil
+    }
+}
+
 // MARK: - Bozze
 
 /// Quello che si sta scrivendo. I campi sono stringhe (le date in secondi dal
 /// 1970) e restano corti: Handoff consiglia pochi KB in tutto.
 struct KBHandoffDraft: Hashable {
-    enum Kind: String { case todo, grocery, event, chat, note }
+    enum Kind: String { case todo, grocery, event, chat, note, visit, exam, treatment }
 
     var kind: Kind
     var fields: [String: String]

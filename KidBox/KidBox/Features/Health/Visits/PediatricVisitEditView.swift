@@ -82,6 +82,43 @@ struct PediatricVisitEditView: View {
     
     private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
     
+    /// Bozza arrivata da un altro dispositivo (solo visita nuova).
+    private var incomingDraft: KBHandoffDraft? = nil
+
+    func handoff(_ draft: KBHandoffDraft?) -> Self {
+        var copy = self
+        copy.incomingDraft = draft
+        return copy
+    }
+
+    private var handoffDraft: KBHandoffDraft? {
+        guard visitId == nil else { return nil }
+        let typed = [reason, selectedDoctorName, notes, diagnosis, recommendations]
+            .contains { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        guard typed else { return nil }
+        return KBHandoffDraft(kind: .visit, fields: [
+            "childId": childId, "reason": reason, "doctor": selectedDoctorName,
+            "spec": selectedSpec?.rawValue, "customSpec": customSpecText,
+            "date": KBHandoffDraft.dateString(visitDate),
+            "diagnosis": diagnosis, "recommendations": recommendations,
+            "notes": notes, "step": String(currentStep),
+        ])
+    }
+
+    private func applyHandoff() {
+        guard visitId == nil, let d = incomingDraft else { return }
+        reason = d.fields["reason"] ?? ""
+        selectedDoctorName = d.fields["doctor"] ?? ""
+        doctorSearchText = selectedDoctorName
+        selectedSpec = d.fields["spec"].flatMap(KBDoctorSpecialization.init(rawValue:))
+        customSpecText = d.fields["customSpec"] ?? ""
+        if let date = d.date("date") { visitDate = date }
+        diagnosis = d.fields["diagnosis"] ?? ""
+        recommendations = d.fields["recommendations"] ?? ""
+        notes = d.fields["notes"] ?? ""
+        if let step = d.fields["step"].flatMap(Int.init) { currentStep = max(0, step) }
+    }
+
     init(
         familyId:           String,
         childId:            String,
@@ -137,7 +174,13 @@ struct PediatricVisitEditView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("Annulla") { dismiss() } }
             }
-            .onAppear { loadIfEditing() }
+            .onAppear {
+                loadIfEditing()
+                applyHandoff()
+            }
+            // Handoff: la visita nuova che si sta scrivendo continua
+            // sull'altro dispositivo, allo stesso passo.
+            .handoffDraft(handoffDraft)
             // FIX BUG 1: sheet agganciato al NavigationStack root (non alla computed var
             // prescriptionsTabExams che viene smontata quando si avanza allo step 5).
             // In questo modo onSaved aggiorna linkedExamIds anche dopo aver cambiato step.

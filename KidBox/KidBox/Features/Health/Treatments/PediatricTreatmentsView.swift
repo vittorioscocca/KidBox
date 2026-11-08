@@ -185,6 +185,7 @@ struct PediatricTreatmentsView: View {
     @State private var customFilterEnd   = Date()
     
     @State private var showAddSheet        = false
+    @State private var handoffDraft: KBHandoffDraft? = nil
     @State private var editingTreatmentId: String? = nil
     
     private let tint = KBTheme.tint
@@ -309,11 +310,18 @@ struct PediatricTreatmentsView: View {
             prompt: "Cerca cura"
         )
         .toolbar { toolbarItems }
-        .sheet(isPresented: $showAddSheet) {
+        .onHandoffDraft(.treatment) { d in
+            guard d.fields["childId"] == childId else { return }
+            editingTreatmentId = nil
+            handoffDraft = d
+            showAddSheet = true
+        }
+        .sheet(isPresented: $showAddSheet, onDismiss: { handoffDraft = nil }) {
             PediatricTreatmentEditView(
                 familyId: familyId, childId: childId,
                 childName: childName, treatmentId: editingTreatmentId
             )
+            .handoff(handoffDraft)
         }
         .sheet(isPresented: $showFilterSheet) { filterSheet }
         .confirmationDialog(

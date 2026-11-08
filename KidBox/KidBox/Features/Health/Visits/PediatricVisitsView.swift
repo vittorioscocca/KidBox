@@ -22,6 +22,7 @@ struct PediatricVisitsView: View {
     
     // ── Add ──
     @State private var showAddSheet = false
+    @State private var handoffDraft: KBHandoffDraft? = nil
     
     // ── Selezione multipla ──
     @State private var isSelecting       = false
@@ -183,8 +184,14 @@ struct PediatricVisitsView: View {
             prompt: "Cerca visita"
         )
         .toolbar { toolbarItems }
-        .sheet(isPresented: $showAddSheet) {
+        .onHandoffDraft(.visit) { d in
+            guard d.fields["childId"] == childId else { return }
+            handoffDraft = d
+            showAddSheet = true
+        }
+        .sheet(isPresented: $showAddSheet, onDismiss: { handoffDraft = nil }) {
             PediatricVisitEditView(familyId: familyId, childId: childId, childName: childName)
+                .handoff(handoffDraft)
         }
         .sheet(isPresented: $showFilterSheet) { filterSheet }
         .sheet(isPresented: $showAIConsent) {

@@ -68,6 +68,38 @@ struct PediatricExamEditView: View {
     private let common = ["Emocromo", "Esame urine", "Ecografia", "Tampone",
                           "Radiografia", "Holter", "Spirometria", "TC", "RMN"]
     
+    /// Bozza arrivata da un altro dispositivo (solo esame nuovo).
+    private var incomingDraft: KBHandoffDraft? = nil
+
+    func handoff(_ draft: KBHandoffDraft?) -> Self {
+        var copy = self
+        copy.incomingDraft = draft
+        return copy
+    }
+
+    private var handoffDraft: KBHandoffDraft? {
+        // Un esame prescritto dentro una visita vive con la visita: non viaggia da solo.
+        guard examId == nil, prescribingVisitId == nil else { return nil }
+        let typed = [name, preparation, notes, location]
+            .contains { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        guard typed else { return nil }
+        return KBHandoffDraft(kind: .exam, fields: [
+            "childId": childId, "name": name, "urgent": isUrgent ? "1" : nil,
+            "deadline": hasDeadline ? KBHandoffDraft.dateString(deadline) : nil,
+            "preparation": preparation, "notes": notes, "location": location,
+        ])
+    }
+
+    private func applyHandoff() {
+        guard examId == nil, let d = incomingDraft else { return }
+        name = d.fields["name"] ?? ""
+        isUrgent = d.fields["urgent"] == "1"
+        if let date = d.date("deadline") { hasDeadline = true; deadline = date }
+        preparation = d.fields["preparation"] ?? ""
+        notes = d.fields["notes"] ?? ""
+        location = d.fields["location"] ?? ""
+    }
+
     init(
         familyId:           String,
         childId:            String,
@@ -254,7 +286,12 @@ struct PediatricExamEditView: View {
                 }
             }
             // FIX: carica i dati appena la view appare, sia in creazione che in modifica
-            .onAppear { loadIfEditing() }
+            .onAppear {
+                loadIfEditing()
+                applyHandoff()
+            }
+            // Handoff: l'esame nuovo che si sta scrivendo continua sull'altro dispositivo.
+            .handoffDraft(handoffDraft)
         }
         // Attachment sheets
         .sheet(isPresented: $showSourcePicker) {

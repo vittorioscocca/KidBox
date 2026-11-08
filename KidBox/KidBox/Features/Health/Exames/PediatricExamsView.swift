@@ -77,6 +77,7 @@ struct PediatricExamsView: View {
     
     // Add sheet
     @State private var showAddSheet   = false
+    @State private var handoffDraft: KBHandoffDraft? = nil
     @State private var editingExamId: String? = nil
     
     // ── Calendario ──
@@ -237,7 +238,13 @@ struct PediatricExamsView: View {
             badgeRefreshTick += 1
             pendingBadgeRefresh = true
         }
-        .sheet(isPresented: $showAddSheet, onDismiss: { editingExamId = nil }) {
+        .onHandoffDraft(.exam) { d in
+            guard d.fields["childId"] == childId else { return }
+            editingExamId = nil
+            handoffDraft = d
+            showAddSheet = true
+        }
+        .sheet(isPresented: $showAddSheet, onDismiss: { editingExamId = nil; handoffDraft = nil }) {
             PediatricExamEditView(
                 familyId:  familyId,
                 childId:   childId,
@@ -248,6 +255,7 @@ struct PediatricExamsView: View {
                     showCalendarSheet = true
                 }
             )
+            .handoff(handoffDraft)
         }
         .sheet(isPresented: $showCalendarSheet) {
             if let p = calendarProposal {

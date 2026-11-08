@@ -99,6 +99,47 @@ struct PediatricTreatmentEditView: View {
     
     private var isPetTreatment: Bool { !petIdForSave.isEmpty }
 
+    /// Bozza arrivata da un altro dispositivo (solo cura nuova di una persona).
+    private var incomingDraft: KBHandoffDraft? = nil
+
+    func handoff(_ draft: KBHandoffDraft?) -> Self {
+        var copy = self
+        copy.incomingDraft = draft
+        return copy
+    }
+
+    /// Handoff: la cura nuova che si sta scrivendo continua sull'altro
+    /// dispositivo, allo stesso passo. Quelle degli animali no: vivono altrove.
+    private var handoffDraft: KBHandoffDraft? {
+        guard treatmentId == nil, initialPetId.isEmpty else { return nil }
+        let typed = [drugName, activeIngredient, notes]
+            .contains { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        guard typed else { return nil }
+        return KBHandoffDraft(kind: .treatment, fields: [
+            "childId": childId, "drug": drugName, "ingredient": activeIngredient,
+            "dosage": dosageValue > 0 ? String(dosageValue) : nil, "unit": dosageUnit,
+            "longTerm": isLongTerm ? "1" : nil, "days": String(durationDays),
+            "perDay": String(dailyFrequency), "start": KBHandoffDraft.dateString(startDate),
+            "times": times.joined(separator: " "), "notes": notes,
+            "step": String(currentStep),
+        ])
+    }
+
+    private func applyHandoff() {
+        guard treatmentId == nil, let d = incomingDraft else { return }
+        drugName = d.fields["drug"] ?? ""
+        activeIngredient = d.fields["ingredient"] ?? ""
+        if let v = d.fields["dosage"].flatMap(Double.init) { dosageValue = v }
+        if let u = d.fields["unit"] { dosageUnit = u }
+        isLongTerm = d.fields["longTerm"] == "1"
+        if let v = d.fields["days"].flatMap(Int.init), v > 0 { durationDays = v }
+        if let v = d.fields["perDay"].flatMap(Int.init), v > 0 { dailyFrequency = v }
+        if let date = d.date("start") { startDate = date }
+        if let t = d.fields["times"]?.split(separator: " ").map(String.init), !t.isEmpty { times = t }
+        notes = d.fields["notes"] ?? ""
+        if let step = d.fields["step"].flatMap(Int.init) { currentStep = max(0, step) }
+    }
+
     init(
         familyId: String,
         childId: String,
@@ -165,8 +206,10 @@ struct PediatricTreatmentEditView: View {
                     }
                 }
             }
+            .handoffDraft(handoffDraft)
             .onAppear {
                 loadIfEditing()
+                applyHandoff()
                 ensureScheduleTimesMatchesFrequency()
                 Task {
                     let s = await UNUserNotificationCenter.current().notificationSettings()
