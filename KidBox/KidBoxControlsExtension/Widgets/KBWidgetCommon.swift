@@ -132,7 +132,7 @@ struct ProfileQuery: EntityQuery {
     }
 }
 
-// MARK: - Intent di configurazione (un solo widget, «Modifica widget» sceglie cosa mostrare)
+// MARK: - Intent di configurazione (cinque pagine in galleria, «Modifica widget» sceglie cosa mostrare)
 
 enum KBWidgetContent: String, AppEnum, CaseIterable {
     case calendar, todo, grocery, care, fitness
@@ -147,11 +147,145 @@ enum KBWidgetContent: String, AppEnum, CaseIterable {
     ]
 }
 
-struct KidBoxWidgetIntent: WidgetConfigurationIntent {
+/// Cosa serve al provider da qualunque pagina della galleria. Ogni pagina ha il
+/// suo intent solo perché il valore predefinito di «Mostra» è statico: per il
+/// resto sono identici, e da «Modifica widget» ognuna può mostrare tutto.
+protocol KBContentIntent: WidgetConfigurationIntent {
+    var content: KBWidgetContent { get }
+    var list: TodoListEntity? { get }
+    var member: ProfileEntity? { get }
+}
+
+/// Prima pagina (e widget nato dall'icona): parte dal Calendario. Nome e kind invariati, o i widget già sulla Home perdono il legame.
+struct KidBoxWidgetIntent: KBContentIntent {
     static let title: LocalizedStringResource = "KidBox"
     static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure o piano fitness.")
 
     @Parameter(title: "Mostra", default: .calendar)
+    var content: KBWidgetContent
+
+    @Parameter(title: "Lista")
+    var list: TodoListEntity?
+
+    @Parameter(title: "Membro")
+    var member: ProfileEntity?
+
+    static var parameterSummary: some ParameterSummary {
+        When(\.$content, .equalTo, KBWidgetContent.todo) {
+            Summary("Mostra \(\.$content)") { \.$list }
+        } otherwise: {
+            When(\.$content, .equalTo, KBWidgetContent.care) {
+                Summary("Mostra \(\.$content)") { \.$member }
+            } otherwise: {
+                When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                    Summary("Mostra \(\.$content)") { \.$member }
+                } otherwise: {
+                    Summary("Mostra \(\.$content)")
+                }
+            }
+        }
+    }
+}
+
+/// Pagina To-do.
+struct KidBoxTodoWidgetIntent: KBContentIntent {
+    static let title: LocalizedStringResource = "KidBox"
+    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure o piano fitness.")
+
+    @Parameter(title: "Mostra", default: .todo)
+    var content: KBWidgetContent
+
+    @Parameter(title: "Lista")
+    var list: TodoListEntity?
+
+    @Parameter(title: "Membro")
+    var member: ProfileEntity?
+
+    static var parameterSummary: some ParameterSummary {
+        When(\.$content, .equalTo, KBWidgetContent.todo) {
+            Summary("Mostra \(\.$content)") { \.$list }
+        } otherwise: {
+            When(\.$content, .equalTo, KBWidgetContent.care) {
+                Summary("Mostra \(\.$content)") { \.$member }
+            } otherwise: {
+                When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                    Summary("Mostra \(\.$content)") { \.$member }
+                } otherwise: {
+                    Summary("Mostra \(\.$content)")
+                }
+            }
+        }
+    }
+}
+
+/// Pagina Spesa.
+struct KidBoxGroceryWidgetIntent: KBContentIntent {
+    static let title: LocalizedStringResource = "KidBox"
+    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure o piano fitness.")
+
+    @Parameter(title: "Mostra", default: .grocery)
+    var content: KBWidgetContent
+
+    @Parameter(title: "Lista")
+    var list: TodoListEntity?
+
+    @Parameter(title: "Membro")
+    var member: ProfileEntity?
+
+    static var parameterSummary: some ParameterSummary {
+        When(\.$content, .equalTo, KBWidgetContent.todo) {
+            Summary("Mostra \(\.$content)") { \.$list }
+        } otherwise: {
+            When(\.$content, .equalTo, KBWidgetContent.care) {
+                Summary("Mostra \(\.$content)") { \.$member }
+            } otherwise: {
+                When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                    Summary("Mostra \(\.$content)") { \.$member }
+                } otherwise: {
+                    Summary("Mostra \(\.$content)")
+                }
+            }
+        }
+    }
+}
+
+/// Pagina Cure.
+struct KidBoxCareWidgetIntent: KBContentIntent {
+    static let title: LocalizedStringResource = "KidBox"
+    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure o piano fitness.")
+
+    @Parameter(title: "Mostra", default: .care)
+    var content: KBWidgetContent
+
+    @Parameter(title: "Lista")
+    var list: TodoListEntity?
+
+    @Parameter(title: "Membro")
+    var member: ProfileEntity?
+
+    static var parameterSummary: some ParameterSummary {
+        When(\.$content, .equalTo, KBWidgetContent.todo) {
+            Summary("Mostra \(\.$content)") { \.$list }
+        } otherwise: {
+            When(\.$content, .equalTo, KBWidgetContent.care) {
+                Summary("Mostra \(\.$content)") { \.$member }
+            } otherwise: {
+                When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                    Summary("Mostra \(\.$content)") { \.$member }
+                } otherwise: {
+                    Summary("Mostra \(\.$content)")
+                }
+            }
+        }
+    }
+}
+
+/// Pagina Piano Fitness.
+struct KidBoxFitnessWidgetIntent: KBContentIntent {
+    static let title: LocalizedStringResource = "KidBox"
+    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure o piano fitness.")
+
+    @Parameter(title: "Mostra", default: .fitness)
     var content: KBWidgetContent
 
     @Parameter(title: "Lista")

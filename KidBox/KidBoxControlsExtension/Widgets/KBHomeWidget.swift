@@ -19,17 +19,17 @@ struct KBHomeEntry: TimelineEntry {
     let memberId: String?
 }
 
-struct KBHomeProvider: AppIntentTimelineProvider {
+struct KBHomeProvider<I: KBContentIntent>: AppIntentTimelineProvider {
 
     func placeholder(in context: Context) -> KBHomeEntry {
-        .init(date: .now, snapshot: nil, content: .calendar, listId: nil, memberId: nil)
+        .init(date: .now, snapshot: nil, content: I().content, listId: nil, memberId: nil)
     }
 
-    func snapshot(for configuration: KidBoxWidgetIntent, in context: Context) async -> KBHomeEntry {
+    func snapshot(for configuration: I, in context: Context) async -> KBHomeEntry {
         entry(configuration, at: .now, snapshot: KBWidgetStore.read())
     }
 
-    func timeline(for configuration: KidBoxWidgetIntent, in context: Context) async -> Timeline<KBHomeEntry> {
+    func timeline(for configuration: I, in context: Context) async -> Timeline<KBHomeEntry> {
         let snap = KBWidgetStore.read()
         let now = Date()
         let midnight = kbNextMidnight(after: now)
@@ -54,23 +54,7 @@ struct KBHomeProvider: AppIntentTimelineProvider {
         return Timeline(entries: entries, policy: .after(midnight))
     }
 
-    /// Configurazioni già pronte, una per contenuto. Sulla Home di iOS 27 il
-    /// widget nato dal tocco lungo sull'icona non mostrava «Modifica widget»:
-    /// le raccomandazioni sono l'unico aggancio pubblico che il sistema può
-    /// offrire lì (documentazione assente, da verificare su device).
-    func recommendations() -> [AppIntentRecommendation<KidBoxWidgetIntent>] {
-        KBWidgetContent.allCases.map { content in
-            let intent = KidBoxWidgetIntent()
-            intent.content = content
-            return AppIntentRecommendation(
-                intent: intent,
-                description: KBWidgetContent.caseDisplayRepresentations[content]?.title
-                    ?? LocalizedStringResource(stringLiteral: content.rawValue)
-            )
-        }
-    }
-
-    private func entry(_ c: KidBoxWidgetIntent, at date: Date, snapshot: KBWidgetSnapshot?) -> KBHomeEntry {
+    private func entry(_ c: I, at date: Date, snapshot: KBWidgetSnapshot?) -> KBHomeEntry {
         .init(date: date, snapshot: snapshot, content: c.content, listId: c.list?.id, memberId: c.member?.id)
     }
 }
@@ -94,16 +78,58 @@ struct KBHomeWidgetView: View {
     }
 }
 
+/// Le cinque pagine della galleria. L'ordine conta: la prima è quella che iOS
+/// usa quando l'icona dell'app diventa un widget. I kind sono nuovi rispetto
+/// alla prima build (KidBoxCalendarWidget, KidBoxTodoWidget, …): riusarli
+/// riaggancerebbe istanze vecchie senza configurazione.
+private func kbHomeConfiguration<I: KBContentIntent>(
+    kind: String, intent: I.Type, name: LocalizedStringResource, description: LocalizedStringResource
+) -> some WidgetConfiguration {
+    AppIntentConfiguration(kind: kind, intent: I.self, provider: KBHomeProvider<I>()) { entry in
+        KBHomeWidgetView(entry: entry)
+    }
+    .configurationDisplayName(Text(name))
+    .description(Text(description))
+    .supportedFamilies([.systemSmall])
+}
+
 struct KBHomeWidget: Widget {
     static let kind = "KidBoxHomeWidget"
-
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: Self.kind, intent: KidBoxWidgetIntent.self,
-                               provider: KBHomeProvider()) { entry in
-            KBHomeWidgetView(entry: entry)
-        }
-        .configurationDisplayName("KidBox")
-        .description("Calendario, to-do, spesa, cure o piano fitness: scegli da «Modifica widget».")
-        .supportedFamilies([.systemSmall])
+        kbHomeConfiguration(kind: Self.kind, intent: KidBoxWidgetIntent.self,
+                            name: "Calendario",
+                            description: "Gli eventi di oggi. Da «Modifica widget» puoi mostrare anche to-do, spesa, cure o piano fitness.")
+    }
+}
+
+struct KBTodoHomeWidget: Widget {
+    var body: some WidgetConfiguration {
+        kbHomeConfiguration(kind: "KidBoxHomeWidget.todo", intent: KidBoxTodoWidgetIntent.self,
+                            name: "To-do",
+                            description: "I to-do della famiglia, di una lista a tua scelta.")
+    }
+}
+
+struct KBGroceryHomeWidget: Widget {
+    var body: some WidgetConfiguration {
+        kbHomeConfiguration(kind: "KidBoxHomeWidget.grocery", intent: KidBoxGroceryWidgetIntent.self,
+                            name: "Lista della spesa",
+                            description: "Cosa resta da comprare.")
+    }
+}
+
+struct KBCareHomeWidget: Widget {
+    var body: some WidgetConfiguration {
+        kbHomeConfiguration(kind: "KidBoxHomeWidget.care", intent: KidBoxCareWidgetIntent.self,
+                            name: "Cure",
+                            description: "La prossima dose di un membro della famiglia, da segnare come presa.")
+    }
+}
+
+struct KBFitnessHomeWidget: Widget {
+    var body: some WidgetConfiguration {
+        kbHomeConfiguration(kind: "KidBoxHomeWidget.fitness", intent: KidBoxFitnessWidgetIntent.self,
+                            name: "Piano Fitness",
+                            description: "L'allenamento di oggi dal piano di un membro della famiglia.")
     }
 }
