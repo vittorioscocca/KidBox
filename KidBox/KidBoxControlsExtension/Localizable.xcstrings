@@ -1,121 +1,125 @@
 {
-  "sourceLanguage": "it",
-  "strings": {
-    "%@": {},
-    "%@ - %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ - %2$@"
+  "sourceLanguage" : "it",
+  "strings" : {
+    "%@" : {
+
+    },
+    "%@ - %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ - %2$@"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ - %2$@"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ - %2$@"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ - %2$@"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ - %2$@"
           }
         }
       }
     },
-    "%@ · %lld min": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ · %2$lld min"
+    "%@ · %lld min" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$lld min"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ · %2$lld min"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$lld min"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ · %2$lld min"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$lld min"
           }
         }
       }
     },
-    "%lld": {},
-    "%lld altri eventi": {
-      "localizations": {
-        "it": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld altro evento"
+    "%lld" : {
+
+    },
+    "%lld altri eventi" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld more event"
                 }
               },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld altri eventi"
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld more events"
                 }
               }
             }
           }
         },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld more event"
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld evento más"
                 }
               },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld more events"
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld eventos más"
                 }
               }
             }
           }
         },
-        "es": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld evento más"
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld autre événement"
                 }
               },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld eventos más"
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld autres événements"
                 }
               }
             }
           }
         },
-        "fr": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld autre événement"
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld altro evento"
                 }
               },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld autres événements"
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld altri eventi"
                 }
               }
             }
@@ -123,1647 +127,1703 @@
         }
       }
     },
-    "%lld di %lld oggi": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld of %2$lld today"
+    "%lld di %lld oggi" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld of %2$lld today"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld de %2$lld hoy"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld de %2$lld hoy"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld sur %2$lld aujourd'hui"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld sur %2$lld aujourd'hui"
           }
         }
       }
     },
-    "%lld min": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld min"
+    "%lld min" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld min"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld min"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min"
           }
         }
       }
     },
-    "%lld/%lld": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$lld/%2$lld"
+    "%lld/%lld" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
           }
         }
       }
     },
-    "+%lld": {},
-    "Aggiorna": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Refresh"
+    "+%lld" : {
+
+    },
+    "×%lld" : {
+
+    },
+    "Aggiorna" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiser"
+          }
+        }
+      }
+    },
+    "Aggiorna i widget" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh widgets"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Actualizar"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar widgets"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Actualiser"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiser les widgets"
           }
         }
       }
     },
-    "Aggiornato": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Updated"
+    "Aggiornato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Actualizado"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizado"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mis à jour"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mis à jour"
           }
         }
       }
     },
-    "Album": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Album"
+    "Album" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Álbum"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Álbum"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Album"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album"
           }
         }
       }
     },
-    "Animali": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pets"
+    "Animali" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pets"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mascotas"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mascotas"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Animaux"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animaux"
           }
         }
       }
     },
-    "Apre Foto e video con la fotocamera.": {},
-    "Apri KidBox per iniziare": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open KidBox to get started"
+    "Apre Foto e video con la fotocamera." : {
+
+    },
+    "Apri KidBox per iniziare" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open KidBox to get started"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre KidBox para empezar"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre KidBox para empezar"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvrez KidBox pour commencer"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrez KidBox pour commencer"
           }
         }
       }
     },
-    "Apri KidBox per preparare le foto": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open KidBox to get the photos ready"
+    "Apri KidBox per preparare le foto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open KidBox to get the photos ready"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre KidBox para preparar las fotos"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre KidBox para preparar las fotos"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvrez KidBox pour préparer les photos"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrez KidBox pour préparer les photos"
           }
         }
       }
     },
-    "Assistente": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Assistant"
+    "Assistente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistant"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Asistente"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asistente"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Assistant"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistant"
           }
         }
       }
     },
-    "Calendario": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calendar"
+    "Calendario" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calendario"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendario"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calendrier"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendrier"
           }
         }
       }
     },
-    "Calendario, to-do, spesa, cure o piano fitness: scegli da «Modifica widget».": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calendar, to-dos, shopping, treatments or fitness plan: choose from “Edit Widget”."
+    "Calendario, to-do, spesa, cure o piano fitness: scegli da «Modifica widget»." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar, to-dos, shopping, treatments or fitness plan: choose from “Edit Widget”."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calendario, tareas, compra, tratamientos o plan fitness: elige en «Editar widget»."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendario, tareas, compra, tratamientos o plan fitness: elige en «Editar widget»."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calendrier, tâches, courses, soins ou plan fitness : choisissez dans « Modifier le widget »."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendrier, tâches, courses, soins ou plan fitness : choisissez dans « Modifier le widget »."
           }
         }
       }
     },
-    "Calendario, to-do, spesa, cure, piano fitness o foto: scegli cosa mostrare da «Modifica widget».": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calendar, to-dos, shopping, treatments, fitness plan or photos: choose what to show from “Edit Widget”."
+    "Calendario, to-do, spesa, cure, piano fitness o foto: scegli cosa mostrare da «Modifica widget»." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar, to-dos, shopping, treatments, fitness plan or photos: choose what to show from “Edit Widget”."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calendario, tareas, compra, tratamientos, plan fitness o fotos: elige qué mostrar desde «Editar widget»."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendario, tareas, compra, tratamientos, plan fitness o fotos: elige qué mostrar desde «Editar widget»."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calendrier, tâches, courses, soins, plan fitness ou photos : choisissez quoi afficher depuis « Modifier le widget »."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendrier, tâches, courses, soins, plan fitness ou photos : choisissez quoi afficher depuis « Modifier le widget »."
           }
         }
       }
     },
-    "Casa": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Home items"
+    "Casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home items"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Casa"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casa"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Maison"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maison"
           }
         }
       }
     },
-    "Chat": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chat"
+    "Chat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chat"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chat"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat"
           }
         }
       }
     },
-    "Contenuto": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Content"
+    "Contenuto" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Content"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contenido"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contenido"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contenu"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contenu"
           }
         }
       }
     },
-    "Cure": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Treatments"
+    "Cure" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Treatments"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tratamientos"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tratamientos"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Soins"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soins"
           }
         }
       }
     },
-    "Disponibile con Pro": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Available with Pro"
+    "Disponibile con Pro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Available with Pro"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Disponible con Pro"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disponible con Pro"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Disponible avec Pro"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disponible avec Pro"
           }
         }
       }
     },
-    "Documenti": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Documents"
+    "Documenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documents"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Documentos"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documentos"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Documents"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documents"
           }
         }
       }
     },
-    "Domani": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tomorrow"
+    "Domani" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mañana"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mañana"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Demain"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demain"
           }
         }
       }
     },
-    "Dose": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dose"
+    "Dose" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dose"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dosis"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dosis"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prise"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prise"
           }
         }
       }
     },
-    "Fatto": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Done"
+    "Fatto" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hecho"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hecho"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fait"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fait"
           }
         }
       }
     },
-    "Fitness": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fitness"
+    "Fitness" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fitness"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fitness"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fitness"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fitness"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fitness"
           }
         }
       }
     },
-    "Foto": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Photos"
+    "Foto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fotos"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotos"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Photos"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos"
           }
         }
       }
+    },
+    "Foto KidBox" : {
+
     },
-    "Foto KidBox": {},
-    "Garage": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garage"
+    "Garage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Garage"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garaje"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Garaje"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Garage"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Garage"
           }
         }
       }
     },
-    "Gli eventi di oggi della tua famiglia.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your family's events for today."
+    "Gli eventi di oggi della tua famiglia." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your family's events for today."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Los eventos de hoy de tu familia."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los eventos de hoy de tu familia."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les événements du jour de votre famille."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les événements du jour de votre famille."
           }
         }
       }
     },
-    "Home": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Home"
+    "Home" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inicio"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicio"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Accueil"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accueil"
           }
         }
       }
     },
-    "KidBox": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "KidBox"
+    "KidBox" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "KidBox"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "KidBox"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox"
           }
         }
       }
     },
-    "KidBox — Foto": {},
-    "Le prossime dosi dei farmaci di un membro della famiglia.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The next medicine doses for a family member."
+    "KidBox — Foto" : {
+
+    },
+    "Le prossime dosi dei farmaci di un membro della famiglia." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The next medicine doses for a family member."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Las próximas dosis de medicamentos de un miembro de la familia."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las próximas dosis de medicamentos de un miembro de la familia."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les prochaines prises de médicaments d'un membre de la famille."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les prochaines prises de médicaments d'un membre de la famille."
           }
         }
       }
     },
-    "Lista": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "List"
+    "Lista" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lista"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Liste"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste"
           }
         }
       }
     },
-    "Lista della spesa": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shopping list"
+    "Lista della spesa" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shopping list"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lista de la compra"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista de la compra"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Liste de courses"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste de courses"
           }
         }
       }
     },
-    "Lista vuota": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empty list"
+    "Lista vuota" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empty list"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lista vacía"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista vacía"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Liste vide"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste vide"
           }
         }
       }
     },
-    "Membro": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Member"
+    "Membro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Member"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Miembro"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Miembro"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Membre"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Membre"
           }
         }
       }
     },
-    "Mostra": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Show"
+    "Mostra" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mostrar"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Afficher"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher"
           }
         }
       }
     },
-    "Mostra ${content}": {},
-    "Mostra %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Show %@"
+    "Mostra %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show %@"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mostrar %@"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar %@"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Afficher %@"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher %@"
           }
         }
       }
     },
-    "Nessun evento in programma": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No upcoming events"
+    "Mostra ${content}" : {
+
+    },
+    "Nessun evento in programma" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No upcoming events"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No hay eventos próximos"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay eventos próximos"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucun événement à venir"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun événement à venir"
           }
         }
       }
     },
-    "Nessun evento oggi": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No events today"
+    "Nessun evento oggi" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No events today"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sin eventos hoy"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin eventos hoy"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucun événement aujourd'hui"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun événement aujourd'hui"
           }
         }
       }
     },
-    "Nessun piano fitness": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No fitness plan"
+    "Nessun piano fitness" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No fitness plan"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ningún plan fitness"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ningún plan fitness"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucun plan fitness"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun plan fitness"
           }
         }
       }
     },
-    "Nessuna cura attiva": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No active treatments"
+    "Nessuna cura attiva" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No active treatments"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ningún tratamiento activo"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ningún tratamiento activo"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucun soin actif"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun soin actif"
           }
         }
       }
     },
-    "Nessuna foto in questo album": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No photos in this album"
+    "Nessuna foto in questo album" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No photos in this album"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No hay fotos en este álbum"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay fotos en este álbum"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucune photo dans cet album"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune photo dans cet album"
           }
         }
       }
     },
-    "Nessuna seduta in programma": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No upcoming sessions"
+    "Nessuna seduta in programma" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No upcoming sessions"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No hay sesiones programadas"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay sesiones programadas"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucune séance prévue"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune séance prévue"
           }
         }
       }
     },
-    "Nient'altro in programma": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nothing else scheduled"
+    "Nient'altro in programma" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing else scheduled"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nada más programado"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada más programado"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rien d'autre de prévu"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien d'autre de prévu"
           }
         }
       }
     },
-    "Niente da fare": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nothing to do"
+    "Niente da fare" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing to do"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nada que hacer"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada que hacer"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rien à faire"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien à faire"
           }
         }
       }
     },
-    "Note": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notes"
+    "Note" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notas"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notas"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notes"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes"
           }
         }
       }
     },
-    "Notizie": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "News"
+    "Notizie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "News"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Noticias"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noticias"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Actualités"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualités"
           }
         }
       }
     },
-    "Oggi": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Today"
+    "Oggi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hoy"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aujourd'hui"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aujourd'hui"
           }
         }
       }
     },
-    "Password": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Passwords"
+    "Password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passwords"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contraseñas"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraseñas"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mots de passe"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mots de passe"
           }
         }
       }
     },
-    "Piano Fitness": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fitness plan"
+    "Piano Fitness" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fitness plan"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plan fitness"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan fitness"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plan fitness"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan fitness"
           }
         }
       }
     },
-    "Poi": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next"
+    "Poi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Después"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Después"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ensuite"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ensuite"
           }
         }
       }
     },
-    "Posizione": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location"
+    "Posizione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ubicación"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ubicación"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Position"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Position"
           }
         }
       }
     },
-    "Presa": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Taken"
+    "Presa" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taken"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tomada"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomada"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pris"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pris"
           }
         }
       }
     },
-    "Prossime": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Up next"
+    "Prossime" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up next"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Próximas"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Próximas"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "À venir"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À venir"
           }
         }
       }
     },
-    "Riposo oggi": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rest day"
+    "Riposo oggi" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rest day"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Descanso hoy"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descanso hoy"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Repos aujourd'hui"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repos aujourd'hui"
           }
         }
       }
     },
-    "Saltata": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skipped"
+    "Saltata" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skipped"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Omitida"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omitida"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sautée"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sautée"
           }
         }
       }
     },
-    "Salute": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Health"
+    "Salute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Health"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salud"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salud"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Santé"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Santé"
           }
         }
       }
     },
-    "Scegli cosa mostrare: calendario, to-do, spesa, cure, piano fitness o foto.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose what to show: calendar, to-dos, shopping, treatments, fitness plan or photos."
+    "Scegli cosa mostrare: calendario, to-do, spesa, cure, piano fitness o foto." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose what to show: calendar, to-dos, shopping, treatments, fitness plan or photos."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Elige qué mostrar: calendario, tareas, compra, tratamientos, plan fitness o fotos."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige qué mostrar: calendario, tareas, compra, tratamientos, plan fitness o fotos."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choisissez quoi afficher : calendrier, tâches, courses, soins, plan fitness ou photos."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez quoi afficher : calendrier, tâches, courses, soins, plan fitness ou photos."
           }
         }
       }
     },
-    "Scegli di chi mostrare il piano. Senza scelta vedi il primo piano trovato.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose whose plan to show. With no choice you see the first plan found."
+    "Scegli di chi mostrare il piano. Senza scelta vedi il primo piano trovato." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose whose plan to show. With no choice you see the first plan found."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Elige de quién mostrar el plan. Sin elección, el primer plan encontrado."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige de quién mostrar el plan. Sin elección, el primer plan encontrado."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choisissez de qui afficher le plan. Sans choix, le premier plan trouvé."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez de qui afficher le plan. Sans choix, le premier plan trouvé."
           }
         }
       }
     },
-    "Scegli di chi mostrare le cure. Senza scelta vedi tutta la famiglia.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose whose treatments to show. With no choice you see the whole family."
+    "Scegli di chi mostrare le cure. Senza scelta vedi tutta la famiglia." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose whose treatments to show. With no choice you see the whole family."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Elige de quién mostrar los tratamientos. Sin elección, toda la familia."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige de quién mostrar los tratamientos. Sin elección, toda la familia."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choisissez de qui afficher les soins. Sans choix, toute la famille."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez de qui afficher les soins. Sans choix, toute la famille."
           }
         }
       }
     },
-    "Scegli la lista da mostrare. Senza scelta vedi tutti i to-do.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose the list to show. With no choice you see all to-dos."
+    "Scegli la lista da mostrare. Senza scelta vedi tutti i to-do." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the list to show. With no choice you see all to-dos."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Elige la lista que mostrar. Sin elección verás todas las tareas."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige la lista que mostrar. Sin elección verás todas las tareas."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choisissez la liste à afficher. Sans choix, tout est affiché."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez la liste à afficher. Sans choix, tout est affiché."
           }
         }
       }
     },
-    "Scorciatoie": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shortcuts"
+    "Scorciatoie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shortcuts"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Accesos directos"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accesos directos"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Raccourcis"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raccourcis"
           }
         }
       }
     },
-    "Segna come comprato": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mark as bought"
+    "Segna come comprato" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark as bought"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marquer comme acheté"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar como comprado"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marcar como comprado"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marquer comme acheté"
           }
         }
       }
     },
-    "Segna come fatto": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mark as done"
+    "Segna come fatto" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark as done"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marquer comme fait"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar como hecho"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marcar como hecho"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marquer comme fait"
           }
         }
       }
     },
-    "Segna come presa": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mark as taken"
+    "Segna come presa" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark as taken"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marcar como tomada"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar como tomada"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marquer comme pris"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marquer comme pris"
           }
         }
       }
     },
-    "Senza lista": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No list"
+    "Senza lista" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No list"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sin lista"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin lista"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sans liste"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sans liste"
           }
         }
       }
     },
-    "Sezione": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Section"
+    "Sezione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Section"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sección"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sección"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Section"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Section"
           }
         }
       }
     },
-    "Spesa": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shopping"
+    "Spesa" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shopping"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Compra"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compra"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Courses"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Courses"
           }
         }
       }
     },
-    "Spese": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expenses"
+    "Spese" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expenses"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gastos"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gastos"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dépenses"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dépenses"
           }
         }
       }
     },
-    "To-do": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+    "To-do" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tareas"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tareas"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "À faire"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À faire"
           }
         }
       }
     },
-    "Tutto fatto per oggi": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "All done for today"
+    "Tutto fatto per oggi" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All done for today"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Todo hecho por hoy"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo hecho por hoy"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tout est fait pour aujourd'hui"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout est fait pour aujourd'hui"
           }
         }
       }
     },
-    "Tutto il giorno": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "All day"
+    "Tutto il giorno" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All day"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Todo el día"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo el día"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toute la journée"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toute la journée"
           }
         }
       }
     },
-    "Tutto preso": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "All taken"
+    "Tutto preso" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All taken"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Todo tomado"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo tomado"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tout pris"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout pris"
           }
         }
       }
     },
-    "Viaggi": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trips"
+    "Viaggi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trips"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Viajes"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viajes"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Voyages"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voyages"
           }
         }
       }
     },
-    "Wallet": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wallet"
+    "Voce" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Item"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wallet"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elemento"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wallet"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Élément"
           }
         }
       }
     },
-    "×%lld": {}
+    "Wallet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet"
+          }
+        }
+      }
+    }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

@@ -1630,7 +1630,7 @@ enum HomeCatalog {
         switch id {
         case .note:      return .init(id: id, title: "Note", short: "Note", symbol: "note.text", tint: .yellow, usageKey: "note")
         case .todo:      return .init(id: id, title: "To-Do", short: "To-Do", symbol: "checklist", tint: .blue, usageKey: "todo")
-        case .shopping:  return .init(id: id, title: "Lista della Spesa", short: "Spesa", symbol: "cart.fill", tint: .green, usageKey: "grocery")
+        case .shopping:  return .init(id: id, title: "Lista della Spesa", short: "grocery.title", symbol: "cart.fill", tint: .green, usageKey: "grocery")
         case .calendar:  return .init(id: id, title: "Calendario", short: "Calendario", symbol: "calendar", tint: .purple, usageKey: "event")
         case .care:      return .init(id: id, title: "Salute", short: "Salute", symbol: "heart.fill", tint: .red, usageKey: "health")
         case .chat:      return .init(id: id, title: "Chat", short: "Chat", symbol: "message.fill", tint: .green, usageKey: "chat")

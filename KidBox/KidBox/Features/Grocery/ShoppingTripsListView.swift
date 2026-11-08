@@ -116,7 +116,7 @@ struct ShoppingTripsListView: View {
                 .background(Color.green.opacity(0.16), in: Circle())
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(trip.storeName?.trimmedNonEmptyOrNil ?? String(localized: "Spesa"))
+                Text(trip.storeName?.trimmedNonEmptyOrNil ?? String(localized: "grocery.title"))
                     .font(.system(size: 17, weight: .semibold))
                 Text(trip.date.formatted(date: .abbreviated, time: .omitted))
                     .font(.caption)
@@ -212,7 +212,7 @@ struct ShoppingTripDetailView: View {
         }
         .scrollContentBackground(.hidden)
         .background(backgroundColor)
-        .navigationTitle(trip.storeName?.trimmedNonEmptyOrNil ?? String(localized: "Spesa"))
+        .navigationTitle(trip.storeName?.trimmedNonEmptyOrNil ?? String(localized: "grocery.title"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

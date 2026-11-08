@@ -4,12 +4,14 @@
 //
 //  Assegna da sola la categoria a un prodotto della lista della spesa.
 //
+//  0. Prima il dizionario di parole chiave (sotto): i prodotti di tutti i
+//     giorni li riconosce senza sbagliare.
 //  1. Apple Intelligence (Foundation Models, sul telefono): sceglie fra le
 //     categorie fisse di `KBGroceryCategory.suggested`. Capisce il prodotto in
 //     italiano, inglese, francese e spagnolo e risponde sempre con la chiave
 //     italiana, che è quella che si salva (vedi `KBGroceryCategory`).
-//  2. Senza Apple Intelligence: piccolo dizionario di parole chiave nelle
-//     stesse quattro lingue.
+//  2. Il dizionario è nelle stesse quattro lingue; senza Apple Intelligence
+//     resta l'unica strada.
 //  3. Se nessuno dei due ha un'idea: `nil`, e la lista lo mostra in «Altro».
 //
 
@@ -24,6 +26,11 @@ enum GroceryCategoryClassifier {
         let name = productName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return nil }
 
+        // Prima il dizionario, scritto a mano: sui prodotti di tutti i giorni
+        // non sbaglia, mentre il modello sul telefono ha messo la pasta nei
+        // surgelati (08/11/2026). Il modello resta per quelli che non conosce.
+        if let known = keywordCategory(for: name) { return known }
+
         if case .available = SystemLanguageModel.default.availability {
             do {
                 let session = LanguageModelSession(instructions: instructions)
@@ -36,12 +43,11 @@ enum GroceryCategoryClassifier {
                     KBLog.ai.kbInfo("Grocery category on-device: \(key)")
                     return key
                 }
-                // «other» dal modello: vale la pena dare una chance al dizionario.
             } catch {
                 KBLog.ai.kbInfo("Grocery category on-device fallita: \(error.localizedDescription)")
             }
         }
-        return keywordCategory(for: name)
+        return nil
     }
 
     /// Dà una categoria alle voci appena create che non ne hanno, senza far

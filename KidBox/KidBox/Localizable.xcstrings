@@ -1,6 +1,36 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
+    "grocery.title" : {
+      "comment" : "Titolo della lista della spesa (non le spese).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shopping"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Courses"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spesa"
+          }
+        }
+      }
+    },
     "" : {
 
     },
@@ -51,226 +81,6 @@
     },
     " Meteo" : {
 
-    },
-    "Aggiungi nota" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add note"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir nota"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter une note"
-          }
-        }
-      }
-    },
-    "A me" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Me"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A mí"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Moi"
-          }
-        }
-      }
-    },
-    "Domani" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tomorrow"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mañana"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Demain"
-          }
-        }
-      }
-    },
-    "Mostra per un mese" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show for a month"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar durante un mes"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher pendant un mois"
-          }
-        }
-      }
-    },
-    "Mostra per una settimana" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show for a week"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar durante una semana"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher pendant une semaine"
-          }
-        }
-      }
-    },
-    "Nascondi subito" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hide right away"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar enseguida"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Masquer tout de suite"
-          }
-        }
-      }
-    },
-    "Questo weekend" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This weekend"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este fin de semana"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce week-end"
-          }
-        }
-      }
-    },
-    "Prossima settimana" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Next week"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La próxima semana"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La semaine prochaine"
-          }
-        }
-      }
-    },
-    "To-do completati" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Completed to-dos"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tareas completadas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "To-do terminés"
-          }
-        }
-      }
-    },
-    "Vale solo su questo dispositivo: i to-do fatti non vengono cancellati e gli altri membri continuano a vederli secondo la loro scelta." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Applies only to this device: completed to-dos aren't deleted, and other members keep seeing them according to their own choice."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solo se aplica a este dispositivo: las tareas completadas no se eliminan y los demás miembros siguen viéndolas según su propia elección."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "S'applique uniquement à cet appareil : les to-do terminés ne sont pas supprimés et les autres membres continuent de les voir selon leur propre choix."
-          }
-        }
-      }
     },
     "–" : {
       "localizations" : {
@@ -3922,6 +3732,9 @@
         }
       }
     },
+    "×%lld" : {
+
+    },
     "~%@ per %lld notte" : {
       "localizations" : {
         "en" : {
@@ -5331,6 +5144,28 @@
         }
       }
     },
+    "A me" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A mí"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moi"
+          }
+        }
+      }
+    },
     "A ogni domanda, insieme a quello che scrivi, parte la memoria dell'assistente: quello che la famiglia tiene in KidBox. Calendario, to-do, spesa, note, spese, salute con i referti, testo letto dai documenti, wallet, casa, veicoli, animali, viaggi, ultimi messaggi della chat. Non partono mai password, numeri dei documenti d'identità e delle carte fedeltà, posizione, né le voci che un altro membro tiene solo per sé." : {
       "comment" : "AI consent: what is sent (body)",
       "localizations" : {
@@ -6306,6 +6141,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Actualiser les données"
+          }
+        }
+      }
+    },
+    "Aggiorna i widget" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh widgets"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar widgets"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiser les widgets"
           }
         }
       }
@@ -7522,6 +7379,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajoutez des membres de la famille dans les Réglages."
+          }
+        }
+      }
+    },
+    "Aggiungi nota" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add note"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir nota"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter une note"
           }
         }
       }
@@ -25007,6 +24886,28 @@
         }
       }
     },
+    "Domani" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mañana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demain"
+          }
+        }
+      }
+    },
     "domani %@" : {
       "localizations" : {
         "en" : {
@@ -25158,6 +25059,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dosage"
+          }
+        }
+      }
+    },
+    "Dose" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dose"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dosis"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dose"
           }
         }
       }
@@ -46641,6 +46564,52 @@
         }
       }
     },
+    "Mostra per un mese" : {
+      "comment" : "Completed to-dos: show for a month",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show for a month"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar durante un mes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher pendant un mois"
+          }
+        }
+      }
+    },
+    "Mostra per una settimana" : {
+      "comment" : "Completed to-dos: show for a week",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show for a week"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar durante una semana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher pendant une semaine"
+          }
+        }
+      }
+    },
     "Mostra scadenze" : {
       "comment" : "AI quick chip",
       "localizations" : {
@@ -46905,6 +46874,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Masquer le mot de passe"
+          }
+        }
+      }
+    },
+    "Nascondi subito" : {
+      "comment" : "Completed to-dos: hide immediately",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide right away"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar enseguida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer tout de suite"
           }
         }
       }
@@ -60493,6 +60485,28 @@
         }
       }
     },
+    "Prossima settimana" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next week"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La próxima semana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La semaine prochaine"
+          }
+        }
+      }
+    },
     "Prossima: %@" : {
       "localizations" : {
         "en" : {
@@ -62893,6 +62907,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ce voyage"
+          }
+        }
+      }
+    },
+    "Questo weekend" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This weekend"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este fin de semana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce week-end"
           }
         }
       }
@@ -69389,6 +69425,72 @@
         }
       }
     },
+    "Segna come comprato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark as bought"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar como comprado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marquer comme acheté"
+          }
+        }
+      }
+    },
+    "Segna come fatto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark as done"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar como hecho"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marquer comme fait"
+          }
+        }
+      }
+    },
+    "Segna come presa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark as taken"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar como tomada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marquer comme prise"
+          }
+        }
+      }
+    },
     "Segna le password come preferite dal dettaglio o con uno swipe sulla riga." : {
       "localizations" : {
         "en" : {
@@ -74577,6 +74679,28 @@
         }
       }
     },
+    "To-do completati" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completed to-dos"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tareas completadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do terminés"
+          }
+        }
+      }
+    },
     "Tocca «Aggiorna» per creare o aggiornare la cartella con visite, esami, referti e dati da Apple Salute (passi, battiti, sport)." : {
       "localizations" : {
         "en" : {
@@ -78016,6 +78140,28 @@
         }
       }
     },
+    "Vale solo su questo dispositivo: i to-do fatti non vengono cancellati e gli altri membri continuano a vederli secondo la loro scelta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Applies only to this device: completed to-dos aren't deleted, and other members keep seeing them according to their own choice."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo se aplica a este dispositivo: las tareas completadas no se eliminan y los demás miembros siguen viéndolas según su propia elección."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S'applique uniquement à cet appareil : les to-do terminés ne sont pas supprimés et les autres membres continuent de les voir selon leur propre choix."
+          }
+        }
+      }
+    },
     "Valido 7 giorni" : {
       "localizations" : {
         "en" : {
@@ -79534,6 +79680,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "VO₂ max"
+          }
+        }
+      }
+    },
+    "Voce" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Item"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elemento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Élément"
           }
         }
       }

@@ -146,7 +146,7 @@ struct SaveShoppingTripView: View {
         // qui è il dettaglio. `linkedExpenseId` tiene insieme i due.
         let expense = KBExpense(
             familyId: familyId,
-            title: store.isEmpty ? String(localized: "Spesa") : store,
+            title: store.isEmpty ? String(localized: "grocery.title") : store,
             amount: total,
             date: date,
             categoryId: KBExpenseCategory.defaultCategoryId(familyId: familyId, slug: "spesa"),

@@ -145,7 +145,7 @@ struct EditShoppingTripView: View {
             return
         }
 
-        let title = store.isEmpty ? String(localized: "Spesa") : store
+        let title = store.isEmpty ? String(localized: "grocery.title") : store
 
         if let existing {
             existing.title = title

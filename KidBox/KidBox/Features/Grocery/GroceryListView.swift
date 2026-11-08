@@ -316,7 +316,7 @@ struct GroceryListView: View {
             .accessibilityLabel("Indietro")
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Spesa")
+                Text("grocery.title")
                     .font(.system(size: 34, weight: .bold))
                     .foregroundStyle(.primary)
                 Text(countsLine)

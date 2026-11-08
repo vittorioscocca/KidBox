@@ -202,7 +202,8 @@ final class KBWidgetSync {
 
         let familyId = UserDefaults(suiteName: KBWidgetStore.appGroupId)?
             .string(forKey: "activeFamilyId") ?? ""
-        guard !familyId.isEmpty, let uid = Auth.auth().currentUser?.uid else {
+        // `KBUid`: identico in Release; nella demo (DEBUG) riempie anche i widget.
+        guard !familyId.isEmpty, let uid = KBUid.current else {
             // Uscito o senza famiglia: il widget non deve restare con dati altrui.
             KBWidgetStore.clear()
             WidgetCenter.shared.reloadAllTimelines()

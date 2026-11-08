@@ -323,13 +323,18 @@ enum KBDemoSeed {
                               updatedBy: me, updatedByName: "Anna",
                               createdAt: day(-i - 1), updatedAt: day(-i - 1)))
         }
+        var seededGroceries: [(id: String, name: String)] = []
         for g in t.groceries {
-            ctx.insert(KBGroceryItem(familyId: fid, name: g.name, quantity: g.qty, updatedBy: me, createdBy: me))
+            let item = KBGroceryItem(familyId: fid, name: g.name, quantity: g.qty, updatedBy: me, createdBy: me)
+            ctx.insert(item)
+            seededGroceries.append((id: item.id, name: item.name))
         }
 
         seedSections(ctx, day: day)
 
         try? ctx.save()
+        // Il reparto lo sceglie l'app, come per le voci vere.
+        GroceryCategoryClassifier.assignMissing(to: seededGroceries, familyId: fid, modelContext: ctx)
         UserDefaults.standard.set(fid, forKey: "KidBox.activeFamilyId")
     }
 
