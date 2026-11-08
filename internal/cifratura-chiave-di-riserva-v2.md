@@ -204,6 +204,20 @@ progettato a parte.
 3. Fase 4 sì o no, e quando.
 4. Testo della landing da cambiare subito (Fase 0)?
 
+### Decise dall'utente l'08/11/2026
+
+1. **App: rimandabile per 3 giorni, poi obbligatorio.** Chi ha il telefono
+   attivo non viene bloccato all'aggiornamento; dal terzo giorno dopo il primo
+   avvio della versione v2 il promemoria non si chiude più finché il segreto non
+   esiste. Il conteggio parte dal primo avvio della versione nuova su quel
+   device, salvato in locale. Sul web resta obbligatorio da subito.
+2. **Chiusura v1: 90% dei membri attivi passati alla v2, e comunque dopo 30
+   giorni** dall'uscita delle versioni con la Fase 1. Chi resta fuori rientra
+   da telefono attivo o QR.
+3. **Fase 4 dopo, a parte**: si decide a Fase 3 chiusa.
+4. **Landing invariata**: «end-to-end» resta com'è. La Fase 0 si riduce ai
+   testi dentro le app (schermata del segreto e promemoria).
+
 ## 9. Stima a grandi linee
 
 | Fase | Lavoro |
