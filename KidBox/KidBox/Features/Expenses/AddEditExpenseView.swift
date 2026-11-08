@@ -24,6 +24,15 @@ struct AddEditExpenseView: View {
     
     let expense: KBExpense?
     private var isEditing: Bool { expense != nil }
+
+    /// Bozza arrivata da un altro dispositivo (solo spesa nuova).
+    private var incomingDraft: KBHandoffDraft? = nil
+
+    func handoff(_ draft: KBHandoffDraft?) -> Self {
+        var copy = self
+        copy.incomingDraft = draft
+        return copy
+    }
     
     // Form fields
     @State private var title: String               = ""
@@ -211,7 +220,34 @@ struct AddEditExpenseView: View {
                 pendingURLs.append(contentsOf: urls)
             }
         }
-        .onAppear { populate() }
+        .onAppear {
+            populate()
+            applyHandoff()
+        }
+        // Handoff: la spesa nuova che si sta scrivendo continua sull'altro
+        // dispositivo; gli allegati restano qui.
+        .handoffDraft(handoffDraft)
+    }
+
+    private var handoffDraft: KBHandoffDraft? {
+        guard expense == nil else { return nil }
+        let typed = [title, amountString, notes]
+            .contains { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        guard typed else { return nil }
+        return KBHandoffDraft(kind: .expense, fields: [
+            "title": title, "amount": amountString,
+            "date": KBHandoffDraft.dateString(date),
+            "categoryId": selectedCategoryId, "notes": notes,
+        ])
+    }
+
+    private func applyHandoff() {
+        guard expense == nil, let d = incomingDraft else { return }
+        title = d.fields["title"] ?? ""
+        amountString = d.fields["amount"] ?? ""
+        if let v = d.date("date") { date = v }
+        if let c = d.fields["categoryId"] { selectedCategoryId = c }
+        notes = d.fields["notes"] ?? ""
     }
     
     // MARK: - Populate

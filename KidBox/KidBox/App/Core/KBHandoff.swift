@@ -29,12 +29,13 @@ struct KBHandoffTarget: Hashable {
     /// Dentro Salute: persona e pagine aperte (scheda, visite, una visita…),
     /// scritte da `KBHealthTrail`.
     var healthTrail: String? = nil
+    var expenseId: String? = nil
     var draft: KBHandoffDraft? = nil
 
     private enum Key {
         static let section = "section", familyId = "familyId", childId = "childId"
         static let listId = "listId", albumId = "albumId", albumTitle = "albumTitle"
-        static let healthTrail = "healthTrail"
+        static let healthTrail = "healthTrail", expenseId = "expenseId"
     }
 
     var userInfo: [String: String] {
@@ -44,6 +45,7 @@ struct KBHandoffTarget: Hashable {
         if let albumId { info[Key.albumId] = albumId }
         if let albumTitle { info[Key.albumTitle] = albumTitle }
         if let healthTrail { info[Key.healthTrail] = healthTrail }
+        if let expenseId { info[Key.expenseId] = expenseId }
         if let draft {
             info[KBHandoffDraft.kindKey] = draft.kind.rawValue
             for (k, v) in draft.fields { info[KBHandoffDraft.fieldPrefix + k] = v }
@@ -66,6 +68,7 @@ struct KBHandoffTarget: Hashable {
         albumId = userInfo?[Key.albumId] as? String
         albumTitle = userInfo?[Key.albumTitle] as? String
         healthTrail = userInfo?[Key.healthTrail] as? String
+        expenseId = userInfo?[Key.expenseId] as? String
         if let raw = userInfo?[KBHandoffDraft.kindKey] as? String, let kind = KBHandoffDraft.Kind(rawValue: raw) {
             var fields: [String: String] = [:]
             for (k, v) in userInfo ?? [:] {
@@ -122,6 +125,9 @@ enum KBHandoff {
                 target.section = .photos
                 target.albumId = albumId
                 target.albumTitle = title
+            case .expenseDetail(familyId: _, expenseId: let expenseId):
+                target.section = .expenses
+                target.expenseId = expenseId
             default:
                 break
             }
@@ -135,9 +141,17 @@ enum KBHandoff {
     /// Riapre il posto ricevuto. Lista e album solo se la famiglia è la stessa:
     /// in un'altra famiglia non esistono, si apre la sola sezione.
     @MainActor
-    static func open(_ target: KBHandoffTarget, coordinator: AppCoordinator,
+    static func open(_ received: KBHandoffTarget, coordinator: AppCoordinator,
                      modelContext: ModelContext, usesSidebar: Bool) {
-        guard coordinator.isAuthenticated else { pending = target; return }
+        guard coordinator.isAuthenticated else { pending = received; return }
+        var target = received
+        // Una bozza scritta da un foglio aperto altrove (la spesa dal «+» della
+        // Home, l'assistente da Salute) porta alla sezione che la sa usare.
+        if let home = target.draft?.kind.section, home != target.section {
+            target.section = home
+            target.listId = nil; target.albumId = nil
+            target.healthTrail = nil; target.expenseId = nil
+        }
         pending = nil
         let sameFamily = target.familyId == coordinator.activeFamilyId
         KBLog.navigation.kbInfo("Handoff: apro \(target.section.rawValue) sameFamily=\(sameFamily) draft=\(target.draft?.kind.rawValue ?? "-")")
@@ -173,6 +187,19 @@ enum KBHandoff {
                 // persona sola, si sostituirebbe da sé (e «Indietro» ci rientra).
                 coordinator.rootTab = .home
                 coordinator.path = trail
+            }
+            return
+        }
+
+        if sameFamily, let expenseId = target.expenseId {
+            let route = Route.expenseDetail(familyId: target.familyId, expenseId: expenseId)
+            if usesSidebar {
+                coordinator.path.removeAll()
+                coordinator.sidebarSection = .expenses
+                coordinator.path = [route]
+            } else {
+                coordinator.rootTab = .home
+                coordinator.path = [.expensesHome(familyId: target.familyId, highlightExpenseId: nil), route]
             }
             return
         }
@@ -284,7 +311,18 @@ enum KBHealthTrail {
 /// Quello che si sta scrivendo. I campi sono stringhe (le date in secondi dal
 /// 1970) e restano corti: Handoff consiglia pochi KB in tutto.
 struct KBHandoffDraft: Hashable {
-    enum Kind: String { case todo, grocery, event, chat, note, visit, exam, treatment }
+    enum Kind: String {
+        case todo, grocery, event, chat, note, visit, exam, treatment, expense, assistant
+
+        /// La sezione dove la bozza va per forza, ovunque fosse aperta.
+        var section: SidebarSection? {
+            switch self {
+            case .expense:   return .expenses
+            case .assistant: return .assistant
+            default:         return nil
+            }
+        }
+    }
 
     var kind: Kind
     var fields: [String: String]

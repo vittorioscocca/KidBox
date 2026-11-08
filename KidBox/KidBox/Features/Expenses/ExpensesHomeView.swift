@@ -37,6 +37,7 @@ struct ExpensesHomeView: View {
     // lo stesso approccio usato da DocumentFolderView con bind(modelContext:).
     @StateObject private var vm: ExpensesViewModel
     @State private var syncCancellable: AnyCancellable? = nil
+    @State private var handoffDraft: KBHandoffDraft? = nil
     /// Spesa da notifica già aperta: evita di riaprirne il dettaglio a ogni
     /// reload della lista. Gemello di `consumedHighlightExpenseId` su Android.
     @State private var openedPushExpenseId: String? = nil
@@ -123,8 +124,13 @@ struct ExpensesHomeView: View {
                 }
             }
         }
-        .sheet(isPresented: $vm.showAddExpense, onDismiss: { vm.reload() }) {
+        .onHandoffDraft(.expense) { d in
+            handoffDraft = d
+            vm.showAddExpense = true
+        }
+        .sheet(isPresented: $vm.showAddExpense, onDismiss: { vm.reload(); handoffDraft = nil }) {
             AddEditExpenseView(vm: vm, expense: nil)
+                .handoff(handoffDraft)
         }
         .sheet(item: $vm.expenseToEdit, onDismiss: { vm.reload() }) { expense in
             AddEditExpenseView(vm: vm, expense: expense)

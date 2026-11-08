@@ -402,6 +402,13 @@ private struct PlanningAIChatInnerView: View {
         }
         .navigationTitle("Assistente")
         .navigationBarTitleDisplayMode(.inline)
+        // Handoff: la domanda che si sta scrivendo continua sull'altro
+        // dispositivo, nel campo dell'assistente (da mandare o correggere).
+        .handoffDraft(vm.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                      ? nil : KBHandoffDraft(kind: .assistant, fields: ["text": vm.inputText]))
+        .onHandoffDraft(.assistant) { d in
+            if let text = d.fields["text"] { vm.inputText = text }
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
