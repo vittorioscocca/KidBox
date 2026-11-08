@@ -160,6 +160,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				App/Intents/OpenKidBoxFamilyPhotosCameraIntent.swift,
+				App/Widgets/KBWidgetSnapshot.swift,
 			);
 			target = 7CE0B00A2F3378CB0086D687 /* KidBoxControlsExtension */;
 		};

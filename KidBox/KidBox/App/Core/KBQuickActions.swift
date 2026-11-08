@@ -126,3 +126,26 @@ struct KBQuickActionListener: ViewModifier {
         }
     }
 }
+
+extension Notification.Name {
+    /// Un widget della Home ha chiesto di aprire una sezione (`KBQuickActions.pending`).
+    static let kbWidgetOpenRequested = Notification.Name("kbWidgetOpenRequested")
+}
+
+import SwiftUI
+import SwiftData
+
+/// Tocco su un widget ad app già aperta: l'URL arriva dopo il passaggio in
+/// primo piano, quindi `didBecomeActive` da solo lo mancherebbe. Modificatore a
+/// parte perché la catena di `RootHostView` è già al limite del type-checker.
+struct KBWidgetOpenReceiver: ViewModifier {
+    let usesSidebar: Bool
+    @EnvironmentObject private var coordinator: AppCoordinator
+    @Environment(\.modelContext) private var modelContext
+
+    func body(content: Content) -> some View {
+        content.onReceive(NotificationCenter.default.publisher(for: .kbWidgetOpenRequested)) { _ in
+            coordinator.consumePendingQuickActionIfNeeded(modelContext: modelContext, usesSidebar: usesSidebar)
+        }
+    }
+}

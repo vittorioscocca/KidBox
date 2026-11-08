@@ -33,6 +33,7 @@ enum FitnessPlanStore {
         // Le corse del piano finiscono nel registro delle scarpe adesso: alla
         // rigenerazione del piano sarebbe tardi.
         FitnessShoeStore.reconcile(plan: document, childId: childId)
+        Task { @MainActor in KBWidgetSync.shared.requestRefresh() }
     }
 
     // MARK: - Storico delle sedute

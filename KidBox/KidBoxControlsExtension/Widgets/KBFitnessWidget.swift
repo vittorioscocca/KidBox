@@ -1,0 +1,117 @@
+//
+//  KBFitnessWidget.swift
+//  KidBoxControlsExtension
+//
+//  Widget quadrato «Piano Fitness»: l'allenamento di oggi del membro scelto.
+//  Solo Pro/Max: sui Free il widget lo dice, non mostra dati.
+//
+
+import SwiftUI
+import WidgetKit
+import AppIntents
+
+struct KBFitnessEntry: TimelineEntry {
+    let date: Date
+    let snapshot: KBWidgetSnapshot?
+    let memberId: String?
+}
+
+struct KBFitnessProvider: AppIntentTimelineProvider {
+    func placeholder(in context: Context) -> KBFitnessEntry { .init(date: .now, snapshot: nil, memberId: nil) }
+
+    func snapshot(for configuration: FitnessWidgetIntent, in context: Context) async -> KBFitnessEntry {
+        .init(date: .now, snapshot: KBWidgetStore.read(), memberId: configuration.member?.id)
+    }
+
+    func timeline(for configuration: FitnessWidgetIntent, in context: Context) async -> Timeline<KBFitnessEntry> {
+        let entry = KBFitnessEntry(date: .now, snapshot: KBWidgetStore.read(), memberId: configuration.member?.id)
+        return Timeline(entries: [entry], policy: .after(kbNextMidnight(after: .now)))
+    }
+}
+
+struct KBFitnessWidgetView: View {
+    let entry: KBFitnessEntry
+
+    private var profile: KBWidgetSnapshot.FitnessProfile? {
+        guard let snap = entry.snapshot else { return nil }
+        if let id = entry.memberId { return snap.fitness.first { $0.id == id } }
+        return snap.fitness.first
+    }
+
+    private var memberName: String? {
+        guard let p = profile else { return nil }
+        return entry.snapshot?.profiles.first { $0.id == p.id }?.name
+    }
+
+    private func icon(_ type: String) -> String {
+        let t = type.lowercased()
+        if t.contains("cors") || t.contains("run")      { return "figure.run" }
+        if t.contains("cammin") || t.contains("walk")   { return "figure.walk" }
+        if t.contains("bici") || t.contains("cicl")     { return "figure.outdoor.cycle" }
+        if t.contains("nuot")                           { return "figure.pool.swim" }
+        if t.contains("yoga") || t.contains("mobil")    { return "figure.yoga" }
+        if t.contains("forz") || t.contains("pesi")     { return "figure.strengthtraining.traditional" }
+        return "figure.mixed.cardio"
+    }
+
+    var body: some View {
+        let cal = Calendar.current
+        Group {
+            if entry.snapshot == nil {
+                KBWidgetSignedOut()
+            } else if entry.snapshot?.fitnessUnlocked == false {
+                KBWidgetMessage(systemImage: "lock.fill", text: "Disponibile con Pro", color: .kbFitness)
+            } else if let profile {
+                let today = profile.sessions.first { cal.isDate($0.date, inSameDayAs: entry.date) }
+                let next = profile.sessions.first { $0.date > entry.date && !$0.isDone && !$0.isSkipped }
+                VStack(alignment: .leading, spacing: 6) {
+                    KBWidgetHeader(title: memberName ?? String(localized: "Fitness"), color: .kbFitness)
+                    if let today {
+                        HStack(spacing: 8) {
+                            Image(systemName: today.isDone ? "checkmark.circle.fill" : icon(today.activityType))
+                                .font(.title2)
+                                .foregroundStyle(today.isDone ? Color.kbGrocery : Color.kbFitness)
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(today.title)
+                                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                    .lineLimit(2)
+                                Group {
+                                    if today.isDone { Text("Fatto") } else { Text("\(today.minutes) min") }
+                                }
+                                .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    } else {
+                        Label("Riposo oggi", systemImage: "moon.zzz")
+                            .font(.system(.subheadline, design: .rounded).weight(.medium))
+                    }
+                    Spacer(minLength: 0)
+                    if let next, today?.isDone != false || today == nil {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(next.date, format: .dateTime.weekday(.wide).day())
+                                .font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                            Text(next.title).font(.caption.weight(.medium)).lineLimit(1)
+                        }
+                    }
+                }
+            } else {
+                KBWidgetMessage(systemImage: "figure.run", text: "Nessun piano fitness", color: .kbFitness)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .widgetURL(URL(string: "kidbox://widget/health"))
+        .containerBackground(.background, for: .widget)
+    }
+}
+
+struct KBFitnessWidget: Widget {
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: "KidBoxFitnessWidget", intent: FitnessWidgetIntent.self,
+                               provider: KBFitnessProvider()) { entry in
+            KBFitnessWidgetView(entry: entry)
+        }
+        .configurationDisplayName("Piano Fitness")
+        .description("L'allenamento di oggi dal piano di un membro della famiglia.")
+        .supportedFamilies([.systemSmall])
+    }
+}

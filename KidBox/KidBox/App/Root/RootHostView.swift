@@ -347,6 +347,7 @@ struct RootHostView: View {
             // Ritorno in primo piano subito dopo la registrazione.
             Task { await consumePendingInviteIfNeeded() }
         }
+        .modifier(KBWidgetOpenReceiver(usesSidebar: usesSidebarShell))
         // Link toccato ad app già aperta: l'URL arriva DOPO il passaggio in
         // primo piano, quindi il solo `didBecomeActive` lo mancherebbe.
         .onReceive(NotificationCenter.default.publisher(for: .kbPendingFamilyInviteStored)) { _ in

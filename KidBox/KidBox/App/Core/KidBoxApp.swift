@@ -45,6 +45,7 @@ struct KidBoxApp: App {
         TodoReminderDoneAction.container = container
         // Motore proattivo: gira a ogni salvataggio dei dati locali.
         KBInsightRunner.shared.start(container: container)
+        KBWidgetSync.shared.start(container: container)
         if ModelContainerProvider.didQuarantineCorruptedStoreThisLaunch {
             KBLog.sync.kbInfo("SwiftData store was quarantined — scheduling bootstrap + flushGlobal")
             Task { @MainActor in
@@ -151,6 +152,18 @@ struct KidBoxApp: App {
                             return
                         }
                         
+                        // Tocco su un widget della Home: `kidbox://widget/<sezione>`.
+                        // Stessa strada del tocco lungo sull'icona.
+                        if url.scheme == "kidbox", url.host == "widget",
+                           let section = SidebarSection(rawValue: url.lastPathComponent) {
+                            KBLog.navigation.kbInfo("onOpenURL widget -> \(section.rawValue)")
+                            // Lo consuma RootHostView al passaggio in primo piano
+                            // (che sa se la shell è a barra laterale o no).
+                            KBQuickActions.pending = section
+                            NotificationCenter.default.post(name: .kbWidgetOpenRequested, object: nil)
+                            return
+                        }
+
                         if url.scheme == "kidbox", url.host == "control",
                            url.path == "/open-family-photos-camera" || url.path == "open-family-photos-camera" {
                             KBLog.sync.kbInfo("onOpenURL control -> family photos camera shortcut")
@@ -591,6 +604,7 @@ struct KidBoxApp: App {
                 ReviewPrompter.registerAppOpen()
                 Task { await KBSubscriptionManager.shared.refreshCurrentEntitlement() }
                 KBInsightRunner.shared.requestRun(reason: "foreground")
+                KBWidgetSync.shared.requestRefresh(delay: .zero)
                 KBInsightRunner.shared.scheduleBackgroundRefresh()
                 // Throttlato internamente a una chiamata ogni 6 ore.
                 Task { await AppUpdateChecker.shared.checkForUpdate() }
