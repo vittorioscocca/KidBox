@@ -28,6 +28,7 @@ struct KBFitnessWidgetView: View {
     private var memberName: String? {
         guard let p = profile else { return nil }
         return entry.snapshot?.profiles.first { $0.id == p.id }?.name
+            .split(separator: " ").first.map(String.init)
     }
 
     private func icon(_ type: String) -> String {

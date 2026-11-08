@@ -28,14 +28,19 @@ struct KBCareWidgetView: View {
 
     private var title: String {
         if let id = entry.memberId, let p = entry.snapshot?.profiles.first(where: { $0.id == id }) {
-            return p.name
+            return firstName(p.name)
         }
         return String(localized: "Cure")
     }
 
     private func name(of childId: String) -> String? {
         guard entry.memberId == nil, (entry.snapshot?.profiles.count ?? 0) > 1 else { return nil }
-        return entry.snapshot?.profiles.first { $0.id == childId }?.name
+        return entry.snapshot?.profiles.first { $0.id == childId }.map { firstName($0.name) }
+    }
+
+    /// Solo il nome: «Vittorio Scocca» in un quadrato diventava «Vittorio Sco…».
+    private func firstName(_ full: String) -> String {
+        full.split(separator: " ").first.map(String.init) ?? full
     }
 
     /// Apre la cura della prima dose da prendere; senza dosi, le cure del membro.
@@ -61,20 +66,21 @@ struct KBCareWidgetView: View {
 
     private func actionButton(_ dose: KBWidgetSnapshot.Dose, taken: Bool) -> some View {
         Button(intent: KBMarkDoseTakenIntent(doseId: dose.id, taken: taken)) {
-            Group {
-                if taken {
-                    Label("Presa", systemImage: "checkmark")
-                } else {
-                    Label("Saltata", systemImage: "xmark")
-                }
+            // Icona e testo piccoli e restringibili: in un quadrato due
+            // pulsanti affiancati hanno ~60 punti l'uno, «Saltata» con l'icona
+            // a corpo normale ne usciva.
+            HStack(spacing: 3) {
+                Image(systemName: taken ? "checkmark" : "xmark")
+                    .font(.system(size: 10, weight: .heavy))
+                if taken { Text("Presa") } else { Text("Saltata") }
             }
-            .labelStyle(.titleAndIcon)
-            .font(.system(.caption, design: .rounded).weight(.bold))
+            .font(.system(.caption2, design: .rounded).weight(.bold))
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            .minimumScaleFactor(0.6)
             .foregroundStyle(taken ? Color.white : Color.primary)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 7)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
             .background(Capsule().fill(taken ? Color.kbCare : Color.secondary.opacity(0.18)))
         }
         .buttonStyle(.plain)
@@ -89,6 +95,7 @@ struct KBCareWidgetView: View {
                             .font(.system(.subheadline, design: .rounded).weight(.bold))
                             .foregroundStyle(Color.kbCare)
                             .lineLimit(1)
+                            .minimumScaleFactor(0.75)
                         Spacer(minLength: 4)
                         let p = todayProgress
                         if p.total > 0 {
