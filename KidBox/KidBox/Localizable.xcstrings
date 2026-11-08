@@ -9883,6 +9883,28 @@
         }
       }
     },
+    "Aperta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expanded"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expandida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Développée"
+          }
+        }
+      }
+    },
     "Aperta 24 ore" : {
       "localizations" : {
         "en" : {
@@ -16544,6 +16566,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fermez et rouvrez KidBox pour utiliser la nouvelle langue."
+          }
+        }
+      }
+    },
+    "Chiusa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapsed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraída"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réduite"
           }
         }
       }

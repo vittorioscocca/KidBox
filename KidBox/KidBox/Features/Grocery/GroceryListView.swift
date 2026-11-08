@@ -58,6 +58,10 @@ struct GroceryListView: View {
     @State private var didStartRealtime = false
     @State private var showAddSheet = false
     @State private var editingItemId: String? = nil
+    /// Categorie ripiegate dall'utente (chiave = valore salvato, non l'etichetta).
+    /// Si azzera a ogni apertura: una categoria nascosta per sbaglio non deve
+    /// far credere che la lista sia vuota.
+    @State private var collapsedCategories: Set<String> = []
     @State private var showDeletePurchasedAlert = false
     @State private var showSaveTripSheet = false
     @State private var showTripsHistory = false
@@ -175,9 +179,9 @@ struct GroceryListView: View {
             // alto e prende il colore spento di sistema. Qui il titolo di
             // categoria è una riga come le altre, che scorre con la lista.
             ForEach(groupedVisible, id: \.category) { group in
-                sectionHeader(for: group.category)
+                sectionHeader(for: group.category, count: group.items.count)
 
-                ForEach(group.items) { item in
+                ForEach(collapsedCategories.contains(group.category) ? [] : group.items) { item in
                     row(item)
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
@@ -344,13 +348,39 @@ struct GroceryListView: View {
     /// Titolo di categoria. Sui "presi" porta anche la scorciatoia per svuotarli:
     /// è lì che serve, e non ha senso mostrarla mentre si guarda cosa manca.
     @ViewBuilder
-    private func sectionHeader(for category: String) -> some View {
+    private func sectionHeader(for category: String, count: Int) -> some View {
+        let isCollapsed = collapsedCategories.contains(category)
         HStack {
-            Text(KBGroceryCategory.displayName(for: category))
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.primary)
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    if isCollapsed { collapsedCategories.remove(category) }
+                    else { collapsedCategories.insert(category) }
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Text(KBGroceryCategory.displayName(for: category))
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.primary)
 
-            Spacer()
+                    if isCollapsed {
+                        Text("\(count)")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .rotationEffect(.degrees(isCollapsed ? -90 : 0))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityValue(isCollapsed ? Text("Chiusa") : Text("Aperta"))
 
             if filter == .purchased {
                 Button(role: .destructive) {
