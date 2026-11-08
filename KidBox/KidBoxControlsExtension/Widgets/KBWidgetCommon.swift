@@ -132,30 +132,49 @@ struct ProfileQuery: EntityQuery {
     }
 }
 
-// MARK: - Intent di configurazione
+// MARK: - Intent di configurazione (un solo widget, «Modifica widget» sceglie cosa mostrare)
 
-struct TodoWidgetIntent: WidgetConfigurationIntent {
-    static let title: LocalizedStringResource = "To-do"
-    static let description = IntentDescription("Scegli la lista da mostrare. Senza scelta vedi tutti i to-do.")
+enum KBWidgetContent: String, AppEnum {
+    case calendar, todo, grocery, care, fitness
+
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Contenuto"
+    static let caseDisplayRepresentations: [KBWidgetContent: DisplayRepresentation] = [
+        .calendar: DisplayRepresentation(title: "Calendario", image: .init(systemName: "calendar")),
+        .todo:     DisplayRepresentation(title: "To-do", image: .init(systemName: "checklist")),
+        .grocery:  DisplayRepresentation(title: "Spesa", image: .init(systemName: "cart")),
+        .care:     DisplayRepresentation(title: "Cure", image: .init(systemName: "pills")),
+        .fitness:  DisplayRepresentation(title: "Piano Fitness", image: .init(systemName: "figure.run")),
+    ]
+}
+
+struct KidBoxWidgetIntent: WidgetConfigurationIntent {
+    static let title: LocalizedStringResource = "KidBox"
+    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure o piano fitness.")
+
+    @Parameter(title: "Mostra", default: .calendar)
+    var content: KBWidgetContent
 
     @Parameter(title: "Lista")
     var list: TodoListEntity?
-}
-
-struct CareWidgetIntent: WidgetConfigurationIntent {
-    static let title: LocalizedStringResource = "Cure"
-    static let description = IntentDescription("Scegli di chi mostrare le cure. Senza scelta vedi tutta la famiglia.")
 
     @Parameter(title: "Membro")
     var member: ProfileEntity?
-}
 
-struct FitnessWidgetIntent: WidgetConfigurationIntent {
-    static let title: LocalizedStringResource = "Piano Fitness"
-    static let description = IntentDescription("Scegli di chi mostrare il piano. Senza scelta vedi il primo piano trovato.")
-
-    @Parameter(title: "Membro")
-    var member: ProfileEntity?
+    static var parameterSummary: some ParameterSummary {
+        When(\.$content, .equalTo, KBWidgetContent.todo) {
+            Summary("Mostra \(\.$content)") { \.$list }
+        } otherwise: {
+            When(\.$content, .equalTo, KBWidgetContent.care) {
+                Summary("Mostra \(\.$content)") { \.$member }
+            } otherwise: {
+                When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                    Summary("Mostra \(\.$content)") { \.$member }
+                } otherwise: {
+                    Summary("Mostra \(\.$content)")
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Voce di timeline

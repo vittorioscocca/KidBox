@@ -8,27 +8,6 @@
 import SwiftUI
 import WidgetKit
 
-struct KBCalendarProvider: TimelineProvider {
-    func placeholder(in context: Context) -> KBWidgetEntry { .init(date: .now, snapshot: nil) }
-
-    func getSnapshot(in context: Context, completion: @escaping (KBWidgetEntry) -> Void) {
-        completion(.init(date: .now, snapshot: KBWidgetStore.read()))
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<KBWidgetEntry>) -> Void) {
-        let snap = KBWidgetStore.read()
-        let now = Date()
-        let midnight = kbNextMidnight(after: now)
-        // Una voce ad ogni fine evento di oggi: quello finito sparisce da solo.
-        var dates: Set<Date> = [now]
-        for e in snap?.events ?? [] where !e.isAllDay && e.end > now && e.end < midnight {
-            dates.insert(e.end)
-        }
-        let entries = dates.sorted().map { KBWidgetEntry(date: $0, snapshot: snap) }
-        completion(Timeline(entries: entries, policy: .after(midnight)))
-    }
-}
-
 struct KBCalendarWidgetView: View {
     let entry: KBWidgetEntry
 
@@ -114,16 +93,5 @@ struct KBCalendarWidgetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(URL(string: "kidbox://widget/calendar"))
         .containerBackground(.background, for: .widget)
-    }
-}
-
-struct KBCalendarWidget: Widget {
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "KidBoxCalendarWidget", provider: KBCalendarProvider()) { entry in
-            KBCalendarWidgetView(entry: entry)
-        }
-        .configurationDisplayName("Calendario")
-        .description("Gli eventi di oggi della tua famiglia.")
-        .supportedFamilies([.systemSmall])
     }
 }

@@ -16,19 +16,6 @@ struct KBFitnessEntry: TimelineEntry {
     let memberId: String?
 }
 
-struct KBFitnessProvider: AppIntentTimelineProvider {
-    func placeholder(in context: Context) -> KBFitnessEntry { .init(date: .now, snapshot: nil, memberId: nil) }
-
-    func snapshot(for configuration: FitnessWidgetIntent, in context: Context) async -> KBFitnessEntry {
-        .init(date: .now, snapshot: KBWidgetStore.read(), memberId: configuration.member?.id)
-    }
-
-    func timeline(for configuration: FitnessWidgetIntent, in context: Context) async -> Timeline<KBFitnessEntry> {
-        let entry = KBFitnessEntry(date: .now, snapshot: KBWidgetStore.read(), memberId: configuration.member?.id)
-        return Timeline(entries: [entry], policy: .after(kbNextMidnight(after: .now)))
-    }
-}
-
 struct KBFitnessWidgetView: View {
     let entry: KBFitnessEntry
 
@@ -110,17 +97,5 @@ struct KBFitnessWidgetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(deepLink)
         .containerBackground(.background, for: .widget)
-    }
-}
-
-struct KBFitnessWidget: Widget {
-    var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: "KidBoxFitnessWidget", intent: FitnessWidgetIntent.self,
-                               provider: KBFitnessProvider()) { entry in
-            KBFitnessWidgetView(entry: entry)
-        }
-        .configurationDisplayName("Piano Fitness")
-        .description("L'allenamento di oggi dal piano di un membro della famiglia.")
-        .supportedFamilies([.systemSmall])
     }
 }

@@ -15,28 +15,6 @@ struct KBCareEntry: TimelineEntry {
     let memberId: String?
 }
 
-struct KBCareProvider: AppIntentTimelineProvider {
-    func placeholder(in context: Context) -> KBCareEntry { .init(date: .now, snapshot: nil, memberId: nil) }
-
-    func snapshot(for configuration: CareWidgetIntent, in context: Context) async -> KBCareEntry {
-        .init(date: .now, snapshot: KBWidgetStore.read(), memberId: configuration.member?.id)
-    }
-
-    func timeline(for configuration: CareWidgetIntent, in context: Context) async -> Timeline<KBCareEntry> {
-        let snap = KBWidgetStore.read()
-        let memberId = configuration.member?.id
-        let now = Date()
-        // Una voce a ogni orario di dose: lo stato «in ritardo» scatta da solo.
-        var dates: Set<Date> = [now]
-        for d in snap?.doses ?? [] where d.time > now && (memberId == nil || d.childId == memberId) {
-            dates.insert(d.time)
-            if dates.count >= 12 { break }
-        }
-        let entries = dates.sorted().map { KBCareEntry(date: $0, snapshot: snap, memberId: memberId) }
-        return Timeline(entries: entries, policy: .after(kbNextMidnight(after: now)))
-    }
-}
-
 struct KBCareWidgetView: View {
     let entry: KBCareEntry
 
@@ -135,17 +113,5 @@ struct KBCareWidgetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(deepLink)
         .containerBackground(.background, for: .widget)
-    }
-}
-
-struct KBCareWidget: Widget {
-    var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: "KidBoxCareWidget", intent: CareWidgetIntent.self,
-                               provider: KBCareProvider()) { entry in
-            KBCareWidgetView(entry: entry)
-        }
-        .configurationDisplayName("Cure")
-        .description("Le prossime dosi dei farmaci di un membro della famiglia.")
-        .supportedFamilies([.systemSmall])
     }
 }

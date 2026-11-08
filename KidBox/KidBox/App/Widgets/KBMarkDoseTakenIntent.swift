@@ -23,7 +23,7 @@ struct KBMarkDoseTakenIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         KBWidgetDoseQueue.enqueue(doseId)
         KBWidgetDoseQueue.markTakenInSnapshot(doseId)
-        WidgetCenter.shared.reloadTimelines(ofKind: "KidBoxCareWidget")
+        WidgetCenter.shared.reloadTimelines(ofKind: "KidBoxHomeWidget")
         // Nell'app: scrive la dose e la sincronizza. Nell'estensione è nil e
         // la coda aspetta la prossima apertura.
         await KBWidgetDoseQueue.drainInApp?()

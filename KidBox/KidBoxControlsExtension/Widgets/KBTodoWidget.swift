@@ -16,19 +16,6 @@ struct KBTodoEntry: TimelineEntry {
     let listId: String?     // nil = tutti
 }
 
-struct KBTodoProvider: AppIntentTimelineProvider {
-    func placeholder(in context: Context) -> KBTodoEntry { .init(date: .now, snapshot: nil, listId: nil) }
-
-    func snapshot(for configuration: TodoWidgetIntent, in context: Context) async -> KBTodoEntry {
-        .init(date: .now, snapshot: KBWidgetStore.read(), listId: configuration.list?.id)
-    }
-
-    func timeline(for configuration: TodoWidgetIntent, in context: Context) async -> Timeline<KBTodoEntry> {
-        let entry = KBTodoEntry(date: .now, snapshot: KBWidgetStore.read(), listId: configuration.list?.id)
-        return Timeline(entries: [entry], policy: .after(kbNextMidnight(after: .now)))
-    }
-}
-
 struct KBTodoWidgetView: View {
     let entry: KBTodoEntry
 
@@ -102,17 +89,5 @@ struct KBTodoWidgetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(URL(string: "kidbox://widget/todo"))
         .containerBackground(.background, for: .widget)
-    }
-}
-
-struct KBTodoWidget: Widget {
-    var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: "KidBoxTodoWidget", intent: TodoWidgetIntent.self,
-                               provider: KBTodoProvider()) { entry in
-            KBTodoWidgetView(entry: entry)
-        }
-        .configurationDisplayName("To-do")
-        .description("I to-do della famiglia, di una lista a tua scelta.")
-        .supportedFamilies([.systemSmall])
     }
 }

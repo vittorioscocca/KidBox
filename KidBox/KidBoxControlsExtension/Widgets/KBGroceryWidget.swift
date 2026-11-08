@@ -8,19 +8,6 @@
 import SwiftUI
 import WidgetKit
 
-struct KBGroceryProvider: TimelineProvider {
-    func placeholder(in context: Context) -> KBWidgetEntry { .init(date: .now, snapshot: nil) }
-
-    func getSnapshot(in context: Context, completion: @escaping (KBWidgetEntry) -> Void) {
-        completion(.init(date: .now, snapshot: KBWidgetStore.read()))
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<KBWidgetEntry>) -> Void) {
-        let entry = KBWidgetEntry(date: .now, snapshot: KBWidgetStore.read())
-        completion(Timeline(entries: [entry], policy: .never))
-    }
-}
-
 struct KBGroceryWidgetView: View {
     let entry: KBWidgetEntry
 
@@ -57,16 +44,5 @@ struct KBGroceryWidgetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(URL(string: "kidbox://widget/shopping"))
         .containerBackground(.background, for: .widget)
-    }
-}
-
-struct KBGroceryWidget: Widget {
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "KidBoxGroceryWidget", provider: KBGroceryProvider()) { entry in
-            KBGroceryWidgetView(entry: entry)
-        }
-        .configurationDisplayName("Lista della spesa")
-        .description("Cosa resta da comprare.")
-        .supportedFamilies([.systemSmall])
     }
 }
