@@ -30,6 +30,9 @@ final class KBWidgetSync {
     func start(container: ModelContainer) {
         guard self.container == nil else { return }
         self.container = container
+        KBWidgetDoseQueue.drainInApp = {
+            await MainActor.run { KBWidgetSync.shared.drainPendingDoses() }
+        }
 
         saveObserver = NotificationCenter.default.addObserver(
             forName: ModelContext.didSave, object: nil, queue: .main
@@ -61,9 +64,32 @@ final class KBWidgetSync {
 
     // MARK: - Un giro
 
+    /// Scrive come «prese» le dosi segnate dal widget e le manda in sincronizzazione.
+    func drainPendingDoses() {
+        guard let container else { return }
+        let ids = KBWidgetDoseQueue.pending()
+        guard !ids.isEmpty else { return }
+        let familyId = UserDefaults(suiteName: KBWidgetStore.appGroupId)?
+            .string(forKey: "activeFamilyId") ?? ""
+        guard !familyId.isEmpty else { return }
+        for id in ids {
+            // «treatmentId|giorno|slot», vedi `doses(...)`.
+            let parts = id.split(separator: "|").map(String.init)
+            if parts.count == 3, let day = Int(parts[1]), let slot = Int(parts[2]) {
+                TreatmentDoseActionHandler.recordDose(
+                    treatmentId: parts[0], familyId: familyId,
+                    dayOffset: day - 1, slotIndex: slot, taken: true,
+                    modelContext: container.mainContext
+                )
+            }
+            KBWidgetDoseQueue.remove(id)
+        }
+    }
+
     func refresh() {
         guard let container else { return }
         observePlanIfNeeded()
+        drainPendingDoses()
 
         let familyId = UserDefaults(suiteName: KBWidgetStore.appGroupId)?
             .string(forKey: "activeFamilyId") ?? ""

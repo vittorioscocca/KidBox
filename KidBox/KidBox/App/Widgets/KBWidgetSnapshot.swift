@@ -147,3 +147,43 @@ enum KBWidgetStore {
         try? FileManager.default.removeItem(at: url)
     }
 }
+
+// MARK: - «Presa» dal widget Cure
+
+/// Dosi segnate come prese dal widget, in attesa che l'app le scriva davvero.
+///
+/// Il pulsante del widget gira nell'estensione (a meno che il sistema non lo
+/// esegua nell'app): lì non c'è SwiftData né la sincronizzazione. L'estensione
+/// aggiorna subito l'istantanea, così il widget cambia, e mette l'id in coda;
+/// l'app la svuota appena può (`KBWidgetSync.drainPendingDoses`).
+enum KBWidgetDoseQueue {
+
+    private static let key = "kidbox.widget.pendingDoses"
+
+    /// Impostato dall'app: se l'intent gira nel suo processo, svuota subito.
+    nonisolated(unsafe) static var drainInApp: (@Sendable () async -> Void)?
+
+    private static var defaults: UserDefaults? { UserDefaults(suiteName: KBWidgetStore.appGroupId) }
+
+    static func pending() -> [String] {
+        defaults?.stringArray(forKey: key) ?? []
+    }
+
+    static func enqueue(_ doseId: String) {
+        var list = pending()
+        if !list.contains(doseId) { list.append(doseId) }
+        defaults?.set(list, forKey: key)
+    }
+
+    static func remove(_ doseId: String) {
+        defaults?.set(pending().filter { $0 != doseId }, forKey: key)
+    }
+
+    /// Aggiorna l'istantanea senza aspettare l'app.
+    static func markTakenInSnapshot(_ doseId: String) {
+        guard var snap = KBWidgetStore.read(),
+              let i = snap.doses.firstIndex(where: { $0.id == doseId }) else { return }
+        snap.doses[i].taken = true
+        KBWidgetStore.write(snap)
+    }
+}

@@ -74,33 +74,58 @@ struct KBCareWidgetView: View {
         return c?.url
     }
 
+    /// Quante dosi di oggi sono già prese, sul totale di oggi.
+    private var todayProgress: (taken: Int, total: Int) {
+        let cal = Calendar.current
+        let today = doses.filter { cal.isDate($0.time, inSameDayAs: entry.date) }
+        return (today.filter(\.taken).count, today.count)
+    }
+
     var body: some View {
         Group {
             if entry.snapshot != nil {
-                VStack(alignment: .leading, spacing: 6) {
-                    KBWidgetHeader(title: title, color: .kbCare, count: pending.isEmpty ? nil : pending.count)
+                VStack(alignment: .leading, spacing: 4) {
+                    KBWidgetHeader(title: title, color: .kbCare)
                     if doses.isEmpty {
                         KBWidgetMessage(systemImage: "pills", text: "Nessuna cura attiva", color: .kbCare)
-                    } else if pending.isEmpty {
-                        KBWidgetMessage(systemImage: "checkmark.circle", text: "Tutto preso", color: .kbCare)
-                    } else {
-                        ForEach(pending.prefix(3)) { dose in
-                            let late = dose.time < entry.date
-                            VStack(alignment: .leading, spacing: 0) {
-                                HStack(spacing: 4) {
-                                    Text(dose.time, format: .dateTime.hour().minute())
-                                        .font(.caption.weight(.bold))
-                                        .foregroundStyle(late ? Color.kbCalendar : Color.kbCare)
-                                    if let who = name(of: dose.childId) {
-                                        Text(who).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-                                    }
-                                }
-                                Text(dose.dosage.isEmpty ? dose.drugName : "\(dose.drugName) · \(dose.dosage)")
-                                    .font(.system(.footnote, design: .rounded).weight(.medium))
-                                    .lineLimit(1)
+                    } else if let dose = pending.first {
+                        let late = dose.time < entry.date
+                        Text(dose.time, format: .dateTime.hour().minute())
+                            .font(.system(size: 30, weight: .bold, design: .rounded))
+                            .foregroundStyle(late ? Color.kbCalendar : Color.kbCare)
+                        Text(dose.drugName)
+                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                            .lineLimit(1)
+                        HStack(spacing: 4) {
+                            if !dose.dosage.isEmpty {
+                                Text(dose.dosage).lineLimit(1)
+                            }
+                            if let who = name(of: dose.childId) {
+                                Text("· \(who)").lineLimit(1)
                             }
                         }
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                         Spacer(minLength: 0)
+                        Button(intent: KBMarkDoseTakenIntent(doseId: dose.id)) {
+                            Label("Presa", systemImage: "checkmark")
+                                .font(.system(.footnote, design: .rounded).weight(.bold))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 6)
+                                .background(Capsule().fill(Color.kbCare))
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        KBWidgetMessage(systemImage: "checkmark.circle", text: "Tutto preso", color: .kbCare)
+                    }
+                    if !doses.isEmpty {
+                        let p = todayProgress
+                        if p.total > 0 {
+                            Text("\(p.taken) di \(p.total) oggi")
+                                .font(.caption2).foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                        }
                     }
                 }
             } else {
