@@ -79,7 +79,17 @@ segreto dell'utente (codice di recupero / passkey)
     serve una derivazione lenta, e nessuno lo indovina.
   - `passkey`: chiave = HKDF(output dell'estensione **WebAuthn PRF** della passkey).
     Funziona su Safari, Chrome, iOS e Android recenti; dove non c'è, solo codice.
+    **Più slot passkey per utente**, uno per ogni credenziale: quella creata su
+    iPhone vive nel Portachiavi iCloud, quella creata su Android nel Gestore
+    password di Google, e sono serrature diverse. Dopo un rientro su un sistema
+    nuovo l'app propone di aggiungere la passkey di quel sistema.
   - formato di ogni slot: `{type, salt, nonce, cipher, tag, credentialId?, createdAt}`.
+- **Il codice di recupero c'è sempre, la passkey è un'aggiunta.** Chi crea la
+  cassaforte riceve il codice in ogni caso: una passkey sola lascerebbe fuori chi
+  entra da un Mac con un altro account Apple, da Windows o da Android.
+- **La biometria non c'entra con la chiave.** Face ID, Touch ID e impronta
+  sbloccano il dispositivo; la passkey è la stessa e l'uscita PRF è la stessa,
+  quindi iPhone con Face ID e Mac con l'impronta aprono la stessa cassaforte.
 - **Copia di riserva v2** `families/{familyId}/memberKeyBackups/{uid}`: la chiave di
   famiglia avvolta con la RK, `version: 2`. Stesso percorso di oggi, così
   cancellazione di famiglia e di account funzionano già.
@@ -99,16 +109,27 @@ copia v2 in più, nessun codice nuovo.
 | Ho perso tutto, sono l'unico membro | Codice di recupero | Sì, byte chiusi |
 | Ho perso tutto, anche il codice, e sono solo | **Dati cifrati persi** | — |
 
+Casi concreti, stesso account KidBox:
+
+| Da → a | Strada | Note |
+|---|---|---|
+| iPhone → app Mac, stesso account Apple | Portachiavi iCloud | Da provare: che l'app Mac legga la stessa voce sincronizzata non è scontato |
+| iPhone → web in Safari sul Mac, stesso account Apple | Passkey sincronizzata, sblocco con l'impronta | — |
+| iPhone → web in Chrome sul Mac | Passkey iCloud **probabilmente**; altrimenti codice | Da provare sul Mac dell'utente prima di contarci |
+| iPhone → Mac con un altro account Apple | QR dall'iPhone, altrimenti codice | La passkey lì non c'è |
+| iPhone → Android | QR dall'iPhone, poi QR di un familiare, poi codice | La passkey Apple via «inquadra con il telefono» (hybrid) non dà il PRF in modo affidabile: non ci si conta |
+| Android → web in Chrome, stesso account Google | Passkey sincronizzata dal Gestore password di Google | — |
+
 Il QR riusa `InviteCrypto` (segreto nel QR, materiale avvolto in un documento a
 scadenza breve, 10 minuti, cancellato dopo l'uso): il codice c'è già per gli inviti.
 
 ## 4. Le fasi
 
 ### Fase 0 — Subito, prima del codice
-- Landing e schede store: «cifrato con una chiave della famiglia» al posto di
-  «cifrato end-to-end» finché non si chiude la Fase 3. Quattro lingue, landing e
-  descrizioni App Store/Play.
-- Decisioni dell'utente (sezione 8).
+- Landing e schede store **invariate** (decisione dell'utente, sezione 8): resta
+  il rischio che «end-to-end» prometta più di quanto regge finché la v1 esiste.
+- Testi dentro le app (sezione 7) nelle quattro lingue.
+- Decisioni dell'utente (sezione 8): prese.
 
 ### Fase 1 — Cassaforte v2 nei tre client (lettura e scrittura)
 - **iOS/Mac**: `FamilyKeyVault.swift` nuovo (RK, slot, copia v2). In
@@ -126,10 +147,17 @@ scadenza breve, 10 minuti, cancellato dopo l'uso): il codice c'è già per gli i
 - **Functions**: `deleteAccount` cancella anche `users/{uid}/keyVault`.
 
 ### Fase 2 — Ogni utente crea il suo segreto
-- **Dopo l'aggiornamento** (una volta, rimandabile): «Proteggi la chiave della tua
-  famiglia», con passkey (Face ID / Touch ID / impronta) o codice di recupero. Il
-  codice si mostra una volta, con «Salva nelle Password» / condividi / stampa, e si
-  chiede di riscriverne 4 caratteri per conferma.
+- **Dopo l'aggiornamento** (rimandabile 3 giorni, poi obbligatorio: sezione 8):
+  «Proteggi la chiave della tua famiglia». Si genera sempre il codice di
+  recupero; la passkey (Face ID / Touch ID / impronta) si propone in aggiunta. Il
+  codice si mostra una volta, con «Stampa», «Salva come file» e «Copia» (per il
+  gestore di password del sistema: Password di Apple, Gestore password di Google),
+  e si chiede di riscriverne 4 caratteri presi a caso per conferma.
+- **Mai proporre di salvarlo nelle Password di KidBox**: sono cifrate con la
+  chiave di famiglia, cioè con quello che il codice deve recuperare. La schermata
+  lo dice.
+- **Rigenera codice** in Impostazioni › Famiglia, da qualunque dispositivo che ha
+  la chiave: slot nuovo, slot vecchio eliminato, niente da ricifrare.
 - Fatto il passo: si scrive la copia v2 per ogni famiglia e si **cancella la propria
   v1** (il client può cancellare il proprio documento).
 - **Web**: al primo accesso dopo il rilascio è obbligatorio. Si legge la v1 un'ultima
@@ -164,6 +192,37 @@ finora (e i backup di Firestore la conservano). Per chiudere davvero:
 È il lavoro più pesante (documenti e foto da riscaricare e ricaricare) e va
 progettato a parte.
 
+## 4 bis. Non rompere ingresso, revoca e login
+
+Ogni volta che si è toccata la chiave, si sono rotti l'ingresso in famiglia, la
+revoca di un membro o il login su un altro dispositivo. Non per la crittografia:
+per il codice attorno, che davanti a una chiave mancante o a un errore prendeva
+decisioni distruttive (il cleaner delle famiglie residue che cancellava anche
+quando il server rifiutava, le rules che facevano auto-espellere i membri). Regole
+fisse per la v2:
+
+1. **L'ingresso in famiglia non aspetta mai il segreto.** La chiave arriva
+   dall'invito come oggi; la RK nasce in silenzio sul dispositivo se non c'è; la
+   copia v2 si scrive subito; il codice si chiede dopo. Se la scrittura della v2
+   fallisce si ritenta più tardi, senza bloccare l'ingresso. **Eccezione: il web**,
+   che non ha dove tenere la chiave: lì il segreto si crea dentro il flusso di
+   ingresso, prima di finirlo.
+2. **La revoca di un membro tocca solo la sua copia in quella famiglia**, mai la
+   sua cassaforte (personale: le rules lo impediscono a chiunque altro).
+3. **Login su un altro dispositivo, in ordine fisso**: Portachiavi / Keystore →
+   RK sincronizzata → cassaforte (passkey o codice) → v1 finché esiste → QR. Se
+   nessuna strada riesce: schermata «chiave mancante». **Mai** cancellare dati,
+   uscire dalla famiglia o riscrivere la chiave per un fallimento di lettura.
+4. **La v1 si cancella solo dopo aver riletto la v2 dal server e averla aperta
+   davvero** con la chiave appena scritta: scriverla non basta.
+5. **Fino alla Fase 3 la v1 resta come rete**: un difetto della v2 rallenta il
+   rientro, non chiude fuori nessuno.
+
+**Tabella di prova prima di ogni fase** (oltre alla sezione 6): per iOS, Android,
+web e Mac, tre azioni — entrare in famiglia da invito, revocare un altro membro,
+login su un dispositivo nuovo — anche con build vecchie e nuove nella stessa
+famiglia. Una cella rossa ferma la fase.
+
 ## 5. Casi limite
 
 - **Più famiglie**: un codice solo (la RK è dell'utente).
@@ -195,6 +254,11 @@ progettato a parte.
   o salva un codice di recupero. Nemmeno KidBox può aprirla.»
 - Avviso sul codice: «Se perdi questo codice e tutti i tuoi dispositivi, e nessun
   familiare ha l'app, i dati cifrati non si possono recuperare.»
+- Dove tenerlo: «Stampalo o salvalo nel gestore di password del telefono. Non
+  salvarlo nelle Password di KidBox: si aprono con la stessa chiave che questo
+  codice serve a ritrovare.»
+- Quando serve: «Di solito non ti servirà: se hai ancora un dispositivo o un
+  familiare con KidBox, rientri con un QR.»
 
 ## 8. Decisioni che spettano all'utente
 
