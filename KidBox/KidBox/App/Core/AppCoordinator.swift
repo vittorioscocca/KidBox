@@ -1642,6 +1642,22 @@ final class AppCoordinator: ObservableObject {
     // MARK: - Open Fitness Plan from Push
 
     /// Elenco delle cure di un membro (widget Cure senza dosi da prendere).
+    /// Apre un album dal widget Foto. Path: familyPhotos → photoAlbumDetail.
+    /// `false` se l'album non c'è più (il chiamante ripiega sulla sezione Foto).
+    @MainActor
+    @discardableResult
+    func openPhotoAlbum(familyId: String, albumId: String, modelContext: ModelContext) -> Bool {
+        let aid = albumId
+        guard let album = try? modelContext.fetch(FetchDescriptor<KBPhotoAlbum>(
+            predicate: #Predicate { $0.id == aid && $0.isDeleted == false }
+        )).first else { return false }
+        KBLog.navigation.kbInfo("openPhotoAlbum familyId=\(familyId) albumId=\(albumId)")
+        path.removeAll()
+        path.append(.familyPhotos(familyId: familyId))
+        path.append(.photoAlbumDetail(familyId: familyId, albumId: album.id, albumTitle: album.title))
+        return true
+    }
+
     func openTreatmentsList(familyId: String, childId: String) {
         path.removeAll()
         path.append(.pediatricHome(familyId: familyId, childId: childId))

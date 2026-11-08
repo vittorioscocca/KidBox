@@ -28,6 +28,15 @@ struct KBPhotosWidgetView: View {
         return snapshot?.albums?.first { $0.id == albumId }?.title
     }
 
+    /// Su un album apre l'album; altrimenti la sezione Foto.
+    private var deepLink: URL? {
+        var c = URLComponents(string: "kidbox://widget/photos")
+        if let albumId, albumTitle != nil {
+            c?.queryItems = [.init(name: "album", value: albumId)]
+        }
+        return c?.url
+    }
+
     /// Una foto per ora, a giro: l'indice viene dalle ore passate dal 1970.
     private var current: (photo: KBWidgetSnapshot.Photo, image: UIImage)? {
         let photos = pool
@@ -67,7 +76,7 @@ struct KBPhotosWidgetView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .widgetURL(URL(string: "kidbox://widget/photos"))
+            .widgetURL(deepLink)
             .containerBackground(for: .widget) {
                 ZStack(alignment: .bottom) {
                     Image(uiImage: current.image)
@@ -83,7 +92,7 @@ struct KBPhotosWidgetView: View {
                                 ? "Apri KidBox per preparare le foto"
                                 : "Nessuna foto in questo album",
                             color: .kbPhotos)
-                .widgetURL(URL(string: "kidbox://widget/photos"))
+                .widgetURL(deepLink)
                 .containerBackground(.background, for: .widget)
         }
     }

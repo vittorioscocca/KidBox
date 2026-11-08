@@ -180,6 +180,19 @@ struct KidBoxApp: App {
                             return
                         }
 
+                        // Widget Foto su un album: apre l'album, non tutte le foto.
+                        //   kidbox://widget/photos?album=<id>
+                        if url.scheme == "kidbox", url.host == "widget",
+                           url.lastPathComponent == "photos",
+                           let fid = coordinator.activeFamilyId,
+                           let album = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                               .queryItems?.first(where: { $0.name == "album" })?.value,
+                           !album.isEmpty,
+                           coordinator.openPhotoAlbum(familyId: fid, albumId: album,
+                                                      modelContext: modelContainer.mainContext) {
+                            return
+                        }
+
                         // Tocco su un widget della Home: `kidbox://widget/<sezione>`.
                         // Stessa strada del tocco lungo sull'icona.
                         if url.scheme == "kidbox", url.host == "widget",
