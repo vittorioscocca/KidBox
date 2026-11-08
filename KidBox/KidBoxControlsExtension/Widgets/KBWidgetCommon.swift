@@ -134,7 +134,7 @@ struct ProfileQuery: EntityQuery {
 
 // MARK: - Intent di configurazione (un solo widget, «Modifica widget» sceglie cosa mostrare)
 
-enum KBWidgetContent: String, AppEnum {
+enum KBWidgetContent: String, AppEnum, CaseIterable {
     case calendar, todo, grocery, care, fitness
 
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "Contenuto"

@@ -54,6 +54,22 @@ struct KBHomeProvider: AppIntentTimelineProvider {
         return Timeline(entries: entries, policy: .after(midnight))
     }
 
+    /// Configurazioni già pronte, una per contenuto. Sulla Home di iOS 27 il
+    /// widget nato dal tocco lungo sull'icona non mostrava «Modifica widget»:
+    /// le raccomandazioni sono l'unico aggancio pubblico che il sistema può
+    /// offrire lì (documentazione assente, da verificare su device).
+    func recommendations() -> [AppIntentRecommendation<KidBoxWidgetIntent>] {
+        KBWidgetContent.allCases.map { content in
+            let intent = KidBoxWidgetIntent()
+            intent.content = content
+            return AppIntentRecommendation(
+                intent: intent,
+                description: KBWidgetContent.caseDisplayRepresentations[content]?.title
+                    ?? LocalizedStringResource(stringLiteral: content.rawValue)
+            )
+        }
+    }
+
     private func entry(_ c: KidBoxWidgetIntent, at date: Date, snapshot: KBWidgetSnapshot?) -> KBHomeEntry {
         .init(date: date, snapshot: snapshot, content: c.content, listId: c.list?.id, memberId: c.member?.id)
     }
