@@ -1641,6 +1641,13 @@ final class AppCoordinator: ObservableObject {
 
     // MARK: - Open Fitness Plan from Push
 
+    /// Elenco delle cure di un membro (widget Cure senza dosi da prendere).
+    func openTreatmentsList(familyId: String, childId: String) {
+        path.removeAll()
+        path.append(.pediatricHome(familyId: familyId, childId: childId))
+        path.append(.pediatricTreatments(familyId: familyId, childId: childId))
+    }
+
     /// Apre il Piano Fitness dal promemoria di una seduta.
     /// Path: pediatricHome → pediatricFitnessPlan
     @MainActor

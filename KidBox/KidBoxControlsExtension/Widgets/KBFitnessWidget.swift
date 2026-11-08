@@ -54,6 +54,15 @@ struct KBFitnessWidgetView: View {
         return "figure.mixed.cardio"
     }
 
+    /// Apre il piano del membro mostrato; senza piano, la Salute.
+    private var deepLink: URL? {
+        var c = URLComponents(string: "kidbox://widget/fitness")
+        if let id = profile?.id, entry.snapshot?.fitnessUnlocked == true {
+            c?.queryItems = [.init(name: "child", value: id)]
+        }
+        return c?.url
+    }
+
     var body: some View {
         let cal = Calendar.current
         Group {
@@ -99,7 +108,7 @@ struct KBFitnessWidgetView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .widgetURL(URL(string: "kidbox://widget/health"))
+        .widgetURL(deepLink)
         .containerBackground(.background, for: .widget)
     }
 }

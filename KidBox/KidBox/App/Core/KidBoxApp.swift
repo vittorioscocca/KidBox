@@ -152,6 +152,34 @@ struct KidBoxApp: App {
                             return
                         }
                         
+                        // Widget Cure e Fitness: aprono la cura o il piano giusti.
+                        //   kidbox://widget/care?child=<id>[&treatment=<id>]
+                        //   kidbox://widget/fitness?child=<id>
+                        if url.scheme == "kidbox", url.host == "widget",
+                           ["care", "fitness"].contains(url.lastPathComponent),
+                           let fid = coordinator.activeFamilyId {
+                            let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+                            let child = items.first { $0.name == "child" }?.value
+                            let treatment = items.first { $0.name == "treatment" }?.value
+                            if let child, !child.isEmpty {
+                                if url.lastPathComponent == "fitness" {
+                                    coordinator.openFitnessPlanFromPush(familyId: fid, childId: child)
+                                } else if let treatment, !treatment.isEmpty {
+                                    coordinator.openTreatmentFromPush(
+                                        familyId: fid, childId: child, treatmentId: treatment,
+                                        modelContext: modelContainer.mainContext
+                                    )
+                                } else {
+                                    coordinator.openTreatmentsList(familyId: fid, childId: child)
+                                }
+                                return
+                            }
+                            // Nessun membro noto: ripiega sulla sezione Salute.
+                            KBQuickActions.pending = .health
+                            NotificationCenter.default.post(name: .kbWidgetOpenRequested, object: nil)
+                            return
+                        }
+
                         // Tocco su un widget della Home: `kidbox://widget/<sezione>`.
                         // Stessa strada del tocco lungo sull'icona.
                         if url.scheme == "kidbox", url.host == "widget",

@@ -60,6 +60,20 @@ struct KBCareWidgetView: View {
         return entry.snapshot?.profiles.first { $0.id == childId }?.name
     }
 
+    /// Apre la cura della prima dose da prendere; senza dosi, le cure del membro.
+    private var deepLink: URL? {
+        var c = URLComponents(string: "kidbox://widget/care")
+        let first = pending.first
+        let child = entry.memberId ?? first?.childId ?? entry.snapshot?.profiles.first?.id
+        var q: [URLQueryItem] = []
+        if let child { q.append(.init(name: "child", value: child)) }
+        if let first, let tid = first.id.split(separator: "|").first {
+            q.append(.init(name: "treatment", value: String(tid)))
+        }
+        c?.queryItems = q.isEmpty ? nil : q
+        return c?.url
+    }
+
     var body: some View {
         Group {
             if entry.snapshot != nil {
@@ -94,7 +108,7 @@ struct KBCareWidgetView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .widgetURL(URL(string: "kidbox://widget/health"))
+        .widgetURL(deepLink)
         .containerBackground(.background, for: .widget)
     }
 }
