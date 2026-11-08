@@ -66,6 +66,10 @@ struct GroceryListView: View {
     @State private var showSaveTripSheet = false
     @State private var showTripsHistory = false
     @State private var sharePrefillName = ""
+
+    /// Scheda d'inserimento veloce (il «+»): `nil` = chiusa.
+    @State private var quickDraft: GroceryQuickDraft? = nil
+    @FocusState private var quickFocus: GroceryQuickField?
     
     init(familyId: String) {
         self.familyId = familyId
@@ -74,7 +78,9 @@ struct GroceryListView: View {
             filter: #Predicate<KBGroceryItem> { i in
                 i.familyId == fid && i.isDeleted == false
             },
-            sort: [SortDescriptor(\KBGroceryItem.createdAt, order: .reverse)]
+            sort: [SortDescriptor(\KBGroceryItem.createdAt, order: .reverse)],
+            // La voce appena scritta nella scheda veloce scivola in lista.
+            animation: .spring(response: 0.4, dampingFraction: 0.82)
         )
     }
     
@@ -133,6 +139,20 @@ struct GroceryListView: View {
             .listRowBackground(Color.clear)
             filterChips
 
+            if quickDraft != nil {
+                GroceryQuickAddCard(
+                    draft: Binding(get: { quickDraft ?? GroceryQuickDraft() }, set: { quickDraft = $0 }),
+                    focus: $quickFocus,
+                    background: cardBackground,
+                    onSubmit: submitQuick,
+                    onInfo: openQuickInfo
+                )
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))
+                .transition(.quickAddRow)
+            }
+
             if filter == .purchased && !purchased.isEmpty {
                 Button {
                     showSaveTripSheet = true
@@ -152,14 +172,14 @@ struct GroceryListView: View {
                 .listRowInsets(EdgeInsets())
             }
 
-            if allItems.isEmpty {
+            if allItems.isEmpty && quickDraft == nil {
                 KBEmptyStateView(
                     systemImage: "cart",
                     title: "Lista vuota",
                     message: "Aggiungi quello che manca e spuntalo mentre sei al supermercato. La lista è condivisa: se qualcuno prende il latte, lo vedi sparire dal tuo telefono.",
                     actionTitle: "Aggiungi articolo",
                     actionSystemImage: "plus.circle.fill",
-                    action: { showAddSheet = true }
+                    action: { openQuick() }
                 )
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
@@ -253,6 +273,11 @@ struct GroceryListView: View {
             consumePendingShare()
         }
         .onDisappear {
+            // Uscendo con un nome scritto e non confermato: lo si tiene.
+            if let draft = quickDraft {
+                GroceryQuickAdd.create(draft, familyId: familyId, modelContext: modelContext)
+                quickDraft = nil
+            }
             SyncCenter.shared.stopGroceryRealtime(consumer: "groceryList")
             SyncCenter.shared.stopShoppingTripsRealtime()
             BadgeManager.shared.activeSections.remove("shopping")
@@ -299,23 +324,63 @@ struct GroceryListView: View {
             .accessibilityLabel("Spese salvate")
 
             Button {
-                editingItemId = nil
-                showAddSheet = true
+                if quickDraft != nil { closeQuick() } else { openQuick() }
             } label: {
-                Image(systemName: "plus")
+                // Aperta la scheda veloce, il «+» diventa la spunta che chiude.
+                Image(systemName: quickDraft != nil ? "checkmark" : "plus")
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(.white)
+                    .contentTransition(.symbolEffect(.replace))
                     .frame(width: 64, height: 44)
                     .background(Color.green, in: Capsule())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Aggiungi articolo")
+            .accessibilityLabel(quickDraft != nil ? "Fine" : "Aggiungi articolo")
         }
         .padding(.horizontal, 16)
         .padding(.top, 4)
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
         .listRowInsets(EdgeInsets())
+    }
+
+    // MARK: - Inserimento veloce
+
+    private func openQuick() {
+        // Sui «Presi» la voce nuova non si vedrebbe: si torna a «Da prendere».
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+            if filter == .purchased { filter = .toBuy }
+            quickDraft = GroceryQuickDraft()
+        }
+    }
+
+    /// «Invio»: salva e apre subito la voce dopo.
+    private func submitQuick() {
+        guard let draft = quickDraft else { return }
+        guard !draft.isEmpty else { closeQuick(); return }
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) {
+            GroceryQuickAdd.create(draft, familyId: familyId, modelContext: modelContext)
+            quickDraft = GroceryQuickDraft()
+        }
+        quickFocus = .name
+    }
+
+    private func closeQuick() {
+        if let draft = quickDraft {
+            GroceryQuickAdd.create(draft, familyId: familyId, modelContext: modelContext)
+        }
+        quickFocus = nil
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { quickDraft = nil }
+    }
+
+    /// La «i»: salva quello che c'è e apre la scheda completa su quella voce.
+    private func openQuickInfo() {
+        let id = quickDraft.flatMap { GroceryQuickAdd.create($0, familyId: familyId, modelContext: modelContext) }
+        quickFocus = nil
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { quickDraft = nil }
+        editingItemId = id
+        sharePrefillName = ""
+        showAddSheet = true
     }
 
     private var filterChips: some View {

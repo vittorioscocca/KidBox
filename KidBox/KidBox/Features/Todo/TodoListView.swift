@@ -44,6 +44,10 @@ struct TodoListView: View {
     @AppStorage(TodoCompletedRetention.key) private var completedRetentionRaw = TodoCompletedRetention.default.rawValue
     @State private var justCompleted: Set<String> = []
 
+    /// Riga d'inserimento veloce (il «+»): `nil` = chiusa.
+    @State private var quickDraft: TodoQuickDraft? = nil
+    @FocusState private var quickFocus: TodoQuickField?
+
     // Query per recuperare il nome della lista
     @Query private var allLists: [KBTodoList]
     
@@ -67,7 +71,9 @@ struct TodoListView: View {
                 t.familyId == fid &&
                 t.isDeleted == false
             },
-            sort: [SortDescriptor(\KBTodoItem.createdAt, order: .reverse)]
+            sort: [SortDescriptor(\KBTodoItem.createdAt, order: .reverse)],
+            // Il to-do appena scritto nella riga veloce scivola in lista.
+            animation: .spring(response: 0.4, dampingFraction: 0.82)
         )
         
         KBLog.todo.kbDebug("TodoListView init familyId=\(familyId) childId=\(childId) listId=\(listId)")
@@ -112,7 +118,19 @@ struct TodoListView: View {
             } else {
         ScrollViewReader { proxy in
             List {
-                if visibleTodos.isEmpty {
+                if quickDraft != nil {
+                    TodoQuickAddRow(
+                        draft: Binding(get: { quickDraft ?? TodoQuickDraft() }, set: { quickDraft = $0 }),
+                        focus: $quickFocus,
+                        members: quickMembers,
+                        onSubmit: submitQuick,
+                        onInfo: openQuickInfo
+                    )
+                    .id(Self.quickRowId)
+                    .listRowBackground(cardBackground)
+                    .transition(.quickAddRow)
+                }
+                if visibleTodos.isEmpty && quickDraft == nil {
                     Text(searchText.isEmpty ? "Nessun To-Do" : "Nessun risultato")
                         .foregroundStyle(.secondary)
                         .listRowBackground(cardBackground)
@@ -146,11 +164,35 @@ struct TodoListView: View {
             .searchable(text: $searchText, prompt: "Cerca nei to-do")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] tap + addTodo listId=\(listId)")
-                        editingTarget = TodoEditTarget(id: UUID().uuidString, todoId: nil)
-                    } label: {
-                        Image(systemName: "plus")
+                    if quickDraft != nil {
+                        // Come la spunta blu di Promemoria: salva quello scritto e chiude.
+                        Button {
+                            closeQuick()
+                        } label: {
+                            Image(systemName: "checkmark")
+                                .fontWeight(.semibold)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .buttonBorderShape(.circle)
+                        .transition(.scale.combined(with: .opacity))
+                        .accessibilityLabel("Fine")
+                    } else {
+                        Button {
+                            KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] tap + quickAdd listId=\(listId)")
+                            withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                quickDraft = TodoQuickDraft()
+                            }
+                            // A riga creata: se la lista era scorsa in giù, la si riporta in vista.
+                            Task { @MainActor in
+                                try? await Task.sleep(for: .milliseconds(60))
+                                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                                    proxy.scrollTo(Self.quickRowId, anchor: .top)
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .transition(.scale.combined(with: .opacity))
                     }
                 }
             }
@@ -213,6 +255,12 @@ struct TodoListView: View {
                 }
             }
             .onDisappear {
+                // Uscendo con un titolo scritto e non confermato: lo si tiene.
+                if let draft = quickDraft {
+                    TodoQuickAdd.create(draft, familyId: familyId, childId: childId,
+                                        listId: listId, modelContext: modelContext)
+                    quickDraft = nil
+                }
                 SyncCenter.shared.stopTodoRealtime(consumer: "list-\(viewTrace)")
                 KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] onDisappear listId=\(listId) -> release todo listener")
             }
@@ -224,6 +272,45 @@ struct TodoListView: View {
         .trackSectionPresence(.todoList, familyId: familyId, scopeId: listId)
     }
     
+    // MARK: - Inserimento veloce
+
+    private static let quickRowId = "todo-quick-add"
+
+    private var quickMembers: [KBFamilyMember] {
+        members.filter { $0.familyId == familyId && !$0.isDeleted }
+    }
+
+    /// «Invio»: salva e apre subito una riga nuova, come Promemoria.
+    private func submitQuick() {
+        guard let draft = quickDraft else { return }
+        guard !draft.isEmpty else { closeQuick(); return }
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) {
+            TodoQuickAdd.create(draft, familyId: familyId, childId: childId,
+                                listId: listId, modelContext: modelContext)
+            quickDraft = TodoQuickDraft()
+        }
+        quickFocus = .title
+    }
+
+    private func closeQuick() {
+        if let draft = quickDraft {
+            TodoQuickAdd.create(draft, familyId: familyId, childId: childId,
+                                listId: listId, modelContext: modelContext)
+        }
+        quickFocus = nil
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { quickDraft = nil }
+    }
+
+    /// La «i»: salva quello che c'è e apre la scheda completa su quel to-do.
+    private func openQuickInfo() {
+        let draft = quickDraft ?? TodoQuickDraft()
+        let id = TodoQuickAdd.create(draft, familyId: familyId, childId: childId,
+                                     listId: listId, modelContext: modelContext)
+        quickFocus = nil
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { quickDraft = nil }
+        editingTarget = TodoEditTarget(id: UUID().uuidString, todoId: id)
+    }
+
     private var listAccessDeniedContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Questo contenuto non è più disponibile.")
