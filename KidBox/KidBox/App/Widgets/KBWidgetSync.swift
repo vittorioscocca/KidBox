@@ -30,8 +30,10 @@ final class KBWidgetSync {
     func start(container: ModelContainer) {
         guard self.container == nil else { return }
         self.container = container
+        // Un solo aggancio per tutti i pulsanti dei widget (dosi e to-do).
         KBWidgetDoseQueue.drainInApp = {
             await MainActor.run { KBWidgetSync.shared.drainPendingDoses() }
+            await KBWidgetSync.shared.drainPendingTodos()
         }
 
         saveObserver = NotificationCenter.default.addObserver(
@@ -86,10 +88,28 @@ final class KBWidgetSync {
         }
     }
 
+    /// Chiude i to-do segnati come fatti dal widget.
+    func drainPendingTodos() async {
+        let ids = KBWidgetTodoQueue.pending()
+        guard !ids.isEmpty else { return }
+        let familyId = UserDefaults(suiteName: KBWidgetStore.appGroupId)?
+            .string(forKey: "activeFamilyId") ?? ""
+        for id in ids {
+            // Rimosso prima: `run` in caso di errore avvisa da sé con una notifica.
+            KBWidgetTodoQueue.remove(id)
+            await TodoReminderDoneAction.run(todoId: id, familyId: familyId, childId: "", listId: "", title: "")
+        }
+    }
+
     func refresh() {
         guard let container else { return }
         observePlanIfNeeded()
         drainPendingDoses()
+        if !KBWidgetTodoQueue.pending().isEmpty {
+            // Il giro dopo (salvataggio → didSave) ricostruisce l'istantanea.
+            Task { await drainPendingTodos() }
+            return
+        }
 
         let familyId = UserDefaults(suiteName: KBWidgetStore.appGroupId)?
             .string(forKey: "activeFamilyId") ?? ""

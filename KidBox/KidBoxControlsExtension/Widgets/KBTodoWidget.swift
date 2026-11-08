@@ -58,9 +58,14 @@ struct KBTodoWidgetView: View {
                     } else {
                         ForEach(content.items.prefix(4)) { item in
                             HStack(alignment: .top, spacing: 6) {
-                                Image(systemName: "circle")
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(item.isUrgent ? Color.kbCalendar : .secondary)
+                                // Toccabile come in Promemoria: il to-do sparisce e il numero scala.
+                                Button(intent: KBMarkTodoDoneIntent(todoId: item.id)) {
+                                    Image(systemName: "circle")
+                                        .font(.system(size: 17))
+                                        .foregroundStyle(item.isUrgent ? Color.kbCalendar : .secondary)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
                                 VStack(alignment: .leading, spacing: 0) {
                                     Text(item.title)
                                         .font(.system(.footnote, design: .rounded).weight(.medium))

@@ -1,1052 +1,1059 @@
 {
-  "sourceLanguage" : "it",
-  "strings" : {
-    "%@" : {
-
-    },
-    "%lld" : {
-
-    },
-    "%lld di %lld oggi" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld of %2$lld today"
+  "sourceLanguage": "it",
+  "strings": {
+    "%@": {},
+    "%lld": {},
+    "%lld di %lld oggi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld of %2$lld today"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld de %2$lld hoy"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld de %2$lld hoy"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld sur %2$lld aujourd'hui"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld sur %2$lld aujourd'hui"
           }
         }
       }
     },
-    "%lld min" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld min"
+    "%lld min": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld min"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld min"
-          }
-        }
-      }
-    },
-    "%lld/%lld" : {
-      "localizations" : {
-        "it" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld/%2$lld"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min"
           }
         }
       }
     },
-    "+%lld" : {
-
-    },
-    "×%lld" : {
-
-    },
-    "Apre Foto e video con la fotocamera." : {
-
-    },
-    "Apri KidBox per iniziare" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open KidBox to get started"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abre KidBox para empezar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ouvrez KidBox pour commencer"
+    "%lld/%lld": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld/%2$lld"
           }
         }
       }
     },
-    "Calendario" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calendar"
+    "+%lld": {},
+    "×%lld": {},
+    "Apre Foto e video con la fotocamera.": {},
+    "Apri KidBox per iniziare": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open KidBox to get started"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calendario"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre KidBox para empezar"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calendrier"
-          }
-        }
-      }
-    },
-    "Calendario, to-do, spesa, cure o piano fitness: scegli da «Modifica widget»." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calendar, to-dos, shopping, treatments or fitness plan: choose from “Edit Widget”."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calendario, tareas, compra, tratamientos o plan fitness: elige en «Editar widget»."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calendrier, tâches, courses, soins ou plan fitness : choisissez dans « Modifier le widget »."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrez KidBox pour commencer"
           }
         }
       }
     },
-    "Contenuto" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Content"
+    "Calendario": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contenido"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendario"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contenu"
-          }
-        }
-      }
-    },
-    "Cosa resta da comprare." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What's left to buy."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lo que queda por comprar."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce qu'il reste à acheter."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendrier"
           }
         }
       }
     },
-    "Cure" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Treatments"
+    "Calendario, to-do, spesa, cure o piano fitness: scegli da «Modifica widget».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar, to-dos, shopping, treatments or fitness plan: choose from “Edit Widget”."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tratamientos"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendario, tareas, compra, tratamientos o plan fitness: elige en «Editar widget»."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Soins"
-          }
-        }
-      }
-    },
-    "Disponibile con Pro" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Available with Pro"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Disponible con Pro"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Disponible avec Pro"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendrier, tâches, courses, soins ou plan fitness : choisissez dans « Modifier le widget »."
           }
         }
       }
     },
-    "Dose" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dose"
+    "Contenuto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Content"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dosis"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contenido"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prise"
-          }
-        }
-      }
-    },
-    "Fatto" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Done"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hecho"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fait"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contenu"
           }
         }
       }
     },
-    "Fitness" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fitness"
+    "Cosa resta da comprare.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's left to buy."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fitness"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo que queda por comprar."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fitness"
-          }
-        }
-      }
-    },
-    "Foto KidBox" : {
-
-    },
-    "Gli eventi di oggi della tua famiglia." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your family's events for today."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los eventos de hoy de tu familia."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les événements du jour de votre famille."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce qu'il reste à acheter."
           }
         }
       }
     },
-    "Gli eventi di oggi. Da «Modifica widget» puoi mostrare anche to-do, spesa, cure o piano fitness." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Today's events. From “Edit Widget” you can also show to-dos, shopping, treatments or fitness plan."
+    "Cure": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treatments"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los eventos de hoy. Desde «Editar widget» también puedes mostrar tareas, compra, tratamientos o plan fitness."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tratamientos"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les événements du jour. Depuis « Modifier le widget », vous pouvez aussi afficher tâches, courses, soins ou plan fitness."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soins"
           }
         }
       }
     },
-    "I to-do della famiglia, di una lista a tua scelta." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your family's to-dos, from a list of your choice."
+    "Disponibile con Pro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available with Pro"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las tareas de la familia, de la lista que elijas."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disponible con Pro"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les tâches de la famille, d'une liste de votre choix."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disponible avec Pro"
           }
         }
       }
     },
-    "KidBox" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KidBox"
+    "Dose": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dose"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KidBox"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosis"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KidBox"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prise"
           }
         }
       }
     },
-    "KidBox — Foto" : {
-
-    },
-    "L'allenamento di oggi dal piano di un membro della famiglia." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Today's workout from a family member's plan."
+    "Fatto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El entrenamiento de hoy del plan de un miembro de la familia."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hecho"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'entraînement du jour du plan d'un membre de la famille."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fait"
           }
         }
       }
     },
-    "La prossima dose di un membro della famiglia, da segnare come presa." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The next dose for a family member, to mark as taken."
+    "Fitness": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitness"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La próxima dosis de un miembro de la familia, para marcarla como tomada."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitness"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La prochaine prise d'un membre de la famille, à marquer comme prise."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitness"
           }
         }
       }
     },
-    "Le prossime dosi dei farmaci di un membro della famiglia." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The next medicine doses for a family member."
+    "Foto KidBox": {},
+    "Gli eventi di oggi della tua famiglia.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your family's events for today."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las próximas dosis de medicamentos de un miembro de la familia."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los eventos de hoy de tu familia."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les prochaines prises de médicaments d'un membre de la famille."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les événements du jour de votre famille."
           }
         }
       }
     },
-    "Lista" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "List"
+    "Gli eventi di oggi. Da «Modifica widget» puoi mostrare anche to-do, spesa, cure o piano fitness.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today's events. From “Edit Widget” you can also show to-dos, shopping, treatments or fitness plan."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lista"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los eventos de hoy. Desde «Editar widget» también puedes mostrar tareas, compra, tratamientos o plan fitness."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Liste"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les événements du jour. Depuis « Modifier le widget », vous pouvez aussi afficher tâches, courses, soins ou plan fitness."
           }
         }
       }
     },
-    "Lista della spesa" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shopping list"
+    "I to-do della famiglia, di una lista a tua scelta.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your family's to-dos, from a list of your choice."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lista de la compra"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las tareas de la familia, de la lista que elijas."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Liste de courses"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les tâches de la famille, d'une liste de votre choix."
           }
         }
       }
     },
-    "Lista vuota" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Empty list"
+    "KidBox": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KidBox"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lista vacía"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KidBox"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Liste vide"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KidBox"
           }
         }
       }
     },
-    "Membro" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Member"
+    "KidBox — Foto": {},
+    "L'allenamento di oggi dal piano di un membro della famiglia.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today's workout from a family member's plan."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Miembro"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El entrenamiento de hoy del plan de un miembro de la familia."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Membre"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'entraînement du jour du plan d'un membre de la famille."
           }
         }
       }
     },
-    "Mostra" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show"
+    "La prossima dose di un membro della famiglia, da segnare come presa.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next dose for a family member, to mark as taken."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La próxima dosis de un miembro de la familia, para marcarla como tomada."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La prochaine prise d'un membre de la famille, à marquer comme prise."
           }
         }
       }
     },
-    "Mostra %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show %@"
+    "Le prossime dosi dei farmaci di un membro della famiglia.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next medicine doses for a family member."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar %@"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las próximas dosis de medicamentos de un miembro de la familia."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher %@"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les prochaines prises de médicaments d'un membre de la famille."
           }
         }
       }
     },
-    "Mostra ${content}" : {
-
-    },
-    "Nessun evento oggi" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No events today"
+    "Lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sin eventos hoy"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun événement aujourd'hui"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liste"
           }
         }
       }
     },
-    "Nessun piano fitness" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No fitness plan"
+    "Lista della spesa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shopping list"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ningún plan fitness"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista de la compra"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun plan fitness"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liste de courses"
           }
         }
       }
     },
-    "Nessuna cura attiva" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No active treatments"
+    "Lista vuota": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty list"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ningún tratamiento activo"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista vacía"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun soin actif"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liste vide"
           }
         }
       }
     },
-    "Niente da fare" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nothing to do"
+    "Membro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Member"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nada que hacer"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miembro"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rien à faire"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membre"
           }
         }
       }
     },
-    "Piano Fitness" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fitness plan"
+    "Mostra": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plan fitness"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plan fitness"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher"
           }
         }
       }
     },
-    "Presa" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Taken"
+    "Mostra %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show %@"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tomada"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar %@"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pris"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher %@"
           }
         }
       }
     },
-    "Riposo oggi" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rest day"
+    "Mostra ${content}": {},
+    "Nessun evento oggi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No events today"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Descanso hoy"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin eventos hoy"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Repos aujourd'hui"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun événement aujourd'hui"
           }
         }
       }
     },
-    "Saltata" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Skipped"
+    "Nessun piano fitness": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No fitness plan"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Omitida"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ningún plan fitness"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sautée"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun plan fitness"
           }
         }
       }
     },
-    "Scegli cosa mostrare: calendario, to-do, spesa, cure o piano fitness." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose what to show: calendar, to-dos, shopping, treatments or fitness plan."
+    "Nessuna cura attiva": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active treatments"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elige qué mostrar: calendario, tareas, compra, tratamientos o plan fitness."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ningún tratamiento activo"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choisissez quoi afficher : calendrier, tâches, courses, soins ou plan fitness."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun soin actif"
           }
         }
       }
     },
-    "Scegli di chi mostrare il piano. Senza scelta vedi il primo piano trovato." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose whose plan to show. With no choice you see the first plan found."
+    "Niente da fare": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing to do"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elige de quién mostrar el plan. Sin elección, el primer plan encontrado."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nada que hacer"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choisissez de qui afficher le plan. Sans choix, le premier plan trouvé."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rien à faire"
           }
         }
       }
     },
-    "Scegli di chi mostrare le cure. Senza scelta vedi tutta la famiglia." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose whose treatments to show. With no choice you see the whole family."
+    "Piano Fitness": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitness plan"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elige de quién mostrar los tratamientos. Sin elección, toda la familia."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan fitness"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choisissez de qui afficher les soins. Sans choix, toute la famille."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan fitness"
           }
         }
       }
     },
-    "Scegli la lista da mostrare. Senza scelta vedi tutti i to-do." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose the list to show. With no choice you see all to-dos."
+    "Presa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taken"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elige la lista que mostrar. Sin elección verás todas las tareas."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tomada"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choisissez la liste à afficher. Sans choix, tout est affiché."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pris"
           }
         }
       }
     },
-    "Segna come presa" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mark as taken"
+    "Riposo oggi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rest day"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Marcar como tomada"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descanso hoy"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Marquer comme pris"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repos aujourd'hui"
           }
         }
       }
     },
-    "Senza lista" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No list"
+    "Saltata": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skipped"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sin lista"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Omitida"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sans liste"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sautée"
           }
         }
       }
     },
-    "Spesa" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shopping"
+    "Scegli cosa mostrare: calendario, to-do, spesa, cure o piano fitness.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose what to show: calendar, to-dos, shopping, treatments or fitness plan."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Compra"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige qué mostrar: calendario, tareas, compra, tratamientos o plan fitness."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Courses"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez quoi afficher : calendrier, tâches, courses, soins ou plan fitness."
           }
         }
       }
     },
-    "To-do" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "To-do"
+    "Scegli di chi mostrare il piano. Senza scelta vedi il primo piano trovato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose whose plan to show. With no choice you see the first plan found."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tareas"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige de quién mostrar el plan. Sin elección, el primer plan encontrado."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "À faire"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez de qui afficher le plan. Sans choix, le premier plan trouvé."
           }
         }
       }
     },
-    "Tutto fatto per oggi" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All done for today"
+    "Scegli di chi mostrare le cure. Senza scelta vedi tutta la famiglia.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose whose treatments to show. With no choice you see the whole family."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Todo hecho por hoy"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige de quién mostrar los tratamientos. Sin elección, toda la familia."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tout est fait pour aujourd'hui"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez de qui afficher les soins. Sans choix, toute la famille."
           }
         }
       }
     },
-    "Tutto il giorno" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All day"
+    "Scegli la lista da mostrare. Senza scelta vedi tutti i to-do.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the list to show. With no choice you see all to-dos."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Todo el día"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige la lista que mostrar. Sin elección verás todas las tareas."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toute la journée"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez la liste à afficher. Sans choix, tout est affiché."
           }
         }
       }
     },
-    "Tutto preso" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All taken"
+    "Segna come presa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as taken"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Todo tomado"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marcar como tomada"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tout pris"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marquer comme pris"
+          }
+        }
+      }
+    },
+    "Senza lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No list"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin lista"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sans liste"
+          }
+        }
+      }
+    },
+    "Spesa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shopping"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Courses"
+          }
+        }
+      }
+    },
+    "To-do": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To-do"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tareas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "À faire"
+          }
+        }
+      }
+    },
+    "Tutto fatto per oggi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All done for today"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo hecho por hoy"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout est fait pour aujourd'hui"
+          }
+        }
+      }
+    },
+    "Tutto il giorno": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All day"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo el día"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toute la journée"
+          }
+        }
+      }
+    },
+    "Tutto preso": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All taken"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo tomado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout pris"
+          }
+        }
+      }
+    },
+    "Segna come fatto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as done"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marquer comme fait"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marcar como hecho"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

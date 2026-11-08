@@ -213,3 +213,38 @@ enum KBWidgetDoseQueue {
         KBWidgetStore.write(snap)
     }
 }
+
+// MARK: - «Fatto» dal widget To-do
+
+/// Stesso schema delle dosi: l'estensione toglie subito il to-do
+/// dall'istantanea (il numero scala) e lo mette in coda; l'app lo chiude
+/// davvero con `TodoReminderDoneAction`, che non riapre un to-do già chiuso.
+enum KBWidgetTodoQueue {
+
+    private static let key = "kidbox.widget.pendingTodosDone"
+    private static var defaults: UserDefaults? { UserDefaults(suiteName: KBWidgetStore.appGroupId) }
+
+    static func pending() -> [String] { defaults?.stringArray(forKey: key) ?? [] }
+
+    static func enqueue(_ todoId: String) {
+        var list = pending()
+        if !list.contains(todoId) { list.append(todoId) }
+        defaults?.set(list, forKey: key)
+    }
+
+    static func remove(_ todoId: String) {
+        defaults?.set(pending().filter { $0 != todoId }, forKey: key)
+    }
+
+    static func markDoneInSnapshot(_ todoId: String) {
+        guard var snap = KBWidgetStore.read() else { return }
+        for i in snap.todoLists.indices {
+            let before = snap.todoLists[i].items.count
+            snap.todoLists[i].items.removeAll { $0.id == todoId }
+            if snap.todoLists[i].items.count < before {
+                snap.todoLists[i].openCount = max(0, snap.todoLists[i].openCount - 1)
+            }
+        }
+        KBWidgetStore.write(snap)
+    }
+}

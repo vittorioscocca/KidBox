@@ -36,3 +36,23 @@ struct KBMarkDoseTakenIntent: AppIntent {
         return .result()
     }
 }
+
+/// Cerchietto del widget To-do: segna il to-do come fatto.
+struct KBMarkTodoDoneIntent: AppIntent {
+    static let title: LocalizedStringResource = "Segna come fatto"
+    static let isDiscoverable: Bool = false
+
+    @Parameter(title: "To-do")
+    var todoId: String
+
+    init() {}
+    init(todoId: String) { self.todoId = todoId }
+
+    func perform() async throws -> some IntentResult {
+        KBWidgetTodoQueue.enqueue(todoId)
+        KBWidgetTodoQueue.markDoneInSnapshot(todoId)
+        WidgetCenter.shared.reloadAllTimelines()
+        await KBWidgetDoseQueue.drainInApp?()
+        return .result()
+    }
+}
