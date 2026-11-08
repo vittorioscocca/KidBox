@@ -864,6 +864,13 @@ private struct ChatConversationView: View {
                 viewModel.inputText = text
             }
         }
+        // Handoff: il messaggio che si sta scrivendo continua sull'altro
+        // dispositivo (va da qui a lì con Handoff, non dal server).
+        .handoffDraft(viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                      ? nil : KBHandoffDraft(kind: .chat, fields: ["text": viewModel.inputText]))
+        .onHandoffDraft(.chat) { d in
+            if let text = d.fields["text"] { viewModel.inputText = text }
+        }
         .onReceive(coordinator.$pendingShareVideoPath.compactMap { $0 }) { path in
             coordinator.pendingShareVideoPath = nil
             let url = URL(fileURLWithPath: path)

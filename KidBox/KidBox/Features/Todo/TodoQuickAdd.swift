@@ -15,6 +15,9 @@ import SwiftUI
 import SwiftData
 
 struct TodoQuickDraft: Equatable {
+    /// L'id del to-do che nascerà. Viaggia con Handoff: se la stessa bozza
+    /// viene salvata su due dispositivi, è lo stesso to-do e non un doppione.
+    var id = UUID().uuidString
     var title = ""
     var notes = ""
     var due: Date? = nil
@@ -38,10 +41,15 @@ enum TodoQuickAdd {
         modelContext: ModelContext
     ) -> String? {
         guard !draft.isEmpty else { return nil }
+        let id = draft.id
+        // Già salvato dall'altro dispositivo (bozza passata con Handoff):
+        // non si riscrive con la versione rimasta qui, magari più vecchia.
+        if ((try? modelContext.fetchCount(FetchDescriptor<KBTodoItem>(
+            predicate: #Predicate { $0.id == id }
+        ))) ?? 0) > 0 { return id }
         let uid = KBUid.current ?? "local"
         let now = Date()
         let notes = draft.notes.trimmingCharacters(in: .whitespacesAndNewlines)
-        let id = UUID().uuidString
         let item = KBTodoItem(
             id: id,
             familyId: familyId,
@@ -261,6 +269,26 @@ extension View {
             .scaleEffect(shown ? 1 : 0.6)
             .offset(y: shown ? 0 : 8)
             .animation(.spring(response: 0.45, dampingFraction: 0.7).delay(Double(index) * 0.06), value: shown)
+    }
+}
+
+extension TodoQuickDraft {
+    var handoff: KBHandoffDraft {
+        KBHandoffDraft(kind: .todo, fields: [
+            "id": id, "title": title, "notes": notes,
+            "due": KBHandoffDraft.dateString(due),
+            "assignedTo": assignedTo, "urgent": isUrgent ? "1" : nil,
+        ])
+    }
+
+    init(handoff d: KBHandoffDraft) {
+        self.init()
+        if let v = d.fields["id"] { id = v }
+        title = d.fields["title"] ?? ""
+        notes = d.fields["notes"] ?? ""
+        due = d.date("due")
+        assignedTo = d.fields["assignedTo"]
+        isUrgent = d.fields["urgent"] == "1"
     }
 }
 

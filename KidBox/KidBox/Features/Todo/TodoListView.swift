@@ -254,6 +254,18 @@ struct TodoListView: View {
                     applyHighlightIfNeeded(proxy: proxy, reason: "visibleTodos.count changed")
                 }
             }
+            // Handoff: la riga che si sta scrivendo continua sull'altro
+            // dispositivo; quella che arriva si apre qui già compilata.
+            .handoffDraft(quickDraft?.handoff)
+            .onHandoffDraft(.todo) { d in
+                if let todoId = d.fields["todoId"] {
+                    editingTarget = TodoEditTarget(id: UUID().uuidString, todoId: todoId)
+                } else {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.78)) {
+                        quickDraft = TodoQuickDraft(handoff: d)
+                    }
+                }
+            }
             .onDisappear {
                 // Uscendo con un titolo scritto e non confermato: lo si tiene.
                 if let draft = quickDraft {

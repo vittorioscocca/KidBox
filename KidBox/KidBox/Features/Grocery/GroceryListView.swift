@@ -272,6 +272,21 @@ struct GroceryListView: View {
         .onReceive(coordinator.$pendingShareText.compactMap { $0 }) { text in
             consumePendingShare()
         }
+        // Handoff: la voce che si sta scrivendo continua sull'altro
+        // dispositivo; quella che arriva si apre qui già compilata.
+        .handoffDraft(quickDraft?.handoff)
+        .onHandoffDraft(.grocery) { d in
+            if let itemId = d.fields["itemId"] {
+                editingItemId = itemId
+                sharePrefillName = ""
+                showAddSheet = true
+            } else {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.78)) {
+                    if filter == .purchased { filter = .toBuy }
+                    quickDraft = GroceryQuickDraft(handoff: d)
+                }
+            }
+        }
         .onDisappear {
             // Uscendo con un nome scritto e non confermato: lo si tiene.
             if let draft = quickDraft {

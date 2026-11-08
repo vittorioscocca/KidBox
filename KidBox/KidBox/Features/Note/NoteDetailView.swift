@@ -148,6 +148,9 @@ struct NoteDetailView: View {
             isViewActive = false
             handleDisappear()
         }
+        // Handoff: la nota passa col suo id e l'altro dispositivo la apre;
+        // il testo è quello già salvato e sincronizzato.
+        .handoffDraft(queriedNotes.isEmpty ? nil : KBHandoffDraft(kind: .note, fields: ["noteId": noteId]))
         
         // ✅ Ascolta aggiornamenti da SwiftData (es. listener realtime che aggiorna la nota)
         //    MA li applica all'UI solo se non stiamo editando (isDirty = false).

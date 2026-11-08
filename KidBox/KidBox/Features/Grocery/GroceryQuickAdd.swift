@@ -13,6 +13,9 @@ import SwiftUI
 import SwiftData
 
 struct GroceryQuickDraft: Equatable {
+    /// Id della voce che nascerà: con Handoff la stessa bozza salvata su due
+    /// dispositivi resta una voce sola.
+    var id = UUID().uuidString
     var name = ""
     var notes = ""
     var quantity = 1
@@ -27,6 +30,10 @@ enum GroceryQuickAdd {
     @discardableResult
     static func create(_ draft: GroceryQuickDraft, familyId: String, modelContext: ModelContext) -> String? {
         guard !draft.isEmpty else { return nil }
+        let draftId = draft.id
+        if ((try? modelContext.fetchCount(FetchDescriptor<KBGroceryItem>(
+            predicate: #Predicate { $0.id == draftId }
+        ))) ?? 0) > 0 { return draftId }
         let uid = KBUid.current ?? "local"
         let now = Date()
         let notes = draft.notes.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -36,6 +43,7 @@ enum GroceryQuickAdd {
         ))) ?? 0) == 0
 
         let item = KBGroceryItem(
+            id: draftId,
             familyId: familyId,
             name: draft.trimmedName,
             category: nil,
@@ -57,6 +65,23 @@ enum GroceryQuickAdd {
         if isFirst { AppAnalytics.featureFirstUse(feature: "grocery") }
         Task { await SyncCenter.shared.flushGrocery(modelContext: modelContext) }
         return item.id
+    }
+}
+
+extension GroceryQuickDraft {
+    var handoff: KBHandoffDraft {
+        KBHandoffDraft(kind: .grocery, fields: [
+            "id": id, "name": name, "notes": notes,
+            "quantity": quantity > 1 ? String(quantity) : nil,
+        ])
+    }
+
+    init(handoff d: KBHandoffDraft) {
+        self.init()
+        if let v = d.fields["id"] { id = v }
+        name = d.fields["name"] ?? ""
+        notes = d.fields["notes"] ?? ""
+        quantity = d.fields["quantity"].flatMap(Int.init).map { min(99, max(1, $0)) } ?? 1
     }
 }
 

@@ -480,6 +480,22 @@ struct CalendarView: View {
                 }
             }
         }
+        .onHandoffDraft(.event) { d in
+            if let eventId = d.fields["eventId"] {
+                if let ev = allEvents.first(where: { $0.id == eventId }) { editingEvent = ev }
+                return
+            }
+            guard let start = d.date("start") else { return }
+            copyPrefill = CalendarEventPrefill(
+                title: d.fields["title"] ?? "",
+                notes: d.fields["notes"],
+                location: d.fields["location"],
+                startDate: start,
+                endDate: d.date("end") ?? start.addingTimeInterval(3600),
+                isAllDay: d.fields["allDay"] == "1",
+                category: d.fields["category"].flatMap(KBEventCategory.init(rawValue:))
+            )
+        }
         .sheet(item: $copyPrefill) { prefill in
             CalendarEventFormView(
                 familyId: familyId,
@@ -2126,6 +2142,18 @@ struct CalendarEventFormView: View {
     @FocusState private var focusedField: FormField?
     
     private var isNewEvent: Bool { event == nil }
+
+    private var handoffDraft: KBHandoffDraft? {
+        if let event { return KBHandoffDraft(kind: .event, fields: ["eventId": event.id]) }
+        guard didPopulateFields else { return nil }
+        return KBHandoffDraft(kind: .event, fields: [
+            "title": title, "notes": notes, "location": location,
+            "start": KBHandoffDraft.dateString(startDate),
+            "end": KBHandoffDraft.dateString(endDate),
+            "allDay": isAllDay ? "1" : nil,
+            "category": category.rawValue,
+        ])
+    }
     
     private var currentUid: String? {
         KBUid.current
@@ -2374,6 +2402,9 @@ struct CalendarEventFormView: View {
                     }
                 }
             }
+            // Handoff: un evento esistente passa col suo id; uno nuovo coi
+            // campi scritti, e dall'altra parte si apre la scheda compilata.
+            .handoffDraft(handoffDraft)
             .onAppear {
                 guard !didPopulateFields else { return }
                 didPopulateFields = true

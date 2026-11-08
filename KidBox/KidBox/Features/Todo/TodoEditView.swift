@@ -164,6 +164,21 @@ struct TodoEditView: View {
         return parts.joined(separator: ", ")
     }
     
+    private var handoffDraft: KBHandoffDraft? {
+        if let todoIdToEdit {
+            return KBHandoffDraft(kind: .todo, fields: ["todoId": todoIdToEdit])
+        }
+        var d = TodoQuickDraft()
+        d.id = handoffId
+        d.title = title
+        d.notes = notes
+        d.due = hasDate ? dueDate : nil
+        d.assignedTo = assignedTo
+        d.isUrgent = isUrgent
+        return d.isEmpty && d.notes.isEmpty ? nil : d.handoff
+    }
+    @State private var handoffId = UUID().uuidString
+
     var body: some View {
         NavigationStack {
             Form {
@@ -367,6 +382,9 @@ struct TodoEditView: View {
                     title = prefillTitle
                 }
             }
+            // Handoff: un to-do esistente passa col suo id; uno nuovo come
+            // bozza, che dall'altra parte si apre nella riga veloce.
+            .handoffDraft(handoffDraft)
             .onChange(of: hasDate) { _, isOn in
                 if isOn {
                     if dueDate == nil { dueDate = Date() }

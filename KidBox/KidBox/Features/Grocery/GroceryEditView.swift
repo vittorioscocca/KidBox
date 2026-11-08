@@ -42,6 +42,20 @@ struct GroceryEditView: View {
         self.prefillName = prefillName
     }
     
+    @State private var handoffId = UUID().uuidString
+
+    private var handoffDraft: KBHandoffDraft? {
+        if let itemIdToEdit {
+            return KBHandoffDraft(kind: .grocery, fields: ["itemId": itemIdToEdit])
+        }
+        var d = GroceryQuickDraft()
+        d.id = handoffId
+        d.name = name
+        d.notes = notes
+        d.quantity = quantity
+        return d.isEmpty && d.notes.isEmpty ? nil : d.handoff
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -104,6 +118,9 @@ struct GroceryEditView: View {
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
                 }
             }
+            // Handoff: una voce esistente passa col suo id, una nuova come
+            // bozza che dall'altra parte si apre nella scheda veloce.
+            .handoffDraft(handoffDraft)
             .onAppear {
                 loadIfEditing()
                 if itemIdToEdit == nil && !prefillName.isEmpty {
