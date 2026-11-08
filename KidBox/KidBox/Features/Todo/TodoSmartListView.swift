@@ -56,12 +56,21 @@ struct TodoSmartListView: View {
     
     private var currentUid: String? { KBUid.current }
 
+    /// Impostazioni → To-do completati (vedi `TodoListView`).
+    @AppStorage(TodoCompletedRetention.key) private var completedRetentionRaw = TodoCompletedRetention.default.rawValue
+    @State private var justCompleted: Set<String> = []
+
     private var filteredTodos: [KBTodoItem] {
         kindTodos.filter { $0.matchesSearch(searchText, members: members) }
     }
 
     private var kindTodos: [KBTodoItem] {
-        let visible = todos.filter { $0.isVisible(to: currentUid) }
+        let retention = TodoCompletedRetention(rawValue: completedRetentionRaw) ?? .default
+        let cutoff = retention.cutoff()
+        let visible = todos.filter {
+            $0.isVisible(to: currentUid) &&
+            retention.shows($0, cutoff: cutoff, keep: justCompleted)
+        }
         let me = KBUid.current ?? "local"
         let now = Date()
         let startOfDay = Calendar.current.startOfDay(for: now)
@@ -304,6 +313,7 @@ struct TodoSmartListView: View {
         // Un promemoria fatto non deve più suonare — e da quando gli urgenti
         // sono sveglie a tutto schermo, dimenticarlo si sente.
         if todo.isDone {
+            justCompleted.insert(todo.id)
             TodoReminderService.cancel(todoId: todo.id)
             todo.reminderEnabled = false
             todo.reminderId = nil

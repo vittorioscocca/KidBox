@@ -38,7 +38,12 @@ struct TodoListView: View {
     
     @StateObject private var highlightStore = TodoHighlightStore.shared
     @State private var highlightedTodoId: String? = nil
-    
+
+    /// Impostazioni → To-do completati; `justCompleted` tiene a schermo, barrati,
+    /// quelli chiusi adesso, finché non si esce dalla lista.
+    @AppStorage(TodoCompletedRetention.key) private var completedRetentionRaw = TodoCompletedRetention.default.rawValue
+    @State private var justCompleted: Set<String> = []
+
     // Query per recuperare il nome della lista
     @Query private var allLists: [KBTodoList]
     
@@ -77,10 +82,13 @@ struct TodoListView: View {
     private var currentUid: String? { KBUid.current }
 
     private var visibleTodos: [KBTodoItem] {
-        todos.filter {
+        let retention = TodoCompletedRetention(rawValue: completedRetentionRaw) ?? .default
+        let cutoff = retention.cutoff()
+        return todos.filter {
             $0.listId == listId &&
             !$0.isDeleted &&
-            $0.isVisible(to: currentUid)
+            $0.isVisible(to: currentUid) &&
+            retention.shows($0, cutoff: cutoff, keep: justCompleted)
         }
         .filter { $0.matchesSearch(searchText, members: members) }
     }
@@ -394,6 +402,7 @@ struct TodoListView: View {
         // Un promemoria fatto non deve più suonare — e da quando gli urgenti
         // sono sveglie a tutto schermo, dimenticarlo si sente.
         if todo.isDone {
+            justCompleted.insert(todo.id)
             TodoReminderService.cancel(todoId: todo.id)
             todo.reminderEnabled = false
             todo.reminderId = nil

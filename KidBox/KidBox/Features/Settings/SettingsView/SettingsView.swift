@@ -41,6 +41,7 @@ struct SettingsView: View {
     
     @AppStorage(KBHomeDashboardPreference.key) private var showHomeDashboard = false
     @AppStorage(KBHomeWeatherPreference.key) private var showHomeWeather = false
+    @AppStorage(TodoCompletedRetention.key) private var todoCompletedRetention = TodoCompletedRetention.default.rawValue
 
     var body: some View {
         List {
@@ -101,6 +102,24 @@ struct SettingsView: View {
                             Text("Lingua")
                                 .foregroundStyle(.primary)
                             Text(LanguageManager.shared.current.label)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .listRowBackground(cardBackground)
+
+                NavigationLink {
+                    TodoCompletedSettingsView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "checklist.checked")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("To-do completati")
+                                .foregroundStyle(.primary)
+                            Text((TodoCompletedRetention(rawValue: todoCompletedRetention) ?? .default).label)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

@@ -52,6 +52,116 @@
     " Meteo" : {
 
     },
+    "Mostra per un mese" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show for a month"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar durante un mes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher pendant un mois"
+          }
+        }
+      }
+    },
+    "Mostra per una settimana" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show for a week"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar durante una semana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher pendant une semaine"
+          }
+        }
+      }
+    },
+    "Nascondi subito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide right away"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar enseguida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer tout de suite"
+          }
+        }
+      }
+    },
+    "To-do completati" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completed to-dos"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tareas completadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do terminés"
+          }
+        }
+      }
+    },
+    "Vale solo su questo dispositivo: i to-do fatti non vengono cancellati e gli altri membri continuano a vederli secondo la loro scelta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Applies only to this device: completed to-dos aren't deleted, and other members keep seeing them according to their own choice."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo se aplica a este dispositivo: las tareas completadas no se eliminan y los demás miembros siguen viéndolas según su propia elección."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S'applique uniquement à cet appareil : les to-do terminés ne sont pas supprimés et les autres membres continuent de les voir selon leur propre choix."
+          }
+        }
+      }
+    },
     "–" : {
       "localizations" : {
         "en" : {

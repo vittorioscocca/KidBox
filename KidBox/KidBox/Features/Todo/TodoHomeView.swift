@@ -43,6 +43,7 @@ struct TodoHomeView: View {
     private var allTodos: [KBTodoItem]
     
     // UI state create/edit list
+    @AppStorage(TodoCompletedRetention.key) private var completedRetentionRaw = TodoCompletedRetention.default.rawValue
     @State private var showListEditor = false
     @State private var listNameDraft = ""
     @State private var editingListId: String? = nil
@@ -127,7 +128,12 @@ struct TodoHomeView: View {
         return visibleTodos.filter { !$0.isDone && $0.assignedTo == uid }.count
     }
     
-    private var completedCount: Int { visibleTodos.filter { $0.isDone }.count }
+    /// Solo quelli ancora visibili secondo Impostazioni → To-do completati.
+    private var completedCount: Int {
+        let retention = TodoCompletedRetention(rawValue: completedRetentionRaw) ?? .default
+        let cutoff = retention.cutoff()
+        return visibleTodos.filter { $0.isDone && retention.shows($0, cutoff: cutoff) }.count
+    }
     
     private var notCompletedCount: Int { visibleTodos.filter { !$0.isDone }.count }
     
