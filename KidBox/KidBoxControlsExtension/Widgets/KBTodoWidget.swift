@@ -56,19 +56,21 @@ struct KBTodoWidgetView: View {
                     if content.items.isEmpty {
                         KBWidgetMessage(systemImage: "checkmark.circle", text: "Niente da fare", color: .kbTodo)
                     } else {
-                        ForEach(content.items.prefix(4)) { item in
+                        // Le scadenze occupano una seconda riga: con quelle ne stanno tre.
+                        let rows = content.items.prefix(4).contains { $0.due != nil } ? 3 : 4
+                        ForEach(content.items.prefix(rows)) { item in
                             HStack(alignment: .top, spacing: 6) {
                                 // Toccabile come in Promemoria: il to-do sparisce e il numero scala.
                                 Button(intent: KBMarkTodoDoneIntent(todoId: item.id)) {
                                     Image(systemName: "circle")
-                                        .font(.system(size: 17))
+                                        .font(.system(size: 15))
                                         .foregroundStyle(item.isUrgent ? Color.kbCalendar : .secondary)
                                         .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
                                 VStack(alignment: .leading, spacing: 0) {
                                     Text(item.title)
-                                        .font(.system(.footnote, design: .rounded).weight(.medium))
+                                        .font(.system(.footnote, design: .rounded))
                                         .lineLimit(1)
                                     if let due = item.due {
                                         Group {

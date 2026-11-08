@@ -34,6 +34,7 @@ final class KBWidgetSync {
         KBWidgetDoseQueue.drainInApp = {
             await MainActor.run { KBWidgetSync.shared.drainPendingDoses() }
             await KBWidgetSync.shared.drainPendingTodos()
+            await MainActor.run { KBWidgetSync.shared.drainPendingGrocery() }
         }
 
         saveObserver = NotificationCenter.default.addObserver(
@@ -52,6 +53,52 @@ final class KBWidgetSync {
             .sink { [weak self] _ in
                 MainActor.assumeIsolated { self?.requestRefresh() }
             }
+    }
+
+    // MARK: - Listener per i widget
+
+    private static let listenerConsumer = "homeWidget"
+    private var retainedFamilyId: String?
+
+    /// Spesa e to-do si aggiornano dal server solo mentre la loro schermata è
+    /// aperta: per il widget restavano vecchi, o vuoti dopo una reinstallazione.
+    /// Con almeno un widget KidBox sulla Home, mentre l'app è in primo piano li
+    /// teniamo accesi anche noi (letture: solo con widget e solo in primo piano).
+    func retainListenersIfNeeded() {
+        guard let container else { return }
+        let familyId = UserDefaults(suiteName: KBWidgetStore.appGroupId)?
+            .string(forKey: "activeFamilyId") ?? ""
+        guard !familyId.isEmpty, Auth.auth().currentUser != nil else { return }
+        WidgetCenter.shared.getCurrentConfigurations { result in
+            let hasWidgets = (try? result.get())?.contains { $0.kind.hasPrefix("KidBoxHomeWidget") } ?? false
+            Task { @MainActor in
+                guard hasWidgets else { self.releaseListeners(); return }
+                if let old = self.retainedFamilyId, old != familyId { self.releaseListeners() }
+                self.retainedFamilyId = familyId
+                let context = container.mainContext
+                SyncCenter.shared.startGroceryRealtime(
+                    familyId: familyId, modelContext: context, consumer: Self.listenerConsumer
+                )
+                // Stesso childId della schermata To-do (primo figlio), così il
+                // listener già agganciato non si ricrea a ogni apertura.
+                let childId = ((try? context.fetch(FetchDescriptor<KBFamily>(
+                    predicate: #Predicate { $0.id == familyId }
+                )))?.first?.children.first?.id) ?? ""
+                SyncCenter.shared.startTodoRealtime(
+                    familyId: familyId, childId: childId, modelContext: context,
+                    remote: TodoRemoteStore(), consumer: Self.listenerConsumer
+                )
+            }
+        }
+    }
+
+    /// Andando in background: le schermate aperte restano consumatori e
+    /// decidono loro; qui si toglie solo la nostra parte.
+    func releaseListeners() {
+        guard retainedFamilyId != nil else { return }
+        retainedFamilyId = nil
+        SyncCenter.shared.stopGroceryRealtime(consumer: Self.listenerConsumer)
+        SyncCenter.shared.stopTodoRealtime(consumer: Self.listenerConsumer)
     }
 
     /// Le richieste ravvicinate si fondono in una sola.
@@ -90,22 +137,56 @@ final class KBWidgetSync {
 
     /// Chiude i to-do segnati come fatti dal widget.
     func drainPendingTodos() async {
-        let ids = KBWidgetTodoQueue.pending()
+        let ids = KBWidgetTodoQueue.queue.pending()
         guard !ids.isEmpty else { return }
         let familyId = UserDefaults(suiteName: KBWidgetStore.appGroupId)?
             .string(forKey: "activeFamilyId") ?? ""
         for id in ids {
             // Rimosso prima: `run` in caso di errore avvisa da sé con una notifica.
-            KBWidgetTodoQueue.remove(id)
+            KBWidgetTodoQueue.queue.remove(id)
             await TodoReminderDoneAction.run(todoId: id, familyId: familyId, childId: "", listId: "", title: "")
         }
+    }
+
+    /// Segna come comprate le voci toccate nel widget. Non è un interruttore
+    /// come nella lista: se un altro l'ha già comprata, resta comprata.
+    func drainPendingGrocery() {
+        guard let container else { return }
+        let ids = KBWidgetGroceryQueue.queue.pending()
+        guard !ids.isEmpty else { return }
+        let context = container.mainContext
+        let uid = KBUid.current ?? "local"
+        let now = Date()
+        var touched: [(id: String, familyId: String)] = []
+        for id in ids {
+            KBWidgetGroceryQueue.queue.remove(id)
+            let pid = id
+            guard let item = try? context.fetch(FetchDescriptor<KBGroceryItem>(
+                predicate: #Predicate { $0.id == pid }
+            )).first, !item.isPurchased, !item.isDeleted else { continue }
+            item.isPurchased = true
+            item.purchasedAt = now
+            item.purchasedBy = uid
+            item.updatedAt = now
+            item.updatedBy = uid
+            item.syncState = .pendingUpsert
+            item.lastSyncError = nil
+            touched.append((item.id, item.familyId))
+        }
+        guard !touched.isEmpty else { return }
+        try? context.save()
+        for t in touched {
+            SyncCenter.shared.enqueueGroceryUpsert(itemId: t.id, familyId: t.familyId, modelContext: context)
+        }
+        Task { await SyncCenter.shared.flushGrocery(modelContext: context) }
     }
 
     func refresh() {
         guard let container else { return }
         observePlanIfNeeded()
         drainPendingDoses()
-        if !KBWidgetTodoQueue.pending().isEmpty {
+        drainPendingGrocery()
+        if !KBWidgetTodoQueue.queue.pending().isEmpty {
             // Il giro dopo (salvataggio → didSave) ricostruisce l'istantanea.
             Task { await drainPendingTodos() }
             return

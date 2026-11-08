@@ -18,9 +18,25 @@ extension SyncCenter {
     
     // MARK: - Listener lifecycle
     
+    /// Con consumatore: la schermata Spesa e i widget della Home lo tengono
+    /// acceso insieme, e si spegne solo quando escono tutti e due (vedi
+    /// `listenerConsumers`). Senza, chiudere la schermata staccava anche il
+    /// listener del widget, e la spesa del widget restava vecchia o vuota.
+    func startGroceryRealtime(familyId: String, modelContext: ModelContext, consumer: String) {
+        retainListener("grocery", consumer: consumer)
+        if isListenerBound("grocery", to: familyId, attached: groceryListener != nil) { return }
+        startGroceryRealtime(familyId: familyId, modelContext: modelContext)
+    }
+
+    func stopGroceryRealtime(consumer: String) {
+        guard releaseListener("grocery", consumer: consumer) else { return }
+        stopGroceryRealtime()
+    }
+
     func startGroceryRealtime(familyId: String, modelContext: ModelContext) {
         KBLog.sync.kbInfo("startGroceryRealtime familyId=\(familyId)")
         stopGroceryRealtime()
+        bindListener("grocery", to: familyId)
         
         groceryListener = groceryRemote.listenGroceries(
             familyId: familyId,
@@ -40,6 +56,8 @@ extension SyncCenter {
     }
     
     func stopGroceryRealtime() {
+        clearListenerConsumers("grocery")
+        unbindListeners(["grocery"])
         if groceryListener != nil {
             KBLog.sync.kbInfo("stopGroceryRealtime")
         }

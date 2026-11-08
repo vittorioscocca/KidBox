@@ -233,7 +233,8 @@ struct GroceryListView: View {
             await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
                 SyncCenter.shared.stopGroceryRealtime()
                 SyncCenter.shared.stopShoppingTripsRealtime()
-                SyncCenter.shared.startGroceryRealtime(familyId: familyId, modelContext: modelContext)
+                SyncCenter.shared.startGroceryRealtime(familyId: familyId, modelContext: modelContext, consumer: "groceryList")
+                KBWidgetSync.shared.retainListenersIfNeeded()
                 SyncCenter.shared.startShoppingTripsRealtime(familyId: familyId, modelContext: modelContext)
             }
             await SyncCenter.shared.flushGrocery(modelContext: modelContext)
@@ -243,7 +244,7 @@ struct GroceryListView: View {
             BadgeManager.shared.activeSections.insert("shopping")
             guard !didStartRealtime else { return }
             didStartRealtime = true
-            SyncCenter.shared.startGroceryRealtime(familyId: familyId, modelContext: modelContext)
+            SyncCenter.shared.startGroceryRealtime(familyId: familyId, modelContext: modelContext, consumer: "groceryList")
             SyncCenter.shared.startShoppingTripsRealtime(familyId: familyId, modelContext: modelContext)
             Task { await SyncCenter.shared.flushGrocery(modelContext: modelContext) }
             consumePendingShare()
@@ -252,7 +253,7 @@ struct GroceryListView: View {
             consumePendingShare()
         }
         .onDisappear {
-            SyncCenter.shared.stopGroceryRealtime()
+            SyncCenter.shared.stopGroceryRealtime(consumer: "groceryList")
             SyncCenter.shared.stopShoppingTripsRealtime()
             BadgeManager.shared.activeSections.remove("shopping")
         }

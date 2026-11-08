@@ -49,8 +49,28 @@ struct KBMarkTodoDoneIntent: AppIntent {
     init(todoId: String) { self.todoId = todoId }
 
     func perform() async throws -> some IntentResult {
-        KBWidgetTodoQueue.enqueue(todoId)
+        KBWidgetTodoQueue.queue.enqueue(todoId)
         KBWidgetTodoQueue.markDoneInSnapshot(todoId)
+        WidgetCenter.shared.reloadAllTimelines()
+        await KBWidgetDoseQueue.drainInApp?()
+        return .result()
+    }
+}
+
+/// Cerchietto del widget Spesa: segna la voce come comprata.
+struct KBMarkGroceryBoughtIntent: AppIntent {
+    static let title: LocalizedStringResource = "Segna come comprato"
+    static let isDiscoverable: Bool = false
+
+    @Parameter(title: "Voce")
+    var itemId: String
+
+    init() {}
+    init(itemId: String) { self.itemId = itemId }
+
+    func perform() async throws -> some IntentResult {
+        KBWidgetGroceryQueue.queue.enqueue(itemId)
+        KBWidgetGroceryQueue.markBoughtInSnapshot(itemId)
         WidgetCenter.shared.reloadAllTimelines()
         await KBWidgetDoseQueue.drainInApp?()
         return .result()

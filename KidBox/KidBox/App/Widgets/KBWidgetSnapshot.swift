@@ -214,27 +214,32 @@ enum KBWidgetDoseQueue {
     }
 }
 
-// MARK: - «Fatto» dal widget To-do
+// MARK: - «Fatto» dal widget To-do e «Comprato» dal widget Spesa
 
-/// Stesso schema delle dosi: l'estensione toglie subito il to-do
-/// dall'istantanea (il numero scala) e lo mette in coda; l'app lo chiude
-/// davvero con `TodoReminderDoneAction`, che non riapre un to-do già chiuso.
-enum KBWidgetTodoQueue {
+/// Coda di id toccati nel widget e non ancora scritti dall'app. Stesso schema
+/// delle dosi: l'estensione aggiorna subito l'istantanea (la riga sparisce e il
+/// numero scala) e mette l'id in coda; l'app lo scrive e lo sincronizza.
+struct KBWidgetIdQueue {
+    let key: String
+    private var defaults: UserDefaults? { UserDefaults(suiteName: KBWidgetStore.appGroupId) }
 
-    private static let key = "kidbox.widget.pendingTodosDone"
-    private static var defaults: UserDefaults? { UserDefaults(suiteName: KBWidgetStore.appGroupId) }
+    func pending() -> [String] { defaults?.stringArray(forKey: key) ?? [] }
 
-    static func pending() -> [String] { defaults?.stringArray(forKey: key) ?? [] }
-
-    static func enqueue(_ todoId: String) {
+    func enqueue(_ id: String) {
         var list = pending()
-        if !list.contains(todoId) { list.append(todoId) }
+        if !list.contains(id) { list.append(id) }
         defaults?.set(list, forKey: key)
     }
 
-    static func remove(_ todoId: String) {
-        defaults?.set(pending().filter { $0 != todoId }, forKey: key)
+    func remove(_ id: String) {
+        defaults?.set(pending().filter { $0 != id }, forKey: key)
     }
+}
+
+/// To-do chiusi dal widget; l'app li chiude con `TodoReminderDoneAction`,
+/// che non riapre un to-do già chiuso da un altro membro.
+enum KBWidgetTodoQueue {
+    static let queue = KBWidgetIdQueue(key: "kidbox.widget.pendingTodosDone")
 
     static func markDoneInSnapshot(_ todoId: String) {
         guard var snap = KBWidgetStore.read() else { return }
@@ -245,6 +250,17 @@ enum KBWidgetTodoQueue {
                 snap.todoLists[i].openCount = max(0, snap.todoLists[i].openCount - 1)
             }
         }
+        KBWidgetStore.write(snap)
+    }
+}
+
+/// Voci della spesa segnate come comprate dal widget.
+enum KBWidgetGroceryQueue {
+    static let queue = KBWidgetIdQueue(key: "kidbox.widget.pendingGroceryBought")
+
+    static func markBoughtInSnapshot(_ itemId: String) {
+        guard var snap = KBWidgetStore.read() else { return }
+        snap.grocery.removeAll { $0.id == itemId }
         KBWidgetStore.write(snap)
     }
 }

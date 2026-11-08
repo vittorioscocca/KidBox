@@ -47,7 +47,7 @@ struct KBWidgetHeader: View {
             Spacer(minLength: 4)
             if let count {
                 Text("\(count)")
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
             }
         }

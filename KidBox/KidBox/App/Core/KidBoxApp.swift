@@ -633,6 +633,7 @@ struct KidBoxApp: App {
                 Task { await KBSubscriptionManager.shared.refreshCurrentEntitlement() }
                 KBInsightRunner.shared.requestRun(reason: "foreground")
                 KBWidgetSync.shared.requestRefresh(delay: .zero)
+                KBWidgetSync.shared.retainListenersIfNeeded()
                 KBInsightRunner.shared.scheduleBackgroundRefresh()
                 // Throttlato internamente a una chiamata ogni 6 ore.
                 Task { await AppUpdateChecker.shared.checkForUpdate() }
@@ -692,6 +693,7 @@ struct KidBoxApp: App {
                     coordinator.onboardingAbandonReportedStep = lastStep
                     AppAnalytics.onboardingAbandoned(lastStepSeen: lastStep)
                 }
+                KBWidgetSync.shared.releaseListeners()
                 SyncCenter.shared.stopAutoFlush()
                 SyncCenter.shared.stopFamilyBundleRealtime()
                 SyncCenter.shared.stopPetsRealtime()
