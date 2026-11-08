@@ -27,8 +27,14 @@ struct GroceryEditView: View {
     private let prefillName: String
     private var isEditing: Bool { itemIdToEdit != nil }
     
-    // Categorie suggerite (valori salvati in italiano, vedi KBGroceryCategory)
-    private let suggestedCategories = KBGroceryCategory.suggested
+    /// Categorie fisse più, se serve, quella scritta a mano su Android/web,
+    /// così il Picker non perde il valore di un prodotto esistente.
+    private var categoryChoices: [String] {
+        let current = category.trimmingCharacters(in: .whitespacesAndNewlines)
+        var list = KBGroceryCategory.suggested
+        if !current.isEmpty, !list.contains(current) { list.append(current) }
+        return list
+    }
     
     init(familyId: String, itemIdToEdit: String? = nil, prefillName: String = "") {
         self.familyId = familyId
@@ -57,33 +63,18 @@ struct GroceryEditView: View {
                     }
                 }
 
-                Section("Categoria") {
-                    TextField("Es. Frutta e Verdura", text: $category)
-                    
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(suggestedCategories, id: \.self) { cat in
-                                Button {
-                                    category = cat
-                                } label: {
-                                    Text(KBGroceryCategory.displayName(for: cat))
-                                        .font(.caption)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 6)
-                                        .background(
-                                            Capsule()
-                                                .fill(category == cat
-                                                      ? Color.accentColor
-                                                      : Color.secondary.opacity(0.15))
-                                        )
-                                        .foregroundStyle(category == cat ? .white : .primary)
-                                }
-                                .buttonStyle(.plain)
+                // Alla creazione la categoria la sceglie l'app dopo il salvataggio
+                // (GroceryCategoryClassifier). Solo su un prodotto esistente si
+                // può correggere a mano.
+                if isEditing {
+                    Section("Categoria") {
+                        Picker("Categoria", selection: $category) {
+                            Text("Automatica").tag("")
+                            ForEach(categoryChoices, id: \.self) { cat in
+                                Text(KBGroceryCategory.displayName(for: cat)).tag(cat)
                             }
                         }
-                        .padding(.vertical, 4)
                     }
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                 }
                 
                 Section("Note (opzionale)") {
@@ -170,6 +161,7 @@ struct GroceryEditView: View {
             item.lastSyncError = nil
             try? modelContext.save()
             SyncCenter.shared.enqueueGroceryUpsert(itemId: item.id, familyId: familyId, modelContext: modelContext)
+            if trimmedCategory.isEmpty { autoCategorize(itemId: item.id, name: trimmedName) }
         } else {
             // Create new
             let isFirstGroceryItem = ((try? modelContext.fetchCount(FetchDescriptor<KBGroceryItem>(predicate: #Predicate<KBGroceryItem> {
@@ -190,6 +182,7 @@ struct GroceryEditView: View {
             modelContext.insert(item)
             try? modelContext.save()
             SyncCenter.shared.enqueueGroceryUpsert(itemId: item.id, familyId: familyId, modelContext: modelContext)
+            autoCategorize(itemId: item.id, name: trimmedName)
             AppAnalytics.contentCreated(type: "grocery")
             if isFirstGroceryItem {
                 AppAnalytics.featureFirstUse(feature: "grocery")
@@ -198,5 +191,30 @@ struct GroceryEditView: View {
         
         await SyncCenter.shared.flushGrocery(modelContext: modelContext)
         dismiss()
+    }
+    
+    // MARK: - Categoria automatica
+    
+    /// Parte dopo il salvataggio e non blocca la chiusura della scheda: quando il
+    /// modello risponde la riga cambia gruppo e si risincronizza. Se nel frattempo
+    /// qualcuno ha scelto una categoria, non la tocca.
+    private func autoCategorize(itemId: String, name: String) {
+        let context = modelContext
+        let familyId = familyId
+        Task { @MainActor in
+            guard let found = await GroceryCategoryClassifier.category(for: name) else { return }
+            let desc = FetchDescriptor<KBGroceryItem>(predicate: #Predicate { $0.id == itemId })
+            guard let item = try? context.fetch(desc).first,
+                  !item.isDeleted,
+                  (item.category ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            else { return }
+            item.category = found
+            item.updatedAt = Date()
+            item.syncState = .pendingUpsert
+            item.lastSyncError = nil
+            try? context.save()
+            SyncCenter.shared.enqueueGroceryUpsert(itemId: itemId, familyId: familyId, modelContext: context)
+            await SyncCenter.shared.flushGrocery(modelContext: context)
+        }
     }
 }
