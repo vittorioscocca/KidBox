@@ -60,7 +60,28 @@
       }
     },
     "+%lld": {},
-    "×%lld": {},
+    "Album": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Album"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Álbum"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Album"
+          }
+        }
+      }
+    },
     "Apre Foto e video con la fotocamera.": {},
     "Apri KidBox per iniziare": {
       "extractionState": "manual",
@@ -81,6 +102,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ouvrez KidBox pour commencer"
+          }
+        }
+      }
+    },
+    "Apri KidBox per preparare le foto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open KidBox to get the photos ready"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre KidBox para preparar las fotos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrez KidBox pour préparer les photos"
           }
         }
       }
@@ -292,6 +335,28 @@
         }
       }
     },
+    "Foto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos"
+          }
+        }
+      }
+    },
     "Foto KidBox": {},
     "Gli eventi di oggi della tua famiglia.": {
       "extractionState": "manual",
@@ -316,25 +381,25 @@
         }
       }
     },
-    "Gli eventi di oggi. Da «Modifica widget» puoi mostrare anche to-do, spesa, cure o piano fitness.": {
+    "Gli eventi di oggi. Da «Modifica widget» puoi mostrare anche to-do, spesa, cure, piano fitness o foto.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Today's events. From “Edit Widget” you can also show to-dos, shopping, treatments or fitness plan."
+            "value": "Today's events. From “Edit Widget” you can also show to-dos, shopping, treatments, fitness plan or photos."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Los eventos de hoy. Desde «Editar widget» también puedes mostrar tareas, compra, tratamientos o plan fitness."
+            "value": "Los eventos de hoy. Desde «Editar widget» también puedes mostrar tareas, compra, tratamientos, plan fitness o fotos."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Les événements du jour. Depuis « Modifier le widget », vous pouvez aussi afficher tâches, courses, soins ou plan fitness."
+            "value": "Les événements du jour. Depuis « Modifier le widget », vous pouvez aussi afficher tâches, courses, soins, plan fitness ou photos."
           }
         }
       }
@@ -428,6 +493,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "La prochaine prise d'un membre de la famille, à marquer comme prise."
+          }
+        }
+      }
+    },
+    "Le foto della famiglia, una diversa ogni ora. Puoi scegliere un album.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Family photos, a different one every hour. You can pick an album."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las fotos de la familia, una distinta cada hora. Puedes elegir un álbum."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les photos de la famille, une différente chaque heure. Vous pouvez choisir un album."
           }
         }
       }
@@ -570,6 +657,7 @@
         }
       }
     },
+    "Mostra ${content}": {},
     "Mostra %@": {
       "extractionState": "manual",
       "localizations": {
@@ -593,7 +681,6 @@
         }
       }
     },
-    "Mostra ${content}": {},
     "Nessun evento oggi": {
       "extractionState": "manual",
       "localizations": {
@@ -659,6 +746,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aucun soin actif"
+          }
+        }
+      }
+    },
+    "Nessuna foto in questo album": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No photos in this album"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay fotos en este álbum"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucune photo dans cet album"
           }
         }
       }
@@ -778,25 +887,25 @@
         }
       }
     },
-    "Scegli cosa mostrare: calendario, to-do, spesa, cure o piano fitness.": {
+    "Scegli cosa mostrare: calendario, to-do, spesa, cure, piano fitness o foto.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose what to show: calendar, to-dos, shopping, treatments or fitness plan."
+            "value": "Choose what to show: calendar, to-dos, shopping, treatments, fitness plan or photos."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elige qué mostrar: calendario, tareas, compra, tratamientos o plan fitness."
+            "value": "Elige qué mostrar: calendario, tareas, compra, tratamientos, plan fitness o fotos."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choisissez quoi afficher : calendrier, tâches, courses, soins ou plan fitness."
+            "value": "Choisissez quoi afficher : calendrier, tâches, courses, soins, plan fitness ou photos."
           }
         }
       }
@@ -866,6 +975,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choisissez la liste à afficher. Sans choix, tout est affiché."
+          }
+        }
+      }
+    },
+    "Segna come comprato": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as bought"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marquer comme acheté"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marcar como comprado"
+          }
+        }
+      }
+    },
+    "Segna come fatto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as done"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marquer comme fait"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marcar como hecho"
           }
         }
       }
@@ -1031,52 +1186,7 @@
         }
       }
     },
-    "Segna come fatto": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mark as done"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marquer comme fait"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marcar como hecho"
-          }
-        }
-      }
-    },
-    "Segna come comprato": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mark as bought"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marquer comme acheté"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marcar como comprado"
-          }
-        }
-      }
-    }
+    "×%lld": {}
   },
   "version": "1.0"
 }

@@ -30,6 +30,23 @@ struct KBWidgetSnapshot: Codable, Equatable {
     var profiles: [Profile] = []
     var doses: [Dose] = []
     var fitness: [FitnessProfile] = []
+    /// Opzionali: le istantanee scritte prima del widget Foto devono restare leggibili.
+    var photos: [Photo]? = nil
+    var albums: [Album]? = nil
+
+    // MARK: Foto
+
+    /// Una foto con la sua miniatura già pronta in `KBWidgetPhotoFiles`.
+    struct Photo: Codable, Equatable, Identifiable {
+        var id: String
+        var takenAt: Date
+        var albumIds: [String]
+    }
+
+    struct Album: Codable, Equatable, Identifiable {
+        var id: String
+        var title: String
+    }
 
     // MARK: Calendario
 
@@ -149,8 +166,46 @@ enum KBWidgetStore {
 
     /// Al logout: i widget non devono mostrare i dati di chi è uscito.
     static func clear() {
+        KBWidgetPhotoFiles.clear()
         guard let url = fileURL else { return }
         try? FileManager.default.removeItem(at: url)
+    }
+}
+
+// MARK: - Miniature delle foto
+
+/// Le foto della famiglia sono cifrate: il widget non può né scaricarle né
+/// leggerle. L'app ne scrive qui una copia piccola (JPEG, lato lungo ~520 px)
+/// per le sole foto che il widget può mostrare; il resto non esce dall'app.
+enum KBWidgetPhotoFiles {
+
+    static var directory: URL? {
+        FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: KBWidgetStore.appGroupId)?
+            .appendingPathComponent("widget-photos", isDirectory: true)
+    }
+
+    static func url(for photoId: String) -> URL? {
+        directory?.appendingPathComponent("\(photoId).jpg")
+    }
+
+    static func clear() {
+        guard let dir = directory else { return }
+        try? FileManager.default.removeItem(at: dir)
+    }
+
+    /// Chiave che il widget aggiorna quando gli serve una foto: l'app prepara le
+    /// miniature solo se c'è davvero un widget Foto, niente download a vuoto.
+    static let requestedKey = "kidbox.widget.photosRequestedAt"
+
+    static func markRequested() {
+        UserDefaults(suiteName: KBWidgetStore.appGroupId)?.set(Date(), forKey: requestedKey)
+    }
+
+    static var recentlyRequested: Bool {
+        guard let d = UserDefaults(suiteName: KBWidgetStore.appGroupId)?.object(forKey: requestedKey) as? Date
+        else { return false }
+        return Date().timeIntervalSince(d) < 14 * 86_400
     }
 }
 

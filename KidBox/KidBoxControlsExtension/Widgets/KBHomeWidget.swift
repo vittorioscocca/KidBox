@@ -3,8 +3,8 @@
 //  KidBoxControlsExtension
 //
 //  L'unico widget quadrato di KidBox: dal menù «Modifica widget» (tocco
-//  lungo) si sceglie se mostrare Calendario, To-do, Spesa, Cure o Piano
-//  Fitness, e per To-do, Cure e Fitness anche la lista o il membro.
+//  lungo) si sceglie se mostrare Calendario, To-do, Spesa, Cure, Piano
+//  Fitness o Foto, e per To-do, Cure, Fitness e Foto anche lista, membro o album.
 //
 
 import SwiftUI
@@ -17,6 +17,7 @@ struct KBHomeEntry: TimelineEntry {
     let content: KBWidgetContent
     let listId: String?
     let memberId: String?
+    var albumId: String? = nil
 }
 
 struct KBHomeProvider<I: KBContentIntent>: AppIntentTimelineProvider {
@@ -40,6 +41,15 @@ struct KBHomeProvider<I: KBContentIntent>: AppIntentTimelineProvider {
             for e in snap?.events ?? [] where !e.isAllDay && e.end > now && e.end < midnight {
                 dates.insert(e.end)
             }
+        case .photos:
+            // Dice all'app che c'è un widget Foto: solo allora prepara le miniature.
+            KBWidgetPhotoFiles.markRequested()
+            // Una foto diversa ogni ora; finita la serie, il sistema ne chiede un'altra.
+            let hour = Calendar.current.dateInterval(of: .hour, for: now)?.start ?? now
+            let entries = (0..<12).map { i in
+                entry(configuration, at: i == 0 ? now : hour.addingTimeInterval(Double(i) * 3600), snapshot: snap)
+            }
+            return Timeline(entries: entries, policy: .atEnd)
         case .care:
             // Una voce a ogni orario di dose: lo stato «in ritardo» scatta da solo.
             let member = configuration.member?.id
@@ -55,7 +65,8 @@ struct KBHomeProvider<I: KBContentIntent>: AppIntentTimelineProvider {
     }
 
     private func entry(_ c: I, at date: Date, snapshot: KBWidgetSnapshot?) -> KBHomeEntry {
-        .init(date: date, snapshot: snapshot, content: c.content, listId: c.list?.id, memberId: c.member?.id)
+        .init(date: date, snapshot: snapshot, content: c.content, listId: c.list?.id,
+              memberId: c.member?.id, albumId: c.album?.id)
     }
 }
 
@@ -74,11 +85,13 @@ struct KBHomeWidgetView: View {
             KBCareWidgetView(entry: .init(date: entry.date, snapshot: entry.snapshot, memberId: entry.memberId))
         case .fitness:
             KBFitnessWidgetView(entry: .init(date: entry.date, snapshot: entry.snapshot, memberId: entry.memberId))
+        case .photos:
+            KBPhotosWidgetView(date: entry.date, snapshot: entry.snapshot, albumId: entry.albumId)
         }
     }
 }
 
-/// Le cinque pagine della galleria. L'ordine conta: la prima è quella che iOS
+/// Le sei pagine della galleria. L'ordine conta: la prima è quella che iOS
 /// usa quando l'icona dell'app diventa un widget. I kind sono nuovi rispetto
 /// alla prima build (KidBoxCalendarWidget, KidBoxTodoWidget, …): riusarli
 /// riaggancerebbe istanze vecchie senza configurazione.
@@ -98,7 +111,7 @@ struct KBHomeWidget: Widget {
     var body: some WidgetConfiguration {
         kbHomeConfiguration(kind: Self.kind, intent: KidBoxWidgetIntent.self,
                             name: "Calendario",
-                            description: "Gli eventi di oggi. Da «Modifica widget» puoi mostrare anche to-do, spesa, cure o piano fitness.")
+                            description: "Gli eventi di oggi. Da «Modifica widget» puoi mostrare anche to-do, spesa, cure, piano fitness o foto.")
     }
 }
 
@@ -131,5 +144,13 @@ struct KBFitnessHomeWidget: Widget {
         kbHomeConfiguration(kind: "KidBoxHomeWidget.fitness", intent: KidBoxFitnessWidgetIntent.self,
                             name: "Piano Fitness",
                             description: "L'allenamento di oggi dal piano di un membro della famiglia.")
+    }
+}
+
+struct KBPhotosHomeWidget: Widget {
+    var body: some WidgetConfiguration {
+        kbHomeConfiguration(kind: "KidBoxHomeWidget.photos", intent: KidBoxPhotosWidgetIntent.self,
+                            name: "Foto",
+                            description: "Le foto della famiglia, una diversa ogni ora. Puoi scegliere un album.")
     }
 }

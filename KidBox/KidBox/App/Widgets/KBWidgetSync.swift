@@ -210,6 +210,7 @@ final class KBWidgetSync {
         if KBWidgetStore.write(snapshot) {
             WidgetCenter.shared.reloadAllTimelines()
         }
+        KBWidgetPhotos.prepareIfNeeded(familyId: familyId, uid: uid, context: container.mainContext)
     }
 
     // MARK: - Costruzione
@@ -261,6 +262,10 @@ final class KBWidgetSync {
         if fitnessUnlocked {
             snap.fitness = snap.profiles.compactMap { fitnessProfile(for: $0.id, today: today, cal: cal) }
         }
+
+        let photos = KBWidgetPhotos.snapshotPart(familyId: familyId, context: context)
+        snap.photos = photos.photos
+        snap.albums = photos.albums
         return snap
     }
 

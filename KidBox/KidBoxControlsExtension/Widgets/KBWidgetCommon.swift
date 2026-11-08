@@ -28,6 +28,7 @@ extension Color {
     static let kbGrocery  = Color(hex: "2FA84F")
     static let kbCare     = Color(hex: "E8507A")
     static let kbFitness  = Color(hex: "F5821F")
+    static let kbPhotos   = Color(hex: "AF52DE")
 }
 
 // MARK: - Intestazione (nome a sinistra, numero a destra, come Promemoria)
@@ -132,10 +133,31 @@ struct ProfileQuery: EntityQuery {
     }
 }
 
+// MARK: - Entità: album delle foto
+
+struct PhotoAlbumEntity: AppEntity {
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Album"
+    static let defaultQuery = PhotoAlbumQuery()
+
+    var id: String
+    var title: String
+
+    var displayRepresentation: DisplayRepresentation { DisplayRepresentation(title: "\(title)") }
+}
+
+struct PhotoAlbumQuery: EntityQuery {
+    func entities(for identifiers: [String]) async throws -> [PhotoAlbumEntity] {
+        try await suggestedEntities().filter { identifiers.contains($0.id) }
+    }
+    func suggestedEntities() async throws -> [PhotoAlbumEntity] {
+        (KBWidgetStore.read()?.albums ?? []).map { PhotoAlbumEntity(id: $0.id, title: $0.title) }
+    }
+}
+
 // MARK: - Intent di configurazione (cinque pagine in galleria, «Modifica widget» sceglie cosa mostrare)
 
 enum KBWidgetContent: String, AppEnum, CaseIterable {
-    case calendar, todo, grocery, care, fitness
+    case calendar, todo, grocery, care, fitness, photos
 
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "Contenuto"
     static let caseDisplayRepresentations: [KBWidgetContent: DisplayRepresentation] = [
@@ -144,6 +166,7 @@ enum KBWidgetContent: String, AppEnum, CaseIterable {
         .grocery:  DisplayRepresentation(title: "Spesa", image: .init(systemName: "cart")),
         .care:     DisplayRepresentation(title: "Cure", image: .init(systemName: "pills")),
         .fitness:  DisplayRepresentation(title: "Piano Fitness", image: .init(systemName: "figure.run")),
+        .photos:   DisplayRepresentation(title: "Foto", image: .init(systemName: "photo.on.rectangle")),
     ]
 }
 
@@ -154,12 +177,13 @@ protocol KBContentIntent: WidgetConfigurationIntent {
     var content: KBWidgetContent { get }
     var list: TodoListEntity? { get }
     var member: ProfileEntity? { get }
+    var album: PhotoAlbumEntity? { get }
 }
 
 /// Prima pagina (e widget nato dall'icona): parte dal Calendario. Nome e kind invariati, o i widget già sulla Home perdono il legame.
 struct KidBoxWidgetIntent: KBContentIntent {
     static let title: LocalizedStringResource = "KidBox"
-    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure o piano fitness.")
+    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure, piano fitness o foto.")
 
     @Parameter(title: "Mostra", default: .calendar)
     var content: KBWidgetContent
@@ -170,6 +194,9 @@ struct KidBoxWidgetIntent: KBContentIntent {
     @Parameter(title: "Membro")
     var member: ProfileEntity?
 
+    @Parameter(title: "Album")
+    var album: PhotoAlbumEntity?
+
     static var parameterSummary: some ParameterSummary {
         When(\.$content, .equalTo, KBWidgetContent.todo) {
             Summary("Mostra \(\.$content)") { \.$list }
@@ -180,7 +207,11 @@ struct KidBoxWidgetIntent: KBContentIntent {
                 When(\.$content, .equalTo, KBWidgetContent.fitness) {
                     Summary("Mostra \(\.$content)") { \.$member }
                 } otherwise: {
-                    Summary("Mostra \(\.$content)")
+                    When(\.$content, .equalTo, KBWidgetContent.photos) {
+                        Summary("Mostra \(\.$content)") { \.$album }
+                    } otherwise: {
+                        Summary("Mostra \(\.$content)")
+                    }
                 }
             }
         }
@@ -190,7 +221,7 @@ struct KidBoxWidgetIntent: KBContentIntent {
 /// Pagina To-do.
 struct KidBoxTodoWidgetIntent: KBContentIntent {
     static let title: LocalizedStringResource = "KidBox"
-    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure o piano fitness.")
+    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure, piano fitness o foto.")
 
     @Parameter(title: "Mostra", default: .todo)
     var content: KBWidgetContent
@@ -201,6 +232,9 @@ struct KidBoxTodoWidgetIntent: KBContentIntent {
     @Parameter(title: "Membro")
     var member: ProfileEntity?
 
+    @Parameter(title: "Album")
+    var album: PhotoAlbumEntity?
+
     static var parameterSummary: some ParameterSummary {
         When(\.$content, .equalTo, KBWidgetContent.todo) {
             Summary("Mostra \(\.$content)") { \.$list }
@@ -211,7 +245,11 @@ struct KidBoxTodoWidgetIntent: KBContentIntent {
                 When(\.$content, .equalTo, KBWidgetContent.fitness) {
                     Summary("Mostra \(\.$content)") { \.$member }
                 } otherwise: {
-                    Summary("Mostra \(\.$content)")
+                    When(\.$content, .equalTo, KBWidgetContent.photos) {
+                        Summary("Mostra \(\.$content)") { \.$album }
+                    } otherwise: {
+                        Summary("Mostra \(\.$content)")
+                    }
                 }
             }
         }
@@ -221,7 +259,7 @@ struct KidBoxTodoWidgetIntent: KBContentIntent {
 /// Pagina Spesa.
 struct KidBoxGroceryWidgetIntent: KBContentIntent {
     static let title: LocalizedStringResource = "KidBox"
-    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure o piano fitness.")
+    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure, piano fitness o foto.")
 
     @Parameter(title: "Mostra", default: .grocery)
     var content: KBWidgetContent
@@ -232,6 +270,9 @@ struct KidBoxGroceryWidgetIntent: KBContentIntent {
     @Parameter(title: "Membro")
     var member: ProfileEntity?
 
+    @Parameter(title: "Album")
+    var album: PhotoAlbumEntity?
+
     static var parameterSummary: some ParameterSummary {
         When(\.$content, .equalTo, KBWidgetContent.todo) {
             Summary("Mostra \(\.$content)") { \.$list }
@@ -242,7 +283,11 @@ struct KidBoxGroceryWidgetIntent: KBContentIntent {
                 When(\.$content, .equalTo, KBWidgetContent.fitness) {
                     Summary("Mostra \(\.$content)") { \.$member }
                 } otherwise: {
-                    Summary("Mostra \(\.$content)")
+                    When(\.$content, .equalTo, KBWidgetContent.photos) {
+                        Summary("Mostra \(\.$content)") { \.$album }
+                    } otherwise: {
+                        Summary("Mostra \(\.$content)")
+                    }
                 }
             }
         }
@@ -252,7 +297,7 @@ struct KidBoxGroceryWidgetIntent: KBContentIntent {
 /// Pagina Cure.
 struct KidBoxCareWidgetIntent: KBContentIntent {
     static let title: LocalizedStringResource = "KidBox"
-    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure o piano fitness.")
+    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure, piano fitness o foto.")
 
     @Parameter(title: "Mostra", default: .care)
     var content: KBWidgetContent
@@ -263,6 +308,9 @@ struct KidBoxCareWidgetIntent: KBContentIntent {
     @Parameter(title: "Membro")
     var member: ProfileEntity?
 
+    @Parameter(title: "Album")
+    var album: PhotoAlbumEntity?
+
     static var parameterSummary: some ParameterSummary {
         When(\.$content, .equalTo, KBWidgetContent.todo) {
             Summary("Mostra \(\.$content)") { \.$list }
@@ -273,7 +321,49 @@ struct KidBoxCareWidgetIntent: KBContentIntent {
                 When(\.$content, .equalTo, KBWidgetContent.fitness) {
                     Summary("Mostra \(\.$content)") { \.$member }
                 } otherwise: {
-                    Summary("Mostra \(\.$content)")
+                    When(\.$content, .equalTo, KBWidgetContent.photos) {
+                        Summary("Mostra \(\.$content)") { \.$album }
+                    } otherwise: {
+                        Summary("Mostra \(\.$content)")
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Pagina Foto.
+struct KidBoxPhotosWidgetIntent: KBContentIntent {
+    static let title: LocalizedStringResource = "KidBox"
+    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure, piano fitness o foto.")
+
+    @Parameter(title: "Mostra", default: .photos)
+    var content: KBWidgetContent
+
+    @Parameter(title: "Lista")
+    var list: TodoListEntity?
+
+    @Parameter(title: "Membro")
+    var member: ProfileEntity?
+
+    @Parameter(title: "Album")
+    var album: PhotoAlbumEntity?
+
+    static var parameterSummary: some ParameterSummary {
+        When(\.$content, .equalTo, KBWidgetContent.todo) {
+            Summary("Mostra \(\.$content)") { \.$list }
+        } otherwise: {
+            When(\.$content, .equalTo, KBWidgetContent.care) {
+                Summary("Mostra \(\.$content)") { \.$member }
+            } otherwise: {
+                When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                    Summary("Mostra \(\.$content)") { \.$member }
+                } otherwise: {
+                    When(\.$content, .equalTo, KBWidgetContent.photos) {
+                        Summary("Mostra \(\.$content)") { \.$album }
+                    } otherwise: {
+                        Summary("Mostra \(\.$content)")
+                    }
                 }
             }
         }
@@ -283,7 +373,7 @@ struct KidBoxCareWidgetIntent: KBContentIntent {
 /// Pagina Piano Fitness.
 struct KidBoxFitnessWidgetIntent: KBContentIntent {
     static let title: LocalizedStringResource = "KidBox"
-    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure o piano fitness.")
+    static let description = IntentDescription("Scegli cosa mostrare: calendario, to-do, spesa, cure, piano fitness o foto.")
 
     @Parameter(title: "Mostra", default: .fitness)
     var content: KBWidgetContent
@@ -294,6 +384,9 @@ struct KidBoxFitnessWidgetIntent: KBContentIntent {
     @Parameter(title: "Membro")
     var member: ProfileEntity?
 
+    @Parameter(title: "Album")
+    var album: PhotoAlbumEntity?
+
     static var parameterSummary: some ParameterSummary {
         When(\.$content, .equalTo, KBWidgetContent.todo) {
             Summary("Mostra \(\.$content)") { \.$list }
@@ -304,7 +397,11 @@ struct KidBoxFitnessWidgetIntent: KBContentIntent {
                 When(\.$content, .equalTo, KBWidgetContent.fitness) {
                     Summary("Mostra \(\.$content)") { \.$member }
                 } otherwise: {
-                    Summary("Mostra \(\.$content)")
+                    When(\.$content, .equalTo, KBWidgetContent.photos) {
+                        Summary("Mostra \(\.$content)") { \.$album }
+                    } otherwise: {
+                        Summary("Mostra \(\.$content)")
+                    }
                 }
             }
         }

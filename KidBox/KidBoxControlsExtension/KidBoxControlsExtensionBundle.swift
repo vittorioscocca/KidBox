@@ -15,5 +15,6 @@ struct KidBoxControlsExtensionBundle: WidgetBundle {
         KBGroceryHomeWidget()
         KBCareHomeWidget()
         KBFitnessHomeWidget()
+        KBPhotosHomeWidget()
     }
 }
