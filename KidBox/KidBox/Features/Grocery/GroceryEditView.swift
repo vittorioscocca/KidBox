@@ -195,26 +195,9 @@ struct GroceryEditView: View {
     
     // MARK: - Categoria automatica
     
-    /// Parte dopo il salvataggio e non blocca la chiusura della scheda: quando il
-    /// modello risponde la riga cambia gruppo e si risincronizza. Se nel frattempo
-    /// qualcuno ha scelto una categoria, non la tocca.
+    /// Parte dopo il salvataggio e non blocca la chiusura della scheda.
     private func autoCategorize(itemId: String, name: String) {
-        let context = modelContext
-        let familyId = familyId
-        Task { @MainActor in
-            guard let found = await GroceryCategoryClassifier.category(for: name) else { return }
-            let desc = FetchDescriptor<KBGroceryItem>(predicate: #Predicate { $0.id == itemId })
-            guard let item = try? context.fetch(desc).first,
-                  !item.isDeleted,
-                  (item.category ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            else { return }
-            item.category = found
-            item.updatedAt = Date()
-            item.syncState = .pendingUpsert
-            item.lastSyncError = nil
-            try? context.save()
-            SyncCenter.shared.enqueueGroceryUpsert(itemId: itemId, familyId: familyId, modelContext: context)
-            await SyncCenter.shared.flushGrocery(modelContext: context)
-        }
+        GroceryCategoryClassifier.assignMissing(
+            to: [(id: itemId, name: name)], familyId: familyId, modelContext: modelContext)
     }
 }

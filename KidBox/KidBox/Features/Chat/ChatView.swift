@@ -1524,6 +1524,7 @@ private struct ChatConversationView: View {
         case .grocery(let lines):
             let uid = Auth.auth().currentUser?.uid ?? "local"
             let now = Date()
+            var created: [(id: String, name: String)] = []
             for line in lines {
                 let item = KBGroceryItem(
                     familyId: familyId, name: line,
@@ -1535,9 +1536,11 @@ private struct ChatConversationView: View {
                 modelContext.insert(item)
                 SyncCenter.shared.enqueueGroceryUpsert(
                     itemId: item.id, familyId: familyId, modelContext: modelContext)
+                created.append((id: item.id, name: line))
             }
             try? modelContext.save()
             Task { await SyncCenter.shared.flushGrocery(modelContext: modelContext) }
+            GroceryCategoryClassifier.assignMissing(to: created, familyId: familyId, modelContext: modelContext)
             
         case .note(let title, let body):
             let noteId = UUID().uuidString

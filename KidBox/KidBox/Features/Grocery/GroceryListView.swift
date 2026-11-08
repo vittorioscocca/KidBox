@@ -527,6 +527,7 @@ struct GroceryListView: View {
             let isFirstGroceryItem = ((try? modelContext.fetchCount(FetchDescriptor<KBGroceryItem>(predicate: #Predicate<KBGroceryItem> {
                 $0.familyId == familyId && $0.isDeleted == false
             }))) ?? 0) == 0
+            var created: [(id: String, name: String)] = []
             for line in lines {
                 let item = KBGroceryItem(
                     familyId: familyId,
@@ -545,9 +546,11 @@ struct GroceryListView: View {
                     familyId: familyId,
                     modelContext: modelContext
                 )
+                created.append((id: item.id, name: line))
             }
             try? modelContext.save()
             Task { await SyncCenter.shared.flushGrocery(modelContext: modelContext) }
+            GroceryCategoryClassifier.assignMissing(to: created, familyId: familyId, modelContext: modelContext)
             AppAnalytics.contentCreated(type: "grocery")
             if isFirstGroceryItem {
                 AppAnalytics.featureFirstUse(feature: "grocery")

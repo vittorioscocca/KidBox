@@ -255,6 +255,7 @@ final class PlanningActionExecutor {
 
         let now = Date()
         var added = 0
+        var uncategorized: [(id: String, name: String)] = []
         for name in names {
             let key = name.lowercased()
             guard !pendingGroceryNames.contains(key) else { continue }
@@ -275,8 +276,12 @@ final class PlanningActionExecutor {
             item.syncState = .pendingUpsert
             modelContext.insert(item)
             SyncCenter.shared.enqueueGroceryUpsert(itemId: item.id, familyId: familyId, modelContext: modelContext)
+            if (category ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                uncategorized.append((id: item.id, name: name))
+            }
             added += 1
         }
+        GroceryCategoryClassifier.assignMissing(to: uncategorized, familyId: familyId, modelContext: modelContext)
         return added > 0 ? added : nil
     }
 

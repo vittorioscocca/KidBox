@@ -557,6 +557,7 @@ struct OnboardingWalkthroughView: View {
               !names.isEmpty else { return false }
         let now = Date()
         var seen = Set<String>()
+        var created: [(id: String, name: String)] = []
         for name in names where seen.insert(name.lowercased()).inserted {
             let item = KBGroceryItem(
                 familyId: familyId,
@@ -570,7 +571,9 @@ struct OnboardingWalkthroughView: View {
             item.syncState = .pendingUpsert
             modelContext.insert(item)
             SyncCenter.shared.enqueueGroceryUpsert(itemId: item.id, familyId: familyId, modelContext: modelContext)
+            created.append((id: item.id, name: name))
         }
+        GroceryCategoryClassifier.assignMissing(to: created, familyId: familyId, modelContext: modelContext)
         logFirstContent(.grocery, contentType: "grocery")
         return true
     }

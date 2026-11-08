@@ -14,6 +14,7 @@
 //
 
 import Foundation
+import SwiftData
 import FoundationModels
 
 enum GroceryCategoryClassifier {
@@ -41,6 +42,38 @@ enum GroceryCategoryClassifier {
             }
         }
         return keywordCategory(for: name)
+    }
+
+    /// Dà una categoria alle voci appena create che non ne hanno, senza far
+    /// aspettare chi le ha create. Tocca solo le voci ancora senza categoria
+    /// quando il modello risponde, e manda un solo flush alla fine.
+    @MainActor
+    static func assignMissing(
+        to items: [(id: String, name: String)],
+        familyId: String,
+        modelContext: ModelContext
+    ) {
+        guard !items.isEmpty else { return }
+        Task { @MainActor in
+            var changed = false
+            for entry in items {
+                guard let found = await category(for: entry.name) else { continue }
+                let itemId = entry.id
+                let desc = FetchDescriptor<KBGroceryItem>(predicate: #Predicate { $0.id == itemId })
+                guard let item = try? modelContext.fetch(desc).first,
+                      !item.isDeleted,
+                      (item.category ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                else { continue }
+                item.category = found
+                item.updatedAt = Date()
+                item.syncState = .pendingUpsert
+                item.lastSyncError = nil
+                try? modelContext.save()
+                SyncCenter.shared.enqueueGroceryUpsert(itemId: itemId, familyId: familyId, modelContext: modelContext)
+                changed = true
+            }
+            if changed { await SyncCenter.shared.flushGrocery(modelContext: modelContext) }
+        }
     }
 
     private static let instructions = """
