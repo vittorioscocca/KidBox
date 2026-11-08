@@ -154,6 +154,153 @@ struct PhotoAlbumQuery: EntityQuery {
     }
 }
 
+// MARK: - Scorciatoie del formato grande
+
+/// Le sezioni di KidBox che il formato grande offre come scorciatoie (al
+/// massimo sei). Il valore è quello di `SidebarSection` nell'app: il link
+/// `kidbox://widget/<valore>` apre la sezione per la stessa strada del widget.
+enum KBShortcutSection: String, AppEnum, CaseIterable {
+    case dashboard, calendar, todo, shopping, notes, photos, health, chat,
+         documents, expenses, wallet, passwords, location, pets, homeItems,
+         vehicles, travel, assistant, news
+
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Sezione"
+    static let caseDisplayRepresentations: [KBShortcutSection: DisplayRepresentation] = [
+        .dashboard: DisplayRepresentation(title: "Home", image: .init(systemName: "square.grid.2x2.fill")),
+        .calendar:  DisplayRepresentation(title: "Calendario", image: .init(systemName: "calendar")),
+        .todo:      DisplayRepresentation(title: "To-do", image: .init(systemName: "checklist")),
+        .shopping:  DisplayRepresentation(title: "Spesa", image: .init(systemName: "cart.fill")),
+        .notes:     DisplayRepresentation(title: "Note", image: .init(systemName: "note.text")),
+        .photos:    DisplayRepresentation(title: "Foto", image: .init(systemName: "photo.stack.fill")),
+        .health:    DisplayRepresentation(title: "Salute", image: .init(systemName: "heart.fill")),
+        .chat:      DisplayRepresentation(title: "Chat", image: .init(systemName: "message.fill")),
+        .documents: DisplayRepresentation(title: "Documenti", image: .init(systemName: "doc.text.fill")),
+        .expenses:  DisplayRepresentation(title: "Spese", image: .init(systemName: "eurosign.circle.fill")),
+        .wallet:    DisplayRepresentation(title: "Wallet", image: .init(systemName: "ticket.fill")),
+        .passwords: DisplayRepresentation(title: "Password", image: .init(systemName: "key.fill")),
+        .location:  DisplayRepresentation(title: "Posizione", image: .init(systemName: "location.fill")),
+        .pets:      DisplayRepresentation(title: "Animali", image: .init(systemName: "pawprint.fill")),
+        .homeItems: DisplayRepresentation(title: "Casa", image: .init(systemName: "house.fill")),
+        .vehicles:  DisplayRepresentation(title: "Garage", image: .init(systemName: "car.fill")),
+        .travel:    DisplayRepresentation(title: "Viaggi", image: .init(systemName: "suitcase.fill")),
+        .assistant: DisplayRepresentation(title: "Assistente", image: .init(systemName: "sparkles")),
+        .news:      DisplayRepresentation(title: "Notizie", image: .init(systemName: "newspaper.fill")),
+    ]
+
+    var label: LocalizedStringKey {
+        switch self {
+        case .dashboard: "Home"
+        case .calendar:  "Calendario"
+        case .todo:      "To-do"
+        case .shopping:  "Spesa"
+        case .notes:     "Note"
+        case .photos:    "Foto"
+        case .health:    "Salute"
+        case .chat:      "Chat"
+        case .documents: "Documenti"
+        case .expenses:  "Spese"
+        case .wallet:    "Wallet"
+        case .passwords: "Password"
+        case .location:  "Posizione"
+        case .pets:      "Animali"
+        case .homeItems: "Casa"
+        case .vehicles:  "Garage"
+        case .travel:    "Viaggi"
+        case .assistant: "Assistente"
+        case .news:      "Notizie"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .dashboard: "square.grid.2x2.fill"
+        case .calendar:  "calendar"
+        case .todo:      "checklist"
+        case .shopping:  "cart.fill"
+        case .notes:     "note.text"
+        case .photos:    "photo.stack.fill"
+        case .health:    "heart.fill"
+        case .chat:      "message.fill"
+        case .documents: "doc.text.fill"
+        case .expenses:  "eurosign.circle.fill"
+        case .wallet:    "ticket.fill"
+        case .passwords: "key.fill"
+        case .location:  "location.fill"
+        case .pets:      "pawprint.fill"
+        case .homeItems: "house.fill"
+        case .vehicles:  "car.fill"
+        case .travel:    "suitcase.fill"
+        case .assistant: "sparkles"
+        case .news:      "newspaper.fill"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .dashboard: .orange
+        case .calendar:  .kbCalendar
+        case .todo:      .kbTodo
+        case .shopping:  .kbGrocery
+        case .notes:     .yellow
+        case .photos:    .kbPhotos
+        case .health:    .kbCare
+        case .chat:      .green
+        case .documents: .orange
+        case .expenses:  .mint
+        case .wallet:    .indigo
+        case .passwords: .blue
+        case .location:  .cyan
+        case .pets:      .orange
+        case .homeItems: .brown
+        case .vehicles:  .gray
+        case .travel:    .teal
+        case .assistant: .purple
+        case .news:      .orange
+        }
+    }
+
+    /// La sezione che il contenuto in alto già mostra, da non ripetere.
+    static func shown(by content: KBWidgetContent) -> KBShortcutSection {
+        switch content {
+        case .calendar: .calendar
+        case .todo:     .todo
+        case .grocery:  .shopping
+        case .care, .fitness: .health
+        case .photos:   .photos
+        }
+    }
+
+    /// Senza scelta: sei sezioni d'uso quotidiano, tolta quella già in alto.
+    static func resolved(_ chosen: [KBShortcutEntity]?, content: KBWidgetContent) -> [KBShortcutSection] {
+        if let chosen, !chosen.isEmpty { return Array(chosen.map(\.section).prefix(6)) }
+        let defaults: [KBShortcutSection] = [.calendar, .todo, .shopping, .photos, .health, .chat, .notes]
+        return Array(defaults.filter { $0 != shown(by: content) }.prefix(6))
+    }
+}
+
+/// La scelta multipla con un massimo per formato (`size:`) vale solo per le
+/// entità, non per gli enum: ogni sezione è anche un'entità con l'id del valore.
+struct KBShortcutEntity: AppEntity {
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Sezione"
+    static let defaultQuery = KBShortcutQuery()
+
+    var id: String
+    var section: KBShortcutSection { KBShortcutSection(rawValue: id) ?? .dashboard }
+
+    var displayRepresentation: DisplayRepresentation {
+        KBShortcutSection.caseDisplayRepresentations[section] ?? DisplayRepresentation(title: "\(id)")
+    }
+}
+
+struct KBShortcutQuery: EntityQuery {
+    func entities(for identifiers: [String]) async throws -> [KBShortcutEntity] {
+        identifiers.filter { KBShortcutSection(rawValue: $0) != nil }.map(KBShortcutEntity.init(id:))
+    }
+    func suggestedEntities() async throws -> [KBShortcutEntity] {
+        KBShortcutSection.allCases.map { KBShortcutEntity(id: $0.rawValue) }
+    }
+}
+
 // MARK: - Intent di configurazione (cinque pagine in galleria, «Modifica widget» sceglie cosa mostrare)
 
 enum KBWidgetContent: String, AppEnum, CaseIterable {
@@ -178,6 +325,7 @@ protocol KBContentIntent: WidgetConfigurationIntent {
     var list: TodoListEntity? { get }
     var member: ProfileEntity? { get }
     var album: PhotoAlbumEntity? { get }
+    var shortcuts: [KBShortcutEntity]? { get }
 }
 
 /// Prima pagina (e widget nato dall'icona): parte dal Calendario. Nome e kind invariati, o i widget già sulla Home perdono il legame.
@@ -197,20 +345,44 @@ struct KidBoxWidgetIntent: KBContentIntent {
     @Parameter(title: "Album")
     var album: PhotoAlbumEntity?
 
+    /// Solo nel formato grande: le scorciatoie sotto il contenuto.
+    @Parameter(title: "Scorciatoie", size: [.systemLarge: 6])
+    var shortcuts: [KBShortcutEntity]?
+
     static var parameterSummary: some ParameterSummary {
-        When(\.$content, .equalTo, KBWidgetContent.todo) {
-            Summary("Mostra \(\.$content)") { \.$list }
-        } otherwise: {
-            When(\.$content, .equalTo, KBWidgetContent.care) {
-                Summary("Mostra \(\.$content)") { \.$member }
+        When(widgetFamily: .equalTo, .systemLarge) {
+            When(\.$content, .equalTo, KBWidgetContent.todo) {
+                Summary("Mostra \(\.$content)") { \.$list; \.$shortcuts }
             } otherwise: {
-                When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                When(\.$content, .equalTo, KBWidgetContent.care) {
+                    Summary("Mostra \(\.$content)") { \.$member; \.$shortcuts }
+                } otherwise: {
+                    When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                        Summary("Mostra \(\.$content)") { \.$member; \.$shortcuts }
+                    } otherwise: {
+                        When(\.$content, .equalTo, KBWidgetContent.photos) {
+                            Summary("Mostra \(\.$content)") { \.$album; \.$shortcuts }
+                        } otherwise: {
+                            Summary("Mostra \(\.$content)") { \.$shortcuts }
+                        }
+                    }
+                }
+            }
+        } otherwise: {
+            When(\.$content, .equalTo, KBWidgetContent.todo) {
+                Summary("Mostra \(\.$content)") { \.$list }
+            } otherwise: {
+                When(\.$content, .equalTo, KBWidgetContent.care) {
                     Summary("Mostra \(\.$content)") { \.$member }
                 } otherwise: {
-                    When(\.$content, .equalTo, KBWidgetContent.photos) {
-                        Summary("Mostra \(\.$content)") { \.$album }
+                    When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                        Summary("Mostra \(\.$content)") { \.$member }
                     } otherwise: {
-                        Summary("Mostra \(\.$content)")
+                        When(\.$content, .equalTo, KBWidgetContent.photos) {
+                            Summary("Mostra \(\.$content)") { \.$album }
+                        } otherwise: {
+                            Summary("Mostra \(\.$content)")
+                        }
                     }
                 }
             }
@@ -235,20 +407,44 @@ struct KidBoxTodoWidgetIntent: KBContentIntent {
     @Parameter(title: "Album")
     var album: PhotoAlbumEntity?
 
+    /// Solo nel formato grande: le scorciatoie sotto il contenuto.
+    @Parameter(title: "Scorciatoie", size: [.systemLarge: 6])
+    var shortcuts: [KBShortcutEntity]?
+
     static var parameterSummary: some ParameterSummary {
-        When(\.$content, .equalTo, KBWidgetContent.todo) {
-            Summary("Mostra \(\.$content)") { \.$list }
-        } otherwise: {
-            When(\.$content, .equalTo, KBWidgetContent.care) {
-                Summary("Mostra \(\.$content)") { \.$member }
+        When(widgetFamily: .equalTo, .systemLarge) {
+            When(\.$content, .equalTo, KBWidgetContent.todo) {
+                Summary("Mostra \(\.$content)") { \.$list; \.$shortcuts }
             } otherwise: {
-                When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                When(\.$content, .equalTo, KBWidgetContent.care) {
+                    Summary("Mostra \(\.$content)") { \.$member; \.$shortcuts }
+                } otherwise: {
+                    When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                        Summary("Mostra \(\.$content)") { \.$member; \.$shortcuts }
+                    } otherwise: {
+                        When(\.$content, .equalTo, KBWidgetContent.photos) {
+                            Summary("Mostra \(\.$content)") { \.$album; \.$shortcuts }
+                        } otherwise: {
+                            Summary("Mostra \(\.$content)") { \.$shortcuts }
+                        }
+                    }
+                }
+            }
+        } otherwise: {
+            When(\.$content, .equalTo, KBWidgetContent.todo) {
+                Summary("Mostra \(\.$content)") { \.$list }
+            } otherwise: {
+                When(\.$content, .equalTo, KBWidgetContent.care) {
                     Summary("Mostra \(\.$content)") { \.$member }
                 } otherwise: {
-                    When(\.$content, .equalTo, KBWidgetContent.photos) {
-                        Summary("Mostra \(\.$content)") { \.$album }
+                    When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                        Summary("Mostra \(\.$content)") { \.$member }
                     } otherwise: {
-                        Summary("Mostra \(\.$content)")
+                        When(\.$content, .equalTo, KBWidgetContent.photos) {
+                            Summary("Mostra \(\.$content)") { \.$album }
+                        } otherwise: {
+                            Summary("Mostra \(\.$content)")
+                        }
                     }
                 }
             }
@@ -273,20 +469,44 @@ struct KidBoxGroceryWidgetIntent: KBContentIntent {
     @Parameter(title: "Album")
     var album: PhotoAlbumEntity?
 
+    /// Solo nel formato grande: le scorciatoie sotto il contenuto.
+    @Parameter(title: "Scorciatoie", size: [.systemLarge: 6])
+    var shortcuts: [KBShortcutEntity]?
+
     static var parameterSummary: some ParameterSummary {
-        When(\.$content, .equalTo, KBWidgetContent.todo) {
-            Summary("Mostra \(\.$content)") { \.$list }
-        } otherwise: {
-            When(\.$content, .equalTo, KBWidgetContent.care) {
-                Summary("Mostra \(\.$content)") { \.$member }
+        When(widgetFamily: .equalTo, .systemLarge) {
+            When(\.$content, .equalTo, KBWidgetContent.todo) {
+                Summary("Mostra \(\.$content)") { \.$list; \.$shortcuts }
             } otherwise: {
-                When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                When(\.$content, .equalTo, KBWidgetContent.care) {
+                    Summary("Mostra \(\.$content)") { \.$member; \.$shortcuts }
+                } otherwise: {
+                    When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                        Summary("Mostra \(\.$content)") { \.$member; \.$shortcuts }
+                    } otherwise: {
+                        When(\.$content, .equalTo, KBWidgetContent.photos) {
+                            Summary("Mostra \(\.$content)") { \.$album; \.$shortcuts }
+                        } otherwise: {
+                            Summary("Mostra \(\.$content)") { \.$shortcuts }
+                        }
+                    }
+                }
+            }
+        } otherwise: {
+            When(\.$content, .equalTo, KBWidgetContent.todo) {
+                Summary("Mostra \(\.$content)") { \.$list }
+            } otherwise: {
+                When(\.$content, .equalTo, KBWidgetContent.care) {
                     Summary("Mostra \(\.$content)") { \.$member }
                 } otherwise: {
-                    When(\.$content, .equalTo, KBWidgetContent.photos) {
-                        Summary("Mostra \(\.$content)") { \.$album }
+                    When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                        Summary("Mostra \(\.$content)") { \.$member }
                     } otherwise: {
-                        Summary("Mostra \(\.$content)")
+                        When(\.$content, .equalTo, KBWidgetContent.photos) {
+                            Summary("Mostra \(\.$content)") { \.$album }
+                        } otherwise: {
+                            Summary("Mostra \(\.$content)")
+                        }
                     }
                 }
             }
@@ -311,20 +531,44 @@ struct KidBoxCareWidgetIntent: KBContentIntent {
     @Parameter(title: "Album")
     var album: PhotoAlbumEntity?
 
+    /// Solo nel formato grande: le scorciatoie sotto il contenuto.
+    @Parameter(title: "Scorciatoie", size: [.systemLarge: 6])
+    var shortcuts: [KBShortcutEntity]?
+
     static var parameterSummary: some ParameterSummary {
-        When(\.$content, .equalTo, KBWidgetContent.todo) {
-            Summary("Mostra \(\.$content)") { \.$list }
-        } otherwise: {
-            When(\.$content, .equalTo, KBWidgetContent.care) {
-                Summary("Mostra \(\.$content)") { \.$member }
+        When(widgetFamily: .equalTo, .systemLarge) {
+            When(\.$content, .equalTo, KBWidgetContent.todo) {
+                Summary("Mostra \(\.$content)") { \.$list; \.$shortcuts }
             } otherwise: {
-                When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                When(\.$content, .equalTo, KBWidgetContent.care) {
+                    Summary("Mostra \(\.$content)") { \.$member; \.$shortcuts }
+                } otherwise: {
+                    When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                        Summary("Mostra \(\.$content)") { \.$member; \.$shortcuts }
+                    } otherwise: {
+                        When(\.$content, .equalTo, KBWidgetContent.photos) {
+                            Summary("Mostra \(\.$content)") { \.$album; \.$shortcuts }
+                        } otherwise: {
+                            Summary("Mostra \(\.$content)") { \.$shortcuts }
+                        }
+                    }
+                }
+            }
+        } otherwise: {
+            When(\.$content, .equalTo, KBWidgetContent.todo) {
+                Summary("Mostra \(\.$content)") { \.$list }
+            } otherwise: {
+                When(\.$content, .equalTo, KBWidgetContent.care) {
                     Summary("Mostra \(\.$content)") { \.$member }
                 } otherwise: {
-                    When(\.$content, .equalTo, KBWidgetContent.photos) {
-                        Summary("Mostra \(\.$content)") { \.$album }
+                    When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                        Summary("Mostra \(\.$content)") { \.$member }
                     } otherwise: {
-                        Summary("Mostra \(\.$content)")
+                        When(\.$content, .equalTo, KBWidgetContent.photos) {
+                            Summary("Mostra \(\.$content)") { \.$album }
+                        } otherwise: {
+                            Summary("Mostra \(\.$content)")
+                        }
                     }
                 }
             }
@@ -349,20 +593,44 @@ struct KidBoxPhotosWidgetIntent: KBContentIntent {
     @Parameter(title: "Album")
     var album: PhotoAlbumEntity?
 
+    /// Solo nel formato grande: le scorciatoie sotto il contenuto.
+    @Parameter(title: "Scorciatoie", size: [.systemLarge: 6])
+    var shortcuts: [KBShortcutEntity]?
+
     static var parameterSummary: some ParameterSummary {
-        When(\.$content, .equalTo, KBWidgetContent.todo) {
-            Summary("Mostra \(\.$content)") { \.$list }
-        } otherwise: {
-            When(\.$content, .equalTo, KBWidgetContent.care) {
-                Summary("Mostra \(\.$content)") { \.$member }
+        When(widgetFamily: .equalTo, .systemLarge) {
+            When(\.$content, .equalTo, KBWidgetContent.todo) {
+                Summary("Mostra \(\.$content)") { \.$list; \.$shortcuts }
             } otherwise: {
-                When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                When(\.$content, .equalTo, KBWidgetContent.care) {
+                    Summary("Mostra \(\.$content)") { \.$member; \.$shortcuts }
+                } otherwise: {
+                    When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                        Summary("Mostra \(\.$content)") { \.$member; \.$shortcuts }
+                    } otherwise: {
+                        When(\.$content, .equalTo, KBWidgetContent.photos) {
+                            Summary("Mostra \(\.$content)") { \.$album; \.$shortcuts }
+                        } otherwise: {
+                            Summary("Mostra \(\.$content)") { \.$shortcuts }
+                        }
+                    }
+                }
+            }
+        } otherwise: {
+            When(\.$content, .equalTo, KBWidgetContent.todo) {
+                Summary("Mostra \(\.$content)") { \.$list }
+            } otherwise: {
+                When(\.$content, .equalTo, KBWidgetContent.care) {
                     Summary("Mostra \(\.$content)") { \.$member }
                 } otherwise: {
-                    When(\.$content, .equalTo, KBWidgetContent.photos) {
-                        Summary("Mostra \(\.$content)") { \.$album }
+                    When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                        Summary("Mostra \(\.$content)") { \.$member }
                     } otherwise: {
-                        Summary("Mostra \(\.$content)")
+                        When(\.$content, .equalTo, KBWidgetContent.photos) {
+                            Summary("Mostra \(\.$content)") { \.$album }
+                        } otherwise: {
+                            Summary("Mostra \(\.$content)")
+                        }
                     }
                 }
             }
@@ -387,20 +655,44 @@ struct KidBoxFitnessWidgetIntent: KBContentIntent {
     @Parameter(title: "Album")
     var album: PhotoAlbumEntity?
 
+    /// Solo nel formato grande: le scorciatoie sotto il contenuto.
+    @Parameter(title: "Scorciatoie", size: [.systemLarge: 6])
+    var shortcuts: [KBShortcutEntity]?
+
     static var parameterSummary: some ParameterSummary {
-        When(\.$content, .equalTo, KBWidgetContent.todo) {
-            Summary("Mostra \(\.$content)") { \.$list }
-        } otherwise: {
-            When(\.$content, .equalTo, KBWidgetContent.care) {
-                Summary("Mostra \(\.$content)") { \.$member }
+        When(widgetFamily: .equalTo, .systemLarge) {
+            When(\.$content, .equalTo, KBWidgetContent.todo) {
+                Summary("Mostra \(\.$content)") { \.$list; \.$shortcuts }
             } otherwise: {
-                When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                When(\.$content, .equalTo, KBWidgetContent.care) {
+                    Summary("Mostra \(\.$content)") { \.$member; \.$shortcuts }
+                } otherwise: {
+                    When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                        Summary("Mostra \(\.$content)") { \.$member; \.$shortcuts }
+                    } otherwise: {
+                        When(\.$content, .equalTo, KBWidgetContent.photos) {
+                            Summary("Mostra \(\.$content)") { \.$album; \.$shortcuts }
+                        } otherwise: {
+                            Summary("Mostra \(\.$content)") { \.$shortcuts }
+                        }
+                    }
+                }
+            }
+        } otherwise: {
+            When(\.$content, .equalTo, KBWidgetContent.todo) {
+                Summary("Mostra \(\.$content)") { \.$list }
+            } otherwise: {
+                When(\.$content, .equalTo, KBWidgetContent.care) {
                     Summary("Mostra \(\.$content)") { \.$member }
                 } otherwise: {
-                    When(\.$content, .equalTo, KBWidgetContent.photos) {
-                        Summary("Mostra \(\.$content)") { \.$album }
+                    When(\.$content, .equalTo, KBWidgetContent.fitness) {
+                        Summary("Mostra \(\.$content)") { \.$member }
                     } otherwise: {
-                        Summary("Mostra \(\.$content)")
+                        When(\.$content, .equalTo, KBWidgetContent.photos) {
+                            Summary("Mostra \(\.$content)") { \.$album }
+                        } otherwise: {
+                            Summary("Mostra \(\.$content)")
+                        }
                     }
                 }
             }
@@ -449,5 +741,57 @@ struct KBWidgetCountColumn: View {
                 .minimumScaleFactor(0.8)
         }
         .frame(maxHeight: .infinity, alignment: .leading)
+    }
+}
+
+extension View {
+    /// Il fondo del widget, tranne quando la vista è un pezzo del formato grande.
+    @ViewBuilder
+    func kbWidgetBackground(_ embedded: Bool) -> some View {
+        if embedded { self } else { self.containerBackground(.background, for: .widget) }
+    }
+}
+
+// MARK: - Griglia di scorciatoie (formato grande)
+
+/// Due file da tre: icona sul quadrato del colore della sezione, nome sotto.
+/// Ogni casella è un `Link`, che nel widget vale più del `widgetURL` del contenuto.
+struct KBShortcutGrid: View {
+    let sections: [KBShortcutSection]
+
+    var body: some View {
+        let rows = stride(from: 0, to: sections.count, by: 3).map { Array(sections[$0..<min($0 + 3, sections.count)]) }
+        VStack(spacing: 10) {
+            ForEach(rows.indices, id: \.self) { r in
+                HStack(spacing: 10) {
+                    ForEach(rows[r], id: \.self) { tile($0) }
+                    // Caselle vuote: tengono la misura senza farsi vedere.
+                    ForEach(0..<(3 - rows[r].count), id: \.self) { _ in
+                        Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+                    }
+                }
+            }
+        }
+    }
+
+    private func tile(_ section: KBShortcutSection) -> some View {
+        Link(destination: URL(string: "kidbox://widget/\(section.rawValue)")!) {
+            VStack(spacing: 4) {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(section.tint.gradient)
+                    .frame(height: 48)
+                    .overlay {
+                        Image(systemName: section.systemImage)
+                            .font(.system(size: 21, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
+                Text(section.label)
+                    .font(.system(.caption2, design: .rounded).weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity)
+        }
     }
 }

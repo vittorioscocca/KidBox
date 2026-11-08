@@ -18,6 +18,7 @@ struct KBHomeEntry: TimelineEntry {
     let listId: String?
     let memberId: String?
     var albumId: String? = nil
+    var shortcuts: [KBShortcutEntity]? = nil
 }
 
 struct KBHomeProvider<I: KBContentIntent>: AppIntentTimelineProvider {
@@ -66,27 +67,50 @@ struct KBHomeProvider<I: KBContentIntent>: AppIntentTimelineProvider {
 
     private func entry(_ c: I, at date: Date, snapshot: KBWidgetSnapshot?) -> KBHomeEntry {
         .init(date: date, snapshot: snapshot, content: c.content, listId: c.list?.id,
-              memberId: c.member?.id, albumId: c.album?.id)
+              memberId: c.member?.id, albumId: c.album?.id, shortcuts: c.shortcuts)
     }
 }
 
 struct KBHomeWidgetView: View {
     let entry: KBHomeEntry
 
+    @Environment(\.widgetFamily) private var family
+
     var body: some View {
+        if family == .systemLarge {
+            largeBody
+        } else {
+            content(embedded: false)
+        }
+    }
+
+    /// Grande: sopra lo stesso contenuto del largo, sotto le scorciatoie.
+    private var largeBody: some View {
+        VStack(spacing: 14) {
+            content(embedded: true)
+                .frame(maxHeight: .infinity)
+            if entry.snapshot != nil {
+                KBShortcutGrid(sections: KBShortcutSection.resolved(entry.shortcuts, content: entry.content))
+            }
+        }
+        .containerBackground(.background, for: .widget)
+    }
+
+    @ViewBuilder
+    private func content(embedded: Bool) -> some View {
         switch entry.content {
         case .calendar:
-            KBCalendarWidgetView(entry: .init(date: entry.date, snapshot: entry.snapshot))
+            KBCalendarWidgetView(entry: .init(date: entry.date, snapshot: entry.snapshot), embedded: embedded)
         case .todo:
-            KBTodoWidgetView(entry: .init(date: entry.date, snapshot: entry.snapshot, listId: entry.listId))
+            KBTodoWidgetView(entry: .init(date: entry.date, snapshot: entry.snapshot, listId: entry.listId), embedded: embedded)
         case .grocery:
-            KBGroceryWidgetView(entry: .init(date: entry.date, snapshot: entry.snapshot))
+            KBGroceryWidgetView(entry: .init(date: entry.date, snapshot: entry.snapshot), embedded: embedded)
         case .care:
-            KBCareWidgetView(entry: .init(date: entry.date, snapshot: entry.snapshot, memberId: entry.memberId))
+            KBCareWidgetView(entry: .init(date: entry.date, snapshot: entry.snapshot, memberId: entry.memberId), embedded: embedded)
         case .fitness:
-            KBFitnessWidgetView(entry: .init(date: entry.date, snapshot: entry.snapshot, memberId: entry.memberId))
+            KBFitnessWidgetView(entry: .init(date: entry.date, snapshot: entry.snapshot, memberId: entry.memberId), embedded: embedded)
         case .photos:
-            KBPhotosWidgetView(date: entry.date, snapshot: entry.snapshot, albumId: entry.albumId)
+            KBPhotosWidgetView(date: entry.date, snapshot: entry.snapshot, albumId: entry.albumId, embedded: embedded)
         }
     }
 }
@@ -109,7 +133,7 @@ private func kbHomeConfiguration<I: KBContentIntent>(
     }
     .configurationDisplayName(Text(name))
     .description(Text(description))
-    .supportedFamilies([.systemSmall, .systemMedium])
+    .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
 }
 
 struct KBHomeWidget: Widget {

@@ -31,10 +31,13 @@ struct KBCalendarWidgetView: View {
         return entry.snapshot?.events.first { $0.start >= end }
     }
 
+    /// Dentro il formato grande: disegna il largo senza fondo proprio.
+    var embedded = false
+
     @Environment(\.widgetFamily) private var family
 
     var body: some View {
-        if family == .systemMedium { mediumBody } else { smallBody }
+        if family == .systemMedium || embedded { mediumBody } else { smallBody }
     }
 
     @ViewBuilder
@@ -231,6 +234,6 @@ extension KBCalendarWidgetView {
             mediumRight
         }
         .widgetURL(URL(string: "kidbox://widget/calendar"))
-        .containerBackground(.background, for: .widget)
+        .kbWidgetBackground(embedded)
     }
 }

@@ -86,10 +86,13 @@ struct KBCareWidgetView: View {
         .buttonStyle(.plain)
     }
 
+    /// Dentro il formato grande: disegna il largo senza fondo proprio.
+    var embedded = false
+
     @Environment(\.widgetFamily) private var family
 
     var body: some View {
-        if family == .systemMedium { mediumBody } else { smallBody }
+        if family == .systemMedium || embedded { mediumBody } else { smallBody }
     }
 
     @ViewBuilder
@@ -235,6 +238,6 @@ extension KBCareWidgetView {
             }
         }
         .widgetURL(deepLink)
-        .containerBackground(.background, for: .widget)
+        .kbWidgetBackground(embedded)
     }
 }

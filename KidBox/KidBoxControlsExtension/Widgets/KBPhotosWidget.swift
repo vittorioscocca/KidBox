@@ -53,8 +53,58 @@ struct KBPhotosWidgetView: View {
         return nil
     }
 
+    /// Dentro il formato grande: la foto in un riquadro arrotondato, non come fondo.
+    var embedded = false
+
+    private var caption: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 0) {
+                if let albumTitle {
+                    Text(albumTitle)
+                        .font(.system(.caption, design: .rounded).weight(.bold))
+                        .lineLimit(1)
+                }
+                if let current {
+                    Text(current.photo.takenAt, format: .dateTime.day().month(.abbreviated).year())
+                        .font(.system(.caption2, design: .rounded).weight(.semibold))
+                }
+            }
+            .foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.6), radius: 3)
+            Spacer(minLength: 0)
+        }
+    }
+
+    @ViewBuilder
+    private var embeddedBody: some View {
+        if let current {
+            Color.clear
+                .overlay {
+                    Image(uiImage: current.image)
+                        .resizable()
+                        .scaledToFill()
+                }
+                .overlay {
+                    LinearGradient(colors: [.clear, .black.opacity(0.45)],
+                                   startPoint: .center, endPoint: .bottom)
+                }
+                .overlay(alignment: .bottomLeading) { caption.padding(10) }
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .widgetURL(deepLink)
+        } else {
+            KBWidgetMessage(systemImage: "photo.on.rectangle",
+                            text: (snapshot?.photos ?? []).isEmpty && albumId == nil
+                                ? "Apri KidBox per preparare le foto"
+                                : "Nessuna foto in questo album",
+                            color: .kbPhotos)
+                .widgetURL(deepLink)
+        }
+    }
+
     var body: some View {
-        if snapshot == nil {
+        if embedded {
+            embeddedBody
+        } else if snapshot == nil {
             KBWidgetSignedOut()
                 .containerBackground(.background, for: .widget)
         } else if let current {

@@ -1265,6 +1265,10 @@ final class AppCoordinator: ObservableObject {
             sidebarSection = section
         } else if section == .news {
             selectRootTab(.news)
+        } else if section == .dashboard {
+            // Scorciatoia «Home» del widget grande: la Home è la radice, non una pagina da aprire.
+            path.removeAll()
+            rootTab = .home
         } else {
             path.removeAll()
             rootTab = .home
