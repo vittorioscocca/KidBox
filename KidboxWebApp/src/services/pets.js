@@ -157,8 +157,9 @@ export async function savePet({ familyId, userId, pet }) {
     data.createdAt = serverTimestamp();
     data.createdBy = userId;
   }
-  const sealed = await sealForWrite("pets", data, await sectionWriteKey(familyId));
-  await setDoc(doc(petsCol(familyId), id), sealed, { merge: true });
+  const ref = doc(petsCol(familyId), id);
+  const sealed = await sealForWrite("pets", data, await sectionWriteKey(familyId), ref);
+  await setDoc(ref, sealed, { merge: true });
   // Solo alla creazione: `content_created` misura cosa nasce, non quante
   // volte lo si ritocca. Stesso tipo che usano iOS e Android.
   if (isNew) contentCreated("pets");
@@ -195,8 +196,9 @@ export async function saveEvent({ familyId, userId, event }) {
     data.createdAt = serverTimestamp();
     data.createdBy = userId;
   }
-  const sealed = await sealForWrite("petEvents", data, await sectionWriteKey(familyId));
-  await setDoc(doc(eventsCol(familyId), id), sealed, { merge: true });
+  const ref = doc(eventsCol(familyId), id);
+  const sealed = await sealForWrite("petEvents", data, await sectionWriteKey(familyId), ref);
+  await setDoc(ref, sealed, { merge: true });
   // Solo alla creazione: `content_created` misura cosa nasce, non quante
   // volte lo si ritocca. Stesso tipo che usano iOS e Android.
   if (isNew) contentCreated("pets");

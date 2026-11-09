@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   collection,
   doc,
-  onSnapshot,
   query,
   serverTimestamp,
   setDoc,
@@ -46,6 +45,7 @@ import {
 } from "../calendarUtils";
 import "./Calendario.css";
 import { useOpenParam } from "../hooks/useOpenParam";
+import { listenSecure } from "../services/sectionCrypto";
 
 const VIEWS = ["day", "week", "month", "year"];
 /**
@@ -577,12 +577,16 @@ export default function Calendario() {
     );
     // Come il predicato `isVisible(to:)` di CalendarView su iOS: gli eventi
     // «Solo io» o «Membri selezionati» di un altro membro non si mostrano.
+    // Titolo, note e luogo possono stare in `secure`: arrivano già risolti
+    // (e riaperti, se la famiglia ha un link iCal attivo).
     const uid = user?.uid;
-    return onSnapshot(
+    return listenSecure(
       q,
-      (snap) =>
+      "calendarEvents",
+      currentFamilyId,
+      (docs) =>
         setEvents(
-          snap.docs
+          docs
             .map((d) => ({ id: d.id, ...d.data() }))
             .filter((e) => isEventVisibleTo(e, uid))
         ),

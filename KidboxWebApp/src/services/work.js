@@ -30,6 +30,7 @@ import {
 import { db } from "../firebase";
 import { loadFamilyKey } from "./familyKey";
 import { decryptString, encryptString } from "./noteCrypto";
+import { sealDocWrite } from "./sectionCrypto";
 import { askAssistant } from "./aiChat";
 import { ensureFolder } from "./attachments";
 import { fetchDocumentBlob, softDeleteDocument, updateDocumentVisibility, uploadDocument } from "./documents";
@@ -434,7 +435,8 @@ async function writeEvent({ familyId, userId, eventId, title, span, isNew }) {
     payload.createdAt = serverTimestamp();
     payload.createdBy = userId;
   }
-  await setDoc(doc(eventsCol(familyId), eventId), payload, { merge: true });
+  const ref = doc(eventsCol(familyId), eventId);
+  await setDoc(ref, await sealDocWrite("calendarEvents", ref, payload), { merge: true });
 }
 
 async function removeEvent({ familyId, userId, eventId }) {

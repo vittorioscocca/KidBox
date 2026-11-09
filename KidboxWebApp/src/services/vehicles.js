@@ -191,8 +191,9 @@ export async function saveVehicle({ familyId, userId, vehicle }) {
     data.createdAt = serverTimestamp();
     data.createdBy = userId;
   }
-  const sealed = await sealForWrite("vehicles", data, await sectionWriteKey(familyId));
-  await setDoc(doc(vehiclesCol(familyId), id), sealed, { merge: true });
+  const ref = doc(vehiclesCol(familyId), id);
+  const sealed = await sealForWrite("vehicles", data, await sectionWriteKey(familyId), ref);
+  await setDoc(ref, sealed, { merge: true });
   // Solo alla creazione: `content_created` misura cosa nasce, non quante
   // volte lo si ritocca. Stesso tipo che usano iOS e Android.
   if (isNew) contentCreated("home_vehicles");
@@ -256,9 +257,8 @@ export async function saveVehicleEvent({ familyId, userId, event }) {
     data.createdBy = userId;
   }
 
-  batch.set(doc(eventsCol(familyId), id), await sealForWrite("vehicleEvents", data, familyKey), {
-    merge: true,
-  });
+  const ref = doc(eventsCol(familyId), id);
+  batch.set(ref, await sealForWrite("vehicleEvents", data, familyKey, ref), { merge: true });
   await batch.commit();
   // Solo alla creazione: `content_created` misura cosa nasce, non quante
   // volte lo si ritocca. Stesso tipo che usano iOS e Android.

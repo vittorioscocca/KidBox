@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Timestamp, doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { sealDocWrite } from "../services/sectionCrypto";
 import { db } from "../firebase";
 import { useAuth } from "../AuthContext";
 import { useFamilyMembers } from "../hooks/useFamilyMembers";
@@ -115,9 +116,8 @@ export default function EventEditModal({
     }
 
     try {
-      await setDoc(doc(db, "families", familyId, "calendarEvents", id), payload, {
-        merge: true,
-      });
+      const ref = doc(db, "families", familyId, "calendarEvents", id);
+      await setDoc(ref, await sealDocWrite("calendarEvents", ref, payload), { merge: true });
       onClose();
     } catch (err) {
       setError(err.message);

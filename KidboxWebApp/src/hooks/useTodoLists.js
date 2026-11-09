@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { db } from "../firebase";
+import { listenSecure } from "../services/sectionCrypto";
 
 export function todoListsCol(familyId) {
   return collection(db, "families", familyId, "todoLists");
@@ -19,10 +20,10 @@ export function useTodoLists(familyId) {
       todoListsCol(familyId),
       where("isDeleted", "==", false)
     );
-    const unsub = onSnapshot(q, (snap) =>
-      setLists(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    // Il nome può stare in `secure`: arriva già risolto.
+    return listenSecure(q, "todoLists", familyId, (docs) =>
+      setLists(docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    return unsub;
   }, [familyId]);
 
   return lists;

@@ -364,8 +364,9 @@ export async function saveVisit({ familyId, userId, childId, visit }) {
     data.createdAt = serverTimestamp();
     data.createdBy = userId;
   }
-  const sealed = await sealForWrite("medicalVisits", data, await sectionWriteKey(familyId));
-  await setDoc(doc(visitsCol(familyId), id), sealed, { merge: true });
+  const ref = doc(visitsCol(familyId), id);
+  const sealed = await sealForWrite("medicalVisits", data, await sectionWriteKey(familyId), ref);
+  await setDoc(ref, sealed, { merge: true });
   return id;
 }
 
@@ -443,8 +444,9 @@ export async function saveExam({ familyId, userId, childId, exam }) {
     data.createdAt = serverTimestamp();
     data.createdBy = userId;
   }
-  const sealed = await sealForWrite("medicalExams", data, await sectionWriteKey(familyId));
-  await setDoc(doc(examsCol(familyId), id), sealed, { merge: true });
+  const ref = doc(examsCol(familyId), id);
+  const sealed = await sealForWrite("medicalExams", data, await sectionWriteKey(familyId), ref);
+  await setDoc(ref, sealed, { merge: true });
   return id;
 }
 
@@ -537,8 +539,9 @@ export async function saveTreatment({ familyId, userId, childId, treatment }) {
     data.createdAt = serverTimestamp();
     data.createdBy = userId;
   }
-  const sealed = await sealForWrite("treatments", data, await sectionWriteKey(familyId));
-  await setDoc(doc(treatmentsCol(familyId), id), sealed, { merge: true });
+  const ref = doc(treatmentsCol(familyId), id);
+  const sealed = await sealForWrite("treatments", data, await sectionWriteKey(familyId), ref);
+  await setDoc(ref, sealed, { merge: true });
   return id;
 }
 
@@ -695,8 +698,9 @@ export async function saveVaccine({ familyId, userId, childId, vaccine }) {
     data.createdAt = serverTimestamp();
     data.createdBy = userId;
   }
-  const sealed = await sealForWrite("vaccines", data, await sectionWriteKey(familyId));
-  await setDoc(doc(vaccinesCol(familyId), id), sealed, { merge: true });
+  const ref = doc(vaccinesCol(familyId), id);
+  const sealed = await sealForWrite("vaccines", data, await sectionWriteKey(familyId), ref);
+  await setDoc(ref, sealed, { merge: true });
   return id;
 }
 
@@ -799,6 +803,7 @@ export function listenPediatricProfile({ familyId, childId, onChange, onError })
 export async function savePediatricProfile({ familyId, userId, childId, profile }) {
   const officeHours = profile.doctorOfficeHours || [];
   const contacts = profile.emergencyContacts || [];
+  const ref = doc(profilesCol(familyId), childId);
   const data = await sealForWrite(
     "pediatricProfiles",
     {
@@ -819,9 +824,10 @@ export async function savePediatricProfile({ familyId, userId, childId, profile 
       updatedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
     },
-    await sectionWriteKey(familyId)
+    await sectionWriteKey(familyId),
+    ref
   );
-  await setDoc(doc(profilesCol(familyId), childId), data, { merge: true });
+  await setDoc(ref, data, { merge: true });
 }
 
 /* ── Timeline ────────────────────────────────────────────────────────────── */

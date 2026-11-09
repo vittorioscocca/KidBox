@@ -71,8 +71,9 @@ export async function syncLinkedExpense({
     // li tocca, e su una spesa nuova li mette il ramo qui sotto.
     ...(isNew ? { createdByUid: userId, createdAt: serverTimestamp() } : {}),
   };
-  const sealed = await sealForWrite("expenses", data, await sectionWriteKey(familyId));
-  batch.set(doc(expensesCol(familyId), id), sealed, { merge: true });
+  const ref = doc(expensesCol(familyId), id);
+  const sealed = await sealForWrite("expenses", data, await sectionWriteKey(familyId), ref);
+  batch.set(ref, sealed, { merge: true });
 
   return id;
 }

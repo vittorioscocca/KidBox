@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { sealDocWrite } from "../services/sectionCrypto";
 import { todosCol } from "../hooks/useTodos";
 import { useAuth } from "../AuthContext";
 import { useFamilyMembers } from "../hooks/useFamilyMembers";
@@ -129,7 +130,8 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
         payload.createdBy = user.uid;
         payload.createdAt = serverTimestamp();
       }
-      await setDoc(doc(todosCol(familyId), id), payload, { merge: true });
+      const ref = doc(todosCol(familyId), id);
+      await setDoc(ref, await sealDocWrite("todos", ref, payload), { merge: true });
       onClose();
     } catch (err) {
       setError(err.message);

@@ -122,7 +122,9 @@ export async function saveShoppingTrip({
       updatedAt: serverTimestamp(),
     };
     const familyKey = await sectionWriteKey(familyId);
-    batch.set(doc(expensesCol(familyId), expenseId), await sealForWrite("expenses", expense, familyKey));
+    // `batch.set` senza merge: la spesa è nuova e si scrive per intero.
+    const ref = doc(expensesCol(familyId), expenseId);
+    batch.set(ref, await sealForWrite("expenses", expense, familyKey, ref, { merge: false }));
   }
 
   batch.set(doc(tripsCol(familyId), tripId), {

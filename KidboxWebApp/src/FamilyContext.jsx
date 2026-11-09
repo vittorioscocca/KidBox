@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { collection, doc, getDoc, getDocs, onSnapshot } from "firebase/firestore";
 import { useAuth } from "./AuthContext";
 import { db } from "./firebase";
+import { setCalendarExported } from "./services/sectionCrypto";
 
 const FamilyContext = createContext(null);
 
@@ -35,6 +36,7 @@ export function FamilyProvider({ children }) {
             try {
               const familySnap = await getDoc(doc(db, "families", m.id));
               if (!familySnap.exists()) return null;
+              setCalendarExported(m.id, familySnap.data()?.calendarExported);
               const membersSnap = await getDocs(
                 collection(db, "families", m.id, "members")
               );
@@ -79,6 +81,8 @@ export function FamilyProvider({ children }) {
       (snap) => {
         if (!snap.exists()) return;
         const data = snap.data();
+        // Con un link iCal attivo gli eventi del calendario restano in chiaro.
+        setCalendarExported(snap.id, data?.calendarExported);
         setFamilies((prev) =>
           prev?.map((f) => (f.id === snap.id ? { ...f, ...data } : f)) ?? prev
         );

@@ -163,8 +163,9 @@ export default function Spese() {
       payload.createdAt = serverTimestamp();
     }
     try {
-      const sealed = await sealForWrite("expenses", payload, await sectionWriteKey(currentFamilyId));
-      await setDoc(doc(expensesCol(currentFamilyId), id), sealed, { merge: true });
+      const ref = doc(expensesCol(currentFamilyId), id);
+      const sealed = await sealForWrite("expenses", payload, await sectionWriteKey(currentFamilyId), ref);
+      await setDoc(ref, sealed, { merge: true });
       setEditing(null);
       setCreating(false);
     } catch (err) {

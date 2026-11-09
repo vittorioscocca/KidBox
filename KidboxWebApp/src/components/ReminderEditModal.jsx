@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { sealDocWrite } from "../services/sectionCrypto";
 import { todosCol } from "../hooks/useTodos";
 import { todoListsCol } from "../hooks/useTodoLists";
 import { useAuth } from "../AuthContext";
@@ -81,7 +82,8 @@ export default function ReminderEditModal({
         // Senza `listId` il to-do esisterebbe ma non comparirebbe in nessuna
         // lista: è la trappola degli orfani già nota.
         const newListId = crypto.randomUUID();
-        await setDoc(doc(todoListsCol(familyId), newListId), {
+        const listRef = doc(todoListsCol(familyId), newListId);
+        await setDoc(listRef, await sealDocWrite("todoLists", listRef, {
           id: newListId,
           familyId,
           childId: childId || "",
@@ -90,7 +92,7 @@ export default function ReminderEditModal({
           createdBy: user.uid,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-        });
+        }, { merge: false }));
         targetListId = newListId;
       }
 
@@ -117,7 +119,8 @@ export default function ReminderEditModal({
         payload.createdBy = user.uid;
         payload.createdAt = serverTimestamp();
       }
-      await setDoc(doc(todosCol(familyId), id), payload, { merge: true });
+      const ref = doc(todosCol(familyId), id);
+      await setDoc(ref, await sealDocWrite("todos", ref, payload), { merge: true });
       onClose();
     } catch (err) {
       setError(err.message);

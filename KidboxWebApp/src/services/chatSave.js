@@ -12,6 +12,7 @@ import { Timestamp, doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { getBytes, ref as storageRef } from "firebase/storage";
 import { db, storage } from "../firebase";
 import { encryptString } from "./noteCrypto";
+import { sealDocWrite } from "./sectionCrypto";
 import { loadFamilyKey } from "./familyKey";
 import { uploadDocument } from "./documents";
 import { uploadPhoto } from "./photos";
@@ -110,7 +111,8 @@ export async function saveAsTodo({ familyId, uid, title, defaultListName }) {
   // Senza lista il to-do non sarebbe visibile da nessuna parte: si sceglie la
   // prima lista della famiglia (o se ne crea una). Vedi `resolveTodoListId`.
   const listId = await resolveTodoListId({ familyId, uid, defaultListName });
-  await setDoc(doc(db, "families", familyId, "todos", id), {
+  const ref = doc(db, "families", familyId, "todos", id);
+  await setDoc(ref, await sealDocWrite("todos", ref, {
     childId: "",
     title,
     listId,
@@ -128,7 +130,7 @@ export async function saveAsTodo({ familyId, uid, title, defaultListName }) {
     createdAt: serverTimestamp(),
     updatedBy: uid,
     updatedAt: serverTimestamp(),
-  });
+  }, { merge: false }));
   return id;
 }
 
@@ -136,7 +138,8 @@ export async function saveAsEvent({ familyId, uid, title, startAt }) {
   const id = crypto.randomUUID();
   const start = startAt || new Date();
   const end = new Date(start.getTime() + 60 * 60 * 1000);
-  await setDoc(doc(db, "families", familyId, "calendarEvents", id), {
+  const ref = doc(db, "families", familyId, "calendarEvents", id);
+  await setDoc(ref, await sealDocWrite("calendarEvents", ref, {
     id,
     familyId,
     title,
@@ -154,7 +157,7 @@ export async function saveAsEvent({ familyId, uid, title, startAt }) {
     createdBy: uid,
     updatedAt: serverTimestamp(),
     updatedBy: uid,
-  });
+  }, { merge: false }));
   return id;
 }
 

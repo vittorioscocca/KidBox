@@ -21,6 +21,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { encryptString } from "./noteCrypto";
+import { sealDocWrite } from "./sectionCrypto";
 import { resolveTodoListId } from "./todoTarget";
 import { createRequest } from "./requests";
 
@@ -157,7 +158,8 @@ async function addTodo({ familyId, uid, title, notes, dueAt, childId, listId, de
     listId,
     defaultListName,
   });
-  await setDoc(doc(col(familyId, "todos"), crypto.randomUUID()), {
+  const todoRef = doc(col(familyId, "todos"), crypto.randomUUID());
+  await setDoc(todoRef, await sealDocWrite("todos", todoRef, {
     childId: childId ?? "",
     title,
     listId: targetListId,
@@ -175,7 +177,7 @@ async function addTodo({ familyId, uid, title, notes, dueAt, childId, listId, de
     createdAt: serverTimestamp(),
     updatedBy: uid,
     updatedAt: serverTimestamp(),
-  });
+  }, { merge: false }));
 }
 
 async function addEvent({ familyId, uid, title, start, end, isAllDay, notes }) {
@@ -183,7 +185,8 @@ async function addEvent({ familyId, uid, title, start, end, isAllDay, notes }) {
   // Fine mai prima dell'inizio: se il modello la omette o la sbaglia, si usa
   // l'inizio, come fa la schermata del calendario.
   const endDate = end && end >= start ? end : start;
-  await setDoc(doc(col(familyId, "calendarEvents"), id), {
+  const eventRef = doc(col(familyId, "calendarEvents"), id);
+  await setDoc(eventRef, await sealDocWrite("calendarEvents", eventRef, {
     id,
     familyId,
     title,
@@ -201,7 +204,7 @@ async function addEvent({ familyId, uid, title, start, end, isAllDay, notes }) {
     createdAt: serverTimestamp(),
     updatedBy: uid,
     updatedAt: serverTimestamp(),
-  });
+  }, { merge: false }));
 }
 
 async function addNote({ familyId, uid, userName, familyKey, title, body }) {

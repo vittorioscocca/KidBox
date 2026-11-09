@@ -17,6 +17,7 @@
  */
 import { getDocs, query, where, doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { todoListsCol } from "../hooks/useTodoLists";
+import { openRows, sealDocWrite } from "./sectionCrypto";
 
 export async function resolveTodoListId({
   familyId,
@@ -33,18 +34,28 @@ export async function resolveTodoListId({
   // Ordine per nome e non quello di arrivo: la "prima lista" deve essere la
   // stessa a ogni chiamata, altrimenti due to-do aggiunti di fila dallo stesso
   // assistente finiscono in liste diverse.
-  const existing = snap.docs
-    .map((d) => ({ id: d.id, name: (d.data().name || "").toString() }))
+  // Nomi risolti (chiaro o `secure`): l'ordine deve essere lo stesso degli altri client.
+  const existing = (await openRows("todoLists", familyId, snap.docs))
+    .map((d) => ({ id: d.id, name: (d.name || "").toString() }))
     .sort((a, b) => a.name.localeCompare(b.name));
   if (existing.length > 0) return existing[0].id;
 
   const id = crypto.randomUUID();
-  await setDoc(doc(todoListsCol(familyId), id), {
-    childId: childId ?? "",
-    name: defaultListName || "Generale",
-    isDeleted: false,
-    updatedBy: uid,
-    updatedAt: serverTimestamp(),
-  });
+  const ref = doc(todoListsCol(familyId), id);
+  await setDoc(
+    ref,
+    await sealDocWrite(
+      "todoLists",
+      ref,
+      {
+        childId: childId ?? "",
+        name: defaultListName || "Generale",
+        isDeleted: false,
+        updatedBy: uid,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: false }
+    )
+  );
   return id;
 }

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { isVisibleTo } from "../visibility";
+import { listenSecure } from "../services/sectionCrypto";
 
 export function todosCol(familyId) {
   return collection(db, "families", familyId, "todos");
@@ -29,17 +30,19 @@ export function useTodos(familyId, uid) {
       todosCol(familyId),
       where("isDeleted", "==", false)
     );
-    const unsub = onSnapshot(
+    // Titolo e note possono stare in `secure`: arrivano già risolti.
+    return listenSecure(
       q,
-      (snap) =>
+      "todos",
+      familyId,
+      (docs) =>
         setTodos(
-          snap.docs
+          docs
             .map((d) => ({ id: d.id, ...d.data() }))
             .filter((todo) => isVisibleTo(todo, uid))
         ),
       (err) => setError(err.message)
     );
-    return unsub;
   }, [familyId, uid]);
 
   return { todos, error };

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { todoListsCol } from "../hooks/useTodoLists";
+import { sealDocWrite } from "../services/sectionCrypto";
 import { useAuth } from "../AuthContext";
 import { useTranslation } from "../i18n/LocaleContext";
 import Modal from "./Modal";
@@ -16,13 +17,16 @@ export default function NewListModal({ familyId, childId, onClose }) {
     if (!trimmed) return;
     const id = crypto.randomUUID();
     try {
-      await setDoc(doc(todoListsCol(familyId), id), {
-        childId,
-        name: trimmed,
-        isDeleted: false,
-        updatedBy: user.uid,
-        updatedAt: serverTimestamp(),
-      });
+      const ref = doc(todoListsCol(familyId), id);
+      await setDoc(
+        ref,
+        await sealDocWrite(
+          "todoLists",
+          ref,
+          { childId, name: trimmed, isDeleted: false, updatedBy: user.uid, updatedAt: serverTimestamp() },
+          { merge: false }
+        )
+      );
       onClose();
     } catch (err) {
       setError(err.message);

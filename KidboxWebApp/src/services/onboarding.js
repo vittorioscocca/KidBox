@@ -162,6 +162,9 @@ export async function createFamily({ uid, displayName, name, childName, childBir
   });
   await batch.commit();
 
+  // Il nome del figlio nasce in chiaro anche a interruttore acceso: la chiave
+  // di famiglia nasce più sotto, e il primo client che legge il figlio lo
+  // ricifra (`resealIfPlain`).
   if (child) {
     const childData = {
       name: child,
