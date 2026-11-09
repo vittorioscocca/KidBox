@@ -119,6 +119,33 @@ Casi concreti, stesso account KidBox:
 | iPhone → Mac con un altro account Apple | QR dall'iPhone, altrimenti codice | La passkey lì non c'è |
 | iPhone → Android | QR dall'iPhone, poi QR di un familiare, poi codice | La passkey Apple via «inquadra con il telefono» (hybrid) non dà il PRF in modo affidabile: non ci si conta |
 | Android → web in Chrome, stesso account Google | Passkey sincronizzata dal Gestore password di Google | — |
+| Telefono → web su un PC qualunque (Windows compreso) | **«Entra con il telefono»** (sotto) | Strada principale del web quando la passkey non c'è |
+
+**«Entra con il telefono» (come WhatsApp Web, deciso il 09/11/2026).** Il QR
+fra dispositivi qui va al contrario: il PC non ha la fotocamera, quindi è il
+browser a mostrare il QR e l'app a inquadrarlo.
+1. Il browser, già loggato, genera una coppia di chiavi effimera (ECDH P-256).
+   La privata resta in memoria; nel QR vanno la pubblica e l'id di una
+   «stanza» Firestore creata dal PC, a scadenza di 10 minuti.
+2. L'app KidBox inquadra, **controlla che la stanza sia dello stesso uid**
+   (chi ti fa inquadrare il suo QR non riceve niente) e chiede conferma:
+   «Mandare la chiave di "Famiglia X" al browser Chrome su Windows?».
+3. L'app chiude la chiave di famiglia con la pubblica e la deposita nella stanza.
+4. Il browser, in ascolto sulla stanza, apre con la privata e cancella la stanza.
+Il server vede solo byte chiusi. Variante da familiare: la stanza è di chi
+entra, il telefono del familiare conferma chi è.
+
+**Una cassaforte per utente, valida ovunque.** Se esiste, ogni client la
+**apre** (passkey o codice); la **crea** solo se non esiste. Il codice creato
+su iOS è lo stesso che si scrive sul web, e viceversa.
+
+**Dominio della passkey.** La passkey è legata al dominio (RP ID): va fissato
+una volta a `kidboxapp.com` (non `app.kidboxapp.com`) ed è una costante come
+quelle HKDF. Perché la passkey creata dall'app iOS valga sul web servono
+`webcredentials:kidboxapp.com` negli Associated Domains dell'app e l'app
+elencata in `apple-app-site-association` della landing; su Android il
+`assetlinks.json` con il permesso `get_login_creds`. Da verificare prima di
+scrivere il codice delle passkey.
 
 Il QR riusa `InviteCrypto` (segreto nel QR, materiale avvolto in un documento a
 scadenza breve, 10 minuti, cancellato dopo l'uso): il codice c'è già per gli inviti.
@@ -145,6 +172,8 @@ scadenza breve, 10 minuti, cancellato dopo l'uso): il codice c'è già per gli i
   `memberKeyBackups` accetta `version` 1 o 2, solo il proprio `uid`. Suite in
   `firestore-tests/` con la verifica differenziale (`/rules-change`).
 - **Functions**: `deleteAccount` cancella anche `users/{uid}/keyVault`.
+- **Interruttore `config/keyVault`** letto dai tre client (sezione 4 ter): si
+  rilascia spento, si accende prima per gli account di test.
 
 ### Fase 2 — Ogni utente crea il suo segreto
 - **Dopo l'aggiornamento** (rimandabile 3 giorni, poi obbligatorio: sezione 8):
@@ -158,12 +187,14 @@ scadenza breve, 10 minuti, cancellato dopo l'uso): il codice c'è già per gli i
   lo dice.
 - **Rigenera codice** in Impostazioni › Famiglia, da qualunque dispositivo che ha
   la chiave: slot nuovo, slot vecchio eliminato, niente da ricifrare.
-- Fatto il passo: si scrive la copia v2 per ogni famiglia e si **cancella la propria
-  v1** (il client può cancellare il proprio documento).
-- **Web**: al primo accesso dopo il rilascio è obbligatorio. Si legge la v1 un'ultima
-  volta, si crea passkey o codice, si scrive la v2, si cancella la v1.
+- Fatto il passo: si scrive la copia v2 per ogni famiglia. **La v1 resta** fino
+  alla Fase 3 (rete di sicurezza 2, sezione 4 ter).
+- **Web**: al primo accesso dopo il rilascio è obbligatorio. Si legge la v1, si
+  apre la cassaforte se esiste o la si crea (passkey o codice), si scrive la v2.
 - **QR fra dispositivi** e **QR da un familiare** in Impostazioni › Famiglia, e nella
   schermata «chiave mancante» (`FamilyKeyMissingGate` / `MissingFamilyKeyException`).
+  Sul web **«Entra con il telefono»** (sezione 3.2): QR mostrato dal browser,
+  inquadrato dall'app.
 - **Misura**: quota di utenti attivi con `keyVault` e senza v1 (script di sola
   lettura sul conteggio dei documenti, non sui contenuti).
 
@@ -222,6 +253,39 @@ fisse per la v2:
 web e Mac, tre azioni — entrare in famiglia da invito, revocare un altro membro,
 login su un dispositivo nuovo — anche con build vecchie e nuove nella stessa
 famiglia. Una cella rossa ferma la fase.
+
+## 4 ter. Reti di sicurezza (09/11/2026)
+
+Gli utenti attivi sono pochi: perderne anche uno per la chiave costa più di
+qualche settimana in più con la v1. Dove può andare storto:
+
+| Fase | Chi può restare fuori | Rischio |
+|---|---|---|
+| 1 | Nessuno: la v2 si aggiunge accanto alla v1, che non si tocca | Basso (il pericolo è il codice attorno, sezione 4 bis) |
+| 2 | Chi davanti alla schermata obbligatoria se ne va | Medio: abbandono più che dati |
+| 3 | Chi non ha il segreto, perde il telefono e non ha familiari con l'app | Unica perdita vera di dati |
+| 4 | Una ricifratura interrotta a metà | Alto, facoltativa, da progettare a parte |
+
+1. **Interruttore `config/keyVault`** (come `config/chatPush`): spento = i
+   client si comportano come oggi; acceso solo per `config/internalUsers` =
+   prova sugli account di test; acceso per tutti = rilascio. Letto con cache
+   breve, spegnibile senza release né deploy. Con l'interruttore spento la v2
+   non si scrive e non si chiede alcun segreto; quella già scritta si può
+   ancora leggere, ma la v1 resta la strada sicura.
+2. **La v1 non si cancella in Fase 2.** Si cancella solo in Fase 3. Un difetto
+   della v2 rallenta il rientro, non chiude fuori nessuno.
+3. **Fase 3 solo con i nomi davanti**: prima della chiusura, l'elenco degli
+   utenti attivi senza cassaforte (script di sola lettura), da contattare uno
+   per uno. Chi è in una famiglia con 2+ membri rientra comunque con il QR di
+   un familiare.
+4. **Obbligo dopo 3 giorni da riconsiderare.** È la decisione 1 della sezione
+   8, ma è anche il punto in cui è più facile perdere qualcuno. Proposta:
+   promemoria insistente ma chiudibile finché i primi utenti reali non sono
+   passati senza problemi; l'obbligo si accende dopo, con l'interruttore.
+   Decide l'utente.
+5. **Tabella della 4 bis sui dispositivi veri** (iPhone, Xiaomi, web, Mac;
+   build vecchie e nuove nella stessa famiglia) **prima di ogni allargamento**
+   dell'interruttore, non solo prima di ogni fase.
 
 ## 5. Casi limite
 
