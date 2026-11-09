@@ -241,3 +241,21 @@ Limiti noti emersi:
   salvataggio a interruttore acceso.
 - `calendarExported` è scrivibile dai membri (non è fra i campi protetti):
   il server non se ne fida per nulla di sicurezza.
+
+## Landing: cosa dire e quando
+
+La FAQ «I nostri dati sono al sicuro?» (`KidboxLanding/public/index.html`,
+`index-en.html`, ES/FR da `tools/i18n/index.json` con
+`scripts/translate_html.py build` + `build_footer.py`) elenca solo ciò che è
+**attivo**. Dal 09/11/2026: documenti, messaggi, note, password, wallet e le
+conversazioni con l'assistente.
+
+Quando si accende `sections_encryption_enabled` (e non prima), aggiungere:
+figli, salute, spese, garage, animali, to-do e calendario. Testo pronto:
+
+- IT: «Documenti, messaggi, note, password, wallet, salute, spese, to-do, calendario e le conversazioni con l'assistente sono cifrati con una chiave di famiglia. Se esporti il calendario con un link, gli eventi restano in chiaro perché il tuo calendario possa leggerli.»
+- EN: "Documents, messages, notes, passwords, wallet, health, expenses, to-dos, calendar and your conversations with the assistant are encrypted with a family key. If you export the calendar with a link, events stay readable so your calendar app can read them."
+- ES/FR: tradurre nello stesso `index.json` (liste allineate) e ricostruire.
+
+Anche la FAQ di `public/strumenti/salute.html` (e le versioni tradotte) va
+ritoccata: oggi dice che solo referti e allegati sono cifrati.
