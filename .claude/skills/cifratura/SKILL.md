@@ -103,7 +103,8 @@ questo che le regole sugli inviti devono reggere da sole → `/rules-change`.
   `KidBoxFirebaseMessagingService` (server manda `textEnc` nei `data`), ma solo
   se il push arriva **solo-dati**, cioè se gira `onMessageReceived`:
   interruttore `config/chatPush.dataOnlyAll` (altrimenti solo gli account di
-  `config/internalUsers`), spegnibile senza deploy. Rischio: su ROM come Xiaomi
+  `config/internalUsers`), spegnibile senza deploy; **acceso per tutti dal
+  24/10/2026** (verificato il 09/11). Rischio: su ROM come Xiaomi
   ad app killata il push solo-dati può non arrivare. Chiave mancante = corpo
   generico, mai un errore. Lo stesso schema vale per qualunque sezione si
   cifri in futuro (to-do, calendario…). → `/notifiche`
