@@ -350,6 +350,22 @@ export async function replaceRecoveryCode({ uid, rkBytes, rkId, recoveryCode }) 
   await setDoc(doc(db, "users", uid, "keyVault", SLOT_RECOVERY), rec);
 }
 
+// ── passaggio col QR (keyHandoff.js) ──────────────────────────────────────
+
+/** Byte e AES-GCM condivisi col modulo del QR: stessi formati di tutto il resto. */
+export const vaultBytes = { bytesToB64, b64ToBytes, bytesToB64Url, open, hkdfAesKey };
+
+/**
+ * La RK arrivata da un altro dispositivo dello stesso utente: vale solo se è
+ * quella della cassaforte (stesso `rkId` di uno slot).
+ */
+export async function adoptHandedRk(uid, rkBytes) {
+  const slots = await listVaultSlots(uid);
+  const expected = slots[0]?.rkId;
+  if (!expected) throw new WrongSecretError();
+  return adoptRk(uid, rkBytes, expected);
+}
+
 // ── passkey (WebAuthn PRF) ────────────────────────────────────────────────
 
 /**

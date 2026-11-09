@@ -244,3 +244,18 @@ export function clearFamilyKeyCache() {
   keyCache.clear();
   rawKeyCache.clear();
 }
+
+/**
+ * La chiave di una famiglia arrivata col QR da un familiare: la si ricorda per
+ * la sessione, la si salva nella copia v1 (finché esiste) e, se la cassaforte
+ * è aperta qui, nella copia v2.
+ */
+export async function adoptHandedFamilyKey({ familyId, userId, rawKey }) {
+  await remember(`${userId}.${familyId}`, rawKey);
+  try {
+    await backupFamilyKey({ familyId, userId, rawKey });
+  } catch (err) {
+    console.warn("[Vault] copia v1 non scritta", err?.code || err?.name);
+  }
+  addMissingV2(userId, familyId, rawKey);
+}

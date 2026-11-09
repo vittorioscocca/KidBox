@@ -134,3 +134,13 @@
   font-family: ui-monospace, monospace;
   text-transform: uppercase;
 }
+
+/* QR di «Entra con il telefono»: bianco anche in tema scuro, si legge meglio. */
+.kv-qr {
+  display: block;
+  margin: 4px auto;
+  width: min(260px, 70vw);
+  height: auto;
+  image-rendering: pixelated;
+  border-radius: 12px;
+}

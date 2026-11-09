@@ -1,6 +1,14 @@
 export const translations = {
   it: {
     keyVault: {
+      phoneCta: "Entra con il telefono",
+      phoneTitle: "Inquadra con il telefono",
+      phoneLead: "Sul telefono apri KidBox › Impostazioni › Sicurezza › «Inquadra un QR» e inquadra questo codice. Anche un familiare può farlo dal suo telefono. La chiave arriva chiusa: nemmeno KidBox può aprirla.",
+      phoneWaiting: "In attesa del telefono…",
+      phoneExpired: "Il codice è scaduto.",
+      phoneRetry: "Nuovo codice",
+      phoneFailed: "La chiave arrivata non si apre. Riprova con un nuovo codice.",
+      phoneGotFamily: "Chiave della famiglia ricevuta da un familiare.",
       secTitle: "Sicurezza",
       secRowHint: "Chiave della famiglia e nuovi dispositivi",
       secChecking: "Controllo…",
@@ -1895,6 +1903,14 @@ export const translations = {
   },
   en: {
     keyVault: {
+      phoneCta: "Sign in with your phone",
+      phoneTitle: "Scan with your phone",
+      phoneLead: "On your phone open KidBox › Settings › Security › “Scan a QR code” and scan this code. A family member can do it from their phone too. The key arrives sealed: not even KidBox can open it.",
+      phoneWaiting: "Waiting for your phone…",
+      phoneExpired: "The code has expired.",
+      phoneRetry: "New code",
+      phoneFailed: "The key that arrived can't be opened. Try again with a new code.",
+      phoneGotFamily: "Family key received from a family member.",
       secTitle: "Security",
       secRowHint: "Family key and new devices",
       secChecking: "Checking…",
@@ -3787,6 +3803,14 @@ export const translations = {
   },
   fr: {
     keyVault: {
+      phoneCta: "Se connecter avec le téléphone",
+      phoneTitle: "Scannez avec le téléphone",
+      phoneLead: "Sur le téléphone, ouvrez KidBox › Réglages › Sécurité › « Scanner un QR » et scannez ce code. Un membre de la famille peut aussi le faire depuis son téléphone. La clé arrive chiffrée : même KidBox ne peut pas l'ouvrir.",
+      phoneWaiting: "En attente du téléphone…",
+      phoneExpired: "Le code a expiré.",
+      phoneRetry: "Nouveau code",
+      phoneFailed: "La clé reçue ne s'ouvre pas. Réessayez avec un nouveau code.",
+      phoneGotFamily: "Clé de la famille reçue d'un membre de la famille.",
       secTitle: "Sécurité",
       secRowHint: "Clé de la famille et nouveaux appareils",
       secChecking: "Vérification…",
@@ -5626,6 +5650,14 @@ export const translations = {
   },
   es: {
     keyVault: {
+      phoneCta: "Entrar con el teléfono",
+      phoneTitle: "Escanea con el teléfono",
+      phoneLead: "En el teléfono abre KidBox › Ajustes › Seguridad › «Escanear un QR» y escanea este código. Un familiar también puede hacerlo desde su teléfono. La clave llega cifrada: ni siquiera KidBox puede abrirla.",
+      phoneWaiting: "Esperando al teléfono…",
+      phoneExpired: "El código ha caducado.",
+      phoneRetry: "Nuevo código",
+      phoneFailed: "La clave recibida no se abre. Inténtalo de nuevo con un código nuevo.",
+      phoneGotFamily: "Clave de la familia recibida de un familiar.",
       secTitle: "Seguridad",
       secRowHint: "Clave de la familia y nuevos dispositivos",
       secChecking: "Comprobando…",

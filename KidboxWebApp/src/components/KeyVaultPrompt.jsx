@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Modal from "./Modal";
 import { useTranslation } from "../i18n/LocaleContext";
-import { syncFamilyKeysV2 } from "../services/familyKey";
+import { adoptHandedFamilyKey, syncFamilyKeysV2 } from "../services/familyKey";
+import { openHandoffRoom } from "../services/keyHandoff";
+import QrCanvas from "./QrCanvas";
 import {
   PasskeyUnsupportedError,
   VaultExistsError,
   WrongSecretError,
   addPasskeySlot,
+  adoptHandedRk,
   createVault,
   generateRecoveryCode,
   listVaultSlots,
@@ -44,6 +47,8 @@ export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onD
   const [copied, setCopied] = useState(false);
   const [canPasskey, setCanPasskey] = useState(false);
   const rk = useRef(null); // { rkBytes, rkId } solo finché serve aggiungere una passkey
+  const room = useRef(null); // stanza del QR aperta (close)
+  const [qr, setQr] = useState(null); // { text, expired }
   const code = useMemo(() => generateRecoveryCode(), []);
   const positions = useMemo(() => {
     const all = Array.from({ length: 24 }, (_, i) => i);
@@ -79,7 +84,45 @@ export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onD
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.uid]);
 
+  function closeRoom() {
+    room.current?.close();
+    room.current = null;
+  }
+
+  const startPhone = () =>
+    run(async () => {
+      closeRoom();
+      setQr(null);
+      setStep("phone");
+      const r = await openHandoffRoom({
+        uid: user.uid,
+        label: browserLabel(),
+        onPayload: (p) =>
+          run(async () => {
+            room.current = null;
+            if (p.kind === "rk") {
+              const result = await adoptHandedRk(user.uid, p.bytes);
+              await afterUnlock(result, { offerPasskey: true });
+            } else if (p.kind === "familyKey" && p.familyId) {
+              await adoptHandedFamilyKey({ familyId: p.familyId, userId: user.uid, rawKey: p.bytes });
+              p.bytes.fill(0);
+              setNotice(k.phoneGotFamily);
+              setStep("done");
+            }
+          }),
+        onError: () => {
+          room.current = null;
+          setError(k.phoneFailed);
+          setQr((q) => (q ? { ...q, expired: true } : q));
+        },
+      });
+      room.current = r;
+      setQr({ text: r.qrText, expired: false });
+      setTimeout(() => setQr((q) => (q && q.text === r.qrText ? { ...q, expired: true } : q)), r.expiresAt - Date.now());
+    });
+
   function wipe() {
+    closeRoom();
     if (rk.current?.rkBytes) rk.current.rkBytes.fill(0);
     rk.current = null;
   }
@@ -340,8 +383,38 @@ export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onD
               </button>
             </form>
             {error && <p className="kv-error">{error}</p>}
+            <button type="button" className="kv-link" onClick={startPhone} disabled={busy}>
+              {k.phoneCta}
+            </button>
             {mode !== "regenerate" && <p className="kv-small">{k.lostCode}</p>}
             {laterButton}
+          </>
+        )}
+
+        {step === "phone" && (
+          <>
+            <h2 className="modal-title">{k.phoneTitle}</h2>
+            <p className="kv-lead">{k.phoneLead}</p>
+            {qr && !qr.expired && <QrCanvas text={qr.text} className="kv-qr" />}
+            {qr && !qr.expired && <p className="kv-small">{k.phoneWaiting}</p>}
+            {qr?.expired && !error && <p className="kv-error">{k.phoneExpired}</p>}
+            {error && <p className="kv-error">{error}</p>}
+            {qr?.expired && (
+              <button type="button" className="kv-primary" onClick={startPhone} disabled={busy}>
+                {k.phoneRetry}
+              </button>
+            )}
+            <button
+              type="button"
+              className="kv-link"
+              onClick={() => {
+                closeRoom();
+                setError(null);
+                setStep("open");
+              }}
+            >
+              {k.back}
+            </button>
           </>
         )}
 
