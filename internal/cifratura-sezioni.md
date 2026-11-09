@@ -218,3 +218,26 @@ senza valore → si usa la versione generica intera), altrimenti mostra
 Tutto dietro lo stesso interruttore spento: a interruttore spento nessun
 documento ha `secure`, il server non aggiunge niente alle push e il feed non
 cambia.
+
+## Stato del secondo giro (09/11/2026)
+
+Commit: functions 2a7a948c (deployate le 13 functions toccate), web ec18c758
+(pubblicato), iOS 6a2b64de, Android 568108b. Interruttore ancora spento.
+
+Limiti noti emersi:
+- **Delega automatica** (`delegateUnassignedTodos`): un to-do cifrato non si
+  delega (`kidboxAsk.outcome: "sealed"`), perché la richiesta nascerebbe col
+  titolo vuoto anche nel link `/r`.
+- **Push sul web**: testo generico, il service worker non decifra.
+- **Feed iCal**: «Impegno» solo in italiano (il feed non ha lingua).
+- **Membro appena entrato senza chiave**: vede vuoti nomi e titoli finché la
+  chiave non arriva e il listener non ripropone il documento (riparo solo per
+  il nome dei figli su iOS).
+- **iOS**: `calendarExported` in cache 10 minuti; subito dopo la creazione di
+  un link iCal un evento può nascere cifrato, poi viene riaperto.
+- **Android**: le push solo dati di to-do e richieste ora incrementano il
+  badge anche ad app chiusa, e i pulsanti delle richieste compaiono anche lì.
+- Le visite da Android sono sempre scritture parziali: una lettura in più per
+  salvataggio a interruttore acceso.
+- `calendarExported` è scrivibile dai membri (non è fra i campi protetti):
+  il server non se ne fida per nulla di sicurezza.
