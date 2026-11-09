@@ -1084,6 +1084,7 @@ window.showPage = function(pid, push = true) {
   document.querySelector(`.nav-item[data-page="${pid}"]`)?.closest('.nav-group')?.classList.add('open');
   if (push && location.hash.slice(1) !== pid) history.pushState(null, '', '#' + pid);
   window.scrollTo(0, 0);
+  if (pid === 'vault' && typeof window.loadKeyVault === 'function' && window._kbReady) window.loadKeyVault();
 };
 
 window.bnGo = function(el, pid) { showPage(pid); };
@@ -1398,6 +1399,35 @@ function renderLandingCounter(byId) {
     <div class="small dim" style="padding:8px 16px">Conta le aperture di pagina, non le persone: si confronta con le «landing viste» di Meta, non con gli utenti di GA4. Le tue visite contano come le altre.</div></div>`;
   }
 }
+
+// ── Cassaforte v2 (getKeyVaultStats: solo conteggi, interni esclusi) ──
+let _kvLoaded = false;
+window.loadKeyVault = async function(force) {
+  if (_kvLoaded && !force) return;
+  _kvLoaded = true;
+  const st = document.getElementById('kv-status');
+  st.textContent = 'Calcolo…';
+  let d;
+  try {
+    d = (await httpsCallable(functions, 'getKeyVaultStats', { timeout: 120000 })({})).data;
+  } catch (e) { st.textContent = 'Errore: ' + e.message; _kvLoaded = false; return; }
+  const pct = (a, b) => b ? Math.round(a * 100 / b) + '%' : '—';
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const f = d.flags || {};
+  const sw = !f.exists ? 'interruttore assente (spento)' : f.enabled ? 'acceso per tutti' : f.internal ? 'acceso solo per gli interni' : 'spento';
+  st.textContent = `config/keyVault: ${sw}${f.enforce ? ' · obbligatoria' : ''} · calcolato alle ${new Date(d.computedAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} · account interni esclusi`;
+  set('kv-a30', pct(d.active30.withVault, d.active30.users)); set('kv-a30-sub', `${d.active30.withVault} su ${d.active30.users} membri aperti negli ultimi 30 giorni`);
+  set('kv-a30-ready', pct(d.active30.allV2, d.active30.users));
+  set('kv-a7', pct(d.active7.withVault, d.active7.users)); set('kv-a7-sub', `${d.active7.withVault} su ${d.active7.users}`);
+  set('kv-pk', pct(d.active30.withPasskey, d.active30.users));
+  const c = d.docs, i = d.internal;
+  document.getElementById('kv-detail').innerHTML = `<div class="tcard" style="margin-top:16px"><div class="tcard-hdr">Copie della chiave (memberKeyBackups)</div><div class="tbl-scroll"><table><thead><tr><th></th><th>Documenti</th><th>Quota</th></tr></thead><tbody>
+    <tr><td>Solo v1 (il server può aprirla)</td><td>${fmtNum(c.v1Only)}</td><td>${pct(c.v1Only, c.total)}</td></tr>
+    <tr><td>v1 + v2</td><td>${fmtNum(c.v1AndV2)}</td><td>${pct(c.v1AndV2, c.total)}</td></tr>
+    <tr><td>Solo v2 (dopo la Fase 3)</td><td>${fmtNum(c.v2Only)}</td><td>${pct(c.v2Only, c.total)}</td></tr>
+    <tr><td><b>Totale</b></td><td><b>${fmtNum(c.total)}</b></td><td></td></tr></tbody></table></div>
+    <div class="small dim" style="padding:8px 16px">Tutti i membri (anche non attivi): ${d.all.withVault} su ${d.all.users} con cassaforte (${pct(d.all.withVault, d.all.users)}). Account interni (${i.users}): ${i.vaults} cassaforti, ${i.docs.withV2} copie v2 su ${i.docs.total}. «Attivo» = ultima apertura dell'app (adminStats/lastOpen): il web non ci entra.</div></div>`;
+};
 
 async function loadLandingGoogle(force) {
   const status = document.getElementById('lg-status');
@@ -1763,6 +1793,8 @@ async function loadAll() {
     await loadAICosts();
     await loadActiveUsers();
     await loadLanding();
+    window._kbReady = true;
+    if (location.hash.slice(1) === 'vault') window.loadKeyVault(true);
     updateTotalCost();
     setStatus('Aggiornato', true);
   } catch(e) {
@@ -3267,6 +3299,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
           <a class="nav-item" data-page="funnel" href="#funnel"><span class="nav-icon">📉</span> Funnel attivazione</a>
           <a class="nav-item" data-page="cohorts" href="#cohorts"><span class="nav-icon">🌱</span> Coorti</a>
           <a class="nav-item" data-page="landing" href="#landing"><span class="nav-icon">🌐</span> Landing</a>
+          <a class="nav-item" data-page="vault" href="#vault"><span class="nav-icon">🔐</span> Cassaforte chiave</a>
         </div>
       </div>
       <div class="nav-group open" data-group="lists">
@@ -3912,6 +3945,18 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       <div class="sec-title" style="margin-top:32px">🌱 Coorti: famiglie che trovano un secondo membro</div>
       <div id="section-cohorts"></div>
 
+      </section>
+      <section class="page" data-page="vault">
+      <div class="sec-title">🔐 Cassaforte della chiave di famiglia <span class="sub">piano v2: quando chiudere la v1 (Fase 3)</span></div>
+      <div class="small dim" id="kv-status" style="margin-bottom:12px">—</div>
+      <div class="grid-4">
+        <div class="card"><div class="card-lbl">Attivi 30 gg con cassaforte</div><div class="card-val c-green" id="kv-a30">—</div><div class="card-sub" id="kv-a30-sub">—</div></div>
+        <div class="card"><div class="card-lbl">Attivi 30 gg pronti per la Fase 3</div><div class="card-val c-blue" id="kv-a30-ready">—</div><div class="card-sub">ogni loro famiglia ha la copia v2</div></div>
+        <div class="card"><div class="card-lbl">Attivi 7 gg con cassaforte</div><div class="card-val c-green" id="kv-a7">—</div><div class="card-sub" id="kv-a7-sub">—</div></div>
+        <div class="card"><div class="card-lbl">Con passkey (attivi 30 gg)</div><div class="card-val c-orange" id="kv-pk">—</div><div class="card-sub">oltre al codice di recupero</div></div>
+      </div>
+      <div id="kv-detail"></div>
+      <div style="margin-top:12px"><button class="btn" onclick="loadKeyVault(true)">Aggiorna</button></div>
       </section>
       <section class="page" data-page="landing">
       <div class="sec-title">🌐 Landing · contatore delle aperture <span class="sub">ogni pagina aperta, anche senza consenso ai cookie</span></div>

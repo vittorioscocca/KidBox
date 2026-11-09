@@ -8768,6 +8768,8 @@ exports.landingPing = require("./landingTraffic").landingPing;
 // Google Search e GA4 della landing per la console admin. Il perché in
 // `landingStats.js`.
 exports.getLandingStats = require("./landingStats").build({ADMIN_UIDS});
+// Cassaforte v2: quanti utenti l'hanno (console › Cassaforte chiave). Solo conteggi.
+exports.getKeyVaultStats = require("./keyVaultStats").makeGetKeyVaultStats(ADMIN_UIDS);
 // Snapshot giornaliero di Search Console e GA4 su Firestore (reportSnapshots).
 exports.reportSnapshotDaily = require("./reportSnapshots").reportSnapshotDaily;
 // Play (crash, ANR, recensioni) e billing: stesso modulo, altro service account.

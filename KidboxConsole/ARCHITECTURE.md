@@ -60,6 +60,7 @@ python3 -m http.server 8080
 | `initStorageUsageAdmin` | ricalcolo storage di tutte le famiglie |
 | `runAnalyticsRollup` | ricalcolo rollup utenti attivi (oggi + ieri) |
 | `getLandingStats` | Google Search e GA4 della landing per il periodo scelto (gira come `ga4-reader`, risultato tenuto 30 min per periodo) |
+| `getKeyVaultStats` | Pagina «Cassaforte chiave»: quanti utenti (attivi 7/30 gg, esclusi gli interni) hanno la cassaforte v2, una passkey, la copia v2 in tutte le famiglie; documenti solo v1 / v1+v2 / solo v2. Solo conteggi, legge con l'Admin SDK perché le rules non lasciano vedere le cassaforti altrui (`functions/keyVaultStats.js`) |
 
 > `ai_usage` e `ai_costs` sono popolati da `askAI`; `metrics` da
 > `analyticsRollupDaily`. Vedi `functions/ARCHITECTURE.md` e
