@@ -309,6 +309,48 @@ enum FamilyKeyVault {
         }
     }
 
+    struct Slot: Identifiable {
+        let id: String
+        let type: String
+        let label: String?
+        let createdAt: Date?
+        let updatedAt: Date?
+    }
+
+    /// Gli slot della cassaforte, dal server (codice e passkey).
+    static func listSlots(uid: String) async throws -> [Slot] {
+        try await db.collection("users").document(uid).collection("keyVault")
+            .getDocuments(source: .server).documents.map { d in
+                Slot(
+                    id: d.documentID,
+                    type: d.data()["type"] as? String ?? "",
+                    label: d.data()["label"] as? String,
+                    createdAt: (d.data()["createdAt"] as? Timestamp)?.dateValue(),
+                    updatedAt: (d.data()["updatedAt"] as? Timestamp)?.dateValue()
+                )
+            }
+    }
+
+    /// Sostituisce il codice di recupero con uno nuovo, usando la RK di questo
+    /// dispositivo: il vecchio smette di valere (stesso documento, stesso `rkId`).
+    static func replaceRecoveryCode(uid: String, recoveryCode: String) async throws {
+        guard let rk = loadRK(uid: uid) else { throw OpenError.missing }
+        let (salt, s) = try FamilyKeyVaultCrypto.sealRecoverySlot(uid: uid, code: recoveryCode, rk: rk)
+        let ref = db.collection("users").document(uid).collection("keyVault").document("recoveryCode")
+        let old = try await ref.getDocument(source: .server).data()
+        if let oldId = old?["rkId"] as? String, oldId != FamilyKeyVaultCrypto.rkId(rk) {
+            // La RK di questo dispositivo non è quella della cassaforte: non si tocca niente.
+            throw OpenError.wrongSecret
+        }
+        try await ref.setData([
+            "type": "recoveryCode", "version": FamilyKeyVaultCrypto.version,
+            "rkId": FamilyKeyVaultCrypto.rkId(rk), "salt": salt,
+            "nonce": s.nonce, "cipher": s.cipher, "tag": s.tag,
+            "createdAt": old?["createdAt"] ?? FieldValue.serverTimestamp(),
+            "updatedAt": FieldValue.serverTimestamp(),
+        ])
+    }
+
     /// Quanti slot ha la cassaforte dell'utente (0 = da creare).
     static func slotCount(uid: String) async throws -> Int {
         try await db.collection("users").document(uid).collection("keyVault")

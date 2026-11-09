@@ -45,6 +45,138 @@
         }
       }
     },
+    "Apri la cassaforte su questo dispositivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the vault on this device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir la caja fuerte en este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir le coffre sur cet appareil"
+          }
+        }
+      }
+    },
+    "Cassaforte da aprire su questo dispositivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vault not yet opened on this device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caja fuerte por abrir en este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coffre à ouvrir sur cet appareil"
+          }
+        }
+      }
+    },
+    "Chiave della famiglia e nuovi dispositivi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Family key and new devices"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clave de la familia y nuevos dispositivos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clé de la famille et nouveaux appareils"
+          }
+        }
+      }
+    },
+    "Chiave non ancora protetta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key not protected yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clave aún no protegida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clé pas encore protégée"
+          }
+        }
+      }
+    },
+    "Chiave protetta su questo dispositivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key protected on this device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clave protegida en este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clé protégée sur cet appareil"
+          }
+        }
+      }
+    },
+    "Codice di recupero" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recovery code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código de recuperación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code de récupération"
+          }
+        }
+      }
+    },
     "Codice non valido: controlla di averlo scritto tutto e senza errori." : {
       "localizations" : {
         "en" : {
@@ -85,6 +217,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Confirmez le code"
+          }
+        }
+      }
+    },
+    "Controllo…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprobando…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérification…"
           }
         }
       }
@@ -151,6 +305,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les documents, mots de passe et photos de KidBox sont chiffrés avec une clé que seule votre famille possède. Pour la retrouver sur un nouveau téléphone ou sur l'ordinateur, enregistrez un code de récupération. Même KidBox ne peut pas l'ouvrir."
+          }
+        }
+      }
+    },
+    "Documenti, password e foto sono cifrati con una chiave che ha solo la tua famiglia. Qui scegli come ritrovarla su un nuovo dispositivo. Nemmeno KidBox può aprirla." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documents, passwords and photos are encrypted with a key only your family has. Here you choose how to get it back on a new device. Not even KidBox can open it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los documentos, contraseñas y fotos están cifrados con una clave que solo tiene tu familia. Aquí eliges cómo recuperarla en un dispositivo nuevo. Ni siquiera KidBox puede abrirla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les documents, mots de passe et photos sont chiffrés avec une clé que seule votre famille possède. Ici, vous choisissez comment la retrouver sur un nouvel appareil. Même KidBox ne peut pas l'ouvrir."
           }
         }
       }
@@ -280,6 +456,28 @@
         }
       }
     },
+    "Il codice precedente non vale più: d'ora in poi usa quello nuovo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The previous code no longer works: from now on use the new one."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El código anterior ya no vale: a partir de ahora usa el nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'ancien code ne fonctionne plus : utilisez désormais le nouveau."
+          }
+        }
+      }
+    },
     "Il tuo codice di recupero" : {
       "localizations" : {
         "en" : {
@@ -368,6 +566,28 @@
         }
       }
     },
+    "Modi per aprire la cassaforte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ways to open the vault"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formas de abrir la caja fuerte"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moyens d'ouvrir le coffre"
+          }
+        }
+      }
+    },
     "N. %lld" : {
       "localizations" : {
         "en" : {
@@ -408,6 +628,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cela ne correspond pas : vérifiez le code enregistré."
+          }
+        }
+      }
+    },
+    "Non riesco a leggere lo stato. Controlla la connessione." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't read the status. Check your connection."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No puedo leer el estado. Comprueba la conexión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de lire l'état. Vérifiez la connexion."
+          }
+        }
+      }
+    },
+    "Passkey" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passkey"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llave de acceso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clé d'accès"
           }
         }
       }
@@ -478,6 +742,28 @@
         }
       }
     },
+    "Rigenera codice di recupero" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generate a new recovery code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generar un nuevo código de recuperación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Générer un nouveau code de récupération"
+          }
+        }
+      }
+    },
     "Salva o stampa" : {
       "localizations" : {
         "en" : {
@@ -544,6 +830,28 @@
         }
       }
     },
+    "Se hai perso il codice ma hai ancora questo dispositivo, creane uno nuovo: quello vecchio smette di valere." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If you've lost your code but still have this device, create a new one: the old one stops working."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si has perdido el código pero aún tienes este dispositivo, crea uno nuevo: el anterior deja de valer."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si vous avez perdu le code mais avez encore cet appareil, créez-en un nouveau : l'ancien ne fonctionnera plus."
+          }
+        }
+      }
+    },
     "Se perdi questo codice e tutti i tuoi dispositivi, e nessun familiare ha l'app, i dati cifrati non si possono recuperare." : {
       "localizations" : {
         "en" : {
@@ -562,6 +870,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Si vous perdez ce code et tous vos appareils, et qu'aucun membre de la famille n'a l'app, les données chiffrées ne peuvent pas être récupérées."
+          }
+        }
+      }
+    },
+    "Sicurezza" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Security"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seguridad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sécurité"
           }
         }
       }

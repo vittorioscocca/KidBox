@@ -25,6 +25,8 @@ struct KeyVaultPromptView: View {
     let allowLater: Bool
     let onDone: () -> Void
     let onLater: () -> Void
+    /// Da Impostazioni › Sicurezza: nuovo codice al posto del vecchio (serve la RK qui).
+    var regenerate = false
 
     private enum Step { case loading, intro, code, confirm, open, done }
 
@@ -53,7 +55,11 @@ struct KeyVaultPromptView: View {
             .toolbar {
                 if allowLater && step != .done && step != .loading {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Più tardi") { onLater() }.disabled(busy)
+                        if regenerate {
+                            Button("Annulla") { onLater() }.disabled(busy)
+                        } else {
+                            Button("Più tardi") { onLater() }.disabled(busy)
+                        }
                     }
                 }
             }
@@ -163,6 +169,7 @@ struct KeyVaultPromptView: View {
     // MARK: azioni
 
     private func load() async {
+        if regenerate { step = .code; return }
         do {
             step = try await FamilyKeyVault.slotCount(uid: uid) > 0 ? .open : .intro
         } catch {
@@ -186,6 +193,12 @@ struct KeyVaultPromptView: View {
         busy = true
         defer { busy = false }
         do {
+            if regenerate {
+                try await FamilyKeyVault.replaceRecoveryCode(uid: uid, recoveryCode: code)
+                notice = String(localized: "Il codice precedente non vale più: d'ora in poi usa quello nuovo.")
+                step = .done
+                return
+            }
             try await FamilyKeyVault.createVault(uid: uid, recoveryCode: code)
             await FamilyKeyVault.syncFamilyKeysV2(uid: uid, familyIds: familyIds)
             step = .done

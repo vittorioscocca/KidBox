@@ -4,7 +4,9 @@
 //
 
 import SwiftUI
+import SwiftData
 import Combine
+import FirebaseAuth
 internal import os
 
 /// App settings screen.
@@ -39,11 +41,23 @@ struct SettingsView: View {
     @State private var updateTestReport: String?
 #endif
     
+    @Query private var families: [KBFamily]
+    /// «Sicurezza» compare con la cassaforte v2 accesa per l'utente (config/keyVault).
+    @State private var showSecurity = false
+
     @AppStorage(KBHomeDashboardPreference.key) private var showHomeDashboard = false
     @AppStorage(KBHomeWeatherPreference.key) private var showHomeWeather = false
     @AppStorage(TodoCompletedRetention.key) private var todoCompletedRetention = TodoCompletedRetention.default.rawValue
 
     var body: some View {
+        settingsList
+            .task {
+                guard let uid = Auth.auth().currentUser?.uid else { return }
+                showSecurity = await FamilyKeyVault.flags(uid: uid).active
+            }
+    }
+
+    private var settingsList: some View {
         List {
             // La famiglia sta in una card sua, sopra l'elenco: è la prima cosa
             // che si viene a cercare qui, e una riga fra le altre non lo diceva.
@@ -258,6 +272,26 @@ struct SettingsView: View {
                     }
                 }
                 .listRowBackground(cardBackground)
+
+                if showSecurity {
+                    NavigationLink {
+                        SecuritySettingsView(familyIds: families.map(\.id))
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "lock.shield.fill")
+                                .foregroundStyle(KBTheme.bubbleTint)
+                                .frame(width: 22)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Sicurezza")
+                                    .foregroundStyle(.primary)
+                                Text("Chiave della famiglia e nuovi dispositivi")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .listRowBackground(cardBackground)
+                }
 
                 NavigationLink {
                     StorageUsageView()
