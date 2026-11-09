@@ -583,3 +583,17 @@ qualche settimana in più con la v1. Dove può andare storto:
   telefono e il QR di un familiare.
 - La chiave di famiglia è la stessa di prima: per il server il passato non
   cambia (backup di Firestore) finché non c'è la Fase 4.
+
+## Fase 4 rimandata (decisione dell'utente, 09/11/2026)
+
+Né la rotazione completa né quella «in avanti» (chiave nuova per i dati nuovi,
+vecchia tenuta per leggere): progetto piccolo e poco noto, nessun segnale di
+accesso non autorizzato, e il costo (ogni punto di cifratura sui tre client,
+passaggio della chiave col QR) non vale il rischio remoto. Si riapre solo se:
+1. si revoca un membro che aveva la chiave;
+2. c'è il sospetto di un accesso al progetto Firebase o all'account Google;
+3. KidBox cresce o si vuole dire pubblicamente che nemmeno i dati vecchi sono
+   leggibili dal server.
+Se si riapre, partire dalla variante «in avanti» con prefisso `k2:`,
+portachiavi sul telefono e nella copia v2, ricifratura dei testi alla lettura,
+file lasciati sulla chiave vecchia.
