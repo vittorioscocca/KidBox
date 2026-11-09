@@ -1292,6 +1292,28 @@
         }
       }
     },
+    "Ricevi la chiave con un QR" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receive the key with a QR code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibir la clave con un QR"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recevoir la clé avec un QR"
+          }
+        }
+      }
+    },
     "Rigenera codice di recupero" : {
       "localizations" : {
         "en" : {
@@ -1552,6 +1574,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L'ouvrir aussi avec Face ID ?"
+          }
+        }
+      }
+    },
+    "«Inquadra un QR» dà la chiave al computer, a un tuo nuovo dispositivo o a un familiare. «Ricevi la chiave con un QR» serve se qui manca: mostra un QR da inquadrare con un altro tuo dispositivo o con il telefono di un familiare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Scan a QR code” gives the key to a computer, a new device of yours or a family member. “Receive the key with a QR code” is for when it's missing here: it shows a QR code to scan with another of your devices or a family member's phone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«Escanear un QR» da la clave al ordenador, a un nuevo dispositivo tuyo o a un familiar. «Recibir la clave con un QR» sirve si aquí falta: muestra un QR para escanear con otro dispositivo tuyo o con el teléfono de un familiar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "« Scanner un QR » donne la clé à l'ordinateur, à un nouvel appareil ou à un membre de la famille. « Recevoir la clé avec un QR » sert si elle manque ici : affiche un QR à scanner avec un autre de vos appareils ou le téléphone d'un membre de la famille."
           }
         }
       }

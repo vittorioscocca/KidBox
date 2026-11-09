@@ -21,7 +21,7 @@ struct SecuritySettingsView: View {
     @State private var sheet: SheetKind?
     @State private var showScan = false
 
-    private enum SheetKind: String, Identifiable { case open, regenerate, passkey; var id: String { rawValue } }
+    private enum SheetKind: String, Identifiable { case open, regenerate, passkey, receive; var id: String { rawValue } }
 
     private var uid: String { Auth.auth().currentUser?.uid ?? "" }
     private var recovery: FamilyKeyVault.Slot? { slots.first { $0.type == "recoveryCode" } }
@@ -95,8 +95,13 @@ struct SecuritySettingsView: View {
                     } label: {
                         Label("Inquadra un QR", systemImage: "qrcode.viewfinder")
                     }
+                    Button {
+                        sheet = .receive
+                    } label: {
+                        Label("Ricevi la chiave con un QR", systemImage: "qrcode")
+                    }
                 } footer: {
-                    Text("Per dare la chiave al computer («Entra con il telefono»), a un tuo nuovo dispositivo o a un familiare che non la ha.")
+                    Text("«Inquadra un QR» dà la chiave al computer, a un tuo nuovo dispositivo o a un familiare. «Ricevi la chiave con un QR» serve se qui manca: mostra un QR da inquadrare con un altro tuo dispositivo o con il telefono di un familiare.")
                 }
             }
         }
@@ -115,7 +120,8 @@ struct SecuritySettingsView: View {
                 onDone: { sheet = nil; Task { await reload() } },
                 onLater: { sheet = nil },
                 regenerate: kind == .regenerate,
-                addPasskey: kind == .passkey
+                addPasskey: kind == .passkey,
+                receive: kind == .receive
             )
         }
     }

@@ -28,6 +28,8 @@ struct KeyVaultPromptView: View {
     var regenerate = false
     /// Da Impostazioni › Sicurezza: solo «aggiungi una passkey» (serve la RK qui).
     var addPasskey = false
+    /// Da Impostazioni › Sicurezza: subito il QR per ricevere la chiave da un altro dispositivo o da un familiare.
+    var receive = false
 
     private enum Step { case loading, intro, code, confirm, open, phone, passkey, done }
 
@@ -59,7 +61,7 @@ struct KeyVaultPromptView: View {
             .toolbar {
                 if allowLater && step != .done && step != .loading && step != .passkey {
                     ToolbarItem(placement: .cancellationAction) {
-                        if regenerate || addPasskey {
+                        if regenerate || addPasskey || receive {
                             Button("Annulla") { onLater() }.disabled(busy)
                         } else {
                             Button("Più tardi") { onLater() }.disabled(busy)
@@ -179,7 +181,9 @@ struct KeyVaultPromptView: View {
             if roomExpired {
                 primary("Nuovo codice", disabled: busy) { Task { await startRoom() } }
             }
-            Button("Indietro") { closeRoom(); error = nil; step = .open }
+            if !receive {
+                Button("Indietro") { closeRoom(); error = nil; step = .open }
+            }
 
         case .passkey:
             icon("faceid")
@@ -207,6 +211,7 @@ struct KeyVaultPromptView: View {
     private func load() async {
         if regenerate { step = .code; return }
         if addPasskey { step = .passkey; return }
+        if receive { await startRoom(); return }
         passkeyIds = (try? await FamilyKeyVault.passkeyCredentialIds(uid: uid)) ?? []
         do {
             step = try await FamilyKeyVault.slotCount(uid: uid) > 0 ? .open : .intro
