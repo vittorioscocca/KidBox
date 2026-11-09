@@ -1,5 +1,14 @@
 # Cifratura delle sezioni (Garage, Animali, Spese, Salute)
 
+**Stato al 09/11/2026 sera:** due giri scritti su iOS, Android, web e server
+(Garage, Animali, Spese, Salute, figli, to-do, liste, calendario, push
+decifrate sul telefono), pushati. Interruttore `sections_encryption_enabled`
+**spento**; acceso con l'override di debug solo per «Scocca Limato», provato
+su iPhone e Xiaomi (sezione «Prova su device»). Testo dei cancellati svuotato
+dal server. La landing elenca già queste sezioni come cifrate. Prossimo passo:
+accendere l'interruttore quando GA4 mostra le build diffuse. Regole generali
+nella skill `/cifratura`.
+
 Deciso con l'utente il 09/11/2026: estendere la cifratura con la chiave di
 famiglia alle sezioni che il server **non legge** (gruppo «costo basso»).
 Il server su queste collezioni conta documenti, somma dimensioni e cancella:

@@ -1,6 +1,6 @@
 ---
 name: cifratura
-description: La chiave di famiglia di KidBox — dove vive, come arriva a un nuovo membro, cosa si rompe se si sbaglia, e cosa il server NON può fare per via sua. Usare quando si tocca un campo cifrato (documenti, note, password, wallet, chat, foto), il join o la revoca di un membro, l'escrow della chiave, o quando l'utente dice «non vedo più le note», «si vede cifrato», «non riesco a leggere».
+description: La chiave di famiglia di KidBox — dove vive, come arriva a un nuovo membro, cosa si rompe se si sbaglia, e cosa il server NON può fare per via sua. Usare quando si tocca un campo cifrato (documenti, note, password, wallet, chat, foto, e dal 09/11/2026 il campo `secure` di Garage, Animali, Spese, Salute, figli, to-do, liste, calendario), il join o la revoca di un membro, l'escrow o la cassaforte della chiave, o quando l'utente dice «non vedo più le note», «si vede cifrato», «vedo i titoli vuoti», «non riesco a leggere».
 ---
 
 > È la skill più trasversale del progetto: **una sola chiave** copre documenti,
@@ -25,9 +25,9 @@ interruttore ma **senza regola** per il testo letto dei documenti
 (`extractedTextEnc`): le build vecchie riscrivono il testo a ogni modifica del
 documento, e i client nuovi lo ricifrano leggendolo.
 
-Non cifrati, per scelta: titoli e note dei to-do e le **richieste di
-famiglia** (01/10/2026), perché il server le legge per la push e per creare il
-to-do. Il link pubblico di una richiesta (`/r`) porta il token nel
+Non cifrate, per scelta: le **richieste di famiglia** (01/10/2026), perché il
+server le legge per la push e per creare il to-do. (I to-do invece dal
+09/11/2026 sì: vedi «Cifratura delle sezioni» sotto.) Il link pubblico di una richiesta (`/r`) porta il token nel
 **frammento** (`#t=`) e il server ne tiene solo lo SHA-256, come il segreto
 degli inviti (`#k=`), che viaggia nello stesso frammento.
 
@@ -41,6 +41,67 @@ campi cifrati. Foto in `families/{id}/wallet/paymentCards/{cardId}/…kbenc`.
 Su un campo `*Enc` **non** si fanno query, **non** si costruiscono indici, **non**
 si scrivono log, e **nessuna Cloud Function può migrarlo**: un cambio di schema
 su un campo cifrato non è backfillabile dal server, va fatto dai client.
+
+## Cifratura delle sezioni (campo `secure`, dal 09/11/2026)
+
+Specifica completa, tabella dei campi, limiti e prova in
+**`internal/cifratura-sezioni.md`**: leggerla prima di toccare una di queste
+collezioni. In breve:
+
+- **Formato:** un campo `secure` (base64 AES-GCM del JSON dei campi della
+  tabella, stessa chiave e stesse funzioni delle note) + `secureV: 1`. Codice:
+  `SectionCrypto.swift`, `SectionCrypto.kt` (`SectionFields`), web
+  `sectionCrypto.js` (`SECURE_FIELDS`). **La tabella deve restare identica sui
+  tre client** e in `scripts/section-encryption-check.js` e
+  `functions/deletedContent.js`.
+- **Collezioni:** `vehicles`, `vehicleEvents`, `pets`, `petEvents`,
+  `expenses`, `medicalVisits`, `medicalExams`, `treatments`, `vaccines`,
+  `pediatricProfiles`, `children` (`name`), `todos`, `todoLists`,
+  `calendarEvents`.
+- **Lettura (sempre, anche a interruttore spento):** un valore in chiaro non
+  vuoto vince, altrimenti si prende da `secure`.
+- **Scrittura (solo con l'interruttore):** i campi della tabella vanno a `""`
+  e i valori in `secure`; le scritture parziali si fondono con il documento
+  esistente. Interruttore Remote Config **`sections_encryption_enabled`,
+  spento** finché le build che leggono `secure` non sono diffuse.
+- **Ricifratura alla lettura:** un client acceso che legge un documento in
+  chiaro lo riscrive cifrato (senza toccare `updatedAt/By`). Conseguenza: **un
+  documento passa solo quando una schermata lo legge** — Garage, Animali e la
+  scheda medica del figlio sono passati solo dopo averli aperti.
+- **Calendario esportato** (`families/{fid}.calendarExported`, link iCal): gli
+  eventi restano in chiaro e quelli già sigillati si riaprono, perché il feed
+  li deve leggere.
+- **Push:** il server aggiunge `secure`, `secureColl`, `secureFamilyId`,
+  `titleTpl`, `bodyTpl`, `fallbackBody`; iOS riempie il testo nella
+  Notification Service Extension (`SecurePushTemplate`), Android con
+  `SecurePushText` (push solo dati), il web mostra il testo generico. La
+  delega automatica salta i to-do cifrati (titolo vuoto nel link `/r`).
+- **Cancellati:** to-do, liste, animali ed eventi degli animali si leggono con
+  `isDeleted == false`, quindi nessuno li ricifra. Il server ne **svuota** il
+  testo appena cancellati (`functions/deletedContent.js`, dentro
+  `notifyTodoAssigned` e `cascadeDeleteTodosOfList` + `blankDeletedPets/
+  PetEvents`); lo storico è stato ripulito il 09/11/2026 con
+  `scripts/blank-deleted-content.js` (273 documenti). Le altre sezioni i
+  cancellati li leggono e li ricifrano da sole.
+- **Prezzo noto:** chi ha un'app senza il codice di lettura vede nomi, titoli e
+  note **vuoti** (date, importi e struttura restano). Spegnere l'interruttore
+  non riporta in chiaro i documenti già cifrati.
+
+### Provarla su una sola famiglia (interruttore spento)
+
+- iOS Debug: argomento di avvio `-kb_debugSectionsEncryptionFamily <familyId>`
+  (copiato nelle preferenze, così vale anche aprendo dall'icona; `off` lo
+  spegne). Gli argomenti di avvio da soli valgono solo partendo da Xcode.
+- Android debug: file di preferenze `kb_debug_overrides`, stringa
+  `sections_encryption_family`, scritto con `adb push` + `run-as` (sopravvive
+  a `installDebug`, non a una disinstallazione).
+- Web: `localStorage.kb_debugSectionsEncryptionFamily = <familyId>`.
+- Controllo: `node scripts/section-encryption-check.js <familyId>
+  [--since ISO] [--json]` → per collezione CIFRATO / CHIARO / MISTO / VUOTO,
+  senza mai stampare i valori. Contare a parte i documenti cancellati.
+- **Mai su una famiglia con un membro sull'app dello store**: vedrebbe i vuoti.
+  «Scocca Limato» (`7747FF89-…`) è cifrata così dal 09/11/2026, prova riuscita
+  (lettura incrociata iOS↔Android e push col titolo vero).
 
 ## Dove vive la chiave (tre posti, non uno)
 
@@ -74,6 +135,26 @@ personale, codice di recupero, passkey, QR) è progettata in
 `internal/cifratura-chiave-di-riserva-v2.md`, con le decisioni dell'utente
 (sezione 8) e le regole per non rompere ingresso, revoca e login (sezione
 4 bis). **Leggerlo per intero prima di toccare l'escrow.**
+
+**Stato al 09/11/2026:**
+- `config/keyVault` acceso solo per `config/internalUsers` (Vittorio e
+  Antonella). Accensione per tutti quando le build sono diffuse; `enforce`
+  dopo.
+- **Fase 3 per una famiglia:** `families/{fid}.keyV1Closed: true` (lo scrive
+  solo l'Admin SDK, `keepsKeyV1Closed` nelle rules) → `memberKeyBackupIsValid`
+  accetta solo `version: 2`; i client scrivono solo la v2 o niente. Prima di
+  chiudere: ogni membro ha la copia v2 con lo **stesso `rkId`** della sua
+  cassaforte. Chiusa per «Scocca Limato» il 09/11/2026. Trappole pagate nel
+  farla: una `get` sul documento famiglia **assente** nega (serve `exists`
+  prima: il backup può arrivare prima del documento, o nello stesso batch);
+  sul web `backupFamilyKey` lanciava e bloccava l'ingresso in famiglia; una
+  riscrittura NON in merge del documento famiglia farebbe sparire il campo
+  (oggi sono tutte in merge). Limite: un membro nuovo che entra da app senza
+  cassaforte non lascia copia sul server.
+- **Fase 4 (rotazione della chiave) rimandata** dall'utente: si riapre solo se
+  si revoca un membro, se c'è il sospetto di un accesso, o se si vuole dire
+  pubblicamente che nemmeno i dati vecchi sono leggibili. Se si riapre:
+  variante «in avanti» (prefisso `k2:`, portachiavi, passaggio col QR).
 
 ## Come la chiave arriva a un nuovo membro
 
@@ -111,8 +192,8 @@ questo che le regole sugli inviti devono reggere da sole → `/rules-change`.
   `config/internalUsers`), spegnibile senza deploy; **acceso per tutti dal
   24/10/2026** (verificato il 09/11). Rischio: su ROM come Xiaomi
   ad app killata il push solo-dati può non arrivare. Chiave mancante = corpo
-  generico, mai un errore. Lo stesso schema vale per qualunque sezione si
-  cifri in futuro (to-do, calendario…). → `/notifiche`
+  generico, mai un errore. Lo stesso schema vale per le sezioni cifrate
+  (to-do, eventi, spese: vedi sopra). → `/notifiche`
 - **Ricerca, AI o analytics lato server sui contenuti**: il server vede byte.
   Tutto ciò che legge contenuti gira **sul client**.
 - **QA**: gli script con il client SDK possono verificare che i blob esistano e
@@ -121,6 +202,14 @@ questo che le regole sugli inviti devono reggere da sole → `/rules-change`.
 - **Supporto**: davanti a «non vedo più le note», la prima domanda non è sui
   dati ma sulla **chiave**: quel device ce l'ha? l'escrow c'è? è lo stesso
   `familyId` (la famiglia attiva vive su `users/{uid}.activeFamilyId`)?
+
+## La landing
+
+Deve dire solo ciò che è attivo… con un'eccezione voluta: dal 09/11/2026 la
+FAQ «I nostri dati sono al sicuro?» e quella di Salute elencano già salute,
+spese, to-do, calendario, garage e animali, su richiesta dell'utente, **prima**
+dell'accensione di `sections_encryption_enabled`. Accenderlo appena le build
+sono diffuse. «End-to-end» solo dopo la Fase 3 per tutti.
 
 ## Prima di dire «fatto»
 

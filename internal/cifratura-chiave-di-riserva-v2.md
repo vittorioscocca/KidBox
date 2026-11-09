@@ -1,10 +1,15 @@
 # Chiave di riserva v2: la copia della chiave di famiglia che il server non può aprire
 
-Piano scritto l'08/11/2026. Stato al 09/11/2026: **Fase 1 fatta per regole,
-`deleteAccount` e web app** (deployate; web provata sugli emulatori e accesa
-solo per gli account interni: `config/keyVault.internal`). Dominio delle
-passkey pronto per iOS e Android. iOS e Android scritti e committati (non
-pushati, nessuna UI: arriva con la Fase 2), provati sul vettore del web.
+Piano scritto l'08/11/2026.
+
+**Stato al 09/11/2026 sera:** Fasi 1 e 2 scritte su iOS, Android e web,
+pushate (Android 2.6.0 in produzione, iOS in revisione). Cassaforte accesa solo
+per `config/internalUsers` (Vittorio e Antonella): codice, passkey (iPhone,
+Xiaomi, Safari e Chrome su Mac) e passaggio col QR provati su device. **Fase 3
+chiusa per una sola famiglia** («Scocca Limato», `keyV1Closed`, sezione in
+fondo). **Fase 4 rimandata** (sezione in fondo). Da fare: prova di apertura con
+la passkey Android da un dispositivo senza chiave, accensione per tutti,
+misura, Fase 3 per tutti.
 Formato e costanti nella sezione 3.3.
 Contesto e regole generali sulla chiave: skill `/cifratura`.
 

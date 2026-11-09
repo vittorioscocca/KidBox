@@ -38,7 +38,7 @@ i suoi commit si vedono solo con `git -C KidBoxAndroid`.
 - `/app-check` — quota di richieste attestate, come si legge (la media a 7 giorni inganna), il cancello per l'enforcement
 - `/alexa` — accoppiamento, nome di invocazione (sei punti), gate di lingua; il backend non si tocca
 - `/calendario` — ricorrenze, promemoria degli eventi, calendari del telefono e iscritti da link, Google e Outlook senza OAuth
-- `/cifratura` — la chiave di famiglia: dove vive, come arriva a un membro, cosa il server non può fare
+- `/cifratura` — la chiave di famiglia: dove vive, come arriva a un membro, cosa il server non può fare; cassaforte v2, Fase 3 per famiglia, cifratura delle sezioni (`secure`) e come provarla su una famiglia
 - `/ai` — purpose, modello, unità scalate e quote; le trappole di copilota, cache e max_tokens
 - `/abbonamenti-store` — Pro/Max mensili e annuali su App Store e Play: livelli, IVA, invio in revisione, verifica via API
 - `/prova-pro` — la prova Pro di 14 giorni: concessione, interruttore, regalo alle famiglie esistenti, dove vive il testo
