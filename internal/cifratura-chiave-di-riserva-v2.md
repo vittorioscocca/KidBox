@@ -559,3 +559,27 @@ qualche settimana in più con la v1. Dove può andare storto:
 | 2 | 2-3 giorni (UX, QR, testi) + attesa dell'adozione |
 | 3 | 1 giorno + cancellazioni |
 | 4 | da progettare; settimane, non giorni |
+
+## Fase 3 per una sola famiglia (09/11/2026, «Scocca Limato»)
+
+`families/{fid}.keyV1Closed: true` chiude la copia v1 per quella famiglia:
+- **Rules** (bc097304): `memberKeyBackupIsValid(familyId)` accetta solo
+  `version: 2` se la famiglia ha `keyV1Closed` (`exists` prima della `get`, per
+  i backup scritti prima del documento famiglia); `keepsKeyV1Closed()` nega ai
+  client di mettere o togliere il campo, lo scrive solo l'Admin SDK. 11 test
+  nella suite.
+- **Client** (iOS e web a8d0a02c, Android 2524c9b): con la v1 chiusa scrivono
+  `{version: 2, v2, updatedAt}` o niente se lì manca la cassaforte; il web non
+  ferma l'ingresso in famiglia per il rifiuto. Le build vecchie riscrivono la
+  v1 e vengono rifiutate (best-effort, nessun effetto; contano nei DENY).
+- **Chiusa il 09/11/2026 alle 19:25 UTC** per `7747FF89-BD7D-4474-8E9E-827C1F97ECE1`
+  dopo aver verificato che entrambi i membri avessero la copia v2 con lo
+  stesso `rkId` della loro cassaforte (Vittorio `uoF0…`, codice + 4 passkey;
+  Antonella `pyj_…`, codice + passkey iPhone). Tolti `cipher/nonce/tag` dai due
+  `memberKeyBackups`, `version: 2`.
+- **Limite noto:** un membro NUOVO che entra in una famiglia chiusa da iOS o
+  Android senza cassaforte non lascia nessuna copia sul server (la sua app non
+  legge ancora il documento famiglia e la v1 viene rifiutata): gli resta il
+  telefono e il QR di un familiare.
+- La chiave di famiglia è la stessa di prima: per il server il passato non
+  cambia (backup di Firestore) finché non c'è la Fase 4.
