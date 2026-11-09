@@ -383,7 +383,9 @@ Fase 2.
   - Punto fisso per RICEVERE (09/11): Impostazioni › Sicurezza › «Ricevi la
     chiave con un QR» su iOS (48679737), Android (646967c) e web (ca02bd93,
     pubblicato): apre subito la stanza e mostra il QR, anche se il riquadro della
-    cassaforte non compare. Non ancora provato su device.
+    cassaforte non compare. Provato il 09/11: Xiaomi riceve, iPhone manda la RK,
+    consegna aperta, stanza cancellata, poi l'offerta della passkey; anche
+    «Annulla» cancella la stanza.
   - Manca ancora il QR nella schermata «chiave mancante»
     (`FamilyKeyMissingGate` / `MissingFamilyKeyException`).
 
