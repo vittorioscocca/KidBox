@@ -312,7 +312,14 @@ Fase 2.
   verificata (stesso `rkId` della cassaforte, v1 intatta). Block Store ha
   risposto **senza E2E** su quel telefono, quindi la RK non è stata salvata lì:
   la regola regge, ma va capito quanti telefoni veri hanno l'E2E prima di
-  contarci per la Fase 3.
+  contarci per la Fase 3. Causa trovata: **backup di Google spento** sul telefono
+  (`bmgr enabled` = disabled); la sequenza come blocco schermo va bene. Da
+  allora (Android): la RK va su Block Store anche dopo, all'avvio, appena l'E2E
+  diventa disponibile (una volta per installazione); se non lo è, un invito una
+  tantum spiega di accendere il backup di Google, col pulsante che apre la
+  pagina Backup (`com.google.android.gms.backup.ACTION_BACKUP_SETTINGS`,
+  ripiego sulle Impostazioni). Lo stesso riquadro compare alla fine della
+  schermata della cassaforte.
 - **Prova su iPhone vero (stesso account, 09/11/2026):** codice accettato; alle
   10:54 l'app ha riscritto la v1 in merge (la v2 è rimasta) e 18 secondi dopo
   la v2 della famiglia attiva, con lo stesso `rkId` di web e Android. Web,
