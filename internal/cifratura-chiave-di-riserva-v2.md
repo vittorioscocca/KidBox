@@ -386,8 +386,11 @@ Fase 2.
     cassaforte non compare. Provato il 09/11: Xiaomi riceve, iPhone manda la RK,
     consegna aperta, stanza cancellata, poi l'offerta della passkey; anche
     «Annulla» cancella la stanza.
-  - Manca ancora il QR nella schermata «chiave mancante»
-    (`FamilyKeyMissingGate` / `MissingFamilyKeyException`).
+  - QR anche nella schermata «chiave mancante» (09/11), solo a cassaforte
+    accesa: iOS `FamilyKeyMissingGate` (4a63e802), Android
+    `FamilyKeyMissingDialog` (efb5043), web `ReceiveKeyButton` in Documenti,
+    Note, Foto, Password, Wallet, Chat (pubblicato). Non provato su device:
+    serve un dispositivo davvero senza chiave.
 
 ### Fase 3 — Chiusura della v1
 Quando la quota della Fase 2 è alta (soglia da decidere, es. 90% degli attivi a 30
