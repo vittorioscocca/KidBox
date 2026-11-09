@@ -24,6 +24,7 @@ import PasswordEditModal from "../components/PasswordEditModal";
 import PasswordGroupsModal from "../components/PasswordGroupsModal";
 import PasswordSecurityModal from "../components/PasswordSecurityModal";
 import "./Password.css";
+import ReceiveKeyButton from "../components/ReceiveKeyButton";
 
 const SCOPES = ["all", "favorites", "family", "onlyMine"];
 
@@ -271,6 +272,7 @@ export default function Password() {
       <div className="pw-page">
         <h1>{p.title}</h1>
         <p className="pw-locked">🔒 {p.keyMissing}</p>
+        <ReceiveKeyButton />
       </div>
     );
   }

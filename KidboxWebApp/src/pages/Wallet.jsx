@@ -33,6 +33,7 @@ import CardPhotoSlots from "../components/CardPhotoSlots";
 import { deletePaymentCard, listenPaymentCards, savePaymentCard } from "../services/paymentCards";
 import "./Wallet.css";
 import { useOpenParam } from "../hooks/useOpenParam";
+import ReceiveKeyButton from "../components/ReceiveKeyButton";
 
 export default function Wallet() {
   const { currentFamilyId } = useFamily();
@@ -251,6 +252,7 @@ export default function Wallet() {
       <div className="wl-page">
         <h1>{w.title}</h1>
         <p className="pw-locked">🔒 {w.keyMissing}</p>
+        <ReceiveKeyButton />
       </div>
     );
   }

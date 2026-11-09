@@ -18,6 +18,7 @@ import {
 import PhotoGallery from "../components/PhotoGallery";
 import Modal from "../components/Modal";
 import "./Foto.css";
+import ReceiveKeyButton from "../components/ReceiveKeyButton";
 
 const GROUPINGS = ["year", "month", "all"];
 
@@ -302,6 +303,7 @@ export default function Foto() {
         <div className="locked-icon">🔒</div>
         <h2>{t.photos.keyMissing}</h2>
         <p>{t.photos.keyMissingHint}</p>
+        <ReceiveKeyButton />
       </div>
     );
   }

@@ -22,6 +22,7 @@ import Modal from "../components/Modal";
 import "./Documenti.css";
 import { useOpenParam } from "../hooks/useOpenParam";
 import { isVisibleTo } from "../visibility";
+import ReceiveKeyButton from "../components/ReceiveKeyButton";
 
 /** Da una sola immagine si eredita il nome; da più si dice quante sono. */
 function defaultPdfNameFor(images) {
@@ -495,6 +496,7 @@ export default function Documenti() {
         <div className="locked-icon">🔒</div>
         <h2>{t.documents.keyMissing}</h2>
         <p>{t.documents.keyMissingHint}</p>
+        <ReceiveKeyButton />
       </div>
     );
   }

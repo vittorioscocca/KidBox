@@ -22,6 +22,7 @@ import RichTextEditor from "../components/RichTextEditor";
 import VisibilityPickerModal, { visibilityChipLabel } from "../components/VisibilityPickerModal";
 import "./Note.css";
 import { useOpenParam } from "../hooks/useOpenParam";
+import ReceiveKeyButton from "../components/ReceiveKeyButton";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -287,6 +288,7 @@ export default function Note() {
         <div className="locked-icon">🔒</div>
         <h2>{t.notes.keyMissing}</h2>
         <p>{t.notes.keyMissingHint}</p>
+        <ReceiveKeyButton />
       </div>
     );
   }

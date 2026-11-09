@@ -60,6 +60,7 @@ import {
   saveToPhotos,
 } from "../services/chatSave";
 import "./Chat.css";
+import ReceiveKeyButton from "../components/ReceiveKeyButton";
 
 /**
  * Scrivania (Mac compreso): mouse e trascinamento ci sono davvero. È la sola
@@ -896,6 +897,7 @@ export default function Chat() {
         </div>
       </header>
 
+      {error === c.keyMissing && <ReceiveKeyButton />}
       {error && (
         <p className="error">
           {error}
