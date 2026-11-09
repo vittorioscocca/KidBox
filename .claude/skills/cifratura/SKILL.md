@@ -48,7 +48,7 @@ su un campo cifrato non è backfillabile dal server, va fatto dai client.
 |---|---|
 | iOS | Keychain (`FamilyKeychainStore`) + **mirror** in access group condiviso con l'estensione AutoFill (`SharedFamilyKey`, account `family.key`) |
 | Android | Keystore / `EncryptedPrefs` (`FamilyKeyStore`) |
-| Web | **da nessuna parte**: non c'è Keychain, la chiave passa sempre dall'escrow |
+| Web | **da nessuna parte**: non c'è Keychain, la chiave passa sempre dall'escrow. Dal 09/11/2026 (con l'interruttore `config/keyVault`) c'è la chiave personale v2 in IndexedDB, che apre la copia `v2` dell'escrow: formato e costanti nella sezione 3.3 del piano |
 
 L'**escrow** è `families/{familyId}/memberKeyBackups/{uid}`: la chiave AES-256
 della famiglia, wrappata con una chiave derivata in modo **deterministico** da

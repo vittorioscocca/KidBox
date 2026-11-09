@@ -1,6 +1,8 @@
 # Chiave di riserva v2: la copia della chiave di famiglia che il server non può aprire
 
-Piano scritto l'08/11/2026. Stato: **da approvare, niente ancora nel codice.**
+Piano scritto l'08/11/2026. Stato al 09/11/2026: **Fase 1 fatta per regole
+(deployate) e web app (provata sugli emulatori, interruttore spento)**; iOS,
+Android e `deleteAccount` da fare. Formato e costanti nella sezione 3.3.
 Contesto e regole generali sulla chiave: skill `/cifratura`.
 
 ## 1. Il problema, in una frase
@@ -72,7 +74,8 @@ segreto dell'utente (codice di recupero / passkey)
 - **Chiave personale (RK)**: 32 byte casuali generati sul dispositivo. Vive nel
   Portachiavi (sincronizzato) su Apple, nel Keystore su Android, in IndexedDB come
   `CryptoKey` non esportabile sul web.
-- **Cassaforte dell'utente** `users/{uid}/keyVault/main`: la RK avvolta da uno o più
+- **Cassaforte dell'utente** `users/{uid}/keyVault/{slotId}` (un documento per
+  slot, sezione 3.3): la RK avvolta da uno o più
   «slot», uno per ogni modo di aprirla (come le serrature con più chiavi):
   - `recoveryCode`: chiave = HKDF-SHA256(codice, salt casuale per slot). Il codice lo
     **genera l'app** (24 caratteri base32 a gruppi, ~120 bit): con tanta entropia non
@@ -83,7 +86,7 @@ segreto dell'utente (codice di recupero / passkey)
     iPhone vive nel Portachiavi iCloud, quella creata su Android nel Gestore
     password di Google, e sono serrature diverse. Dopo un rientro su un sistema
     nuovo l'app propone di aggiungere la passkey di quel sistema.
-  - formato di ogni slot: `{type, salt, nonce, cipher, tag, credentialId?, createdAt}`.
+  - formato di ogni slot: sezione 3.3.
 - **Il codice di recupero c'è sempre, la passkey è un'aggiunta.** Chi crea la
   cassaforte riceve il codice in ogni caso: una passkey sola lascerebbe fuori chi
   entra da un Mac con un altro account Apple, da Windows o da Android.
@@ -91,7 +94,8 @@ segreto dell'utente (codice di recupero / passkey)
   sbloccano il dispositivo; la passkey è la stessa e l'uscita PRF è la stessa,
   quindi iPhone con Face ID e Mac con l'impronta aprono la stessa cassaforte.
 - **Copia di riserva v2** `families/{familyId}/memberKeyBackups/{uid}`: la chiave di
-  famiglia avvolta con la RK, `version: 2`. Stesso percorso di oggi, così
+  famiglia avvolta con la RK, nella mappa `v2` **accanto** ai campi della v1 (che
+  resta fino alla Fase 3). Stesso documento di oggi, così revoca, uscita,
   cancellazione di famiglia e di account funzionano già.
 
 Un solo codice per utente, anche con più famiglie. Aggiungere una famiglia = una
@@ -149,6 +153,67 @@ scrivere il codice delle passkey.
 
 Il QR riusa `InviteCrypto` (segreto nel QR, materiale avvolto in un documento a
 scadenza breve, 10 minuti, cancellato dopo l'uso): il codice c'è già per gli inviti.
+
+### 3.3 Formato e costanti v2 (scritti il 09/11/2026 col web; iOS e Android li copiano identici)
+
+Un carattere diverso in una di queste stringhe produce una chiave diversa e dati
+illeggibili, senza un errore. Riferimento: `KidboxWebApp/src/services/familyKeyVault.js`.
+
+| Cosa | Valore |
+|---|---|
+| Contesto | `kidbox-vault-v2`, `version: 2` negli slot |
+| RK | 32 byte casuali |
+| `rkId` (pubblico) | HKDF-SHA256(ikm = RK, salt vuoto, info `kidbox-vault-v2:rk-id`), 16 byte, base64url senza padding |
+| Codice di recupero | 15 byte casuali → 24 caratteri base32 di Crockford `0123456789ABCDEFGHJKMNPQRSTVWXYZ`, mostrato `XXXX-XXXX-XXXX-XXXX-XXXX-XXXX` |
+| Forma canonica del codice | maiuscole, via spazi e trattini, `O`→`0`, `I` e `L`→`1`; deve restare di 24 caratteri dell'alfabeto |
+| Chiave dello slot codice | HKDF-SHA256(ikm = UTF-8 della forma canonica, salt = 16 byte casuali dello slot, info `kidbox-vault-v2:slot:recoveryCode`), 32 byte |
+| Input PRF della passkey | `eval.first` = UTF-8 di `kidbox-vault-v2:prf` |
+| Chiave dello slot passkey | HKDF-SHA256(ikm = uscita PRF di 32 byte, salt = 16 byte dello slot, info `kidbox-vault-v2:slot:passkey`), 32 byte |
+| Cifratura della RK nello slot | AES-256-GCM, nonce 12 byte, AAD = UTF-8 di `kidbox-vault-v2:rk:{uid}` |
+| Chiave per le copie di famiglia | HKDF-SHA256(ikm = RK, salt vuoto, info `kidbox-vault-v2:family`), 32 byte |
+| Cifratura della copia v2 | AES-256-GCM, nonce 12 byte, AAD = UTF-8 di `kidbox-vault-v2:family:{uid}:{familyId}` |
+| Dominio della passkey (RP ID) | `kidboxapp.com` su `*.kidboxapp.com`; in sviluppo l'host stesso |
+| Id dello slot passkey | `passkey_` + base64url dei primi 16 byte di SHA-256(rawId della credenziale) |
+
+Ciphertext e tag sempre in **campi separati**, base64 standard (come la v1 e
+CryptoKit); `credentialId` e `rkId` in base64url.
+
+**Documenti** (forma imposta dalle rules, suite in `firestore-tests/`):
+- `users/{uid}/keyVault/recoveryCode` e `users/{uid}/keyVault/passkey_<id>`:
+  `{type: "recoveryCode"|"passkey", version: 2, rkId, salt, nonce, cipher, tag,
+  credentialId? (solo passkey), label? (es. «Chrome · Mac»), createdAt, updatedAt?}`.
+  Solo il proprietario legge e scrive; un update non cambia `rkId`.
+- `families/{fid}/memberKeyBackups/{uid}`: `{cipher, nonce, tag, updatedAt,
+  version: 1, v2?: {cipher, nonce, tag, rkId, updatedAt}}` finché c'è la v1;
+  dopo la Fase 3 `{version: 2, v2, updatedAt}`. Le app vecchie riscrivono la v1
+  con `setData` e la mappa `v2` sparisce: è previsto, i client nuovi la
+  riaggiungono con un merge alla lettura successiva. **Nessun client nuovo
+  sovrascrive il documento senza rimettere anche la `v2`.**
+- Creazione: lo slot del codice si crea in transazione solo se non esiste; se
+  un altro dispositivo l'ha appena creata, si apre quella (mai due RK).
+
+**Interruttore** `config/keyVault`: `{enabled, internal, enforce}`. `enabled` =
+tutti; `internal` = solo gli uid in `config/internalUsers.uids`; `enforce` = niente
+«Più tardi». Documento assente = spento per tutti (stato al 09/11/2026).
+
+**Web** (fatto il 09/11/2026):
+- la RK sta in IndexedDB (`kidbox-vault`, store `rk`, chiave = uid) come
+  `CryptoKey` HKDF non esportabile; all'**uscita dall'account** il browser la
+  dimentica (anche col logout remoto), e al login successivo chiede di nuovo
+  passkey o codice una volta;
+- lettura: v2 se il browser ha la RK, poi v1; se c'è solo la v2 e manca la RK,
+  `MissingFamilyKeyError` con `vaultLocked = true`;
+- alla lettura dalla v1 con la cassaforte attiva, la copia v2 si aggiunge in
+  background; ogni copia v2 scritta si **rilegge dal server e si apre** prima di
+  contarla buona (regola 4); la v1 non si cancella (4 ter, punto 2);
+- promemoria in `KeyVaultGate` (dentro l'app) e in fondo all'onboarding, dopo
+  creazione o ingresso in famiglia, con «Più tardi»;
+- prova: 22 controlli su emulatori Auth e Firestore con Chrome e un autenticatore
+  virtuale con PRF (crea, ingresso da invito con passkey, rimando, revoca, login
+  di un revocato, rientro con passkey e con codice, codice sbagliato, solo v2,
+  logout). Limite: un autenticatore virtuale non esporta il segreto PRF, quindi
+  «la stessa passkey sincronizzata su un altro dispositivo» va provata con un
+  Mac e un iPhone veri.
 
 ## 4. Le fasi
 
