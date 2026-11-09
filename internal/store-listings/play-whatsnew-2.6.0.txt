@@ -1,0 +1,28 @@
+<it-IT>
+• Liste to-do: scegli chi le vede (famiglia, solo tu o alcuni membri) e i to-do nuovi lo ereditano.
+• To-do: la vista «Tutti» raggruppa per lista.
+• Lista della spesa: le categorie si chiudono e si aprono con un tocco, e da chiuse mostrano quante voci hanno.
+• Piano fitness: la scarpa in alto apre le scarpe da corsa.
+• Scheda medica leggibile anche col tema scuro.
+</it-IT>
+<en-US>
+• To-do lists: choose who sees them (family, only you or some members), and new to-dos inherit it.
+• To-dos: the "All" view groups by list.
+• Shopping list: categories collapse and expand with a tap, and show how many items they hold when closed.
+• Fitness plan: the shoe at the top opens your running shoes.
+• Medical card readable in dark mode too.
+</en-US>
+<fr-FR>
+• Listes de tâches : choisissez qui les voit (famille, vous seul ou certains membres) et les nouvelles tâches en héritent.
+• Tâches : la vue « Tous » regroupe par liste.
+• Liste de courses : les catégories se ferment et s'ouvrent d'un geste, et affichent leur nombre d'articles une fois fermées.
+• Plan fitness : la chaussure en haut ouvre vos chaussures de course.
+• Fiche médicale lisible aussi en mode sombre.
+</fr-FR>
+<es-ES>
+• Listas de tareas: elige quién las ve (familia, solo tú o algunos miembros) y las tareas nuevas lo heredan.
+• Tareas: la vista «Todos» agrupa por lista.
+• Lista de la compra: las categorías se cierran y se abren con un toque, y cerradas muestran cuántos artículos tienen.
+• Plan fitness: la zapatilla de arriba abre tus zapatillas de running.
+• Ficha médica legible también con el tema oscuro.
+</es-ES>
