@@ -296,6 +296,16 @@ Fase 2.
   vale solo se il suo `rkId` coincide con quello della cassaforte. Motivo: senza
   E2E Google potrebbe aprire la RK, cioè proprio quello che la v2 deve
   impedire. È l'equivalente del Portachiavi iCloud su iOS.
+- **Stato al 09/11/2026 (non pushato, non provato su device):** su iOS
+  (`KeyVaultPromptView.swift`, agganciata in `RootHostView`) e Android
+  (`KeyVaultPrompt.kt`, in `AppNavGraph`) c'è la schermata col **solo codice**:
+  crea (codice mostrato una volta, «Copia» locale/sensibile, «Salva o stampa»
+  dal foglio di condivisione, conferma di 4 caratteri) o apre la cassaforte, poi
+  scrive e verifica la v2 di ogni famiglia di cui il telefono ha la chiave.
+  Compare 3 secondi dopo l'avvio solo con l'interruttore acceso e senza RK in
+  locale; «Più tardi» vale fino alla prossima apertura dell'app. Android prova
+  prima Block Store (solo E2E, `rkId` controllato). Testi uguali al web, nelle 4
+  lingue. Da fare: passkey native, QR, «Rigenera codice», misura.
 - **Misura**: quota di utenti attivi con `keyVault` e senza v1 (script di sola
   lettura sul conteggio dei documenti, non sui contenuti).
 
