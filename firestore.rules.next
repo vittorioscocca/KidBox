@@ -349,6 +349,58 @@ service cloud.firestore {
 
     // Contatore famiglie possedute: l'utente può leggere il proprio (per mostrare
     // il limite in UI), ma la scrittura è riservata all'Admin SDK, che ignora le rules.
+    // ── PASSAGGIO DELLA CHIAVE CON IL QR (cassaforte v2) ───
+    // Chi non ha la chiave (browser con «Entra con il telefono», telefono
+    // nuovo, familiare appena entrato) crea `keyHandoffs/{roomId}` con la sua
+    // chiave pubblica effimera P-256, la stessa che mostra nel QR; chi ha la
+    // chiave inquadra e deposita in `payload` il materiale chiuso con ECDH. Il
+    // server vede solo la pubblica e byte chiusi. La chiave personale (`rk`) va
+    // solo allo stesso utente; la chiave di una famiglia solo da un membro a un
+    // membro attivo di quella famiglia. Una consegna sola, entro la scadenza (10
+    // minuti; TTL su `expiresAt`). Niente list: l'id lo ha solo chi vede il QR.
+    // Piano: `internal/cifratura-chiave-di-riserva-v2.md`, sezione 3.2.
+    function isActiveMemberUid(familyId, uid) {
+      let path = /databases/$(database)/documents/families/$(familyId)/members/$(uid);
+      return exists(path)
+        && ('role' in get(path).data)
+        && get(path).data.get('isDeleted', false) != true;
+    }
+
+    function keyHandoffPayloadIsValid(p, room) {
+      return p is map
+        && p.keys().hasAll(['kind', 'epk', 'nonce', 'cipher', 'tag'])
+        && p.keys().hasOnly(['kind', 'familyId', 'epk', 'nonce', 'cipher', 'tag'])
+        && isB64(p.epk, 140) && isB64(p.nonce, 32) && isB64(p.cipher, 128) && isB64(p.tag, 32)
+        && ((p.kind == 'rk' && !('familyId' in p) && request.auth.uid == room.uid)
+            || (p.kind == 'familyKey' && p.get('familyId', '') is string && p.get('familyId', '') != ''
+                && isMember(p.familyId) && isActiveMemberUid(p.familyId, room.uid)));
+    }
+
+    match /keyHandoffs/{roomId} {
+      allow get: if isSignedIn()
+        && (resource.data.uid == request.auth.uid || resource.data.expiresAt > request.time);
+      allow create: if isSignedIn()
+        && roomId.matches('^[A-Za-z0-9_-]{20,64}$')
+        && request.resource.data.keys().hasAll(['uid', 'pub', 'createdAt', 'expiresAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'pub', 'label', 'createdAt', 'expiresAt'])
+        && request.resource.data.uid == request.auth.uid
+        && isB64(request.resource.data.pub, 140)
+        && (!('label' in request.resource.data)
+            || (request.resource.data.label is string && request.resource.data.label.size() <= 80))
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt <= request.time + duration.value(11, 'm');
+      allow update: if isSignedIn()
+        && !('payload' in resource.data)
+        && resource.data.expiresAt > request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['payload', 'senderUid', 'sentAt'])
+        && request.resource.data.senderUid == request.auth.uid
+        && request.resource.data.sentAt is timestamp
+        && keyHandoffPayloadIsValid(request.resource.data.payload, resource.data);
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
     match /user_quotas/{uid} {
       allow read: if isSignedIn() && request.auth.uid == uid;
       allow write: if false;

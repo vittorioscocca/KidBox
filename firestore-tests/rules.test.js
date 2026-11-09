@@ -468,6 +468,67 @@ async function check(nome, promessa) {
   await check("escrow: e la riscrive (rientro)",
       assertSucceeds(escrowDi(dbMembro, MEMBRO).set(copiaV1)));
 
+  // ── PASSAGGIO DELLA CHIAVE CON IL QR ──────────────
+  //
+  // `keyHandoffs/{roomId}`: chi non ha la chiave (browser, telefono nuovo,
+  // familiare appena entrato) crea una stanza con la sua chiave pubblica
+  // effimera e la mostra nel QR; chi la chiave ce l'ha inquadra e deposita
+  // il materiale chiuso. La chiave personale va solo allo STESSO utente, la
+  // chiave di famiglia solo a un membro attivo di quella famiglia, e da un
+  // membro. Una volta sola, entro la scadenza.
+  console.log("\n── PASSAGGIO DELLA CHIAVE CON IL QR ──────────────");
+  const tra = (min) => new Date(Date.now() + min * 60000);
+  const stanza = (uid) => ({uid, pub: "BHB1Yg==", label: "Chrome · Windows", createdAt: new Date(), expiresAt: tra(10)});
+  const busta = {epk: "ZXBr", nonce: "bm9uY2U=", cipher: "Y2lwaGVy", tag: "dGFn"};
+  const consegna = (uid, payload) => ({senderUid: uid, sentAt: new Date(), payload});
+  const roomDi = (d, id) => d.doc(`keyHandoffs/${id}`);
+  await check("qr: chi entra crea la propria stanza",
+      assertSucceeds(roomDi(dbMembro, "stanzaMembro0000000001").set(stanza(MEMBRO))));
+  await check("qr: NON crea una stanza a nome di un altro",
+      assertFails(roomDi(dbEstraneo, "stanzaFalsa00000000001").set(stanza(MEMBRO))));
+  await check("qr: NON crea una stanza che scade fra un'ora",
+      assertFails(roomDi(dbMembro, "stanzaLunga00000000001").set({...stanza(MEMBRO), expiresAt: tra(60)})));
+  await check("qr: NON crea una stanza con un campo in più",
+      assertFails(roomDi(dbMembro, "stanzaPiu000000000001").set({...stanza(MEMBRO), payload: busta})));
+  await check("qr: NON si listano le stanze",
+      assertFails(dbMembro.collection("keyHandoffs").get()));
+  await check("qr: chi inquadra legge la stanza col suo id",
+      assertSucceeds(roomDi(dbEstraneo, "stanzaMembro0000000001").get()));
+  await check("qr: un estraneo NON manda la chiave personale a un altro utente",
+      assertFails(roomDi(dbEstraneo, "stanzaMembro0000000001")
+          .update(consegna(ESTRANEO, {...busta, kind: "rk"}))));
+  await check("qr: un estraneo NON manda una chiave di famiglia",
+      assertFails(roomDi(dbEstraneo, "stanzaMembro0000000001")
+          .update(consegna(ESTRANEO, {...busta, kind: "familyKey", familyId: FAM}))));
+  await check("qr: NON si consegna a nome di un altro",
+      assertFails(roomDi(db, "stanzaMembro0000000001")
+          .update(consegna(MEMBRO, {...busta, kind: "familyKey", familyId: FAM}))));
+  await check("qr: un familiare manda la chiave di famiglia a un membro",
+      assertSucceeds(roomDi(db, "stanzaMembro0000000001")
+          .update(consegna(UID, {...busta, kind: "familyKey", familyId: FAM}))));
+  await check("qr: NON si consegna due volte",
+      assertFails(roomDi(db, "stanzaMembro0000000001")
+          .update(consegna(UID, {...busta, kind: "familyKey", familyId: FAM}))));
+  await check("qr: chi l'ha creata cancella la stanza",
+      assertSucceeds(roomDi(dbMembro, "stanzaMembro0000000001").delete()));
+  await check("qr: lo stesso utente si manda la chiave personale",
+      assertSucceeds(roomDi(dbMembro, "stanzaMembro0000000002").set(stanza(MEMBRO))
+          .then(() => roomDi(dbMembro, "stanzaMembro0000000002").update(consegna(MEMBRO, {...busta, kind: "rk"})))));
+  await check("qr: un altro NON cancella la stanza",
+      assertFails(roomDi(db, "stanzaMembro0000000002").delete()));
+  await check("qr: un membro NON manda la chiave di famiglia a chi non è membro",
+      assertFails(roomDi(dbEstraneo, "stanzaEstr00000000001").set(stanza(ESTRANEO))
+          .then(() => roomDi(db, "stanzaEstr00000000001")
+              .update(consegna(UID, {...busta, kind: "familyKey", familyId: FAM})))));
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc("keyHandoffs/stanzaScaduta000000001")
+        .set({...stanza(MEMBRO), expiresAt: tra(-1)});
+  });
+  await check("qr: NON si consegna in una stanza scaduta",
+      assertFails(roomDi(dbMembro, "stanzaScaduta000000001").update(consegna(MEMBRO, {...busta, kind: "rk"}))));
+  await check("qr: un altro NON legge una stanza scaduta",
+      assertFails(roomDi(db, "stanzaScaduta000000001").get()));
+
   // ── QUERY DI COLLEZIONE (LIST) ─────────────────────
   //
   // Regressione vera, in produzione: escludendo `memberKeyBackups` dentro un
