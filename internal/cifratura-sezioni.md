@@ -274,3 +274,23 @@ Controllo su Firestore (solo lettura, non stampa i valori):
 per collezione CIFRATO / CHIARO / MISTO / VUOTO, coi nomi dei campi in chiaro.
 
 Mai sulla famiglia vera: chi ci entra con l'app dello store vede i vuoti.
+
+## Prova su device (09/11/2026, famiglia «Scocca Limato»)
+
+Accesa solo per `7747FF89-BD7D-4474-8E9E-827C1F97ECE1` con l'override di
+debug: Xiaomi (Vittorio, build debug Android) e iPhone di Antonella (build
+Debug da Xcode, argomento nello schema, non committato). Esito:
+
+- Firestore (`scripts/section-encryption-check.js`): tutti i documenti attivi
+  CIFRATI in tutte le 14 collezioni, nessun MISTO. Un documento si ricifra
+  solo quando una schermata lo legge (Garage, Animali e la scheda medica del
+  figlio sono passati solo dopo averli aperti).
+- Lettura incrociata iOS ↔ Android: tutto leggibile.
+- Push dei to-do creati da iOS e da Android: titolo vero sul blocco schermo
+  di entrambi.
+- Limite trovato: i to-do **cancellati** (`isDeleted`) restano in chiaro,
+  perché nessun client li legge e quindi nessuno li ricifra (114 in questa
+  famiglia). Per la Salute invece anche i cancellati risultano cifrati.
+
+Da qui la famiglia resta cifrata: un membro con l'app dello store vedrebbe i
+vuoti. Spegnere l'override non la riporta in chiaro.
