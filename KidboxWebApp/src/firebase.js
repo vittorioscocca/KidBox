@@ -1,8 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getFunctions } from "firebase/functions";
+import { connectAuthEmulator, getAuth } from "firebase/auth";
+import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
+import { connectFunctionsEmulator, getFunctions } from "firebase/functions";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -72,3 +72,14 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app, "europe-west1");
 export const storage = getStorage(app);
+
+// Solo in sviluppo e solo se chiesto (`VITE_USE_EMULATORS=1 npm run dev`): Auth,
+// Firestore e Functions degli emulatori locali, con le regole del repo. Serve a
+// provare flussi come la cassaforte della chiave in un browser pulito, con
+// account usa e getta, senza toccare i dati veri.
+if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === "1") {
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+  console.warn("[Firebase] emulatori locali attivi");
+}

@@ -17,6 +17,15 @@
       "port": 5173
     },
     {
+      "name": "webapp-emulators",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd KidboxWebApp && VITE_USE_EMULATORS=1 npx vite --port 5174 --strictPort"
+      ],
+      "port": 5174
+    },
+    {
       "name": "landing",
       "runtimeExecutable": "sh",
       "runtimeArgs": [
