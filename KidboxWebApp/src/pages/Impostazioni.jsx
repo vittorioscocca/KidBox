@@ -11,6 +11,7 @@ import { useTranslation } from "../i18n/LocaleContext";
 import { isAlexaAvailable } from "../i18n/alexaAvailability";
 import { THEMES, useTheme } from "../ThemeContext";
 import { LANGUAGES, setNotificationLanguage } from "../services/settings";
+import { keyVaultFlags } from "../services/familyKeyVault";
 import {
   loadPlan,
   loadProfile,
@@ -34,6 +35,12 @@ export default function Impostazioni() {
   const fileInput = useRef(null);
 
   const [plan, setPlan] = useState(null);
+  const [showSecurity, setShowSecurity] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    keyVaultFlags(user.uid).then((f) => setShowSecurity(!!f.active)).catch(() => setShowSecurity(false));
+  }, [user]);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -287,6 +294,10 @@ export default function Impostazioni() {
         <Row icon="✨" tint="purple" title={s.ai} hint={s.aiRowHint} to={`${base}/assistente`} chevron />
         <Row icon="🔔" title={s.notifications} hint={s.notificationsRowHint} to={`${base}/notifiche`} chevron />
         <Row icon="🛡️" tint="green" title={s.privacy} hint={s.privacyRowHint} to={`${base}/privacy`} chevron />
+        {/* Solo con l'interruttore della cassaforte acceso per questo utente. */}
+        {showSecurity && (
+          <Row icon="🔐" tint="green" title={t.keyVault.secTitle} hint={t.keyVault.secRowHint} to={`${base}/sicurezza`} chevron />
+        )}
         {/* La skill esiste solo in italiano: vedi `isAlexaAvailable`. */}
         {isAlexaAvailable(locale) && (
           <Row icon="🔊" tint="blue" title={t.alexa.title} hint={s.alexaRowHint} to={`${base}/alexa`} chevron />

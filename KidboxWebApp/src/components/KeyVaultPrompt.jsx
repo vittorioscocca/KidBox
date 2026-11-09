@@ -14,6 +14,7 @@ import {
   openVaultWithPasskey,
   openVaultWithRecoveryCode,
   passkeyMaybeSupported,
+  replaceRecoveryCode,
 } from "../services/familyKeyVault";
 import "./KeyVaultPrompt.css";
 
@@ -26,8 +27,12 @@ import "./KeyVaultPrompt.css";
  *
  * Dopo: copia v2 verificata per ogni famiglia di `familyIds`. La v1 non si
  * tocca. `allowLater` = c'è «Più tardi» (spento solo con `enforce`).
+ *
+ * Da Impostazioni › Sicurezza: `mode` "regenerate" (codice nuovo, stessa RK) o
+ * "addPasskey". La RK in IndexedDB non è esportabile, quindi in entrambi i casi
+ * si riapre prima la cassaforte (passkey o codice) per avere i byte.
  */
-export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onDone, onLater }) {
+export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onDone, onLater, mode = "default" }) {
   const { t } = useTranslation();
   const k = t.keyVault;
   const [step, setStep] = useState("loading");
@@ -59,7 +64,7 @@ export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onD
         const s = await listVaultSlots(user.uid);
         if (cancelled) return;
         setSlots(s);
-        setStep(s.length > 0 ? "open" : "intro");
+        setStep(s.length > 0 ? "open" : mode === "default" ? "intro" : "open");
       } catch {
         if (!cancelled) {
           setError(k.error);
@@ -92,7 +97,9 @@ export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onD
   const afterUnlock = async (result, { offerPasskey }) => {
     rk.current = result;
     await syncFamilyKeysV2({ userId: user.uid, familyIds: familyIds || [] });
-    if (offerPasskey && canPasskey) setStep("passkey");
+    if (mode === "regenerate") setStep("code");
+    else if (mode === "addPasskey") setStep("passkey");
+    else if (offerPasskey && canPasskey) setStep("passkey");
     else setStep("done");
   };
 
@@ -120,6 +127,12 @@ export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onD
       const ok = positions.every((p, i) => canonical?.[p] === norm(confirmChars[i]));
       if (!ok) {
         setError(k.confirmWrong);
+        return;
+      }
+      if (mode === "regenerate") {
+        await replaceRecoveryCode({ uid: user.uid, rkBytes: rk.current.rkBytes, rkId: rk.current.rkId, recoveryCode: code });
+        setNotice(k.regenerated);
+        setStep("done");
         return;
       }
       try {
@@ -203,7 +216,7 @@ export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onD
 
   const laterButton = allowLater && step !== "done" && (
     <button type="button" className="kv-link" onClick={later} disabled={busy}>
-      {k.later}
+      {mode === "default" ? k.later : k.cancel}
     </button>
   );
 
@@ -294,7 +307,7 @@ export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onD
             <div className="kv-icon" aria-hidden="true">🔐</div>
             <h2 className="modal-title">{k.openTitle}</h2>
             {notice && <p className="kv-notice">{notice}</p>}
-            <p className="kv-lead">{k.openLead}</p>
+            <p className="kv-lead">{mode === "default" ? k.openLead : k.unlockFirst}</p>
             {canPasskey && slots.some((s) => s.type === "passkey") && (
               <button type="button" className="kv-primary" onClick={openWithPasskey} disabled={busy}>
                 {k.openPasskey}
@@ -327,7 +340,7 @@ export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onD
               </button>
             </form>
             {error && <p className="kv-error">{error}</p>}
-            <p className="kv-small">{k.lostCode}</p>
+            {mode !== "regenerate" && <p className="kv-small">{k.lostCode}</p>}
             {laterButton}
           </>
         )}
@@ -341,8 +354,8 @@ export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onD
             <button type="button" className="kv-primary" onClick={createPasskey} disabled={busy}>
               {k.passkeyCta}
             </button>
-            <button type="button" className="kv-link" onClick={() => setStep("done")} disabled={busy}>
-              {k.passkeySkip}
+            <button type="button" className="kv-link" onClick={mode === "addPasskey" ? later : () => setStep("done")} disabled={busy}>
+              {mode === "addPasskey" ? k.cancel : k.passkeySkip}
             </button>
           </>
         )}

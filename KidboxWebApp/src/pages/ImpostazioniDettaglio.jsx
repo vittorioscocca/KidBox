@@ -20,6 +20,8 @@ import { useAuth } from "../AuthContext";
 import { useFamily } from "../FamilyContext";
 import { useTranslation } from "../i18n/LocaleContext";
 import AlexaCard from "../components/AlexaCard";
+import KeyVaultPrompt from "../components/KeyVaultPrompt";
+import { getLocalVault, listVaultSlots } from "../services/familyKeyVault";
 import { isAlexaAvailable } from "../i18n/alexaAvailability";
 import { HEALTH_CONTEXT_PREFS, NOTIFICATION_PREFS } from "../services/settings";
 import { deleteAccount, fetchStorageUsage, loadPlan } from "../services/profile";
@@ -54,6 +56,7 @@ export default function ImpostazioniDettaglio() {
     privacy: [s.privacy, PrivacyPage],
     alexa: isAlexaAvailable(locale) ? [t.alexa.title, AlexaPage] : null,
     sessione: [s.session, SessionePage],
+    sicurezza: [t.keyVault.secTitle, SicurezzaPage],
   };
   const entry = pages[section];
   if (!entry) return <Navigate to={BACK} replace />;
@@ -359,6 +362,93 @@ function PrivacyPage() {
       <Group label={s.deviceSection}>
         <DeviceRow icon="🔑" title={s.passwordsAutofill} hint={s.passwordsAutofillHint} label={s.deviceOnly} />
       </Group>
+    </>
+  );
+}
+
+/* ── Sicurezza ───────────────────────────────────────────────────────────── */
+
+/**
+ * Sicurezza: la cassaforte della chiave di famiglia (piano v2). Gemella di
+ * `SecuritySettingsView` (iOS) e `SecuritySettingsScreen` (Android). Sul web
+ * la RK non è esportabile: rigenerare il codice o aggiungere una passkey
+ * passa da una riapertura (vedi `KeyVaultPrompt`, `mode`).
+ */
+function SicurezzaPage() {
+  const { user } = useAuth();
+  const { families } = useFamily();
+  const { t, locale } = useTranslation();
+  const k = t.keyVault;
+  const [state, setState] = useState(null); // null | { slots, hasRk, failed }
+  const [dialog, setDialog] = useState(null); // null | "default" | "regenerate" | "addPasskey"
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!user) return undefined;
+    let cancelled = false;
+    (async () => {
+      const hasRk = !!(await getLocalVault(user.uid));
+      try {
+        const slots = await listVaultSlots(user.uid);
+        if (!cancelled) setState({ slots, hasRk, failed: false });
+      } catch {
+        if (!cancelled) setState({ slots: [], hasRk, failed: true });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, tick]);
+
+  const fmtDate = (ts) => (ts?.toDate ? ts.toDate().toLocaleDateString(locale) : "");
+  const slots = state?.slots || [];
+  const recovery = slots.find((x) => x.type === "recoveryCode");
+  const passkeys = slots.filter((x) => x.type === "passkey");
+
+  let status = ["⏳", "grey", k.secChecking];
+  if (state?.failed) status = ["⚠️", "orange", k.secFailed];
+  else if (state && slots.length === 0) status = ["🔓", "orange", k.secNone];
+  else if (state?.hasRk) status = ["🔒", "green", k.secOk];
+  else if (state) status = ["🔐", "orange", k.secLocked];
+
+  return (
+    <>
+      <Group hint={k.secExplain}>
+        <Row icon={status[0]} tint={status[1]} title={status[2]} />
+      </Group>
+
+      {slots.length > 0 && (
+        <Group label={k.secMethods}>
+          {recovery && <Row icon="🔑" tint="blue" title={k.codeLabel} right={<Value>{fmtDate(recovery.updatedAt || recovery.createdAt)}</Value>} />}
+          {passkeys.map((pk) => (
+            <Row key={pk.id} icon="👆" tint="purple" title={pk.label || k.secPasskey} right={<Value>{fmtDate(pk.createdAt)}</Value>} />
+          ))}
+        </Group>
+      )}
+
+      {state && !state.failed && (
+        <Group hint={recovery ? k.secRegenerateHint : undefined}>
+          {slots.length === 0 && <Row icon="🔐" tint="green" title={k.secCreate} onClick={() => setDialog("default")} chevron />}
+          {slots.length > 0 && !state.hasRk && (
+            <Row icon="🔓" tint="green" title={k.secOpenHere} onClick={() => setDialog("default")} chevron />
+          )}
+          {slots.length > 0 && <Row icon="👆" tint="purple" title={k.secAddPasskey} onClick={() => setDialog("addPasskey")} chevron />}
+          {recovery && <Row icon="♻️" tint="blue" title={k.secRegenerate} onClick={() => setDialog("regenerate")} chevron />}
+        </Group>
+      )}
+
+      {dialog && user && (
+        <KeyVaultPrompt
+          user={user}
+          familyIds={(families || []).map((f) => f.id)}
+          mode={dialog}
+          onDone={() => {
+            setDialog(null);
+            setTick((n) => n + 1);
+          }}
+          onLater={() => setDialog(null)}
+        />
+      )}
     </>
   );
 }
