@@ -50,6 +50,7 @@ su un campo cifrato non è backfillabile dal server, va fatto dai client.
 | Android | Keystore / `EncryptedPrefs` (`FamilyKeyStore`) |
 | Cassaforte v2 (dal 09/11/2026, dietro `config/keyVault`) | chiave personale RK: Portachiavi sincronizzato su iOS (`FamilyKeyVault.swift`), EncryptedPrefs `kidbox_vault` su Android (`FamilyKeyVault.kt`), IndexedDB sul web. Apre la mappa `v2` dell'escrow. La RK nasce solo creando o aprendo la cassaforte |
 | Web | **da nessuna parte**: non c'è Keychain, la chiave passa sempre dall'escrow. Dal 09/11/2026 (con l'interruttore `config/keyVault`) c'è la chiave personale v2 in IndexedDB, che apre la copia `v2` dell'escrow: formato e costanti nella sezione 3.3 del piano |
+| Passaggio col QR (dal 09/11/2026) | `keyHandoffs/{roomId}`: chi riceve mostra una pubblica P-256 effimera, chi ha la chiave la manda chiusa (RK allo stesso utente, chiave di famiglia a un membro). `KeyHandoff.swift` / `KeyHandoff.kt` / `keyHandoff.js`, costanti nel piano (Fase 2) |
 
 L'**escrow** è `families/{familyId}/memberKeyBackups/{uid}`: la chiave AES-256
 della famiglia, wrappata con una chiave derivata in modo **deterministico** da

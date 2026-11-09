@@ -305,7 +305,7 @@ Fase 2.
   Compare 3 secondi dopo l'avvio solo con l'interruttore acceso e senza RK in
   locale; «Più tardi» vale fino alla prossima apertura dell'app. Android prova
   prima Block Store (solo E2E, `rkId` controllato). Testi uguali al web, nelle 4
-  lingue. Da fare: passkey native, QR, «Rigenera codice», misura.
+  lingue. Poi fatti (09/11/2026): passkey native, QR, «Rigenera codice», misura (sotto).
 - **Prova su Android vero (Xiaomi, account interno, 09/11/2026):** il promemoria
   compare e riconosce la cassaforte creata dal web; codice sbagliato rifiutato;
   col codice vero la RK arriva e la v2 della famiglia attiva viene scritta e
@@ -327,8 +327,51 @@ Fase 2.
   10:54 l'app ha riscritto la v1 in merge (la v2 è rimasta) e 18 secondi dopo
   la v2 della famiglia attiva, con lo stesso `rkId` di web e Android. Web,
   Android e iOS aprono la stessa cassaforte.
-- **Misura**: quota di utenti attivi con `keyVault` e senza v1 (script di sola
-  lettura sul conteggio dei documenti, non sui contenuti).
+- **Misura (fatto il 09/11/2026, 55b80eb6):** console admin › «🔐 Cassaforte
+  chiave», dalla callable `getKeyVaultStats` (solo admin, solo conteggi,
+  interni esclusi): utenti attivi a 7/30 giorni con cassaforte, con passkey, con
+  la copia v2 in **tutte** le loro famiglie (= chi non perde niente se sparisce
+  la v1); documenti solo v1 / v1+v2 / solo v2; stato dell'interruttore.
+- **Impostazioni › Sicurezza (09/11/2026; iOS 9cfadc6f, Android 8997daa, web
+  998bc0d8):** visibile solo con l'interruttore acceso. Stato su questo
+  dispositivo, modi per aprirla (codice con data, passkey), crea/apri, «Rigenera
+  codice» (stessa RK, stesso documento, `createdAt` conservato; sulle app serve
+  la RK in locale, sul web si riapre prima perché la RK in IndexedDB non è
+  esportabile), «Aggiungi una passkey», «Inquadra un QR».
+- **Passkey native (09/11/2026; iOS 0f02c441, Android 757351d):** iOS
+  `VaultPasskey.swift` (AuthenticationServices, PRF `saltInput1` = input PRF
+  della 3.3), Android `VaultPasskey.kt` (Credential Manager, JSON WebAuthn con
+  `extensions.prf.eval.first`). Slot `passkey_` + b64url(sha256(rawId)[0..16]),
+  identico al web. Offerta dopo aver creato o aperto la cassaforte. **Non
+  ancora provate su device**: la prova che conta è una passkey creata
+  sull'iPhone che apre la cassaforte dal browser (stesso PRF), e viceversa.
+- **QR (09/11/2026; rules 2457b1f4, web 8adb50bc, iOS bd910d76, Android
+  9a63725).** Diverso da quanto scritto sopra («riusa InviteCrypto»): un solo
+  protocollo ECDH per tutti e tre i casi, perché il segreto nel QR va dal
+  telefono al PC solo se il PC ha la fotocamera.
+  - Chi **riceve** (browser con «Entra con il telefono», dispositivo nuovo o
+    familiare senza chiave: pulsante nella schermata della cassaforte) crea
+    `keyHandoffs/{roomId}` = `{uid, pub, label, createdAt, expiresAt}` (10
+    minuti, TTL Firestore su `expiresAt`) e mostra `KBKEY1.{roomId}.{pub}`
+    (pub = P-256 grezza 65 byte, base64url).
+  - Chi **manda** (Impostazioni › Sicurezza › «Inquadra un QR») usa la pubblica
+    DEL QR (il server non può scambiarla), controlla che coincida col
+    documento, e sceglie: stesso uid e RK presente → `kind: "rk"`; altrimenti la
+    chiave di una famiglia in comune in cui chi riceve è membro attivo →
+    `kind: "familyKey"`. Chiede conferma («Mandare la chiave di «X» a Y?»).
+  - Busta: ECDH effimero, HKDF-SHA256(salt = roomId, info =
+    `kidbox-vault-v2:handoff`), AES-GCM con AAD
+    `kidbox-vault-v2:handoff:{roomId}:{kind}:{familyId}`; `payload =
+    {kind, familyId?, epk, nonce, cipher, tag}`. Provata l'interoperabilità
+    CryptoKit → WebCrypto e Java → WebCrypto (script usa e getta).
+  - Rules: la RK solo allo stesso utente, la chiave di famiglia solo da un
+    membro a un membro attivo, una consegna sola, entro la scadenza; niente
+    list; cancella solo chi ha creato la stanza. 17 casi nella suite.
+  - Chi riceve la RK controlla l'`rkId` della cassaforte; la chiave di famiglia
+    la salva come all'ingresso con invito (portachiavi + escrow v1/v2).
+  - **Non provato su device.** Manca il QR nella schermata «chiave mancante»
+    (`FamilyKeyMissingGate` / `MissingFamilyKeyException`) e in Impostazioni ›
+    Famiglia: oggi il ricevente lo apre dalla schermata della cassaforte.
 
 ### Fase 3 — Chiusura della v1
 Quando la quota della Fase 2 è alta (soglia da decidere, es. 90% degli attivi a 30
