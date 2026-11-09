@@ -1344,6 +1344,8 @@ final class SyncCenter: ObservableObject {
                             // Non si azzera con un remoto privo del campo: le liste
                             // vecchie non lo hanno e perderemmo il proprietario.
                             if let creator = dto.createdBy { existing.createdBy = creator }
+                            existing.defaultVisibilityScope = dto.defaultVisibilityScope
+                            existing.defaultVisibilityMemberIds = dto.defaultVisibilityMemberIds
                         }
                     } else if !dto.isDeleted {
                         // nuova lista arrivata dal remoto: la creiamo localmente
@@ -1355,7 +1357,9 @@ final class SyncCenter: ObservableObject {
                             createdAt: dto.updatedAt ?? Date(),
                             updatedAt: dto.updatedAt ?? Date(),
                             isDeleted: false,
-                            createdBy: dto.createdBy
+                            createdBy: dto.createdBy,
+                            defaultVisibilityScope: dto.defaultVisibilityScope,
+                            defaultVisibilityMemberIds: dto.defaultVisibilityMemberIds
                         )
                         modelContext.insert(list)
                         KBLog.sync.kbDebug("applyTodoListInbound: inserita lista remota name=\(dto.name) id=\(dto.id)")

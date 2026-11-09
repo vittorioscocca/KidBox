@@ -23,6 +23,10 @@ final class KBTodoList {
     /// lo hanno, e `TodoListExposure` le tratta come pubbliche per non farle
     /// sparire a chi le usa già.
     var createdBy: String?
+    /// Visibilità che prendono di default i to-do creati nella lista
+    /// (`family` | `members` | `private`). `nil` = famiglia, come prima.
+    var defaultVisibilityScope: String?
+    var defaultVisibilityMemberIds: [String]?
     
     init(
         id: String = UUID().uuidString,
@@ -32,7 +36,9 @@ final class KBTodoList {
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         isDeleted: Bool = false,
-        createdBy: String? = nil
+        createdBy: String? = nil,
+        defaultVisibilityScope: String? = nil,
+        defaultVisibilityMemberIds: [String]? = nil
     ) {
         self.id = id
         self.familyId = familyId
@@ -42,5 +48,15 @@ final class KBTodoList {
         self.updatedAt = updatedAt
         self.isDeleted = isDeleted
         self.createdBy = createdBy
+        self.defaultVisibilityScope = defaultVisibilityScope
+        self.defaultVisibilityMemberIds = defaultVisibilityMemberIds
+    }
+
+    /// Scope normalizzato da dare ai to-do nuovi.
+    var resolvedDefaultScope: String { KBVisibilityScope.normalized(defaultVisibilityScope) }
+
+    /// Membri da dare ai to-do nuovi (solo con scope `members`).
+    var resolvedDefaultMemberIds: [String] {
+        resolvedDefaultScope == KBVisibilityScope.members ? (defaultVisibilityMemberIds ?? []) : []
     }
 }

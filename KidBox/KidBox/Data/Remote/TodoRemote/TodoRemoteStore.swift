@@ -179,6 +179,8 @@ struct TodoListRemoteDTO {
     let isDeleted: Bool
     let createdBy: String?
     let updatedAt: Date?
+    let defaultVisibilityScope: String?
+    let defaultVisibilityMemberIds: [String]?
 }
 
 enum TodoListRemoteChange {
@@ -212,6 +214,8 @@ extension TodoRemoteStore {
             "isDeleted": list.isDeleted,
             // Serve a decidere chi vede una lista ancora vuota.
             "createdBy": list.createdBy ?? uid,
+            "defaultVisibilityScope": list.resolvedDefaultScope,
+            "defaultVisibilityMemberIds": list.resolvedDefaultMemberIds,
             "updatedBy": uid,
             "updatedAt": FieldValue.serverTimestamp()
         ], merge: true)
@@ -297,7 +301,9 @@ extension TodoRemoteStore {
                         name: name,
                         isDeleted: d["isDeleted"] as? Bool ?? false,
                         createdBy: (d["createdBy"] as? String)?.trimmingCharacters(in: .whitespaces).nilIfEmpty,
-                        updatedAt: (d["updatedAt"] as? Timestamp)?.dateValue()
+                        updatedAt: (d["updatedAt"] as? Timestamp)?.dateValue(),
+                        defaultVisibilityScope: d["defaultVisibilityScope"] as? String,
+                        defaultVisibilityMemberIds: d["defaultVisibilityMemberIds"] as? [String]
                     )
                     
                     KBLog.sync.kbDebug("[\(trace)] TodoLists change type=\(diff.type.rawValue) id=\(dto.id) isDeleted=\(kbBool(dto.isDeleted)) updatedAt=\(kbOptDate(dto.updatedAt))")
@@ -340,7 +346,9 @@ extension TodoRemoteStore {
                 name: name,
                 isDeleted: d["isDeleted"] as? Bool ?? false,
                 createdBy: (d["createdBy"] as? String)?.trimmingCharacters(in: .whitespaces).nilIfEmpty,
-                updatedAt: (d["updatedAt"] as? Timestamp)?.dateValue()
+                updatedAt: (d["updatedAt"] as? Timestamp)?.dateValue(),
+                defaultVisibilityScope: d["defaultVisibilityScope"] as? String,
+                defaultVisibilityMemberIds: d["defaultVisibilityMemberIds"] as? [String]
             )
         }
         

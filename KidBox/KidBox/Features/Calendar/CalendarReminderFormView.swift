@@ -121,7 +121,9 @@ struct CalendarReminderFormView: View {
                 listId: list.id,
                 todos: allTodos,
                 currentUid: currentUid,
-                listCreatedBy: list.createdBy
+                listCreatedBy: list.createdBy,
+                listDefaultScope: list.defaultVisibilityScope,
+                listDefaultMemberIds: list.defaultVisibilityMemberIds ?? []
             )
         }
     }

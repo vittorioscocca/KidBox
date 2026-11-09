@@ -71,8 +71,14 @@ enum TodoQuickAdd {
         item.assignedTo = draft.assignedTo
         item.createdBy = uid
         item.priorityRaw = draft.isUrgent ? 1 : 0
-        item.visibilityScope = KBVisibilityScope.family
-        item.visibilityMemberIds = []
+        // La visibilità di default è quella scelta per la lista.
+        let lid = listId
+        let list = try? modelContext.fetch(FetchDescriptor<KBTodoList>(
+            predicate: #Predicate { $0.id == lid }
+        )).first
+        item.visibilityScope = list?.resolvedDefaultScope ?? KBVisibilityScope.family
+        item.visibilityMemberIds = list?.resolvedDefaultMemberIds ?? []
+        if item.visibilityScope == KBVisibilityScope.onlyCreator { item.assignedTo = uid }
         item.syncState = .pendingUpsert
         item.lastSyncError = nil
         modelContext.insert(item)

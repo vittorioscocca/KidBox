@@ -47,6 +47,10 @@ struct TodoHomeView: View {
     @State private var showListEditor = false
     @State private var listNameDraft = ""
     @State private var editingListId: String? = nil
+    @State private var listVisibilityScope = KBVisibilityScope.family
+    @State private var listVisibilityMemberIds: Set<String> = []
+    @State private var showListVisibilityPicker = false
+    @Query private var allMembers: [KBFamilyMember]
     
     @State private var showShareTodoSheet = false
     @State private var sharePrefillTitle = ""
@@ -96,7 +100,9 @@ struct TodoHomeView: View {
                 listId: list.id,
                 todos: todosInFamilyChild,
                 currentUid: currentUid,
-                listCreatedBy: list.createdBy
+                listCreatedBy: list.createdBy,
+                listDefaultScope: list.defaultVisibilityScope,
+                listDefaultMemberIds: list.defaultVisibilityMemberIds ?? []
             )
         }
     }
@@ -161,6 +167,8 @@ struct TodoHomeView: View {
                     TodoEmptyStateView {
                         editingListId = nil
                         listNameDraft = ""
+                        listVisibilityScope = KBVisibilityScope.family
+                        listVisibilityMemberIds = []
                         showListEditor = true
                     }
                 }
@@ -191,6 +199,8 @@ struct TodoHomeView: View {
                     KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] tap + newList familyId=\(familyId) childId=\(childId)")
                     editingListId = nil
                     listNameDraft = ""
+                    listVisibilityScope = KBVisibilityScope.family
+                    listVisibilityMemberIds = []
                     showListEditor = true
                 } label: {
                     Image(systemName: "plus")
@@ -516,6 +526,8 @@ struct TodoHomeView: View {
                                 KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] context edit listId=\(list.id)")
                                 editingListId = list.id
                                 listNameDraft = list.name
+                                listVisibilityScope = list.resolvedDefaultScope
+                                listVisibilityMemberIds = Set(list.resolvedDefaultMemberIds)
                                 showListEditor = true
                             }
                             Button("Elimina", role: .destructive) {
@@ -533,6 +545,33 @@ struct TodoHomeView: View {
         NavigationStack {
             Form {
                 TextField("Nome lista", text: $listNameDraft)
+                Section {
+                    Button {
+                        showListVisibilityPicker = true
+                    } label: {
+                        HStack {
+                            Text("Visibilità")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Text(KBVisibilityScope.chipLabel(for: listVisibilityScope))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } footer: {
+                    Text("I to-do creati in questa lista avranno questa visibilità, che puoi cambiare per ognuno.")
+                }
+            }
+            .sheet(isPresented: $showListVisibilityPicker) {
+                VisibilityPickerSheet(
+                    selectedScope: $listVisibilityScope,
+                    selectedMemberIds: $listVisibilityMemberIds,
+                    members: allMembers.filter { $0.familyId == familyId && !$0.isDeleted && $0.userId != currentUid },
+                    currentUid: currentUid,
+                    scopeSectionTitle: "Chi può vedere i to-do di questa lista"
+                ) { scope, ids in
+                    listVisibilityScope = scope
+                    listVisibilityMemberIds = ids
+                }
             }
             .navigationTitle(editingListId == nil ? "Nuova lista" : "Modifica lista")
             .toolbar {
@@ -549,6 +588,8 @@ struct TodoHomeView: View {
                         showListEditor = false
                         editingListId = nil
                         listNameDraft = ""
+                        listVisibilityScope = KBVisibilityScope.family
+                        listVisibilityMemberIds = []
                     }
                 }
             }
@@ -571,11 +612,15 @@ struct TodoHomeView: View {
         
         let listId: String
         let now = Date()
+        let savedListMemberIds: [String] = listVisibilityScope == KBVisibilityScope.members
+            ? Array(listVisibilityMemberIds).sorted() : []
         
         if let eid = editingListId,
            let list = visibleLists.first(where: { $0.id == eid }) {
             KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] saveList update listId=\(eid)")
             list.name = name
+            list.defaultVisibilityScope = listVisibilityScope
+            list.defaultVisibilityMemberIds = savedListMemberIds
             list.updatedAt = now
             listId = list.id
         } else {
@@ -583,7 +628,9 @@ struct TodoHomeView: View {
                 familyId: familyId,
                 childId: childId,
                 name: name,
-                createdBy: KBUid.current
+                createdBy: KBUid.current,
+                defaultVisibilityScope: listVisibilityScope,
+                defaultVisibilityMemberIds: savedListMemberIds
             )
             modelContext.insert(list)
             listId = list.id

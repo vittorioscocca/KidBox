@@ -105,7 +105,9 @@ struct TodoListView: View {
             listId: listId,
             todos: todos.filter { !$0.isDeleted },
             currentUid: currentUid,
-            listCreatedBy: allLists.first(where: { $0.id == listId })?.createdBy
+            listCreatedBy: allLists.first(where: { $0.id == listId })?.createdBy,
+            listDefaultScope: allLists.first(where: { $0.id == listId })?.defaultVisibilityScope,
+            listDefaultMemberIds: allLists.first(where: { $0.id == listId })?.defaultVisibilityMemberIds ?? []
         )
     }
     

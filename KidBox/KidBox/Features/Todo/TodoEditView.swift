@@ -374,8 +374,13 @@ struct TodoEditView: View {
             .onAppear {
                 KBLog.app.kbInfo("TodoEditView familyMembers: \(familyMembers.map { m in "\(m.userId) → \(m.displayName ?? "NIL")" }.joined(separator: ", "))")
                 if todoIdToEdit == nil {
-                    selectedVisibilityScope = KBVisibilityScope.family
-                    selectedVisibilityMemberIds = []
+                    // Default = visibilità scelta per la lista (modificabile qui).
+                    let lid = listId
+                    let list = try? modelContext.fetch(FetchDescriptor<KBTodoList>(
+                        predicate: #Predicate { $0.id == lid }
+                    )).first
+                    selectedVisibilityScope = list?.resolvedDefaultScope ?? KBVisibilityScope.family
+                    selectedVisibilityMemberIds = Set(list?.resolvedDefaultMemberIds ?? [])
                 }
                 hydrateIfEditing()
                 if todoIdToEdit == nil && !prefillTitle.isEmpty {

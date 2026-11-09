@@ -25,11 +25,16 @@ enum TodoListExposure {
         listId: String,
         todos: [KBTodoItem],
         currentUid: String?,
-        listCreatedBy: String? = nil
+        listCreatedBy: String? = nil,
+        listDefaultScope: String? = nil,
+        listDefaultMemberIds: [String] = []
     ) -> Bool {
         guard let uid = currentUid, !uid.isEmpty else { return false }
         let activeInList = todos.filter { $0.listId == listId && !$0.isDeleted }
         if activeInList.isEmpty {
+            // Lista vuota con visibilità «membri selezionati»: la vedono anche loro.
+            if KBVisibilityScope.normalized(listDefaultScope) == KBVisibilityScope.members,
+               listDefaultMemberIds.contains(uid) { return true }
             guard let owner = listCreatedBy, !owner.isEmpty else { return true }
             return owner == uid
         }
