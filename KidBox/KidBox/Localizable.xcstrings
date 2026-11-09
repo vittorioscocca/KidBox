@@ -1,6 +1,28 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
+    "Aggiungi una passkey" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a passkey"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir una llave de acceso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter une clé d'accès"
+          }
+        }
+      }
+    },
     "Apertura…" : {
       "localizations" : {
         "en" : {
@@ -261,6 +283,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Créer le code de récupération"
+          }
+        }
+      }
+    },
+    "Crea una passkey" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a passkey"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear una llave de acceso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créer une clé d'accès"
+          }
+        }
+      }
+    },
+    "Crea una passkey: su un altro dispositivo con lo stesso account Apple basterà lo sblocco, senza scrivere il codice. Il codice resta valido." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a passkey: on another device with the same Apple Account, unlocking will be enough, no code to type. Your code stays valid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea una llave de acceso: en otro dispositivo con la misma cuenta de Apple bastará con desbloquear, sin escribir el código. El código sigue siendo válido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créez une clé d'accès : sur un autre appareil avec le même compte Apple, le déverrouillage suffira, sans saisir le code. Le code reste valable."
           }
         }
       }
@@ -676,6 +742,28 @@
         }
       }
     },
+    "Passkey aggiunta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passkey added."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llave de acceso añadida."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clé d'accès ajoutée."
+          }
+        }
+      }
+    },
     "Più tardi" : {
       "localizations" : {
         "en" : {
@@ -738,6 +826,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un problème est survenu. Réessayez."
+          }
+        }
+      }
+    },
+    "Questa passkey non funziona qui. Usa il codice di recupero." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This passkey doesn't work here. Use your recovery code."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta llave de acceso no funciona aquí. Usa el código de recuperación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette clé d'accès ne fonctionne pas ici. Utilisez le code de récupération."
+          }
+        }
+      }
+    },
+    "Questo dispositivo non permette di usare una passkey per la cassaforte: il codice di recupero resta la tua chiave." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This device can't use a passkey for the vault: your recovery code remains your key."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este dispositivo no permite usar una llave de acceso para la caja fuerte: el código de recuperación sigue siendo tu llave."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet appareil ne permet pas d'utiliser une clé d'accès pour le coffre : le code de récupération reste votre clé."
           }
         }
       }
@@ -936,6 +1068,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sur cet appareil, il suffit de le faire une fois : saisissez le code de récupération que vous avez enregistré."
+          }
+        }
+      }
+    },
+    "Usa la passkey" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use passkey"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar la llave de acceso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser la clé d'accès"
+          }
+        }
+      }
+    },
+    "Vuoi aprirla anche con Face ID?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open it with Face ID too?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Abrirla también con Face ID?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'ouvrir aussi avec Face ID ?"
           }
         }
       }

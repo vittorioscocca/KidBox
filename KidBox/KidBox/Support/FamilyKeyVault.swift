@@ -165,6 +165,34 @@ enum FamilyKeyVaultCrypto {
         return (Data(salt).base64EncodedString(), try seal(rk, key: key, aad: aadSlotPrefix + uid))
     }
 
+    /// Chiude la RK in uno slot qualunque (passkey: `ikm` = uscita PRF).
+    static func sealSlot(uid: String, type: String, ikm: Data, rk: Data) throws -> (salt: String, sealed: Sealed) {
+        var salt = [UInt8](repeating: 0, count: 16)
+        _ = SecRandomCopyBytes(kSecRandomDefault, salt.count, &salt)
+        let key = slotKey(type: type, ikm: ikm, salt: Data(salt))
+        return (Data(salt).base64EncodedString(), try seal(rk, key: key, aad: aadSlotPrefix + uid))
+    }
+
+    /// Apre uno slot qualunque: la RK o `wrongSecret`.
+    static func openSlot(uid: String, type: String, ikm: Data, salt: String, sealed: Sealed, rkId expected: String?) throws -> Data {
+        guard let saltData = Data(base64Encoded: salt),
+              let rk = try? open(sealed, key: slotKey(type: type, ikm: ikm, salt: saltData), aad: aadSlotPrefix + uid),
+              rk.count == 32 else { throw VaultError.wrongSecret }
+        if let expected, rkId(rk) != expected { throw VaultError.wrongSecret }
+        return rk
+    }
+
+    /// Id dello slot di una passkey, uguale al web: `passkey_` + b64url(sha256(rawId)[0..<16]).
+    static func passkeySlotId(rawId: Data) -> String {
+        "passkey_" + base64Url(Data(SHA256.hash(data: rawId)).prefix(16))
+    }
+
+    static func fromBase64Url(_ s: String) -> Data? {
+        var b = s.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        while b.count % 4 != 0 { b += "=" }
+        return Data(base64Encoded: b)
+    }
+
     static func sealFamilyKeyV2(uid: String, familyId: String, familyKey: Data, rk: Data) throws -> Sealed {
         try seal(familyKey, key: familyWrapKey(rk), aad: "\(aadFamilyPrefix)\(uid):\(familyId)")
     }
@@ -349,6 +377,49 @@ enum FamilyKeyVault {
             "createdAt": old?["createdAt"] ?? FieldValue.serverTimestamp(),
             "updatedAt": FieldValue.serverTimestamp(),
         ])
+    }
+
+    // MARK: passkey (stessi slot del web; la cerimonia è in VaultPasskey)
+
+    /// Gli id delle passkey registrate (rawId), per `allowedCredentials`.
+    static func passkeyCredentialIds(uid: String) async throws -> [Data] {
+        try await db.collection("users").document(uid).collection("keyVault")
+            .getDocuments(source: .server).documents
+            .filter { ($0.data()["type"] as? String) == "passkey" }
+            .compactMap { ($0.data()["credentialId"] as? String).flatMap(FamilyKeyVaultCrypto.fromBase64Url) }
+    }
+
+    /// Aggiunge lo slot della passkey appena creata, con la RK di questo dispositivo.
+    static func addPasskeySlot(uid: String, rawId: Data, prf: Data, label: String?) async throws {
+        guard let rk = loadRK(uid: uid) else { throw OpenError.missing }
+        let (salt, s) = try FamilyKeyVaultCrypto.sealSlot(uid: uid, type: "passkey", ikm: prf, rk: rk)
+        var rec: [String: Any] = [
+            "type": "passkey", "version": FamilyKeyVaultCrypto.version,
+            "rkId": FamilyKeyVaultCrypto.rkId(rk), "salt": salt,
+            "nonce": s.nonce, "cipher": s.cipher, "tag": s.tag,
+            "credentialId": FamilyKeyVaultCrypto.base64Url(rawId),
+            "createdAt": FieldValue.serverTimestamp(),
+        ]
+        if let label, !label.isEmpty { rec["label"] = String(label.prefix(80)) }
+        try await db.collection("users").document(uid).collection("keyVault")
+            .document(FamilyKeyVaultCrypto.passkeySlotId(rawId: rawId)).setData(rec)
+    }
+
+    /// Apre la cassaforte con l'uscita PRF della passkey usata e salva la RK.
+    static func openWithPasskey(uid: String, rawId: Data, prf: Data) async throws {
+        let snap = try await db.collection("users").document(uid).collection("keyVault")
+            .document(FamilyKeyVaultCrypto.passkeySlotId(rawId: rawId)).getDocument(source: .server)
+        guard let d = snap.data() else { throw OpenError.wrongSecret }
+        guard let salt = d["salt"] as? String, let c = d["cipher"] as? String,
+              let n = d["nonce"] as? String, let t = d["tag"] as? String else { throw OpenError.missing }
+        let rk: Data
+        do {
+            rk = try FamilyKeyVaultCrypto.openSlot(
+                uid: uid, type: "passkey", ikm: prf, salt: salt,
+                sealed: .init(cipher: c, nonce: n, tag: t), rkId: d["rkId"] as? String
+            )
+        } catch { throw OpenError.wrongSecret }
+        try saveRK(rk, uid: uid)
     }
 
     /// Quanti slot ha la cassaforte dell'utente (0 = da creare).

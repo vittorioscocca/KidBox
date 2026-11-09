@@ -6,11 +6,10 @@
 //  `KeyVaultPrompt.jsx` sul web e di `KeyVaultPrompt.kt` su Android.
 //
 //  Se la cassaforte dell'utente non esiste la crea col codice di recupero; se
-//  esiste (creata da un altro dispositivo o dal web) la apre col codice. Una
-//  cassaforte per utente: il codice è lo stesso ovunque. Dopo: copia v2
-//  verificata per ogni famiglia. La v1 non si tocca.
-//
-//  Passkey native e QR arrivano dopo: qui solo il codice.
+//  esiste (creata da un altro dispositivo o dal web) la apre col codice o con
+//  una passkey. Una cassaforte per utente: il codice è lo stesso ovunque. Dopo:
+//  copia v2 verificata per ogni famiglia e l'offerta di una passkey (Face ID),
+//  con lo stesso slot del web. La v1 non si tocca.
 //
 
 import SwiftUI
@@ -27,8 +26,10 @@ struct KeyVaultPromptView: View {
     let onLater: () -> Void
     /// Da Impostazioni › Sicurezza: nuovo codice al posto del vecchio (serve la RK qui).
     var regenerate = false
+    /// Da Impostazioni › Sicurezza: solo «aggiungi una passkey» (serve la RK qui).
+    var addPasskey = false
 
-    private enum Step { case loading, intro, code, confirm, open, done }
+    private enum Step { case loading, intro, code, confirm, open, passkey, done }
 
     @State private var step: Step = .loading
     @State private var busy = false
@@ -39,6 +40,7 @@ struct KeyVaultPromptView: View {
     @State private var code = FamilyKeyVaultCrypto.generateRecoveryCode()
     @State private var positions: [Int] = Array((0..<24).shuffled().prefix(4)).sorted()
     @State private var confirmChars = ["", "", "", ""]
+    @State private var passkeyIds: [Data] = []
 
     private var canonical: String? { FamilyKeyVaultCrypto.normalizeRecoveryCode(code) }
 
@@ -53,9 +55,9 @@ struct KeyVaultPromptView: View {
                 .frame(maxWidth: .infinity)
             }
             .toolbar {
-                if allowLater && step != .done && step != .loading {
+                if allowLater && step != .done && step != .loading && step != .passkey {
                     ToolbarItem(placement: .cancellationAction) {
-                        if regenerate {
+                        if regenerate || addPasskey {
                             Button("Annulla") { onLater() }.disabled(busy)
                         } else {
                             Button("Più tardi") { onLater() }.disabled(busy)
@@ -143,6 +145,9 @@ struct KeyVaultPromptView: View {
             title("Apri la cassaforte della famiglia")
             if let notice { noticeView(notice) }
             lead("Su questo dispositivo serve una volta sola: scrivi il codice di recupero che hai salvato.")
+            if !passkeyIds.isEmpty {
+                primary("Usa la passkey", disabled: busy) { Task { await openWithPasskey() } }
+            }
             TextField(String("XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"), text: $typedCode)
                 .font(.system(.body, design: .monospaced))
                 .textInputAutocapitalization(.characters)
@@ -157,6 +162,18 @@ struct KeyVaultPromptView: View {
             }
             small("Hai perso il codice? Se hai ancora un dispositivo o un familiare con KidBox, rientri da lì.")
 
+        case .passkey:
+            icon("faceid")
+            title("Vuoi aprirla anche con Face ID?")
+            lead("Crea una passkey: su un altro dispositivo con lo stesso account Apple basterà lo sblocco, senza scrivere il codice. Il codice resta valido.")
+            errorView
+            primary(busy ? "Creazione…" : "Crea una passkey", disabled: busy) { Task { await createPasskey() } }
+            if addPasskey {
+                Button("Annulla") { onLater() }.disabled(busy)
+            } else {
+                Button("Non ora") { step = .done }.disabled(busy)
+            }
+
         case .done:
             icon("checkmark.seal.fill")
             title("Fatto")
@@ -170,6 +187,8 @@ struct KeyVaultPromptView: View {
 
     private func load() async {
         if regenerate { step = .code; return }
+        if addPasskey { step = .passkey; return }
+        passkeyIds = (try? await FamilyKeyVault.passkeyCredentialIds(uid: uid)) ?? []
         do {
             step = try await FamilyKeyVault.slotCount(uid: uid) > 0 ? .open : .intro
         } catch {
@@ -201,7 +220,7 @@ struct KeyVaultPromptView: View {
             }
             try await FamilyKeyVault.createVault(uid: uid, recoveryCode: code)
             await FamilyKeyVault.syncFamilyKeysV2(uid: uid, familyIds: familyIds)
-            step = .done
+            step = .passkey
         } catch FamilyKeyVault.OpenError.exists {
             notice = String(localized: "La tua cassaforte è stata appena creata da un altro dispositivo: aprila con quel codice.")
             step = .open
@@ -219,13 +238,62 @@ struct KeyVaultPromptView: View {
             try await FamilyKeyVault.openWithRecoveryCode(uid: uid, recoveryCode: typedCode)
             await FamilyKeyVault.syncFamilyKeysV2(uid: uid, familyIds: familyIds)
             notice = nil
-            step = .done
+            step = .passkey
         } catch FamilyKeyVault.OpenError.wrongSecret {
             error = String(localized: "Codice non valido: controlla di averlo scritto tutto e senza errori.")
         } catch {
             KBLog.security.kbError("Vault: apertura fallita \(error.localizedDescription)")
             self.error = String(localized: "Qualcosa non ha funzionato. Riprova.")
         }
+    }
+
+    private func openWithPasskey() async {
+        error = nil
+        busy = true
+        defer { busy = false }
+        do {
+            let r = try await VaultPasskey.assert(allowIds: passkeyIds)
+            try await FamilyKeyVault.openWithPasskey(uid: uid, rawId: r.rawId, prf: r.prf)
+            await FamilyKeyVault.syncFamilyKeysV2(uid: uid, familyIds: familyIds)
+            notice = nil
+            step = .done
+        } catch VaultPasskey.PasskeyError.cancelled {
+            // annullata: si resta qui
+        } catch {
+            KBLog.security.kbError("Vault: apertura con passkey fallita \(String(describing: error))")
+            self.error = String(localized: "Questa passkey non funziona qui. Usa il codice di recupero.")
+        }
+    }
+
+    private func createPasskey() async {
+        error = nil
+        busy = true
+        defer { busy = false }
+        do {
+            let r = try await VaultPasskey.create(uid: uid, name: email ?? uid)
+            try await FamilyKeyVault.addPasskeySlot(uid: uid, rawId: r.rawId, prf: r.prf, label: Self.deviceLabel)
+            notice = String(localized: "Passkey aggiunta.")
+            step = .done
+        } catch VaultPasskey.PasskeyError.cancelled {
+            // annullata: si resta qui
+        } catch VaultPasskey.PasskeyError.unsupported(let why) {
+            KBLog.security.kbError("Vault: passkey senza PRF (\(why))")
+            notice = String(localized: "Questo dispositivo non permette di usare una passkey per la cassaforte: il codice di recupero resta la tua chiave.")
+            step = .done
+        } catch {
+            KBLog.security.kbError("Vault: creazione passkey fallita \(String(describing: error))")
+            self.error = String(localized: "Qualcosa non ha funzionato. Riprova.")
+        }
+    }
+
+    /// Nome leggibile dello slot, come «Chrome · Mac» sul web.
+    private static var deviceLabel: String {
+        #if canImport(UIKit)
+        if ProcessInfo.processInfo.isMacCatalystApp { return "App · Mac" }
+        return "App · \(UIDevice.current.model)"
+        #else
+        return "App · Mac"
+        #endif
     }
 
     /// Negli appunti solo su questo dispositivo (niente Appunti universali) e per due minuti.

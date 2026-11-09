@@ -20,7 +20,7 @@ struct SecuritySettingsView: View {
     @State private var loadFailed = false
     @State private var sheet: SheetKind?
 
-    private enum SheetKind: String, Identifiable { case open, regenerate; var id: String { rawValue } }
+    private enum SheetKind: String, Identifiable { case open, regenerate, passkey; var id: String { rawValue } }
 
     private var uid: String { Auth.auth().currentUser?.uid ?? "" }
     private var recovery: FamilyKeyVault.Slot? { slots.first { $0.type == "recoveryCode" } }
@@ -75,6 +75,9 @@ struct SecuritySettingsView: View {
                             }
                         }
                     }
+                    if hasRK && !slots.isEmpty {
+                        Button("Aggiungi una passkey") { sheet = .passkey }
+                    }
                     if hasRK && recovery != nil {
                         Button("Rigenera codice di recupero") { sheet = .regenerate }
                     }
@@ -96,7 +99,8 @@ struct SecuritySettingsView: View {
                 allowLater: true,
                 onDone: { sheet = nil; Task { await reload() } },
                 onLater: { sheet = nil },
-                regenerate: kind == .regenerate
+                regenerate: kind == .regenerate,
+                addPasskey: kind == .passkey
             )
         }
     }
