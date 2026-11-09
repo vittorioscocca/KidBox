@@ -369,7 +369,18 @@ Fase 2.
     list; cancella solo chi ha creato la stanza. 17 casi nella suite.
   - Chi riceve la RK controlla l'`rkId` della cassaforte; la chiave di famiglia
     la salva come all'ingresso con invito (portachiavi + escrow v1/v2).
-  - **Non provato su device.** Manca il QR nella schermata «chiave mancante»
+  - **Provato il 09/11/2026: «Entra con il telefono» da Chrome sul Mac
+    (senza chiave) con lo Xiaomi:** stanza letta e consegnata in 9 secondi,
+    Chrome ha aperto la RK (stesso `rkId`), stanza cancellata subito. Poi
+    Chrome ha creato la sua passkey nel Portachiavi con Touch ID (slot
+    «Chrome · Mac»). Da provare: QR fra due app, da un familiare, lato iPhone.
+  - **Passkey Android provata sullo Xiaomi (09/11/2026):** creata e scritta
+    (slot «Android · Xiaomi …», id calcolato come sul web). **Trappola:** su
+    HyperOS «Password e account › Servizio preferito» era vuoto, e Android
+    offriva solo «crea la passkey su un altro dispositivo» (ibrido, niente PRF
+    affidabile): va scelto Google. Non ancora provata l'APERTURA con quella
+    passkey da un dispositivo senza chiave.
+  - Manca il QR nella schermata «chiave mancante»
     (`FamilyKeyMissingGate` / `MissingFamilyKeyException`) e in Impostazioni ›
     Famiglia: oggi il ricevente lo apre dalla schermata della cassaforte.
 
