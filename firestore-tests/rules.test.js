@@ -468,6 +468,39 @@ async function check(nome, promessa) {
   await check("escrow: e la riscrive (rientro)",
       assertSucceeds(escrowDi(dbMembro, MEMBRO).set(copiaV1)));
 
+  // Fase 3 per una famiglia: `keyV1Closed` sul documento famiglia (Admin SDK).
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc(`families/${FAM}`).update({keyV1Closed: true});
+    await ctx.firestore().doc(`families/${FAM}/memberKeyBackups/${MEMBRO}`)
+        .set({version: 2, v2: copiaV2, updatedAt: new Date()});
+  });
+  await check("v1 chiusa: NON passa la v1 (app vecchia)",
+      assertFails(escrowDi(dbMembro, MEMBRO).set(copiaV1)));
+  await check("v1 chiusa: NON passa la v1 con accanto la v2",
+      assertFails(escrowDi(dbMembro, MEMBRO).set({...copiaV1, v2: copiaV2})));
+  await check("v1 chiusa: NON passa la v1 in merge sopra la v2 sola",
+      assertFails(escrowDi(dbMembro, MEMBRO).set({cipher: "QUJD", nonce: "bm9uY2U=", tag: "dGFn", version: 1}, {merge: true})));
+  await check("v1 chiusa: la v2 sola passa",
+      assertSucceeds(escrowDi(dbMembro, MEMBRO).set({version: 2, v2: copiaV2, updatedAt: new Date()})));
+  await check("v1 chiusa: la v2 aggiornata in merge passa",
+      assertSucceeds(escrowDi(dbMembro, MEMBRO).set({v2: {...copiaV2, updatedAt: new Date()}}, {merge: true})));
+  await check("v1 chiusa: un membro NON la riapre dal documento famiglia",
+      assertFails(dbMembro.doc(`families/${FAM}`).update({keyV1Closed: false})));
+  await check("v1 chiusa: il proprietario NON la riapre dal documento famiglia",
+      assertFails(db.doc(`families/${FAM}`).update({keyV1Closed: false})));
+  await check("famiglia: si rinomina ancora con la v1 chiusa",
+      assertSucceeds(db.doc(`families/${FAM}`).update({name: "Rossi"})));
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc(`families/${FAM}`).update({keyV1Closed: false});
+  });
+  await check("famiglia: un membro NON chiude la v1 di tutti",
+      assertFails(db.doc(`families/${FAM}`).update({keyV1Closed: true})));
+  await check("v1 riaperta: la v1 torna a passare",
+      assertSucceeds(escrowDi(dbMembro, MEMBRO).set(copiaV1)));
+  await check("escrow: la v1 passa anche prima che esista il documento famiglia (onboarding)",
+      assertSucceeds(env.authenticatedContext(ESTRANEO).firestore()
+          .doc(`families/famigliaNuova/memberKeyBackups/${ESTRANEO}`).set(copiaV1)));
+
   // ── PASSAGGIO DELLA CHIAVE CON IL QR ──────────────
   //
   // `keyHandoffs/{roomId}`: chi non ha la chiave (browser, telefono nuovo,

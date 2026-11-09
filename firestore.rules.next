@@ -245,7 +245,7 @@ service cloud.firestore {
     // la chiusura della v1. Le app vecchie riscrivono la v1 senza `v2`: passa,
     // e la copia v2 si riscrive dopo. Il 09/11/2026 tutti i 378 documenti in
     // produzione avevano esattamente cipher, nonce, tag, updatedAt, version: 1.
-    function memberKeyBackupIsValid() {
+    function memberKeyBackupIsValid(familyId) {
       let d = request.resource.data;
       return d.keys().hasOnly(['cipher', 'nonce', 'tag', 'updatedAt', 'version', 'v2'])
         && (d.get('version', 0) == 1 || d.get('version', 0) == 2)
@@ -254,7 +254,25 @@ service cloud.firestore {
             ? (isB64(d.get('cipher', null), 128) && isB64(d.get('nonce', null), 32)
                && isB64(d.get('tag', null), 32))
             : (!d.keys().hasAny(['cipher', 'nonce', 'tag']) && 'v2' in d))
-        && (!('v2' in d) || memberKeyBackupV2IsValid(d.v2));
+        && (!('v2' in d) || memberKeyBackupV2IsValid(d.v2))
+        && (d.version == 2 || !familyKeyV1Closed(familyId));
+    }
+
+    // Fase 3 della cassaforte, una famiglia alla volta (dal 09/11/2026):
+    // con `keyV1Closed` sul documento famiglia la copia della chiave si accetta
+    // solo v2. Le app che riscrivono la v1 vengono rifiutate (scrittura
+    // best-effort, nessun effetto visibile) e non la fanno ricomparire dopo la
+    // cancellazione. Il campo lo scrive solo l'Admin SDK (`keepsKeyV1Closed`).
+    // `exists` prima: alla creazione della famiglia il backup può arrivare
+    // prima del documento (o nello stesso batch, dove `get` vede lo stato di
+    // prima), e una `get` su un documento assente nega.
+    function familyKeyV1Closed(familyId) {
+      return exists(/databases/$(database)/documents/families/$(familyId))
+        && get(/databases/$(database)/documents/families/$(familyId)).data.get('keyV1Closed', false) == true;
+    }
+
+    function keepsKeyV1Closed() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['keyV1Closed']);
     }
 
     // ── USERS ──────────────────────────────────────────────
@@ -440,7 +458,7 @@ service cloud.firestore {
         && createsNoPlanField();
 
       allow read, delete: if isMemberOrOwner(familyId);
-      allow update: if isMemberOrOwner(familyId) && keepsPlanFields();
+      allow update: if isMemberOrOwner(familyId) && keepsPlanFields() && keepsKeyV1Closed();
 
       match /members/{uid} {
         // L'auto-iscrizione non è più libera. Prima bastava `uid ==
@@ -572,7 +590,7 @@ service cloud.firestore {
       match /memberKeyBackups/{memberUid} {
         allow read, delete: if isSignedIn() && request.auth.uid == memberUid;
         allow create, update: if isSignedIn() && request.auth.uid == memberUid
-          && memberKeyBackupIsValid();
+          && memberKeyBackupIsValid(familyId);
       }
 
       match /counters/{uid} {
