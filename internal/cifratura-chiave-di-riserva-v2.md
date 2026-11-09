@@ -306,6 +306,13 @@ Fase 2.
   locale; «Più tardi» vale fino alla prossima apertura dell'app. Android prova
   prima Block Store (solo E2E, `rkId` controllato). Testi uguali al web, nelle 4
   lingue. Da fare: passkey native, QR, «Rigenera codice», misura.
+- **Prova su Android vero (Xiaomi, account interno, 09/11/2026):** il promemoria
+  compare e riconosce la cassaforte creata dal web; codice sbagliato rifiutato;
+  col codice vero la RK arriva e la v2 della famiglia attiva viene scritta e
+  verificata (stesso `rkId` della cassaforte, v1 intatta). Block Store ha
+  risposto **senza E2E** su quel telefono, quindi la RK non è stata salvata lì:
+  la regola regge, ma va capito quanti telefoni veri hanno l'E2E prima di
+  contarci per la Fase 3. iOS non ancora provato (simulatore senza sessione).
 - **Misura**: quota di utenti attivi con `keyVault` e senza v1 (script di sola
   lettura sul conteggio dei documenti, non sui contenuti).
 
