@@ -97,5 +97,30 @@ riscrivono viene ricifrato dal primo client nuovo che legge.
 | 2 | Build iOS e Android con la tappa 1 diffuse (GA4 `platform × appVersion` a 7 giorni) | da fare |
 | 3 | Accendere `sections_encryption_enabled` | da fare |
 
+## Limiti noti (dalla tappa 1, 09/11/2026)
+
+- **Un campo svuotato in chiaro può ricomparire.** Se un documento è già
+  cifrato e una build vecchia (o un client a interruttore spento) svuota un
+  campo, in lettura torna il valore di `secure`. Raro: succede solo dopo
+  l'accensione e solo da build vecchie.
+- **Vaccini su Android**: scrive anche `name`, `doctorName` e `location`, che
+  iOS e web non hanno; restano in chiaro (`name` di solito ripete
+  `commercialName`). Da decidere se aggiungerli alla tabella su tutti e tre.
+- Il web sigilla solo le scritture che portano **tutti** i campi della tabella
+  (una parziale resta in chiaro, e il chiaro vince).
+- Scritture parziali, tre comportamenti: il web non sigilla (resta in chiaro),
+  iOS rilegge il documento e fonde i campi mancanti prima di sigillare,
+  Android sigilla quello che ha (a interruttore acceso un campo nullo diventa
+  `""`: una cura con `activeIngredient` nullo lo svuota davvero).
+- Restano in chiaro in `medicalVisits` i campi `travelDetailsData`,
+  `asNeededDrugsData`, `prescribedExamsData` (Data in base64) e
+  `asNeededDrugsJson`, che possono contenere nomi di farmaci: candidati per un
+  secondo giro.
+- La ricifratura tocca anche i documenti cancellati che il client legge
+  (spese, contesto dell'assistente sul web): qualche scrittura in più, nessun
+  danno.
+
+Commit della tappa 1: web 996b84e3 (pubblicato), Android 2b141b7, iOS 32c2c8da.
+
 Il prezzo noto della tappa 3: chi resta su una build vecchia vede vuoti nome,
 titolo e note dei documenti cifrati (date, importi e struttura restano).
