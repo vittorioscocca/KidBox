@@ -46,6 +46,13 @@ enum FamilyKeyEscrowService {
     ///   - key:      Family master key to back up.
     ///   - familyId: Identifies which Firestore sub-collection to write to.
     ///   - userId:   Firebase UID of the current user (used for key derivation and doc ID).
+    /// `families/{familyId}.keyV1Closed`: la famiglia ha chiuso la copia v1
+    /// (Fase 3 della cassaforte, `internal/cifratura-chiave-di-riserva-v2.md`).
+    static func isV1Closed(familyId: String) async -> Bool {
+        let snap = try? await db.collection("families").document(familyId).getDocument()
+        return (snap?.data()?["keyV1Closed"] as? Bool) == true
+    }
+
     static func backup(key: SymmetricKey, familyId: String, userId: String) async {
         guard !familyId.isEmpty, !userId.isEmpty else {
             KBLog.security.kbError("KeyEscrow backup skipped: empty familyId or userId")
@@ -66,6 +73,15 @@ enum FamilyKeyEscrowService {
             // dispositivo ha la chiave personale (FamilyKeyVault).
             if let v2 = await FamilyKeyVault.v2Field(uid: userId, familyId: familyId, familyKey: key) {
                 data["v2"] = v2
+            }
+            // Fase 3 per questa famiglia (`keyV1Closed`): le rules accettano solo
+            // la v2. Si scrive quella sola, o niente se qui manca la cassaforte.
+            if await isV1Closed(familyId: familyId) {
+                guard let v2 = data["v2"] else {
+                    KBLog.security.kbInfo("KeyEscrow backup skipped: v1 closed, no v2 here familyId=\(familyId)")
+                    return
+                }
+                data = ["version": 2, "v2": v2, "updatedAt": FieldValue.serverTimestamp()]
             }
 
             // merge: una v2 scritta da un altro dispositivo non va cancellata.

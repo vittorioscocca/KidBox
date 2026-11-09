@@ -111,7 +111,33 @@ export async function backupFamilyKey({ familyId, userId, rawKey }) {
   } catch (err) {
     console.warn("[Vault] copia v2 rimandata", err?.name);
   }
-  await setDoc(doc(db, "families", familyId, "memberKeyBackups", userId), data);
+  // Fase 3 per questa famiglia (`keyV1Closed`): le rules accettano solo la v2.
+  // Si scrive quella sola; senza cassaforte qui non si scrive niente, ma
+  // l'ingresso in famiglia va avanti (la chiave resta in sessione).
+  const familySnap = await getDoc(doc(db, "families", familyId)).catch(() => null);
+  if (familySnap?.data()?.keyV1Closed === true) {
+    if (data.v2) {
+      await setDoc(
+        doc(db, "families", familyId, "memberKeyBackups", userId),
+        { version: 2, v2: data.v2, updatedAt: serverTimestamp() },
+        { merge: true }
+      );
+    } else {
+      console.warn("[Vault] v1 chiusa e nessuna cassaforte qui: copia non scritta");
+    }
+  } else {
+    try {
+      await setDoc(doc(db, "families", familyId, "memberKeyBackups", userId), data);
+    } catch (err) {
+      // Chi sta entrando non legge ancora il documento famiglia: se la v1 è
+      // chiusa lo dice solo il rifiuto delle rules. Non si ferma l'ingresso.
+      if (familySnap === null && err?.code === "permission-denied") {
+        console.warn("[Vault] copia v1 rifiutata (famiglia con v1 chiusa?): non scritta");
+      } else {
+        throw err;
+      }
+    }
+  }
 
   const cacheKey = `${userId}.${familyId}`;
   rawKeyCache.set(cacheKey, new Uint8Array(rawKey));
