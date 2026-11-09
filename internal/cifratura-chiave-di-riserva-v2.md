@@ -1,8 +1,10 @@
 # Chiave di riserva v2: la copia della chiave di famiglia che il server non può aprire
 
-Piano scritto l'08/11/2026. Stato al 09/11/2026: **Fase 1 fatta per regole
-(deployate) e web app (provata sugli emulatori, interruttore spento)**; iOS,
-Android e `deleteAccount` da fare. Formato e costanti nella sezione 3.3.
+Piano scritto l'08/11/2026. Stato al 09/11/2026: **Fase 1 fatta per regole,
+`deleteAccount` e web app** (deployate; web provata sugli emulatori e accesa
+solo per gli account interni: `config/keyVault.internal`). Dominio delle
+passkey pronto per iOS e Android. iOS e Android da fare. Formato e costanti
+nella sezione 3.3.
 Contesto e regole generali sulla chiave: skill `/cifratura`.
 
 ## 1. Il problema, in una frase
@@ -173,6 +175,7 @@ illeggibili, senza un errore. Riferimento: `KidboxWebApp/src/services/familyKeyV
 | Chiave per le copie di famiglia | HKDF-SHA256(ikm = RK, salt vuoto, info `kidbox-vault-v2:family`), 32 byte |
 | Cifratura della copia v2 | AES-256-GCM, nonce 12 byte, AAD = UTF-8 di `kidbox-vault-v2:family:{uid}:{familyId}` |
 | Dominio della passkey (RP ID) | `kidboxapp.com` su `*.kidboxapp.com`; in sviluppo l'host stesso |
+| Dichiarazioni del dominio (09/11/2026) | `kidboxapp.com/.well-known/apple-app-site-association` con `webcredentials.apps = ["5WA8KG2G2W.it.vittorioscocca.KidBox"]` (già sul CDN di Apple) e entitlement iOS `webcredentials:kidboxapp.com`; `assetlinks.json` con `delegate_permission/common.get_login_creds` per `it.vittorioscocca.kidbox` firmata `ED:B8:…:80:99`, la chiave di firma di Play (letta dagli APK generati della release 86). Verificato con `assetlinks:check` di Google: `linked: true`. L'`assetlinks.json` di `app.kidboxapp.com` è generato da Firebase con altre impronte: non conta, l'RP ID è `kidboxapp.com` |
 | Id dello slot passkey | `passkey_` + base64url dei primi 16 byte di SHA-256(rawId della credenziale) |
 
 Ciphertext e tag sempre in **campi separati**, base64 standard (come la v1 e
@@ -236,7 +239,8 @@ tutti; `internal` = solo gli uid in `config/internalUsers.uids`; `enforce` = nie
 - **Rules**: `users/{uid}/keyVault/{doc}` solo il proprietario, forma validata;
   `memberKeyBackups` accetta `version` 1 o 2, solo il proprio `uid`. Suite in
   `firestore-tests/` con la verifica differenziale (`/rules-change`).
-- **Functions**: `deleteAccount` cancella anche `users/{uid}/keyVault`.
+- **Functions**: `deleteAccount` cancella anche `users/{uid}/keyVault` (fatto
+  e deployato il 09/11/2026).
 - **Interruttore `config/keyVault`** letto dai tre client (sezione 4 ter): si
   rilascia spento, si accende prima per gli account di test.
 
