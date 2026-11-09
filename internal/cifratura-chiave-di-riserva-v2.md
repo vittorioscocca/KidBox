@@ -320,6 +320,9 @@ Fase 2.
   pagina Backup (`com.google.android.gms.backup.ACTION_BACKUP_SETTINGS`,
   ripiego sulle Impostazioni). Lo stesso riquadro compare alla fine della
   schermata della cassaforte.
+  Provato sullo Xiaomi il 09/11/2026: acceso il backup, all'avvio successivo
+  «RK salvata su Block Store (E2E)». Il ripristino dopo una reinstallazione non
+  è ancora provato (serve disinstallare e rientrare).
 - **Prova su iPhone vero (stesso account, 09/11/2026):** codice accettato; alle
   10:54 l'app ha riscritto la v1 in merge (la v2 è rimasta) e 18 secondi dopo
   la v2 della famiglia attiva, con lo stesso `rkId` di web e Android. Web,
