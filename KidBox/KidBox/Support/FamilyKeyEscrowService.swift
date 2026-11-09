@@ -55,18 +55,24 @@ enum FamilyKeyEscrowService {
             let escrowKey = deriveEscrowKey(userId: userId, familyId: familyId)
             let wrapped   = try InviteCrypto.wrapFamilyKey(familyKey: key, wrapKey: escrowKey)
 
-            let data: [String: Any] = [
+            var data: [String: Any] = [
                 "cipher":    wrapped.cipher.base64EncodedString(),
                 "nonce":     wrapped.nonce.base64EncodedString(),
                 "tag":       wrapped.tag.base64EncodedString(),
                 "updatedAt": FieldValue.serverTimestamp(),
                 "version":   currentVersion
             ]
+            // Copia v2 accanto alla v1, se la cassaforte è accesa e questo
+            // dispositivo ha la chiave personale (FamilyKeyVault).
+            if let v2 = await FamilyKeyVault.v2Field(uid: userId, familyId: familyId, familyKey: key) {
+                data["v2"] = v2
+            }
 
+            // merge: una v2 scritta da un altro dispositivo non va cancellata.
             try await db
                 .collection("families").document(familyId)
                 .collection("memberKeyBackups").document(userId)
-                .setData(data)
+                .setData(data, merge: true)
 
             KBLog.security.kbInfo(
                 "KeyEscrow backup OK familyId=\(familyId) userId=\(userId)"
@@ -97,8 +103,23 @@ enum FamilyKeyEscrowService {
                 .collection("memberKeyBackups").document(userId)
                 .getDocument()
 
+            guard let d = snap.data() else {
+                KBLog.security.kbInfo(
+                    "KeyEscrow recover: no backup found familyId=\(familyId) userId=\(userId)"
+                )
+                return nil
+            }
+
+            // Ordine fisso (piano v2, 4 bis): prima la copia v2 con la chiave
+            // personale di questo dispositivo, poi la v1. Nessuna scrittura
+            // distruttiva qui.
+            let v2 = d["v2"] as? [String: Any]
+            if let key = FamilyKeyVault.openV2(uid: userId, familyId: familyId, v2: v2) {
+                KBLog.security.kbInfo("KeyEscrow recover OK (v2) familyId=\(familyId)")
+                return key
+            }
+
             guard
-                let d        = snap.data(),
                 let cipherB64 = d["cipher"] as? String,
                 let nonceB64  = d["nonce"]  as? String,
                 let tagB64    = d["tag"]    as? String,
@@ -120,6 +141,11 @@ enum FamilyKeyEscrowService {
             KBLog.security.kbInfo(
                 "KeyEscrow recover OK familyId=\(familyId) userId=\(userId)"
             )
+            // La v2 non si è aperta (assente o di un'altra RK): si aggiunge se
+            // cassaforte accesa e RK presente; altrimenti non fa niente.
+            Task.detached {
+                await FamilyKeyVault.writeAndVerifyV2(uid: userId, familyId: familyId, familyKey: familyKey)
+            }
             return familyKey
 
         } catch {
