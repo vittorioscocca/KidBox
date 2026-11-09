@@ -135,6 +135,8 @@ final class TodoRemoteStore {
         
         if isNew { data["createdBy"] = (todo.createdBy ?? uid) }
         
+        // Titolo e note in `secure` a interruttore acceso (`SectionCrypto`).
+        data = await SectionCrypto.seal(data, .todos, ref: ref, existing: snap.data())
         try await ref.setData(data, merge: true)
         
         KBLog.sync.kbInfo("[\(trace)] TodoRemoteStore.upsert OK todoId=\(todo.id) ms=\(kbMsSince(t0))")
@@ -208,7 +210,7 @@ extension TodoRemoteStore {
             .collection("todoLists")
             .document(list.id)
         
-        try await ref.setData([
+        var data: [String: Any] = [
             "childId": list.childId,
             "name": list.name,
             "isDeleted": list.isDeleted,
@@ -218,7 +220,9 @@ extension TodoRemoteStore {
             "defaultVisibilityMemberIds": list.resolvedDefaultMemberIds,
             "updatedBy": uid,
             "updatedAt": FieldValue.serverTimestamp()
-        ], merge: true)
+        ]
+        data = await SectionCrypto.seal(data, .todoLists, ref: ref)
+        try await ref.setData(data, merge: true)
         
         KBLog.sync.kbInfo("[\(trace)] TodoRemoteStore.upsertList OK listId=\(list.id) ms=\(kbMsSince(t0))")
     }
@@ -287,7 +291,7 @@ extension TodoRemoteStore {
                     }
                     
                     let doc = diff.document
-                    let d = doc.data()
+                    let d = SectionCrypto.read(doc, .todoLists, reencrypt: diff.type != .removed)
                     guard let name = d["name"] as? String,
                           let cid = d["childId"] as? String else {
                         KBLog.sync.kbInfo("[\(trace)] TodoLists decode FAIL docId=\(doc.documentID) type=\(diff.type.rawValue)")
@@ -333,7 +337,7 @@ extension TodoRemoteStore {
             .getDocuments()
         
         let out = snap.documents.compactMap { doc -> TodoListRemoteDTO? in
-            let d = doc.data()
+            let d = SectionCrypto.read(doc, .todoLists)
             guard let name = d["name"] as? String,
                   let cid = d["childId"] as? String else {
                 KBLog.sync.kbInfo("[\(trace)] fetchTodoLists decode FAIL docId=\(doc.documentID)")
@@ -407,7 +411,7 @@ extension TodoRemoteStore {
                     }
                     
                     let doc = diff.document
-                    let data = doc.data()
+                    let data = SectionCrypto.read(doc, .todos, reencrypt: diff.type != .removed)
                     
                     let dto = TodoRemoteDTO(
                         id: doc.documentID,

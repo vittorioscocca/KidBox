@@ -6,7 +6,8 @@
 import UserNotifications
 import OSLog
 
-/// Notification Service Extension — decrypts chat messages before display.
+/// Notification Service Extension — decrypts chat messages before display,
+/// e il testo delle push dei documenti sigillati (`secure`, vedi `applySecureText`).
 ///
 /// Flow:
 ///   1. FCM delivers a push with `mutable-content: 1` (set by the Cloud Function).
@@ -43,6 +44,14 @@ final class NotificationService: UNNotificationServiceExtension {
         self.bestAttemptContent = best
 
         let userInfo = request.content.userInfo
+
+        // Push di un documento sigillato (to-do, evento, spesa…): il testo
+        // dell'utente arriva cifrato in `secure` e va decifrato qui.
+        if let blob = userInfo["secure"] as? String, !blob.isEmpty {
+            applySecureText(best, blob: blob, userInfo: userInfo)
+            contentHandler(best)
+            return
+        }
 
         // Only handle our own chat pushes. Le menzioni usano lo stesso payload
         // di un messaggio normale ma con `type == "chat_mention"`: la NSE deve
@@ -137,6 +146,46 @@ final class NotificationService: UNNotificationServiceExtension {
     }
 
     // MARK: - Helpers
+
+    /// Decifra il JSON di `secure` con la chiave di famiglia (come `textEnc`
+    /// della chat) e riempie `titleTpl`/`bodyTpl`, già tradotti dal server.
+    /// Qualunque intoppo (chiave, decifratura, segnaposto senza valore):
+    /// restano titolo e testo generici arrivati con la push.
+    /// Specifica: `internal/cifratura-sezioni.md`, secondo giro § 5.
+    private func applySecureText(
+        _ content: UNMutableNotificationContent,
+        blob: String,
+        userInfo: [AnyHashable: Any]
+    ) {
+        let coll = userInfo["secureColl"] as? String ?? ""
+        guard
+            let familyId = userInfo["secureFamilyId"] as? String, !familyId.isEmpty,
+            let uid = UserDefaults(suiteName: appGroupId)?.string(forKey: "currentUserUID"), !uid.isEmpty
+        else {
+            log.error("Secure push coll=\(coll, privacy: .public): familyId o uid mancanti — testo generico")
+            return
+        }
+        guard
+            let json = try? NoteCryptoService.decryptString(blob, familyId: familyId, userId: uid),
+            let values = SecurePushTemplate.values(fromJSON: json)
+        else {
+            log.error("Secure push coll=\(coll, privacy: .public): decifratura fallita — testo generico")
+            return
+        }
+        guard let rendered = SecurePushTemplate.render(
+            titleTemplate: userInfo["titleTpl"] as? String,
+            bodyTemplate: userInfo["bodyTpl"] as? String,
+            values: values
+        ) else {
+            log.info("Secure push coll=\(coll, privacy: .public): segnaposto senza valore — testo generico")
+            return
+        }
+        if let title = rendered.title { content.title = title }
+        if let body = rendered.body {
+            content.body = body.count > 180 ? String(body.prefix(177)) + "…" : body
+        }
+        log.info("Secure push coll=\(coll, privacy: .public) decifrata")
+    }
 
     /// Sets the best-attempt body to the server-side fallback text (e.g. "Nuovo messaggio")
     /// that the Cloud Function computed and included as `fallbackBody` in the data payload.

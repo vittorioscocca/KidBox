@@ -181,7 +181,8 @@ final class FamilyReadRemoteStore {
         }
         
         let items: [RemoteChildRead] = qs.documents.compactMap { doc in
-            let d = doc.data()
+            // Il nome può stare in `secure` (`SectionCrypto`): ingresso in famiglia e bootstrap.
+            let d = SectionCrypto.read(doc, .children)
             guard let name = d["name"] as? String else { return nil }
             let birth = (d["birthDate"] as? Timestamp)?.dateValue()
             
@@ -259,7 +260,7 @@ final class FamilyReadRemoteStore {
         }
         
         let items: [RemoteTodoRead] = qs.documents.compactMap { doc in
-            let d = doc.data()
+            let d = SectionCrypto.read(doc, .todos)
             
             guard
                 let childId = d["childId"] as? String,
@@ -312,7 +313,7 @@ final class FamilyReadRemoteStore {
         }
         
         let items: [RemoteTodoListRead] = qs.documents.compactMap { doc in
-            let d = doc.data()
+            let d = SectionCrypto.read(doc, .todoLists)
             guard
                 let childId = d["childId"] as? String,
                 let name = d["name"] as? String

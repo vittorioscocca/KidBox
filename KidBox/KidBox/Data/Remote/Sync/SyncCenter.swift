@@ -1831,7 +1831,7 @@ extension TodoRemoteStore {
             .whereField("updatedAt", isGreaterThanOrEqualTo: Timestamp(date: since))
             .getDocuments()
         return snap.documents.map { doc in
-            let data = doc.data()
+            let data = SectionCrypto.read(doc, .todos)
             let listId = data["listId"] as? String
             
             return TodoRemoteDTO(

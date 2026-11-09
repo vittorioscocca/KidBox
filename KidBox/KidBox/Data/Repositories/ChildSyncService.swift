@@ -66,12 +66,14 @@ struct ChildSyncService {
             payload["updatedBy"] = ub
         }
         
-        try await db
+        let ref = db
             .collection("families")
             .document(fid ?? "")
             .collection("children")
             .document(cid)
-            .setData(payload, merge: true)
+        // Nome in `secure` a interruttore acceso (`SectionCrypto`).
+        payload = await SectionCrypto.seal(payload, .children, ref: ref)
+        try await ref.setData(payload, merge: true)
         
         KBLog.sync.kbDebug("ChildSyncService upsert completed childId=\(cid)")
     }

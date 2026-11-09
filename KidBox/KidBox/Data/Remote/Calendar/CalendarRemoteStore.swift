@@ -51,9 +51,11 @@ final class CalendarRemoteStore {
         // «urgente» arrivi agli altri device invece di restare qui.
         data["priority"]         = dto.priority ?? 0
         
-        try await col(familyId: dto.familyId)
-            .document(dto.id)
-            .setData(data, merge: true)
+        let ref = col(familyId: dto.familyId).document(dto.id)
+        // Titolo, note e luogo in `secure` a interruttore acceso, salvo famiglia
+        // con link iCal (`calendarExported`): lì si scrive in chiaro e si riapre.
+        data = await SectionCrypto.seal(data, .calendarEvents, ref: ref)
+        try await ref.setData(data, merge: true)
     }
     
     // MARK: - Soft delete
@@ -79,7 +81,7 @@ final class CalendarRemoteStore {
                 snapshot?.kbLogSnapshot("Calendar")
                 if let error { onError(error); return }
                 let dtos = snapshot?.documents.compactMap {
-                    CalendarRemoteStore.parseDTO(doc: $0)
+                    CalendarRemoteStore.parseDTO(doc: $0, reencrypt: true)
                 } ?? []
                 onChange(dtos)
             }
@@ -87,8 +89,9 @@ final class CalendarRemoteStore {
     
     // MARK: - Parse
     
-    static func parseDTO(doc: QueryDocumentSnapshot) -> KBCalendarEventDTO? {
-        let d = doc.data()
+    /// `reencrypt` solo dal listener (ricifratura o riapertura, `SectionCrypto`).
+    static func parseDTO(doc: QueryDocumentSnapshot, reencrypt: Bool = false) -> KBCalendarEventDTO? {
+        let d = SectionCrypto.read(doc, .calendarEvents, reencrypt: reencrypt)
         guard
             let id       = d["id"]       as? String,
             let familyId = d["familyId"] as? String,

@@ -2,8 +2,8 @@
 //  SectionCrypto.swift
 //  KidBox
 //
-//  Cifratura delle sezioni (Garage, Animali, Spese, Salute) con la chiave di
-//  famiglia. Specifica: `internal/cifratura-sezioni.md`.
+//  Cifratura delle sezioni (Garage, Animali, Spese, Salute e, dal secondo
+//  giro, figli, to-do, liste e calendario) con la chiave di famiglia. Specifica: `internal/cifratura-sezioni.md`.
 //
 //  Un solo campo in più per documento: `secure` = base64(AES-GCM combined) di
 //  un JSON `{"campo": "valore"}` (formato delle note), più `secureV: 1`.
@@ -12,7 +12,11 @@
 //    `secure`. Se `secure` non si apre restano i valori in chiaro.
 //  - Scrittura: solo con `sections_encryption_enabled` acceso e la chiave in
 //    mano; i campi della tabella vanno a "" (non cancellati: le build vecchie li
-//    vogliono) e il valore in `secure`. Altrimenti in chiaro come sempre.
+//    vogliono; quelli «*» invece si cancellano) e il valore in `secure`.
+//    Altrimenti in chiaro come sempre. Una scrittura parziale prende i campi
+//    mancanti dal documento esistente risolto.
+//  - Calendario: se la famiglia ha `calendarExported` (link iCal) gli eventi
+//    non si sigillano e quelli sigillati si riaprono.
 //  - Ricifratura: un documento con chiaro non vuoto letto dal listener si
 //    riscrive in merge con solo `secure`, `secureV` e i campi a "", senza
 //    toccare `updatedAt`/`updatedBy`. Una volta per documento per sessione.
@@ -39,6 +43,11 @@ enum SectionCrypto {
         case treatments
         case vaccines
         case pediatricProfiles
+        // Secondo giro (`internal/cifratura-sezioni.md` § 3).
+        case children
+        case todos
+        case todoLists
+        case calendarEvents
 
         /// Campi stringa che finiscono in `secure`.
         var fields: [String] {
@@ -48,13 +57,32 @@ enum SectionCrypto {
             case .pets:              return ["name", "breed", "color", "chipCode", "notes"]
             case .petEvents:         return ["title", "vetName", "notes"]
             case .expenses:          return ["title", "notes"]
-            case .medicalVisits:     return ["doctorName", "reason", "diagnosis", "recommendations", "notes", "nextVisitReason"]
+            case .medicalVisits:     return ["doctorName", "reason", "diagnosis", "recommendations", "notes", "nextVisitReason",
+                                             "travelDetailsData", "travelDetailsJson", "asNeededDrugsData",
+                                             "asNeededDrugsJson", "prescribedExamsData", "prescribedExamsJson"]
             case .medicalExams:      return ["name", "preparation", "location", "resultText", "notes"]
             case .treatments:        return ["drugName", "activeIngredient", "notes"]
-            case .vaccines:          return ["commercialName", "lotNumber", "administeredBy", "notes"]
+            case .vaccines:          return ["commercialName", "lotNumber", "administeredBy", "notes",
+                                             "name", "doctorName", "location"]
             case .pediatricProfiles: return ["bloodGroup", "allergies", "medicalNotes", "doctorName", "doctorPhone",
                                              "doctorEmail", "doctorAddress", "doctorWebsite",
                                              "doctorOfficeHoursJSON", "emergencyContactsJSON"]
+            case .children:          return ["name"]
+            case .todos:             return ["title", "notes"]
+            case .todoLists:         return ["name"]
+            case .calendarEvents:    return ["title", "notes", "location"]
+            }
+        }
+
+        /// Campi «*» della tabella: opzionali con JSON o base64 dentro, che un
+        /// parser vecchio potrebbe non reggere vuoti. Sigillati si scrivono
+        /// cancellati (`FieldValue.delete()`) invece che "": le scritture che li
+        /// portano devono essere in merge (setData merge:true o updateData).
+        var deletedFields: Set<String> {
+            switch self {
+            case .medicalVisits: return ["travelDetailsData", "travelDetailsJson", "asNeededDrugsData",
+                                         "asNeededDrugsJson", "prescribedExamsData", "prescribedExamsJson"]
+            default:             return []
             }
         }
     }
@@ -78,10 +106,12 @@ enum SectionCrypto {
         return out
     }
 
-    /// Sposta i campi della tabella in `secure` e li mette a "". Un campo che
-    /// `data` non scrive prende il valore da `existing` (già risolto), così il
-    /// blob non perde ciò che questa scrittura non tocca. Nil se la cifratura fallisce.
-    static func sealed(_ data: [String: Any], fields: [String], existing: [String: Any]?,
+    /// Sposta i campi della tabella in `secure` e li mette a "" (quelli in
+    /// `deleted` a `FieldValue.delete()`). Un campo che `data` non scrive prende
+    /// il valore da `existing` (già risolto), così il blob non perde ciò che questa
+    /// scrittura non tocca (§ 1 del secondo giro). Nil se la cifratura fallisce.
+    static func sealed(_ data: [String: Any], fields: [String], deleted: Set<String> = [],
+                       existing: [String: Any]?,
                        encrypt: (String) -> String?) -> [String: Any]? {
         var values: [String: String] = [:]
         for field in fields {
@@ -94,9 +124,20 @@ enum SectionCrypto {
         }
         guard let blob = encrypt(encodeMap(values)) else { return nil }
         var out = data
-        for field in fields { out[field] = "" }
+        for field in fields { out[field] = deleted.contains(field) ? FieldValue.delete() : "" }
         out[secureKey] = blob
         out[versionKey] = currentVersion
+        return out
+    }
+
+    /// Scrittura in merge che riapre un documento sigillato (§ 4, calendario
+    /// esportato): i campi della tabella in chiaro coi valori già risolti,
+    /// `secure` e `secureV` cancellati. Niente `updatedAt`/`updatedBy`.
+    static func reopened(_ resolved: [String: Any], fields: [String]) -> [String: Any] {
+        var out: [String: Any] = [:]
+        for field in fields { out[field] = (resolved[field] as? String) ?? "" }
+        out[secureKey] = FieldValue.delete()
+        out[versionKey] = FieldValue.delete()
         return out
     }
 
@@ -160,9 +201,23 @@ enum SectionCrypto {
         guard let fid = familyId(of: doc.reference) else { return raw }
         let resolved = open(raw, section, familyId: fid)
         if reencrypt {
-            reencryptIfNeeded(raw: raw, resolved: resolved, section, ref: doc.reference, familyId: fid)
+            if section == .calendarEvents {
+                maintainCalendarEvent(raw: raw, resolved: resolved, ref: doc.reference, familyId: fid)
+            } else {
+                reencryptIfNeeded(raw: raw, resolved: resolved, section, ref: doc.reference, familyId: fid)
+            }
         }
         return resolved
+    }
+
+    /// Come `open`, ma nil se il documento è sigillato e `secure` non si apre:
+    /// serve a chi deve cancellare `secure` senza perdere valori che non conosce.
+    private static func openChecked(_ data: [String: Any], _ section: Section, familyId: String) -> [String: Any]? {
+        guard let blob = data[secureKey] as? String, !blob.isEmpty else { return data }
+        guard let uid, (try? NoteCryptoService.decryptString(blob, familyId: familyId, userId: uid)) != nil else {
+            return nil
+        }
+        return open(data, section, familyId: familyId)
     }
 
     // MARK: - Scrittura
@@ -173,6 +228,18 @@ enum SectionCrypto {
     static func seal(_ data: [String: Any], _ section: Section, ref: DocumentReference,
                      existing: [String: Any]? = nil) async -> [String: Any] {
         guard let fid = familyId(of: ref), let uid = canSeal(familyId: fid) else { return data }
+        if section == .calendarEvents {
+            switch await calendarExported(familyId: fid) {
+            case .some(true):
+                // Link iCal attivo: si scrive in chiaro e si riapre il documento.
+                return await unsealedWrite(data, section, ref: ref, existing: existing, familyId: fid)
+            case .none:
+                // Non sappiamo se è esportato: meglio il chiaro di un feed con «Impegno».
+                return data
+            case .some(false):
+                break
+            }
+        }
         var previous = existing.map { open($0, section, familyId: fid) }
         if previous == nil, section.fields.contains(where: { data[$0] == nil }) {
             // Senza il documento attuale si perderebbero i campi non riscritti:
@@ -180,9 +247,94 @@ enum SectionCrypto {
             guard let snap = try? await ref.getDocument() else { return data }
             previous = open(snap.data() ?? [:], section, familyId: fid)
         }
-        return sealed(data, fields: section.fields, existing: previous) {
+        return sealed(data, fields: section.fields, deleted: section.deletedFields, existing: previous) {
             try? NoteCryptoService.encryptString($0, familyId: fid, userId: uid)
         } ?? data
+    }
+
+    /// Scrittura in chiaro che riapre un documento sigillato: i campi della
+    /// tabella che `data` non scrive si prendono dal documento risolto, poi
+    /// `secure`/`secureV` si cancellano. Documento illeggibile o non sigillato:
+    /// `data` invariato (il chiaro vince comunque in lettura).
+    private static func unsealedWrite(_ data: [String: Any], _ section: Section, ref: DocumentReference,
+                                      existing: [String: Any]?, familyId: String) async -> [String: Any] {
+        var raw = existing
+        if raw == nil {
+            guard let snap = try? await ref.getDocument() else { return data }
+            raw = snap.data() ?? [:]
+        }
+        guard let raw, isSealed(raw),
+              let resolved = openChecked(raw, section, familyId: familyId) else { return data }
+        var out = data
+        for field in section.fields where out[field] == nil {
+            out[field] = (resolved[field] as? String) ?? ""
+        }
+        out[secureKey] = FieldValue.delete()
+        out[versionKey] = FieldValue.delete()
+        return out
+    }
+
+    // MARK: - Calendario esportato (§ 4 del secondo giro)
+
+    private static let exportedLock = NSLock()
+    private static var exportedCache: [String: (value: Bool, at: Date)] = [:]
+    private static let exportedTTL: TimeInterval = 10 * 60
+
+    /// `families/{familyId}.calendarExported`, con una cache di 10 minuti per
+    /// famiglia. Nil se il documento non si legge e non c'è un valore noto.
+    static func calendarExported(familyId: String) async -> Bool? {
+        exportedLock.lock()
+        let cached = exportedCache[familyId]
+        exportedLock.unlock()
+        if let cached, Date().timeIntervalSince(cached.at) < exportedTTL { return cached.value }
+        guard let snap = try? await Firestore.firestore().collection("families").document(familyId).getDocument() else {
+            return cached?.value
+        }
+        let value = snap.data()?["calendarExported"] as? Bool ?? false
+        noteCalendarExported(value, familyId: familyId)
+        return value
+    }
+
+    /// Aggiorna la cache da chi ha già letto il documento famiglia.
+    static func noteCalendarExported(_ value: Bool, familyId: String) {
+        exportedLock.lock()
+        exportedCache[familyId] = (value, Date())
+        exportedLock.unlock()
+    }
+
+    /// Lettura di un evento dal listener: famiglia esportata → riapre i
+    /// documenti sigillati; altrimenti ricifratura normale. Il documento
+    /// famiglia si legge solo se c'è qualcosa da fare (a interruttore spento e
+    /// senza `secure` nessuna lettura in più).
+    private static func maintainCalendarEvent(raw: [String: Any], resolved: [String: Any],
+                                              ref: DocumentReference, familyId: String) {
+        let sealedDoc = isSealed(raw)
+        let wantsReencrypt = hasPlainValues(raw, fields: Section.calendarEvents.fields)
+            && canSeal(familyId: familyId) != nil
+        guard sealedDoc || wantsReencrypt else { return }
+        Task { @MainActor in
+            guard let exported = await calendarExported(familyId: familyId) else { return }
+            if exported {
+                if sealedDoc { reopenIfNeeded(raw: raw, ref: ref, familyId: familyId) }
+            } else {
+                reencryptIfNeeded(raw: raw, resolved: resolved, .calendarEvents, ref: ref, familyId: familyId)
+            }
+        }
+    }
+
+    /// Merge dei campi risolti in chiaro + `secure`/`secureV` cancellati, senza
+    /// `updatedAt`. Una volta per documento per sessione.
+    private static func reopenIfNeeded(raw: [String: Any], ref: DocumentReference, familyId: String) {
+        let section = Section.calendarEvents
+        guard let resolved = openChecked(raw, section, familyId: familyId) else { return }
+        guard reencrypted.insert("reopen:" + ref.path).inserted else { return }
+        ref.setData(reopened(resolved, fields: section.fields), merge: true) { err in
+            if let err {
+                KBLog.sync.kbError("[SectionCrypto] riapertura fallita \(section.rawValue) id=\(ref.documentID) err=\(err.localizedDescription)")
+            } else {
+                KBLog.sync.kbInfo("[SectionCrypto] riaperto \(section.rawValue) id=\(ref.documentID)")
+            }
+        }
     }
 
     // MARK: - Ricifratura
@@ -199,7 +351,8 @@ enum SectionCrypto {
             return
         }
         guard reencrypted.insert(ref.path).inserted else { return }
-        guard let update = sealed([:], fields: section.fields, existing: resolved, encrypt: {
+        guard let update = sealed([:], fields: section.fields, deleted: section.deletedFields,
+                                  existing: resolved, encrypt: {
             try? NoteCryptoService.encryptString($0, familyId: familyId, userId: uid)
         }) else { return }
         ref.setData(update, merge: true) { err in

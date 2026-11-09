@@ -309,6 +309,10 @@ final class KBSubscriptionManager: ObservableObject {
             if !familyId.isEmpty {
                 let familySnap = try await db.collection("families").document(familyId).getDocument()
                 let data = familySnap.data()
+                // Già che c'è il documento famiglia: link iCal attivo? (`SectionCrypto`, calendario).
+                if let data {
+                    SectionCrypto.noteCalendarExported(data["calendarExported"] as? Bool ?? false, familyId: familyId)
+                }
                 let source = data?["planSource"] as? String
                 if source == "trial", let end = (data?["planExpiresAt"] as? Timestamp)?.dateValue() {
                     trialEnd = end

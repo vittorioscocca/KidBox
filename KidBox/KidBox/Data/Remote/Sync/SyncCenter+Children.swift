@@ -129,7 +129,8 @@ extension SyncCenter {
                     continue
                 }
                 
-                let data = doc.data()
+                // Nome risolto da `secure` se cifrato; il listener ricifra il chiaro.
+                let data = SectionCrypto.read(doc, .children, reencrypt: true)
                 let remoteName = data["name"] as? String ?? ""
                 let remoteBirthDate = (data["birthDate"] as? Timestamp)?.dateValue()
                 let remoteUpdatedAt = (data["updatedAt"] as? Timestamp)?.dateValue()
@@ -171,7 +172,10 @@ extension SyncCenter {
                             didMutate = true
                         }
                         
-                        if localChild.name != remoteName {
+                        // Nome sigillato che qui non si apre (chiave non ancora arrivata):
+                        // non si cancella il nome che il telefono già conosce.
+                        let unreadableName = remoteName.isEmpty && SectionCrypto.isSealed(data)
+                        if localChild.name != remoteName && !unreadableName {
                             localChild.name = remoteName
                             didMutate = true
                         }

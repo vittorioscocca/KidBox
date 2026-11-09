@@ -145,6 +145,7 @@ final class FamilyRemoteStore {
             childData["birthDate"] = Timestamp(date: birthDate)
         }
         
+        childData = await SectionCrypto.seal(childData, .children, ref: childRef, existing: [:])
         try await childRef.setData(childData, merge: false)
         
         KBLog.sync.kbInfo("Family created completed familyId=\(family.id) childId=\(child.id)")
@@ -203,6 +204,7 @@ extension FamilyRemoteStore {
             childData["birthDate"] = FieldValue.delete()
         }
         
+        childData = await SectionCrypto.seal(childData, .children, ref: childRef)
         batch.setData(childData, forDocument: childRef, merge: true)
         
         try await batch.commit()

@@ -8,6 +8,7 @@
 
 import XCTest
 import CryptoKit
+import FirebaseFirestore
 @testable import KidBox
 
 final class SectionCryptoTests: XCTestCase {
@@ -94,5 +95,115 @@ final class SectionCryptoTests: XCTestCase {
                                                         existing: ["name": "Panda", "updatedAt": "x"],
                                                         encrypt: encrypt))
         XCTAssertEqual(Set(update.keys), Set(fields + [SectionCrypto.secureKey, SectionCrypto.versionKey]))
+    }
+
+    // MARK: - Secondo giro: campi «*» cancellati
+
+    func test_sealed_starredFieldsAreDeleted() throws {
+        let section = SectionCrypto.Section.medicalVisits
+        let data: [String: Any] = ["reason": "Febbre", "travelDetailsData": "eyJhIjoxfQ==",
+                                   "asNeededDrugsJson": "[]", "cost": 50]
+        let sealed = try XCTUnwrap(SectionCrypto.sealed(data, fields: section.fields, deleted: section.deletedFields,
+                                                        existing: nil, encrypt: encrypt))
+        for f in section.fields {
+            if section.deletedFields.contains(f) {
+                XCTAssertTrue(sealed[f] is FieldValue, "\(f) dovrebbe essere FieldValue.delete()")
+            } else {
+                XCTAssertEqual(sealed[f] as? String, "", f)
+            }
+        }
+        XCTAssertEqual(sealed["cost"] as? Int, 50)
+
+        // In lettura il campo assente equivale a vuoto: il valore torna da `secure`.
+        var stored = sealed
+        for f in section.deletedFields { stored.removeValue(forKey: f) }
+        let opened = SectionCrypto.resolve(stored, fields: section.fields, decrypt: decrypt)
+        XCTAssertEqual(opened["travelDetailsData"] as? String, "eyJhIjoxfQ==")
+        XCTAssertEqual(opened["asNeededDrugsJson"] as? String, "[]")
+        XCTAssertEqual(opened["reason"] as? String, "Febbre")
+    }
+
+    func test_deletedFields_onlyInTable() {
+        for section in SectionCrypto.Section.allCases {
+            XCTAssertTrue(section.deletedFields.isSubset(of: Set(section.fields)), section.rawValue)
+        }
+    }
+
+    // MARK: - Secondo giro: scritture parziali
+
+    func test_sealed_partialWrite_keepsFieldsOtherClientsWrite() throws {
+        // `name`, `doctorName`, `location` dei vaccini li scrive solo Android.
+        let section = SectionCrypto.Section.vaccines
+        let existing: [String: Any] = ["commercialName": "Hexyon", "name": "Esavalente",
+                                       "doctorName": "Dr. Rossi", "location": "ASL"]
+        let write: [String: Any] = ["commercialName": "Hexyon", "lotNumber": "L1", "notes": "ok"]
+        let sealed = try XCTUnwrap(SectionCrypto.sealed(write, fields: section.fields, existing: existing,
+                                                        encrypt: encrypt))
+        let opened = SectionCrypto.resolve(sealed, fields: section.fields, decrypt: decrypt)
+        XCTAssertEqual(opened["name"] as? String, "Esavalente")
+        XCTAssertEqual(opened["doctorName"] as? String, "Dr. Rossi")
+        XCTAssertEqual(opened["location"] as? String, "ASL")
+        XCTAssertEqual(opened["lotNumber"] as? String, "L1")
+    }
+
+    func test_sealed_explicitClear_winsOverExisting() throws {
+        // Un campo scritto nullo o cancellato è uno svuotamento voluto, non un campo mancante.
+        let section = SectionCrypto.Section.calendarEvents
+        let existing: [String: Any] = ["title": "Calcio", "notes": "porta la borraccia", "location": "Campo"]
+        let write: [String: Any] = ["title": "Calcio", "notes": FieldValue.delete(), "location": NSNull()]
+        let sealed = try XCTUnwrap(SectionCrypto.sealed(write, fields: section.fields, existing: existing,
+                                                        encrypt: encrypt))
+        let opened = SectionCrypto.resolve(sealed, fields: section.fields, decrypt: decrypt)
+        XCTAssertEqual(opened["title"] as? String, "Calcio")
+        XCTAssertEqual(opened["notes"] as? String, "")
+        XCTAssertEqual(opened["location"] as? String, "")
+    }
+
+    func test_newTables() {
+        XCTAssertEqual(SectionCrypto.Section.children.fields, ["name"])
+        XCTAssertEqual(SectionCrypto.Section.todos.fields, ["title", "notes"])
+        XCTAssertEqual(SectionCrypto.Section.todoLists.fields, ["name"])
+        XCTAssertEqual(SectionCrypto.Section.calendarEvents.fields, ["title", "notes", "location"])
+    }
+
+    // MARK: - Calendario esportato: riapertura
+
+    func test_reopened_writesPlainAndDeletesSecure() throws {
+        let fields = SectionCrypto.Section.calendarEvents.fields
+        let sealed = try XCTUnwrap(SectionCrypto.sealed(["title": "Dentista", "location": "Via Roma"],
+                                                        fields: fields, existing: nil, encrypt: encrypt))
+        let resolved = SectionCrypto.resolve(sealed, fields: fields, decrypt: decrypt)
+        let update = SectionCrypto.reopened(resolved, fields: fields)
+        XCTAssertEqual(update["title"] as? String, "Dentista")
+        XCTAssertEqual(update["location"] as? String, "Via Roma")
+        XCTAssertEqual(update["notes"] as? String, "")
+        XCTAssertTrue(update[SectionCrypto.secureKey] is FieldValue)
+        XCTAssertTrue(update[SectionCrypto.versionKey] is FieldValue)
+        XCTAssertNil(update["updatedAt"])
+        XCTAssertEqual(Set(update.keys), Set(fields + [SectionCrypto.secureKey, SectionCrypto.versionKey]))
+    }
+
+    // MARK: - Push: segnaposto
+
+    func test_pushTemplate_fillsPlaceholders() throws {
+        let sealed = try XCTUnwrap(SectionCrypto.sealed(["title": "Comprare il latte"],
+                                                        fields: SectionCrypto.Section.todos.fields,
+                                                        existing: nil, encrypt: encrypt))
+        let json = try XCTUnwrap(decrypt(try XCTUnwrap(sealed[SectionCrypto.secureKey] as? String)))
+        let values = try XCTUnwrap(SecurePushTemplate.values(fromJSON: json))
+        let r = try XCTUnwrap(SecurePushTemplate.render(titleTemplate: "Nuovo to-do",
+                                                        bodyTemplate: "Marco ti ha assegnato «{title}»",
+                                                        values: values))
+        XCTAssertEqual(r.title, "Nuovo to-do")
+        XCTAssertEqual(r.body, "Marco ti ha assegnato «Comprare il latte»")
+    }
+
+    func test_pushTemplate_missingValue_keepsGeneric() {
+        XCTAssertNil(SecurePushTemplate.fill("{title} alle {location}", values: ["title": "Calcio"]))
+        XCTAssertNil(SecurePushTemplate.fill("{title}", values: ["title": ""]))
+        XCTAssertNil(SecurePushTemplate.render(titleTemplate: "{title}", bodyTemplate: "{notes}",
+                                               values: ["title": "Calcio"]))
+        XCTAssertEqual(SecurePushTemplate.fill("Senza segnaposto", values: [:]), "Senza segnaposto")
+        XCTAssertEqual(SecurePushTemplate.fill("{a}{b}!", values: ["a": "x", "b": "y"]), "xy!")
     }
 }
