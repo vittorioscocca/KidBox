@@ -38,7 +38,13 @@ struct KBMarkDoseTakenIntent: AppIntent {
 }
 
 /// Pulsante «aggiorna» in fondo al widget grande, come quello di Alexa.
-struct KBRefreshWidgetsIntent: AppIntent {
+///
+/// `LiveActivityIntent` e non solo `AppIntent`: un intent di widget gira
+/// nell'estensione, dove `refreshInApp` è nil e si ricaricava solo l'istantanea
+/// vecchia, quindi «Aggiornato» restava fermo all'ultima scrittura dell'app.
+/// Così il sistema lo esegue nel processo dell'app (avviandola in background),
+/// che ricostruisce l'istantanea con l'ora del controllo.
+struct KBRefreshWidgetsIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Aggiorna i widget"
     static let isDiscoverable: Bool = false
 
