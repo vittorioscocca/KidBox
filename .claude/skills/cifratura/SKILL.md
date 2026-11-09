@@ -97,10 +97,16 @@ questo che le regole sugli inviti devono reggere da sole → `/rules-change`.
 
 ## Cosa la cifratura rende impossibile (e non è un bug da risolvere)
 
-- **Anteprime nelle notifiche**: su Android la notifica di chat resta «Nuovo
-  messaggio» perché il sistema la mostra senza eseguire codice dell'app. Su iOS
-  il testo si vede solo grazie alla Notification Service Extension, che decifra
-  prima del banner. → `/notifiche`
+- **Anteprime nelle notifiche**: il server non può metterci il testo, lo
+  decifra il telefono. Su iOS lo fa la Notification Service Extension prima del
+  banner. Su Android, dal 24/10/2026, lo fa `chatPreview` in
+  `KidBoxFirebaseMessagingService` (server manda `textEnc` nei `data`), ma solo
+  se il push arriva **solo-dati**, cioè se gira `onMessageReceived`:
+  interruttore `config/chatPush.dataOnlyAll` (altrimenti solo gli account di
+  `config/internalUsers`), spegnibile senza deploy. Rischio: su ROM come Xiaomi
+  ad app killata il push solo-dati può non arrivare. Chiave mancante = corpo
+  generico, mai un errore. Lo stesso schema vale per qualunque sezione si
+  cifri in futuro (to-do, calendario…). → `/notifiche`
 - **Ricerca, AI o analytics lato server sui contenuti**: il server vede byte.
   Tutto ciò che legge contenuti gira **sul client**.
 - **QA**: gli script con il client SDK possono verificare che i blob esistano e
