@@ -133,6 +133,50 @@
         }
       }
     },
+    "Chiave della famiglia ricevuta da un familiare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Family key received from a family member."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clave de la familia recibida de un familiar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clé de la famille reçue d'un membre de la famille."
+          }
+        }
+      }
+    },
+    "Chiave mandata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key sent"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clave enviada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clé envoyée"
+          }
+        }
+      }
+    },
     "Chiave non ancora protetta" : {
       "localizations" : {
         "en" : {
@@ -265,6 +309,28 @@
         }
       }
     },
+    "Così potrà leggere documenti, password e foto della famiglia anche se non aveva la chiave." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This lets them read the family's documents, passwords and photos even without the key."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Así podrá leer los documentos, contraseñas y fotos de la familia aunque no tuviera la clave."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ainsi, il pourra lire les documents, mots de passe et photos de la famille même sans la clé."
+          }
+        }
+      }
+    },
     "Crea il codice di recupero" : {
       "localizations" : {
         "en" : {
@@ -331,6 +397,28 @@
         }
       }
     },
+    "Da qui non c'è una chiave da mandare a chi mostra il QR: deve essere il tuo account o un membro della tua famiglia." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There's no key to send from here to whoever is showing the QR code: it must be your account or a member of your family."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desde aquí no hay ninguna clave que enviar a quien muestra el QR: debe ser tu cuenta o un miembro de tu familia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il n'y a pas de clé à envoyer d'ici à qui affiche le QR : ce doit être votre compte ou un membre de votre famille."
+          }
+        }
+      }
+    },
     "Di solito non ti servirà: se hai ancora un dispositivo o un familiare con KidBox, rientri da lì." : {
       "localizations" : {
         "en" : {
@@ -393,6 +481,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les documents, mots de passe et photos sont chiffrés avec une clé que seule votre famille possède. Ici, vous choisissez comment la retrouver sur un nouvel appareil. Même KidBox ne peut pas l'ouvrir."
+          }
+        }
+      }
+    },
+    "Entra con un altro dispositivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use another device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar otro dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser un autre appareil"
           }
         }
       }
@@ -544,6 +654,28 @@
         }
       }
     },
+    "Il QR è scaduto o è già stato usato: chiedine uno nuovo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The QR code has expired or was already used: ask for a new one."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El QR ha caducado o ya se ha usado: pide uno nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le QR a expiré ou a déjà été utilisé : demandez-en un nouveau."
+          }
+        }
+      }
+    },
     "Il tuo codice di recupero" : {
       "localizations" : {
         "en" : {
@@ -566,6 +698,94 @@
         }
       }
     },
+    "In attesa dell'altro dispositivo…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for the other device…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esperando al otro dispositivo…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En attente de l'autre appareil…"
+          }
+        }
+      }
+    },
+    "Inquadra da un altro dispositivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan from another device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escanea desde otro dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scannez depuis un autre appareil"
+          }
+        }
+      }
+    },
+    "Inquadra il QR mostrato dal computer, da un altro tuo dispositivo o dal telefono di un familiare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan the QR code shown by the computer, another device of yours, or a family member's phone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escanea el QR que muestra el ordenador, otro dispositivo tuyo o el teléfono de un familiar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scannez le QR affiché par l'ordinateur, un autre de vos appareils ou le téléphone d'un membre de la famille."
+          }
+        }
+      }
+    },
+    "Inquadra un QR" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan a QR code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escanear un QR"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanner un QR"
+          }
+        }
+      }
+    },
     "KidBox — codice di recupero della chiave di famiglia" : {
       "localizations" : {
         "en" : {
@@ -584,6 +804,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "KidBox — code de récupération de la clé de famille"
+          }
+        }
+      }
+    },
+    "L'altro dispositivo la riceve chiusa e la apre da solo: nemmeno KidBox può leggerla." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The other device receives it sealed and opens it itself: not even KidBox can read it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El otro dispositivo la recibe cifrada y la abre él mismo: ni siquiera KidBox puede leerla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'autre appareil la reçoit chiffrée et l'ouvre lui-même : même KidBox ne peut pas la lire."
+          }
+        }
+      }
+    },
+    "La chiave arrivata non si apre. Riprova con un nuovo codice." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The key that arrived can't be opened. Try again with a new code."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La clave recibida no se abre. Inténtalo de nuevo con un código nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La clé reçue ne s'ouvre pas. Réessayez avec un nouveau code."
           }
         }
       }
@@ -628,6 +892,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Votre coffre vient d'être créé sur un autre appareil : ouvrez-le avec ce code."
+          }
+        }
+      }
+    },
+    "Manda la chiave" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send the key"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar la clave"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer la clé"
+          }
+        }
+      }
+    },
+    "Mandare la chiave di «%@» a %@?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send the key for “%1$@” to %2$@?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Enviar la clave de «%1$@» a %2$@?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer la clé de « %1$@ » à %2$@ ?"
+          }
+        }
+      }
+    },
+    "Mandare la tua chiave a «%@»?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send your key to “%@”?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Enviar tu clave a «%@»?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer votre clé à « %@ » ?"
           }
         }
       }
@@ -720,6 +1050,28 @@
         }
       }
     },
+    "Nuovo codice" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo código"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau code"
+          }
+        }
+      }
+    },
     "Passkey" : {
       "localizations" : {
         "en" : {
@@ -760,6 +1112,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Clé d'accès ajoutée."
+          }
+        }
+      }
+    },
+    "Per dare la chiave al computer («Entra con il telefono»), a un tuo nuovo dispositivo o a un familiare che non la ha." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To give the key to your computer (“Sign in with your phone”), to a new device of yours, or to a family member who doesn't have it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para dar la clave al ordenador («Entrar con el teléfono»), a un dispositivo nuevo tuyo o a un familiar que no la tenga."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour donner la clé à l'ordinateur (« Se connecter avec le téléphone »), à un nouvel appareil ou à un membre de la famille qui ne l'a pas."
           }
         }
       }
@@ -830,6 +1204,28 @@
         }
       }
     },
+    "Quel dispositivo potrà aprire i dati cifrati di tutte le tue famiglie. Conferma solo se il QR è sul tuo computer o su un tuo dispositivo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That device will be able to open the encrypted data of all your families. Confirm only if the QR code is on your computer or one of your devices."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ese dispositivo podrá abrir los datos cifrados de todas tus familias. Confirma solo si el QR está en tu ordenador o en uno de tus dispositivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet appareil pourra ouvrir les données chiffrées de toutes vos familles. Confirmez seulement si le QR est sur votre ordinateur ou l'un de vos appareils."
+          }
+        }
+      }
+    },
     "Questa passkey non funziona qui. Usa il codice di recupero." : {
       "localizations" : {
         "en" : {
@@ -870,6 +1266,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cet appareil ne permet pas d'utiliser une clé d'accès pour le coffre : le code de récupération reste votre clé."
+          }
+        }
+      }
+    },
+    "Questo non è un QR di KidBox per la chiave." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This isn't a KidBox key QR code."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este no es un QR de clave de KidBox."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce n'est pas un QR de clé KidBox."
           }
         }
       }
@@ -1068,6 +1486,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sur cet appareil, il suffit de le faire une fois : saisissez le code de récupération que vous avez enregistré."
+          }
+        }
+      }
+    },
+    "Su un altro tuo dispositivo con KidBox apri Impostazioni › Sicurezza › «Inquadra un QR». Anche un familiare può farlo dal suo telefono. La chiave arriva chiusa: nemmeno KidBox può aprirla." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On another device of yours with KidBox open Settings › Security › “Scan a QR code”. A family member can do it from their phone too. The key arrives sealed: not even KidBox can open it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En otro dispositivo tuyo con KidBox abre Ajustes › Seguridad › «Escanear un QR». Un familiar también puede hacerlo desde su teléfono. La clave llega cifrada: ni siquiera KidBox puede abrirla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sur un autre de vos appareils avec KidBox, ouvrez Réglages › Sécurité › « Scanner un QR ». Un membre de la famille peut aussi le faire depuis son téléphone. La clé arrive chiffrée : même KidBox ne peut pas l'ouvrir."
           }
         }
       }

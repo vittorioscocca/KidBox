@@ -19,6 +19,7 @@ struct SecuritySettingsView: View {
     @State private var loaded = false
     @State private var loadFailed = false
     @State private var sheet: SheetKind?
+    @State private var showScan = false
 
     private enum SheetKind: String, Identifiable { case open, regenerate, passkey; var id: String { rawValue } }
 
@@ -87,8 +88,22 @@ struct SecuritySettingsView: View {
                     }
                 }
             }
+            if loaded {
+                Section {
+                    Button {
+                        showScan = true
+                    } label: {
+                        Label("Inquadra un QR", systemImage: "qrcode.viewfinder")
+                    }
+                } footer: {
+                    Text("Per dare la chiave al computer («Entra con il telefono»), a un tuo nuovo dispositivo o a un familiare che non la ha.")
+                }
+            }
         }
         .navigationTitle("Sicurezza")
+        .sheet(isPresented: $showScan) {
+            KeyHandoffScanView(familyIds: familyIds) { showScan = false }
+        }
         .task { await reload() }
         .refreshable { await reload() }
         .sheet(item: $sheet) { kind in

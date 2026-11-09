@@ -29,7 +29,7 @@ struct KeyVaultPromptView: View {
     /// Da Impostazioni › Sicurezza: solo «aggiungi una passkey» (serve la RK qui).
     var addPasskey = false
 
-    private enum Step { case loading, intro, code, confirm, open, passkey, done }
+    private enum Step { case loading, intro, code, confirm, open, phone, passkey, done }
 
     @State private var step: Step = .loading
     @State private var busy = false
@@ -41,6 +41,8 @@ struct KeyVaultPromptView: View {
     @State private var positions: [Int] = Array((0..<24).shuffled().prefix(4)).sorted()
     @State private var confirmChars = ["", "", "", ""]
     @State private var passkeyIds: [Data] = []
+    @State private var room: KeyHandoff.Room?
+    @State private var roomExpired = false
 
     private var canonical: String? { FamilyKeyVaultCrypto.normalizeRecoveryCode(code) }
 
@@ -67,6 +69,7 @@ struct KeyVaultPromptView: View {
             }
         }
         .interactiveDismissDisabled(true)
+        .onDisappear { closeRoom() }
         .task { await load() }
     }
 
@@ -160,7 +163,23 @@ struct KeyVaultPromptView: View {
                     disabled: busy || FamilyKeyVaultCrypto.normalizeRecoveryCode(typedCode) == nil) {
                 Task { await openWithCode() }
             }
+            Button("Entra con un altro dispositivo") { Task { await startRoom() } }.disabled(busy)
             small("Hai perso il codice? Se hai ancora un dispositivo o un familiare con KidBox, rientri da lì.")
+
+        case .phone:
+            icon("qrcode")
+            title("Inquadra da un altro dispositivo")
+            lead("Su un altro tuo dispositivo con KidBox apri Impostazioni › Sicurezza › «Inquadra un QR». Anche un familiare può farlo dal suo telefono. La chiave arriva chiusa: nemmeno KidBox può aprirla.")
+            if let room, !roomExpired, let img = QRCodeGenerator.image(from: room.qrText) {
+                Image(uiImage: img).interpolation(.none).resizable().scaledToFit()
+                    .frame(maxWidth: 240).padding(10).background(Color.white, in: RoundedRectangle(cornerRadius: 12))
+                small("In attesa dell'altro dispositivo…")
+            }
+            errorView
+            if roomExpired {
+                primary("Nuovo codice", disabled: busy) { Task { await startRoom() } }
+            }
+            Button("Indietro") { closeRoom(); error = nil; step = .open }
 
         case .passkey:
             icon("faceid")
@@ -244,6 +263,57 @@ struct KeyVaultPromptView: View {
         } catch {
             KBLog.security.kbError("Vault: apertura fallita \(error.localizedDescription)")
             self.error = String(localized: "Qualcosa non ha funzionato. Riprova.")
+        }
+    }
+
+    private func closeRoom() {
+        room?.close()
+        room = nil
+    }
+
+    private func startRoom() async {
+        closeRoom()
+        error = nil
+        roomExpired = false
+        step = .phone
+        busy = true
+        defer { busy = false }
+        do {
+            let r = try await KeyHandoff.openRoom(uid: uid, label: Self.deviceLabel) { result in
+                Task { await received(result) }
+            }
+            room = r
+            let qr = r.qrText
+            Task {
+                try? await Task.sleep(for: .seconds(KeyHandoff.ttl))
+                if room?.qrText == qr { closeRoom(); roomExpired = true }
+            }
+        } catch {
+            KBLog.security.kbError("KeyHandoff: stanza non creata \(String(describing: error))")
+            self.error = String(localized: "Qualcosa non ha funzionato. Riprova.")
+            roomExpired = true
+        }
+    }
+
+    private func received(_ result: Result<KeyHandoff.Received, Error>) async {
+        room = nil
+        busy = true
+        defer { busy = false }
+        do {
+            let r = try result.get()
+            try await KeyHandoff.adopt(r, uid: uid)
+            if r.kind == "rk" {
+                await FamilyKeyVault.syncFamilyKeysV2(uid: uid, familyIds: familyIds)
+                notice = nil
+                step = .passkey
+            } else {
+                notice = String(localized: "Chiave della famiglia ricevuta da un familiare.")
+                step = .done
+            }
+        } catch {
+            KBLog.security.kbError("KeyHandoff: consegna non aperta \(String(describing: error))")
+            self.error = String(localized: "La chiave arrivata non si apre. Riprova con un nuovo codice.")
+            roomExpired = true
         }
     }
 
