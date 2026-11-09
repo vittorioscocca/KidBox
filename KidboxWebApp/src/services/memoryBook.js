@@ -17,6 +17,7 @@ import { actionsPrompt } from "./aiActions";
 import { loadFacts } from "./aiMemory";
 import { loadFamilyKey } from "./familyKey";
 import { decryptString } from "./noteCrypto";
+import { openRows } from "./sectionCrypto";
 import { noteHtmlToText } from "./noteHtml";
 import { buildHealthContext, responseLanguageName } from "./healthContext";
 import { loadFamilyHealth } from "./health";
@@ -102,7 +103,8 @@ async function readCollection(familyId, name, { onlyActive = true } = {}) {
   const base = collection(db, "families", familyId, name);
   try {
     const snap = await getDocs(onlyActive ? query(base, where("isDeleted", "==", false)) : base);
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    // Garage, animali, spese e salute: campi risolti da `secure` se serve.
+    return await openRows(name, familyId, snap.docs);
   } catch {
     // Una sezione che non si riesce a leggere non deve far fallire l'intera
     // conversazione: si manda il contesto senza di lei.

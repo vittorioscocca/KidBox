@@ -2,7 +2,8 @@
  * Garage: veicoli e interventi, allineato a `VehicleRemoteStore` e
  * `VehicleEventRemoteStore` su iOS.
  *
- * Tutto in chiaro, eliminazione con `isDeleted: true`.
+ * Nome, targa, note e simili possono stare in `secure` (`sectionCrypto.js`);
+ * il resto in chiaro. Eliminazione con `isDeleted: true`.
  *
  * Gli interventi hanno un `linkedExpenseId`: se c'è un costo, alimentano le
  * Spese di famiglia nella categoria «automobile», con la regola condivisa in
@@ -13,7 +14,6 @@
 import {
   collection,
   doc,
-  onSnapshot,
   query,
   serverTimestamp,
   setDoc,
@@ -24,6 +24,7 @@ import {
 import { db } from "../firebase";
 import { deleteLinkedExpense, syncLinkedExpense } from "./linkedExpense";
 import { contentCreated } from "./analytics";
+import { listenSecure, sealForWrite, sectionWriteKey } from "./sectionCrypto";
 
 const vehiclesCol = (familyId) => collection(db, "families", familyId, "vehicles");
 const eventsCol = (familyId) => collection(db, "families", familyId, "vehicleEvents");
@@ -128,19 +129,23 @@ export function listenGarage({ familyId, onChange, onError }) {
     onChange({ vehicles, events });
   };
 
-  const stopVehicles = onSnapshot(
+  const stopVehicles = listenSecure(
     query(vehiclesCol(familyId), where("isDeleted", "==", false)),
-    (snap) => {
-      vehicles = snap.docs.map(readVehicle).sort((a, b) => a.name.localeCompare(b.name));
+    "vehicles",
+    familyId,
+    (docs) => {
+      vehicles = docs.map(readVehicle).sort((a, b) => a.name.localeCompare(b.name));
       emit();
     },
     (err) => onError?.(err)
   );
 
-  const stopEvents = onSnapshot(
+  const stopEvents = listenSecure(
     query(eventsCol(familyId), where("isDeleted", "==", false)),
-    (snap) => {
-      events = snap.docs.map(readEvent).sort((a, b) => (b.date || 0) - (a.date || 0));
+    "vehicleEvents",
+    familyId,
+    (docs) => {
+      events = docs.map(readEvent).sort((a, b) => (b.date || 0) - (a.date || 0));
       emit();
     },
     (err) => onError?.(err)
@@ -186,7 +191,8 @@ export async function saveVehicle({ familyId, userId, vehicle }) {
     data.createdAt = serverTimestamp();
     data.createdBy = userId;
   }
-  await setDoc(doc(vehiclesCol(familyId), id), data, { merge: true });
+  const sealed = await sealForWrite("vehicles", data, await sectionWriteKey(familyId));
+  await setDoc(doc(vehiclesCol(familyId), id), sealed, { merge: true });
   // Solo alla creazione: `content_created` misura cosa nasce, non quante
   // volte lo si ritocca. Stesso tipo che usano iOS e Android.
   if (isNew) contentCreated("home_vehicles");
@@ -215,9 +221,10 @@ function expenseNotesFor(event) {
 export async function saveVehicleEvent({ familyId, userId, event }) {
   const id = event.id || crypto.randomUUID();
   const isNew = !event.id;
+  const familyKey = await sectionWriteKey(familyId);
   const batch = writeBatch(db);
 
-  const linkedExpenseId = syncLinkedExpense({
+  const linkedExpenseId = await syncLinkedExpense({
     batch,
     familyId,
     userId,
@@ -249,7 +256,9 @@ export async function saveVehicleEvent({ familyId, userId, event }) {
     data.createdBy = userId;
   }
 
-  batch.set(doc(eventsCol(familyId), id), data, { merge: true });
+  batch.set(doc(eventsCol(familyId), id), await sealForWrite("vehicleEvents", data, familyKey), {
+    merge: true,
+  });
   await batch.commit();
   // Solo alla creazione: `content_created` misura cosa nasce, non quante
   // volte lo si ritocca. Stesso tipo che usano iOS e Android.

@@ -38,6 +38,16 @@ const TEXT_ENCRYPTION_CACHE_KEY = "kb_textEncryptionEnabled";
 const TEXT_ENCRYPTION_FALLBACK = false;
 
 /**
+ * Sezioni cifrate con la chiave di famiglia (Garage, Animali, Spese, Salute):
+ * campo `secure` al posto del chiaro. Spento finché le build iOS e Android che
+ * lo sanno leggere non sono diffuse (`internal/cifratura-sezioni.md`). La
+ * lettura capisce sempre entrambi i formati. Stessa chiave di iOS e Android.
+ */
+export const SECTIONS_ENCRYPTION_REMOTE_KEY = "sections_encryption_enabled";
+const SECTIONS_ENCRYPTION_CACHE_KEY = "kb_sectionsEncryptionEnabled";
+const SECTIONS_ENCRYPTION_FALLBACK = false;
+
+/**
  * Lettura immediata, senza rete: è quella con cui parte la schermata di login.
  * `null` in cache significa «mai scritta», che non è `false`: la differenza
  * conterà il giorno in cui il default compilato tornerà `true`.
@@ -58,6 +68,16 @@ export function textEncryptionEnabled() {
     return cached === null ? TEXT_ENCRYPTION_FALLBACK : cached === "true";
   } catch {
     return TEXT_ENCRYPTION_FALLBACK;
+  }
+}
+
+/** Le sezioni si scrivono cifrate (e i documenti vecchi si ricifrano). */
+export function sectionsEncryptionEnabled() {
+  try {
+    const cached = localStorage.getItem(SECTIONS_ENCRYPTION_CACHE_KEY);
+    return cached === null ? SECTIONS_ENCRYPTION_FALLBACK : cached === "true";
+  } catch {
+    return SECTIONS_ENCRYPTION_FALLBACK;
   }
 }
 
@@ -82,6 +102,7 @@ export async function refreshFeatureFlags() {
     remoteConfig.defaultConfig = {
       [FACEBOOK_LOGIN_REMOTE_KEY]: FACEBOOK_LOGIN_FALLBACK,
       [TEXT_ENCRYPTION_REMOTE_KEY]: TEXT_ENCRYPTION_FALLBACK,
+      [SECTIONS_ENCRYPTION_REMOTE_KEY]: SECTIONS_ENCRYPTION_FALLBACK,
     };
     // In sviluppo si rilegge a ogni avvio, così una modifica in console si
     // verifica subito; in produzione un'ora, come sui client nativi: il flag
@@ -91,9 +112,11 @@ export async function refreshFeatureFlags() {
     await fetchAndActivate(remoteConfig);
     const enabled = getValue(remoteConfig, FACEBOOK_LOGIN_REMOTE_KEY).asBoolean();
     const encrypted = getValue(remoteConfig, TEXT_ENCRYPTION_REMOTE_KEY).asBoolean();
+    const sections = getValue(remoteConfig, SECTIONS_ENCRYPTION_REMOTE_KEY).asBoolean();
     try {
       localStorage.setItem(FACEBOOK_LOGIN_CACHE_KEY, String(enabled));
       localStorage.setItem(TEXT_ENCRYPTION_CACHE_KEY, String(encrypted));
+      localStorage.setItem(SECTIONS_ENCRYPTION_CACHE_KEY, String(sections));
     } catch {
       // Storage negato: il valore vale per questa sessione e basta.
     }

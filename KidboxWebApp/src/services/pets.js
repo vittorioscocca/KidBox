@@ -1,8 +1,8 @@
 /**
  * Animali domestici, allineato a `PetRemoteStore` e `PetEventRemoteStore`.
  *
- * Animali ed eventi viaggiano **in chiaro**: è la scelta dei client nativi per
- * questo modulo, e cifrarli solo qui li renderebbe illeggibili sul telefono.
+ * Nome, razza, note e simili possono stare in `secure` (`sectionCrypto.js`),
+ * con lo stesso formato e la stessa tabella dei client nativi; il resto in chiaro.
  * L'eliminazione è `isDeleted: true`, come per Wallet.
  *
  * Gli allegati non hanno una collezione propria: sono documenti di famiglia
@@ -13,7 +13,6 @@
 import {
   collection,
   doc,
-  onSnapshot,
   query,
   serverTimestamp,
   setDoc,
@@ -22,6 +21,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { contentCreated } from "./analytics";
+import { listenSecure, sealForWrite, sectionWriteKey } from "./sectionCrypto";
 
 const petsCol = (familyId) => collection(db, "families", familyId, "pets");
 const eventsCol = (familyId) => collection(db, "families", familyId, "petEvents");
@@ -105,19 +105,23 @@ export function listenPets({ familyId, onChange, onError }) {
     onChange({ pets, events });
   };
 
-  const stopPets = onSnapshot(
+  const stopPets = listenSecure(
     query(petsCol(familyId), where("isDeleted", "==", false)),
-    (snap) => {
-      pets = snap.docs.map(readPet).sort((a, b) => a.name.localeCompare(b.name));
+    "pets",
+    familyId,
+    (docs) => {
+      pets = docs.map(readPet).sort((a, b) => a.name.localeCompare(b.name));
       emit();
     },
     (err) => onError?.(err)
   );
 
-  const stopEvents = onSnapshot(
+  const stopEvents = listenSecure(
     query(eventsCol(familyId), where("isDeleted", "==", false)),
-    (snap) => {
-      events = snap.docs.map(readEvent).sort((a, b) => (b.date || 0) - (a.date || 0));
+    "petEvents",
+    familyId,
+    (docs) => {
+      events = docs.map(readEvent).sort((a, b) => (b.date || 0) - (a.date || 0));
       emit();
     },
     (err) => onError?.(err)
@@ -153,7 +157,8 @@ export async function savePet({ familyId, userId, pet }) {
     data.createdAt = serverTimestamp();
     data.createdBy = userId;
   }
-  await setDoc(doc(petsCol(familyId), id), data, { merge: true });
+  const sealed = await sealForWrite("pets", data, await sectionWriteKey(familyId));
+  await setDoc(doc(petsCol(familyId), id), sealed, { merge: true });
   // Solo alla creazione: `content_created` misura cosa nasce, non quante
   // volte lo si ritocca. Stesso tipo che usano iOS e Android.
   if (isNew) contentCreated("pets");
@@ -190,7 +195,8 @@ export async function saveEvent({ familyId, userId, event }) {
     data.createdAt = serverTimestamp();
     data.createdBy = userId;
   }
-  await setDoc(doc(eventsCol(familyId), id), data, { merge: true });
+  const sealed = await sealForWrite("petEvents", data, await sectionWriteKey(familyId));
+  await setDoc(doc(eventsCol(familyId), id), sealed, { merge: true });
   // Solo alla creazione: `content_created` misura cosa nasce, non quante
   // volte lo si ritocca. Stesso tipo che usano iOS e Android.
   if (isNew) contentCreated("pets");

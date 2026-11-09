@@ -14,6 +14,7 @@
 import { collection, doc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { categoryId as expenseCategoryId } from "../expenseCategories";
+import { sealForWrite, sectionWriteKey } from "./sectionCrypto";
 
 const expensesCol = (familyId) => collection(db, "families", familyId, "expenses");
 
@@ -23,9 +24,10 @@ const expensesCol = (familyId) => collection(db, "families", familyId, "expenses
  *
  * Lavora su un batch invece di scrivere da sé perché chi la chiama deve poter
  * salvare scheda e spesa insieme: se una delle due fallisce non deve restare
- * l'altra a metà.
+ * l'altra a metà. Asincrona solo per la chiave: titolo e note possono finire
+ * in `secure` (`sectionCrypto.js`).
  */
-export function syncLinkedExpense({
+export async function syncLinkedExpense({
   batch,
   familyId,
   userId,
@@ -54,25 +56,23 @@ export function syncLinkedExpense({
   const id = linkedExpenseId || crypto.randomUUID();
   const effectiveTitle = (title || "").trim() || fallbackTitle;
 
-  batch.set(
-    doc(expensesCol(familyId), id),
-    {
-      id,
-      familyId,
-      title: effectiveTitle,
-      amount,
-      date: Timestamp.fromMillis(date || Date.now()),
-      categoryId: expenseCategoryId(familyId, categorySlug),
-      notes: notes || null,
-      isDeleted: false,
-      updatedBy: userId,
-      updatedAt: serverTimestamp(),
-      // Creatore e data di creazione restano a chi l'ha inserita: il merge non
-      // li tocca, e su una spesa nuova li mette il ramo qui sotto.
-      ...(isNew ? { createdByUid: userId, createdAt: serverTimestamp() } : {}),
-    },
-    { merge: true }
-  );
+  const data = {
+    id,
+    familyId,
+    title: effectiveTitle,
+    amount,
+    date: Timestamp.fromMillis(date || Date.now()),
+    categoryId: expenseCategoryId(familyId, categorySlug),
+    notes: notes || null,
+    isDeleted: false,
+    updatedBy: userId,
+    updatedAt: serverTimestamp(),
+    // Creatore e data di creazione restano a chi l'ha inserita: il merge non
+    // li tocca, e su una spesa nuova li mette il ramo qui sotto.
+    ...(isNew ? { createdByUid: userId, createdAt: serverTimestamp() } : {}),
+  };
+  const sealed = await sealForWrite("expenses", data, await sectionWriteKey(familyId));
+  batch.set(doc(expensesCol(familyId), id), sealed, { merge: true });
 
   return id;
 }

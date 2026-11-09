@@ -24,6 +24,7 @@ import {
 import { db } from "../firebase";
 import { categoryId as expenseCategoryId } from "../expenseCategories";
 import { deleteLinkedExpense, syncLinkedExpense } from "./linkedExpense";
+import { sealForWrite, sectionWriteKey } from "./sectionCrypto";
 
 const tripsCol = (familyId) => collection(db, "families", familyId, "shoppingTrips");
 const expensesCol = (familyId) => collection(db, "families", familyId, "expenses");
@@ -106,7 +107,7 @@ export async function saveShoppingTrip({
   const expenseId = hasAmount ? crypto.randomUUID() : null;
 
   if (hasAmount) {
-    batch.set(doc(expensesCol(familyId), expenseId), {
+    const expense = {
       id: expenseId,
       familyId,
       title: store || "Spesa",
@@ -119,7 +120,9 @@ export async function saveShoppingTrip({
       createdAt: serverTimestamp(),
       updatedBy: userId,
       updatedAt: serverTimestamp(),
-    });
+    };
+    const familyKey = await sectionWriteKey(familyId);
+    batch.set(doc(expensesCol(familyId), expenseId), await sealForWrite("expenses", expense, familyKey));
   }
 
   batch.set(doc(tripsCol(familyId), tripId), {
@@ -165,7 +168,7 @@ export async function updateShoppingTrip({ familyId, userId, trip, storeName, to
   const when = date || trip.date || Date.now();
   const batch = writeBatch(db);
 
-  const linkedExpenseId = syncLinkedExpense({
+  const linkedExpenseId = await syncLinkedExpense({
     batch,
     familyId,
     userId,

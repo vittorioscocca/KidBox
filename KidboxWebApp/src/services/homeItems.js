@@ -220,7 +220,7 @@ export async function saveHousePayment({ familyId, userId, payment }) {
   const isNew = !payment.id;
   const batch = writeBatch(db);
 
-  const linkedExpenseId = syncLinkedExpense({
+  const linkedExpenseId = await syncLinkedExpense({
     batch,
     familyId,
     userId,

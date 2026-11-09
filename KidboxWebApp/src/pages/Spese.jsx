@@ -4,7 +4,6 @@ import {
   collection,
   deleteField,
   doc,
-  onSnapshot,
   query,
   serverTimestamp,
   setDoc,
@@ -25,6 +24,7 @@ import {
 import Modal from "../components/Modal";
 import "./Spese.css";
 import { useOpenParam } from "../hooks/useOpenParam";
+import { listenSecure, sealForWrite, sectionWriteKey } from "../services/sectionCrypto";
 
 function expensesCol(familyId) {
   return collection(db, "families", familyId, "expenses");
@@ -57,9 +57,11 @@ export default function Spese() {
   useEffect(() => {
     if (!currentFamilyId) return undefined;
     const q = query(expensesCol(currentFamilyId), where("isDeleted", "==", false));
-    return onSnapshot(
+    return listenSecure(
       q,
-      (snap) => setExpenses(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      "expenses",
+      currentFamilyId,
+      (docs) => setExpenses(docs.map((d) => ({ id: d.id, ...d.data() }))),
       (err) => setError(err.message)
     );
   }, [currentFamilyId]);
@@ -161,7 +163,8 @@ export default function Spese() {
       payload.createdAt = serverTimestamp();
     }
     try {
-      await setDoc(doc(expensesCol(currentFamilyId), id), payload, { merge: true });
+      const sealed = await sealForWrite("expenses", payload, await sectionWriteKey(currentFamilyId));
+      await setDoc(doc(expensesCol(currentFamilyId), id), sealed, { merge: true });
       setEditing(null);
       setCreating(false);
     } catch (err) {

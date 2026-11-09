@@ -1,9 +1,9 @@
 /**
  * Salute, allineato agli store nativi di iOS e Android.
  *
- * Le collezioni vivono sotto `families/{familyId}` e viaggiano **in chiaro**,
- * come sui client nativi: cifrarle solo qui le renderebbe illeggibili sul
- * telefono. L'eliminazione è sempre `isDeleted: true` (soft delete), perché è
+ * Le collezioni vivono sotto `families/{familyId}`. I testi (medico, diagnosi,
+ * farmaco, note…) possono stare in `secure`, con la tabella e il formato dei
+ * client nativi (`sectionCrypto.js`); il resto è in chiaro. L'eliminazione è sempre `isDeleted: true` (soft delete), perché è
  * quello che i listener nativi si aspettano di trovare.
  *
  *   medicalVisits      → `VisitRemoteStore`
@@ -33,6 +33,7 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { listenSecure, openDocs, sealForWrite, sectionWriteKey } from "./sectionCrypto";
 
 /* ── Riferimenti alle collezioni ─────────────────────────────────────────── */
 
@@ -261,11 +262,13 @@ const newId = () =>
  * Il filtro `isDeleted` resta lato client: combinarlo con `childId` nella query
  * funziona, ma qui i volumi sono piccoli e così non si dipende da indici.
  */
-function listenSubjectCollection({ ref, childId, read, sort, onChange, onError }) {
-  return onSnapshot(
-    query(ref, where("childId", "==", childId)),
-    (snap) => {
-      const rows = snap.docs
+function listenSubjectCollection({ familyId, name, childId, read, sort, onChange, onError }) {
+  return listenSecure(
+    query(col(familyId, name), where("childId", "==", childId)),
+    name,
+    familyId,
+    (docs) => {
+      const rows = docs
         .map(read)
         .filter((r) => !r.isDeleted)
         .sort(sort);
@@ -311,7 +314,8 @@ function readVisit(snap) {
 
 export function listenVisits({ familyId, childId, onChange, onError }) {
   return listenSubjectCollection({
-    ref: visitsCol(familyId),
+    familyId,
+    name: "medicalVisits",
     childId,
     read: readVisit,
     sort: (a, b) => (b.date || 0) - (a.date || 0),
@@ -360,7 +364,8 @@ export async function saveVisit({ familyId, userId, childId, visit }) {
     data.createdAt = serverTimestamp();
     data.createdBy = userId;
   }
-  await setDoc(doc(visitsCol(familyId), id), data, { merge: true });
+  const sealed = await sealForWrite("medicalVisits", data, await sectionWriteKey(familyId));
+  await setDoc(doc(visitsCol(familyId), id), sealed, { merge: true });
   return id;
 }
 
@@ -399,7 +404,8 @@ function readExam(snap) {
 
 export function listenExams({ familyId, childId, onChange, onError }) {
   return listenSubjectCollection({
-    ref: examsCol(familyId),
+    familyId,
+    name: "medicalExams",
     childId,
     read: readExam,
     // Dal più recente al meno recente sulla stessa data di riferimento del
@@ -437,7 +443,8 @@ export async function saveExam({ familyId, userId, childId, exam }) {
     data.createdAt = serverTimestamp();
     data.createdBy = userId;
   }
-  await setDoc(doc(examsCol(familyId), id), data, { merge: true });
+  const sealed = await sealForWrite("medicalExams", data, await sectionWriteKey(familyId));
+  await setDoc(doc(examsCol(familyId), id), sealed, { merge: true });
   return id;
 }
 
@@ -486,10 +493,12 @@ function readTreatment(snap) {
  * fuori: hanno la loro sezione, e il `childId` lì è vuoto.
  */
 export function listenTreatments({ familyId, childId, onChange, onError }) {
-  return onSnapshot(
+  return listenSecure(
     query(treatmentsCol(familyId), where("childId", "==", childId)),
-    (snap) => {
-      const rows = snap.docs
+    "treatments",
+    familyId,
+    (docs) => {
+      const rows = docs
         .map(readTreatment)
         .filter((t) => !t.isDeleted && !t.petId)
         .sort((a, b) => (b.startDate || 0) - (a.startDate || 0));
@@ -528,7 +537,8 @@ export async function saveTreatment({ familyId, userId, childId, treatment }) {
     data.createdAt = serverTimestamp();
     data.createdBy = userId;
   }
-  await setDoc(doc(treatmentsCol(familyId), id), data, { merge: true });
+  const sealed = await sealForWrite("treatments", data, await sectionWriteKey(familyId));
+  await setDoc(doc(treatmentsCol(familyId), id), sealed, { merge: true });
   return id;
 }
 
@@ -649,7 +659,8 @@ export const vaccineDate = (v) =>
 
 export function listenVaccines({ familyId, childId, onChange, onError }) {
   return listenSubjectCollection({
-    ref: vaccinesCol(familyId),
+    familyId,
+    name: "vaccines",
     childId,
     read: readVaccine,
     sort: (a, b) => (vaccineDate(b) || 0) - (vaccineDate(a) || 0),
@@ -684,7 +695,8 @@ export async function saveVaccine({ familyId, userId, childId, vaccine }) {
     data.createdAt = serverTimestamp();
     data.createdBy = userId;
   }
-  await setDoc(doc(vaccinesCol(familyId), id), data, { merge: true });
+  const sealed = await sealForWrite("vaccines", data, await sectionWriteKey(familyId));
+  await setDoc(doc(vaccinesCol(familyId), id), sealed, { merge: true });
   return id;
 }
 
@@ -735,20 +747,21 @@ function readProfile(snap, childId) {
  * tutto.
  */
 export async function loadFamilyHealth(familyId) {
-  const read = async (ref, reader) => {
+  const read = async (name, reader) => {
     try {
-      const snap = await getDocs(ref);
-      return snap.docs.map(reader).filter((r) => r && !r.isDeleted);
+      const snap = await getDocs(col(familyId, name));
+      const docs = await openDocs(name, familyId, snap.docs);
+      return docs.map(reader).filter((r) => r && !r.isDeleted);
     } catch {
       return [];
     }
   };
   const [visits, exams, treatments, vaccines, profiles] = await Promise.all([
-    read(visitsCol(familyId), readVisit),
-    read(examsCol(familyId), readExam),
-    read(treatmentsCol(familyId), readTreatment),
-    read(vaccinesCol(familyId), readVaccine),
-    read(profilesCol(familyId), (snap) => readProfile(snap, snap.id)),
+    read("medicalVisits", readVisit),
+    read("medicalExams", readExam),
+    read("treatments", readTreatment),
+    read("vaccines", readVaccine),
+    read("pediatricProfiles", (snap) => readProfile(snap, snap.id)),
   ]);
   return {
     visits,
@@ -761,18 +774,33 @@ export async function loadFamilyHealth(familyId) {
 
 /** Scheda medica del soggetto. Emette `null` finché il documento non esiste. */
 export function listenPediatricProfile({ familyId, childId, onChange, onError }) {
-  return onSnapshot(
+  // Decifratura asincrona: uno snapshot superato o arrivato dopo lo stop si scarta.
+  let seq = 0;
+  let stopped = false;
+  const stop = onSnapshot(
     doc(profilesCol(familyId), childId),
-    (snap) => onChange(snap.exists() ? readProfile(snap, childId) : null),
+    (snap) => {
+      const mine = ++seq;
+      const opened = snap.exists() ? openDocs("pediatricProfiles", familyId, [snap]) : Promise.resolve([]);
+      opened
+        .then(([d]) => {
+          if (!stopped && mine === seq) onChange(d ? readProfile(d, childId) : null);
+        })
+        .catch((err) => onError?.(err));
+    },
     (err) => onError?.(err)
   );
+  return () => {
+    stopped = true;
+    stop();
+  };
 }
 
 export async function savePediatricProfile({ familyId, userId, childId, profile }) {
   const officeHours = profile.doctorOfficeHours || [];
   const contacts = profile.emergencyContacts || [];
-  await setDoc(
-    doc(profilesCol(familyId), childId),
+  const data = await sealForWrite(
+    "pediatricProfiles",
     {
       familyId,
       childId,
@@ -791,8 +819,9 @@ export async function savePediatricProfile({ familyId, userId, childId, profile 
       updatedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
     },
-    { merge: true }
+    await sectionWriteKey(familyId)
   );
+  await setDoc(doc(profilesCol(familyId), childId), data, { merge: true });
 }
 
 /* ── Timeline ────────────────────────────────────────────────────────────── */
