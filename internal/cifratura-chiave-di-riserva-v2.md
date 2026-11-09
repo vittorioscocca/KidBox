@@ -380,9 +380,12 @@ Fase 2.
     offriva solo «crea la passkey su un altro dispositivo» (ibrido, niente PRF
     affidabile): va scelto Google. Non ancora provata l'APERTURA con quella
     passkey da un dispositivo senza chiave.
-  - Manca il QR nella schermata «chiave mancante»
-    (`FamilyKeyMissingGate` / `MissingFamilyKeyException`) e in Impostazioni ›
-    Famiglia: oggi il ricevente lo apre dalla schermata della cassaforte.
+  - Punto fisso per RICEVERE (09/11): Impostazioni › Sicurezza › «Ricevi la
+    chiave con un QR» su iOS (48679737), Android (646967c) e web (ca02bd93,
+    pubblicato): apre subito la stanza e mostra il QR, anche se il riquadro della
+    cassaforte non compare. Non ancora provato su device.
+  - Manca ancora il QR nella schermata «chiave mancante»
+    (`FamilyKeyMissingGate` / `MissingFamilyKeyException`).
 
 ### Fase 3 — Chiusura della v1
 Quando la quota della Fase 2 è alta (soglia da decidere, es. 90% degli attivi a 30
