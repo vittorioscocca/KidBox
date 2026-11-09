@@ -192,8 +192,8 @@ documento (senza toccare `updatedAt`); finita la transizione resta cifrato.
 | Tappa | Cosa | Stato |
 |---|---|---|
 | 1 | iOS, Android e web **leggono** entrambi i formati; scrivono in chiaro finché l'interruttore Remote Config `text_encryption_enabled` è spento | web live, iOS e Android nelle prossime build |
-| 2 | Build iOS e Android diffuse (criterio di `/rules-change`: GA4 `platform × appVersion` a 7 giorni) | da fare |
-| 3 | Accendere `text_encryption_enabled` **e** promuovere `firestore.rules.next` (rifiuta le scritture in chiaro) | da fare, insieme |
+| 2 | Build iOS e Android diffuse (criterio di `/rules-change`: GA4 `platform × appVersion` a 7 giorni) | fatto 09/11/2026: su ~150 utenti a 7 giorni restano fuori Android 2.3.3 (1) e forse iOS 2.3.9 (1) |
+| 3 | Accendere `text_encryption_enabled` **e** promuovere `firestore.rules.next` (rifiuta le scritture in chiaro) | interruttore acceso il 09/11/2026 alle 15:08 (Remote Config v5, via API); rules da promuovere non prima del 10/11 sera, quando ogni client ha riletto l'interruttore |
 
 Perché non subito: le build iOS installate riscrivono l'array dei messaggi
 intero a ogni avvio (`reconcileAIChat`) e scartano quelli che non sanno
