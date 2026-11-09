@@ -254,7 +254,7 @@ scrive la v1 in **merge** (prima `setData`/`set` interi cancellavano la v2) e
 aggiunge la v2 se l'interruttore è acceso e c'è la RK; dopo un recupero dalla
 v1 la v2 mancante si scrive e si verifica in background. Test sul vettore
 scritto dal web: `KidBoxTests/CryptoTests/FamilyKeyVaultTests.swift`,
-`FamilyKeyVaultCryptoTest.kt`. Block Store: non fatto, resta da valutare.
+`FamilyKeyVaultCryptoTest.kt`. Block Store: deciso, si fa nella Fase 2 (vedi lì).
 
 **Regola comune ai tre client:** la RK nasce **solo con la cassaforte**
 (codice creato o aperto), mai in silenzio all'avvio, come `createVault` sul web. Due
@@ -287,6 +287,15 @@ Fase 2.
   schermata «chiave mancante» (`FamilyKeyMissingGate` / `MissingFamilyKeyException`).
   Sul web **«Entra con il telefono»** (sezione 3.2): QR mostrato dal browser,
   inquadrato dall'app.
+- **Android, RK dopo reinstallazione o telefono nuovo** (deciso dall'utente il
+  09/11/2026): la RK si salva anche su **Google Block Store**, ma **solo se
+  l'API conferma la cifratura end-to-end** (`isEndToEndEncryptionAvailable`,
+  cioè telefono con blocco schermo). Senza blocco schermo o senza servizi
+  Google non si salva lì: si torna al codice di recupero o alla passkey. Al
+  rientro si legge Block Store prima di chiedere il segreto; una RK trovata
+  vale solo se il suo `rkId` coincide con quello della cassaforte. Motivo: senza
+  E2E Google potrebbe aprire la RK, cioè proprio quello che la v2 deve
+  impedire. È l'equivalente del Portachiavi iCloud su iOS.
 - **Misura**: quota di utenti attivi con `keyVault` e senza v1 (script di sola
   lettura sul conteggio dei documenti, non sui contenuti).
 
