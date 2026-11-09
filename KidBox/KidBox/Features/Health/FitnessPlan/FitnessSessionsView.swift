@@ -64,9 +64,9 @@ struct FitnessSessionsView: View {
                 NavigationLink {
                     FitnessSessionsSettingsView(childId: childId)
                 } label: {
-                    Image(systemName: "gearshape")
+                    Image(systemName: "shoe")
                 }
-                .accessibilityLabel("Impostazioni")
+                .accessibilityLabel("Scarpe da corsa")
             }
         }
     }
