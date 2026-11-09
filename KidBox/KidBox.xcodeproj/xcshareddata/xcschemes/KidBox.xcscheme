@@ -74,6 +74,12 @@
             ReferencedContainer = "container:KidBox.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = "-kb_debugSectionsEncryptionFamily 7747FF89-BD7D-4474-8E9E-827C1F97ECE1"
+            isEnabled = "YES">
+         </CommandLineArgument>
+      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
