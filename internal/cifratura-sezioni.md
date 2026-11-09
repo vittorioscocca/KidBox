@@ -242,20 +242,15 @@ Limiti noti emersi:
 - `calendarExported` è scrivibile dai membri (non è fra i campi protetti):
   il server non se ne fida per nulla di sicurezza.
 
-## Landing: cosa dire e quando
+## Landing
 
-La FAQ «I nostri dati sono al sicuro?» (`KidboxLanding/public/index.html`,
-`index-en.html`, ES/FR da `tools/i18n/index.json` con
-`scripts/translate_html.py build` + `build_footer.py`) elenca solo ciò che è
-**attivo**. Dal 09/11/2026: documenti, messaggi, note, password, wallet e le
-conversazioni con l'assistente.
-
-Quando si accende `sections_encryption_enabled` (e non prima), aggiungere:
-figli, salute, spese, garage, animali, to-do e calendario. Testo pronto:
-
-- IT: «Documenti, messaggi, note, password, wallet, salute, spese, to-do, calendario e le conversazioni con l'assistente sono cifrati con una chiave di famiglia. Se esporti il calendario con un link, gli eventi restano in chiaro perché il tuo calendario possa leggerli.»
-- EN: "Documents, messages, notes, passwords, wallet, health, expenses, to-dos, calendar and your conversations with the assistant are encrypted with a family key. If you export the calendar with a link, events stay readable so your calendar app can read them."
-- ES/FR: tradurre nello stesso `index.json` (liste allineate) e ricostruire.
-
-Anche la FAQ di `public/strumenti/salute.html` (e le versioni tradotte) va
-ritoccata: oggi dice che solo referti e allegati sono cifrati.
+Dal 09/11/2026, su richiesta dell'utente, la FAQ «I nostri dati sono al
+sicuro?» (`KidboxLanding/public/index.html`, `index-en.html`, ES/FR da
+`tools/i18n/index.json` con `scripts/translate_html.py build` +
+`build_footer.py`) elenca anche salute, spese, to-do, calendario, garage e
+animali, con la nota che il calendario condiviso via link resta leggibile. La
+FAQ della pagina Salute (`tools/tools_data.py`, `tools_data_es_fr.py`, poi
+`build_tools.py`) dice che visite, cure, vaccini ed esami sono cifrati.
+**La landing è in anticipo sull'interruttore** `sections_encryption_enabled`:
+finché resta spento, quei dati sono scritti in chiaro. Va acceso appena le
+build che cifrano sono diffuse.

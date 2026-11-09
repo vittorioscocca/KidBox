@@ -426,7 +426,7 @@ TOOLS = [
                 ("Mostra la cartella clinica", "Un documento riepilogativo, aggiornato, da aprire in studio o da inviare a un nuovo medico."),
             ],
             "faq": [
-                ("I dati di salute sono cifrati?", "Sì: referti e allegati sono cifrati con la chiave di famiglia, e le schede cliniche sono leggibili solo dai membri."),
+                ("I dati di salute sono cifrati?", "Sì: visite, cure, vaccini, esami, referti e allegati sono cifrati con la chiave di famiglia, leggibili solo dai membri."),
                 ("Cosa arriva da Apple Health / Health Connect?", "Passi, battito, pressione, SpO₂, calorie attive, allenamenti e distanza, solo se dai il permesso."),
                 ("Cosa aggiunge il piano Pro?", "Piano alimentare e piano fitness generati dall'AI su misura del profilo, riservati a Pro e Max, e messaggi AI ogni giorno per la sintesi della storia sanitaria, che sul Free si può solo provare con i 5 messaggi una tantum."),
             ],
@@ -441,7 +441,7 @@ TOOLS = [
                 ("Show the medical record", "A summary document, kept up to date, to open at the surgery or send to a new doctor."),
             ],
             "faq": [
-                ("Is health data encrypted?", "Yes: reports and attachments are encrypted with the family key, and clinical entries are readable by members only."),
+                ("Is health data encrypted?", "Yes: visits, treatments, vaccines, tests, reports and attachments are encrypted with the family key, readable by members only."),
                 ("What comes from Apple Health / Health Connect?", "Steps, heart rate, blood pressure, SpO₂, active calories, workouts and distance, only if you grant permission."),
                 ("What does the Pro plan add?", "AI-generated meal and fitness plans tailored to the profile, available only on Pro and Max, plus daily AI messages for the health-history summary, which Free can only try with its 5 one-off messages."),
             ],

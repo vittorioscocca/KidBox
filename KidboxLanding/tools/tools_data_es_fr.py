@@ -187,7 +187,7 @@ ES = {
             ("Enseña el historial médico", "Un documento resumen, actualizado, para abrir en la consulta o enviar a un médico nuevo."),
         ],
         "faq": [
-            ("¿Los datos de salud están cifrados?", "Sí: los informes y adjuntos se cifran con la clave de la familia, y las fichas clínicas solo las pueden leer los miembros."),
+            ("¿Los datos de salud están cifrados?", "Sí: visitas, tratamientos, vacunas, pruebas, informes y adjuntos se cifran con la clave de la familia y solo los pueden leer los miembros."),
             ("¿Qué llega de Apple Health / Health Connect?", "Pasos, frecuencia cardíaca, tensión arterial, SpO₂, calorías activas, entrenamientos y distancia, solo si das permiso."),
             ("¿Qué añade el plan Pro?", "Planes de alimentación y de ejercicio generados por IA a medida del perfil, reservados a Pro y Max, y mensajes de IA cada día para el resumen del historial de salud, que en el Free solo se puede probar con los 5 mensajes únicos."),
         ],
@@ -512,7 +512,7 @@ FR = {
             ("Montrez le dossier médical", "Un document récapitulatif, à jour, à ouvrir au cabinet ou à envoyer à un nouveau médecin."),
         ],
         "faq": [
-            ("Les données de santé sont-elles chiffrées ?", "Oui : comptes rendus et pièces jointes sont chiffrés avec la clé de la famille, et les fiches cliniques ne sont lisibles que par les membres."),
+            ("Les données de santé sont-elles chiffrées ?", "Oui : visites, traitements, vaccins, examens, comptes rendus et pièces jointes sont chiffrés avec la clé de la famille, lisibles uniquement par les membres."),
             ("Qu'est-ce qui arrive d'Apple Health / Health Connect ?", "Pas, fréquence cardiaque, tension artérielle, SpO₂, calories actives, entraînements et distance, seulement si vous l'autorisez."),
             ("Qu'apporte l'offre Pro ?", "Des plans alimentaires et d'entraînement générés par l'IA selon le profil, réservés à Pro et Max, et des messages IA chaque jour pour la synthèse de l'historique de santé, que Free ne peut qu'essayer avec ses 5 messages uniques."),
         ],
