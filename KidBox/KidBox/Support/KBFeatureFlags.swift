@@ -63,6 +63,13 @@ enum KBFeatureFlags {
     static let textEncryptionDefaultsKey = "kb_textEncryptionEnabled"
     private static let textEncryptionFallback = false
 
+    /// Campi delle sezioni Garage, Animali, Spese e Salute cifrati nel blob
+    /// `secure` (`SectionCrypto`, `internal/cifratura-sezioni.md`). Spento finché
+    /// le build che leggono `secure` non sono diffuse. Stessa chiave su Android e web.
+    static let sectionsEncryptionRemoteKey = "sections_encryption_enabled"
+    static let sectionsEncryptionDefaultsKey = "kb_sectionsEncryptionEnabled"
+    private static let sectionsEncryptionFallback = false
+
     // MARK: - Lettura
 
     /// `object(forKey:)` e non `bool(forKey:)`: quest'ultimo non distingue
@@ -79,13 +86,20 @@ enum KBFeatureFlags {
             ?? textEncryptionFallback
     }
 
+    /// Le sezioni si scrivono cifrate. La lettura capisce sempre entrambi i formati.
+    static var isSectionsEncryptionEnabled: Bool {
+        UserDefaults.standard.object(forKey: sectionsEncryptionDefaultsKey) as? Bool
+            ?? sectionsEncryptionFallback
+    }
+
     // MARK: - Remote Config
 
     private static let remoteConfig: RemoteConfig = {
         let config = RemoteConfig.remoteConfig()
         config.setDefaults([
             facebookLoginRemoteKey: NSNumber(value: facebookLoginFallback),
-            textEncryptionRemoteKey: NSNumber(value: textEncryptionFallback)
+            textEncryptionRemoteKey: NSNumber(value: textEncryptionFallback),
+            sectionsEncryptionRemoteKey: NSNumber(value: sectionsEncryptionFallback)
         ])
 
         let settings = RemoteConfigSettings()
@@ -114,7 +128,9 @@ enum KBFeatureFlags {
             UserDefaults.standard.set(enabled, forKey: facebookLoginDefaultsKey)
             let encrypted = remoteConfig[textEncryptionRemoteKey].boolValue
             UserDefaults.standard.set(encrypted, forKey: textEncryptionDefaultsKey)
-            KBLog.auth.kbInfo("FeatureFlags: \(facebookLoginRemoteKey)=\(enabled) \(textEncryptionRemoteKey)=\(encrypted)")
+            let sections = remoteConfig[sectionsEncryptionRemoteKey].boolValue
+            UserDefaults.standard.set(sections, forKey: sectionsEncryptionDefaultsKey)
+            KBLog.auth.kbInfo("FeatureFlags: \(facebookLoginRemoteKey)=\(enabled) \(textEncryptionRemoteKey)=\(encrypted) \(sectionsEncryptionRemoteKey)=\(sections)")
         } catch {
             // Nessun fallback qui: senza risposta resta l'ultimo valore noto,
             // che è già la scelta giusta dell'ultima volta.

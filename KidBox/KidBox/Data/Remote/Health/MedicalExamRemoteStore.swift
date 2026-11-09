@@ -45,9 +45,9 @@ final class MedicalExamRemoteStore {
         data["resultDate"]         = dto.resultDate.map { Timestamp(date: $0) } ?? FieldValue.delete()
         data["prescribingVisitId"] = dto.prescribingVisitId ?? FieldValue.delete()
         
-        try await col(familyId: dto.familyId)
-            .document(dto.id)
-            .setData(data, merge: true)
+        let docRef = col(familyId: dto.familyId).document(dto.id)
+        data = await SectionCrypto.seal(data, .medicalExams, ref: docRef)
+        try await docRef.setData(data, merge: true)
     }
     
     // MARK: - Soft delete
@@ -75,7 +75,7 @@ final class MedicalExamRemoteStore {
                 snapshot?.kbLogSnapshot("MedicalExams")
                 if let error { onError(error); return }
                 let dtos = snapshot?.documents.compactMap {
-                    MedicalExamRemoteStore.parseDTO(doc: $0)
+                    MedicalExamRemoteStore.parseDTO(doc: $0, reencrypt: true)
                 } ?? []
                 onChange(dtos)
             }
@@ -83,8 +83,8 @@ final class MedicalExamRemoteStore {
     
     // MARK: - Parse
     
-    static func parseDTO(doc: QueryDocumentSnapshot) -> KBMedicalExamDTO? {
-        let d = doc.data()
+    static func parseDTO(doc: QueryDocumentSnapshot, reencrypt: Bool = false) -> KBMedicalExamDTO? {
+        let d = SectionCrypto.read(doc, .medicalExams, reencrypt: reencrypt)
         // `id` nel payload: Android storico / client che non duplicavano l'id nel body usavano solo documentId.
         let id: String = {
             if let s = d["id"] as? String, !s.isEmpty { return s }

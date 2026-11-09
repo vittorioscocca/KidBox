@@ -109,6 +109,7 @@ final class VaccineRemoteStore {
             data["scheduledDate"] = FieldValue.delete()
         }
         
+        data = await SectionCrypto.seal(data, .vaccines, ref: ref)
         try await ref.setData(data, merge: true)
         
         KBLog.sync.kbInfo("Vaccine upsert OK familyId=\(dto.familyId) vaccineId=\(dto.id)")
@@ -171,7 +172,7 @@ final class VaccineRemoteStore {
                 
                 let changes: [VaccineRemoteChange] = snap.documentChanges.compactMap { diff in
                     let doc  = diff.document
-                    let data = doc.data()
+                    let data = SectionCrypto.read(doc, .vaccines, reencrypt: diff.type != .removed)
                     
                     let dto = RemoteVaccineDTO(
                         id:                    doc.documentID,

@@ -71,7 +71,7 @@ final class VisitRemoteStore {
                 guard let snap else { return }
                 let changes: [VisitRemoteChange] = snap.documentChanges.compactMap { diff in
                     if diff.type == .removed { return .remove(diff.document.documentID) }
-                    guard let dto = Self.decode(diff.document, familyId: familyId) else { return nil }
+                    guard let dto = Self.decode(diff.document, familyId: familyId, reencrypt: true) else { return nil }
                     return .upsert(dto)
                 }
                 if !changes.isEmpty { onChange(changes) }
@@ -125,11 +125,12 @@ final class VisitRemoteStore {
         if let v = dto.asNeededDrugsData    { data["asNeededDrugsData"]    = v.base64EncodedString() }
         if let v = dto.prescribedExamsData  { data["prescribedExamsData"]  = v.base64EncodedString() }
         
-        try await db.collection("families")
+        let docRef = db.collection("families")
             .document(dto.familyId)
             .collection("medicalVisits")
             .document(dto.id)
-            .setData(data, merge: true)
+        data = await SectionCrypto.seal(data, .medicalVisits, ref: docRef)
+        try await docRef.setData(data, merge: true)
     }
     
     // MARK: - Soft delete
@@ -149,8 +150,8 @@ final class VisitRemoteStore {
     
     // MARK: - Decode
     
-    private static func decode(_ doc: QueryDocumentSnapshot, familyId: String) -> RemoteVisitDTO? {
-        let d = doc.data()
+    private static func decode(_ doc: QueryDocumentSnapshot, familyId: String, reencrypt: Bool = false) -> RemoteVisitDTO? {
+        let d = SectionCrypto.read(doc, .medicalVisits, reencrypt: reencrypt)
         guard
             let childId = d["childId"] as? String,
             let date    = (d["date"] as? Timestamp)?.dateValue()

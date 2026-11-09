@@ -67,9 +67,9 @@ final class ExpenseRemoteStore {
         data["attachedDocumentId"] = dto.attachedDocumentId  ?? FieldValue.delete()
         data["createdByUid"]       = dto.createdByUid        ?? FieldValue.delete()
         
-        try await col(familyId: dto.familyId)
-            .document(dto.id)
-            .setData(data, merge: true)
+        let docRef = col(familyId: dto.familyId).document(dto.id)
+        data = await SectionCrypto.seal(data, .expenses, ref: docRef)
+        try await docRef.setData(data, merge: true)
     }
     
     // MARK: - Soft delete
@@ -100,7 +100,7 @@ final class ExpenseRemoteStore {
                     if diff.type == .removed {
                         return .remove(diff.document.documentID)
                     }
-                    guard let dto = ExpenseRemoteStore.parseDTO(doc: diff.document) else { return nil }
+                    guard let dto = ExpenseRemoteStore.parseDTO(doc: diff.document, reencrypt: true) else { return nil }
                     return .upsert(dto)
                 }
                 
@@ -114,8 +114,8 @@ final class ExpenseRemoteStore {
     
     // MARK: - Parse
     
-    static func parseDTO(doc: QueryDocumentSnapshot) -> RemoteExpenseDTO? {
-        let d = doc.data()
+    static func parseDTO(doc: QueryDocumentSnapshot, reencrypt: Bool = false) -> RemoteExpenseDTO? {
+        let d = SectionCrypto.read(doc, .expenses, reencrypt: reencrypt)
         
         guard
             let id       = d["id"]       as? String,

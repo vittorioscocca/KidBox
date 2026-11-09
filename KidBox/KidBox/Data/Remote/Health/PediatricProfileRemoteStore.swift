@@ -92,6 +92,7 @@ final class PediatricProfileRemoteStore {
         data["doctorOfficeHoursJSON"] = dto.doctorOfficeHoursJSON ?? FieldValue.delete()
         data["emergencyContactsJSON"] = dto.emergencyContactsJSON ?? FieldValue.delete()
         
+        data = await SectionCrypto.seal(data, .pediatricProfiles, ref: ref)
         try await ref.setData(data, merge: true)
         
         KBLog.sync.kbInfo("PediatricProfile upsert OK familyId=\(dto.familyId) childId=\(dto.childId)")
@@ -150,7 +151,7 @@ final class PediatricProfileRemoteStore {
                     return
                 }
                 
-                let data = snap.data() ?? [:]
+                let data = SectionCrypto.read(snap, .pediatricProfiles, reencrypt: true)
                 let dto = RemotePediatricProfileDTO(
                     id:                    snap.documentID,
                     familyId:              data["familyId"]  as? String ?? familyId,

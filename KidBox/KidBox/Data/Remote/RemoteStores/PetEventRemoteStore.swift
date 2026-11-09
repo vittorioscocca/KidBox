@@ -85,7 +85,9 @@ final class PetEventRemoteStore {
 
         if isNew { data["createdBy"] = item.createdBy.isEmpty ? uid : item.createdBy }
 
-        try await ref(familyId: item.familyId, eventId: item.id).setData(data, merge: true)
+        let docRef = ref(familyId: item.familyId, eventId: item.id)
+        data = await SectionCrypto.seal(data, .petEvents, ref: docRef, existing: snap.data())
+        try await docRef.setData(data, merge: true)
         KBLog.sync.kbInfo("[PetEventRemote] upsert OK id=\(item.id) familyId=\(item.familyId)")
     }
 
@@ -130,9 +132,10 @@ final class PetEventRemoteStore {
 
                 let changes: [PetEventRemoteChange] = snap.documentChanges.compactMap { diff in
                     let doc = diff.document
-                    let d = doc.data()
+                    let d = SectionCrypto.read(doc, .petEvents, reencrypt: diff.type != .removed)
 
-                    guard let title = d["title"] as? String, !title.isEmpty else {
+                    // Cifrato senza chiave: titolo vuoto ma documento valido.
+                    guard let title = d["title"] as? String, !title.isEmpty || SectionCrypto.isSealed(d) else {
                         KBLog.sync.kbDebug("[PetEventRemote] decode FAIL docId=\(doc.documentID)")
                         return nil
                     }

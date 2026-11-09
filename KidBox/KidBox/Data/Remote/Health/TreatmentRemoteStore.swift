@@ -89,7 +89,7 @@ final class TreatmentRemoteStore {
                 guard let snap else { return }
                 let changes: [TreatmentRemoteChange] = snap.documentChanges.compactMap { diff in
                     if diff.type == .removed { return .remove(diff.document.documentID) }
-                    guard let dto = Self.decodeTreatment(diff.document, familyId: familyId) else { return nil }
+                    guard let dto = Self.decodeTreatment(diff.document, familyId: familyId, reencrypt: true) else { return nil }
                     return .upsert(dto)
                 }
                 if !changes.isEmpty { onChange(changes) }
@@ -136,11 +136,12 @@ final class TreatmentRemoteStore {
             data["petId"] = FieldValue.delete()
         }
 
-        try await db.collection("families")
+        let docRef = db.collection("families")
             .document(dto.familyId)
             .collection("treatments")
             .document(dto.id)
-            .setData(data, merge: true)
+        data = await SectionCrypto.seal(data, .treatments, ref: docRef)
+        try await docRef.setData(data, merge: true)
     }
     
     func deleteTreatment(familyId: String, treatmentId: String) async throws {
@@ -261,8 +262,8 @@ final class TreatmentRemoteStore {
         }
     }
     
-    private static func decodeTreatment(_ doc: QueryDocumentSnapshot, familyId: String) -> RemoteTreatmentDTO? {
-        let data = doc.data()
+    private static func decodeTreatment(_ doc: QueryDocumentSnapshot, familyId: String, reencrypt: Bool = false) -> RemoteTreatmentDTO? {
+        let data = SectionCrypto.read(doc, .treatments, reencrypt: reencrypt)
         guard
             let drugName  = data["drugName"]  as? String,
             let startDate = (data["startDate"] as? Timestamp)?.dateValue()
