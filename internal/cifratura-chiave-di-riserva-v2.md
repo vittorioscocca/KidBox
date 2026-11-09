@@ -278,11 +278,13 @@ qualche settimana in più con la v1. Dove può andare storto:
    utenti attivi senza cassaforte (script di sola lettura), da contattare uno
    per uno. Chi è in una famiglia con 2+ membri rientra comunque con il QR di
    un familiare.
-4. **Obbligo dopo 3 giorni da riconsiderare.** È la decisione 1 della sezione
-   8, ma è anche il punto in cui è più facile perdere qualcuno. Proposta:
-   promemoria insistente ma chiudibile finché i primi utenti reali non sono
-   passati senza problemi; l'obbligo si accende dopo, con l'interruttore.
-   Decide l'utente.
+4. **All'inizio il promemoria si chiude sempre** (deciso dall'utente il
+   09/11/2026, cambia la decisione 1 della sezione 8). È il punto in cui è più
+   facile perdere qualcuno: finché i primi utenti reali non sono passati senza
+   problemi il promemoria è insistente ma chiudibile anche dopo i 3 giorni.
+   L'obbligo è un secondo interruttore (`config/keyVault.enforce`), acceso
+   dopo, su decisione dell'utente. Sul web resta obbligatorio da subito: lì
+   senza segreto la chiave non ha dove stare.
 5. **Tabella della 4 bis sui dispositivi veri** (iPhone, Xiaomi, web, Mac;
    build vecchie e nuove nella stessa famiglia) **prima di ogni allargamento**
    dell'interruttore, non solo prima di ogni fase.
@@ -339,6 +341,9 @@ qualche settimana in più con la v1. Dove può andare storto:
    avvio della versione v2 il promemoria non si chiude più finché il segreto non
    esiste. Il conteggio parte dal primo avvio della versione nuova su quel
    device, salvato in locale. Sul web resta obbligatorio da subito.
+   **Aggiornata il 09/11/2026**: all'inizio il promemoria resta chiudibile
+   anche dopo i 3 giorni; l'obbligo si accende dopo con
+   `config/keyVault.enforce` (sezione 4 ter, punto 4).
 2. **Chiusura v1: 90% dei membri attivi passati alla v2, e comunque dopo 30
    giorni** dall'uscita delle versioni con la Fase 1. Chi resta fuori rientra
    da telefono attivo o QR.
