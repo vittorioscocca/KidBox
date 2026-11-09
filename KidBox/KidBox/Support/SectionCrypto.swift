@@ -177,7 +177,7 @@ enum SectionCrypto {
     }
 
     private static func canSeal(familyId: String) -> String? {
-        guard KBFeatureFlags.isSectionsEncryptionEnabled,
+        guard KBFeatureFlags.isSectionsEncryptionEnabled(familyId: familyId),
               let uid, !uid.isEmpty,
               FamilyKeychainStore.loadFamilyKey(familyId: familyId, userId: uid) != nil else { return nil }
         return uid

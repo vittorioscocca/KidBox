@@ -92,6 +92,21 @@ enum KBFeatureFlags {
             ?? sectionsEncryptionFallback
     }
 
+    /// Come `isSectionsEncryptionEnabled`, più la prova su una sola famiglia a
+    /// interruttore spento: nelle build Debug l'argomento di avvio
+    /// `-kb_debugSectionsEncryptionFamily <familyId>` accende la cifratura solo
+    /// per quella famiglia (`internal/cifratura-sezioni.md`, «Come provarla»).
+    static func isSectionsEncryptionEnabled(familyId: String) -> Bool {
+        if isSectionsEncryptionEnabled { return true }
+        #if DEBUG
+        if let debugFamily = UserDefaults.standard.string(forKey: "kb_debugSectionsEncryptionFamily"),
+           !debugFamily.isEmpty, debugFamily == familyId {
+            return true
+        }
+        #endif
+        return false
+    }
+
     // MARK: - Remote Config
 
     private static let remoteConfig: RemoteConfig = {
