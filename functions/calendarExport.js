@@ -13,6 +13,13 @@
 // admin):
 //   uid, familyId, token, tz, createdAt, lastFetchAt
 //
+// Sul documento famiglia questo file tiene `calendarExported` (cifratura delle
+// sezioni, internal/cifratura-sezioni.md, secondo giro §4): `true` quando un
+// link nasce o si rigenera e quando il feed viene letto (così le famiglie che
+// lo usavano già si segnano da sole), `false` quando l'ultimo link della
+// famiglia sparisce. Con `true` i client non cifrano gli eventi del calendario,
+// che altrimenti uscirebbero dal feed senza titolo.
+//
 // Il link è `https://kidboxapp.com/cal/{token}.ics` (rewrite dell'hosting della
 // landing verso `calendarExportFeed`). Chi lo conosce legge il calendario,
 // nomi dei figli compresi: per questo si rigenera (il vecchio smette subito di
@@ -44,6 +51,41 @@ const TOKEN_RE = /^[A-Za-z0-9_-]{32}$/;
 
 const db = () => admin.firestore();
 const exportRef = (uid, familyId) => db().collection("calendarExports").doc(`${uid}_${familyId}`);
+/**
+ * Titolo di un evento cifrato (`secure`, titolo in chiaro vuoto) finché un
+ * client non lo riapre. Il feed non ha una lingua sua (il resto del file è
+ * fisso, PRODID compreso): italiano.
+ */
+const SECURE_EVENT_TITLE = "Impegno";
+
+/**
+ * Scrive `calendarExported` sul documento famiglia. `update` e non `set`: una
+ * famiglia cancellata non deve rinascere con un campo solo. Un errore qui non
+ * deve far fallire il link né il feed.
+ * @param {string} familyId
+ * @param {boolean} value
+ * @return {Promise<void>}
+ */
+async function setCalendarExported(familyId, value) {
+  await db().collection("families").doc(familyId).update({calendarExported: value}).catch((e) => {
+    logger.warn("calendarExported non scritto", {familyId, value, error: e.message});
+  });
+}
+
+/**
+ * Dopo che un link è sparito: se la famiglia non ne ha più, `calendarExported`
+ * torna `false`. Una query con `limit(1)`: una lettura.
+ * @param {string} familyId
+ * @return {Promise<void>}
+ */
+async function clearCalendarExportedIfNone(familyId) {
+  try {
+    const left = await db().collection("calendarExports").where("familyId", "==", familyId).limit(1).get();
+    if (left.empty) await setCalendarExported(familyId, false);
+  } catch (e) {
+    logger.warn("calendarExported: verifica dei link rimasti non riuscita", {familyId, error: e.message});
+  }
+}
 
 /**
  * @param {string} tz nome IANA
@@ -268,7 +310,10 @@ function buildIcs({familyName, tz, events, uid, nowMs}) {
     }
     const rr = rrule(rec, ps);
     if (rr) ev.push(rr);
-    ev.push(`SUMMARY:${esc(e.title || "")}`);
+    // Evento cifrato (`secure`) con il titolo vuoto: senza la chiave il server
+    // non lo legge, e un evento senza nome nel calendario di Google non serve.
+    const sealed = !e.title && typeof e.secure === "string" && e.secure.trim() !== "";
+    ev.push(`SUMMARY:${esc(sealed ? SECURE_EVENT_TITLE : e.title || "")}`);
     if (e.location) ev.push(`LOCATION:${esc(e.location)}`);
     if (e.notes) ev.push(`DESCRIPTION:${esc(e.notes)}`);
     ev.push("END:VEVENT");
@@ -306,7 +351,10 @@ exports.calendarExportLink = onCall(
       const urlOf = (token) => `${PUBLIC_BASE}${token}.ics`;
 
       if (action === "disable") {
-        if (snap.exists) await ref.delete();
+        if (snap.exists) {
+          await ref.delete();
+          await clearCalendarExportedIfNone(familyId);
+        }
         return {url: null};
       }
       if (action === "get") {
@@ -323,6 +371,7 @@ exports.calendarExportLink = onCall(
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         lastFetchAt: null,
       });
+      await setCalendarExported(familyId, true);
       logger.info("calendarExport link", {uid, familyId, action});
       return {url: urlOf(token)};
     },
@@ -357,6 +406,7 @@ exports.calendarExportFeed = onRequest(
       if (!fam.exists || !isActiveMember(member.exists ? member.data() : null)) {
         // Uscito dalla famiglia, o famiglia cancellata: il link si spegne da solo.
         await doc.ref.delete().catch(() => {});
+        if (fam.exists) await clearCalendarExportedIfNone(familyId);
         res.status(404).send("not found");
         return;
       }
@@ -370,6 +420,9 @@ exports.calendarExportFeed = onRequest(
       });
       if (!lastFetchAt || nowMs - toMs(lastFetchAt) > FETCH_STAMP_MS) {
         await doc.ref.update({lastFetchAt: admin.firestore.FieldValue.serverTimestamp()}).catch(() => {});
+        // Il documento famiglia è già letto qui sopra: si scrive solo se il
+        // segno manca, nessuna lettura in più.
+        if (fam.data().calendarExported !== true) await setCalendarExported(familyId, true);
       }
       res.set("Content-Type", "text/calendar; charset=utf-8");
       res.set("Content-Disposition", "inline; filename=\"kidbox.ics\"");

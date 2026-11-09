@@ -421,17 +421,6 @@ async function getTokensForUsers(uids, prefField = null, opts = {}) {
 }
 
 /**
- * Returns FCM tokens for a user if the given notification preference is enabled.
- * @param {string} uid
- * @param {string} prefField
- * @return {Promise<string[]>}
- */
-async function getUserTokensIfEnabled(uid, prefField) {
-  const byUid = await getTokensForUsers([uid], prefField);
-  return byUid.get(uid)?.tokens || [];
-}
-
-/**
  * Token FCM e lingua scelta di un utente (nessun filtro sulle preferenze).
  * @param {string} uid
  * @return {Promise<{tokens: string[], lang: string}>}
@@ -592,6 +581,72 @@ function buildDataOnlyMessage({tokens, title, body, data, badge}) {
       },
     },
   };
+}
+
+/** Oltre questa lunghezza il blob `secure` non viaggia nella push (limite 4 KB di FCM/APNs). */
+const SECURE_PUSH_MAX_CHARS = 2500;
+
+/**
+ * Il blob cifrato di un documento, se il testo che la push userebbe è vuoto.
+ *
+ * Cifratura delle sezioni (internal/cifratura-sezioni.md, secondo giro §5): un
+ * documento sigillato ha i campi di testo a `""` e il valore vero in `secure`.
+ * Il server non può leggerlo; la push porta il blob e il telefono lo decifra.
+ * Se il campo in chiaro non è vuoto vince quello (regola di lettura), e la push
+ * resta quella di sempre.
+ * @param {?object} doc dati del documento
+ * @param {string} field campo di testo usato dalla push (es. `title`)
+ * @return {?string} il blob, o `null` se la push resta quella di sempre
+ */
+function secureBlobFor(doc, field) {
+  if (!doc || typeof doc.secure !== "string" || doc.secure.trim() === "") return null;
+  const plain = doc[field];
+  if (typeof plain === "string" && plain.trim() !== "") return null;
+  return doc.secure;
+}
+
+/**
+ * Trasforma un messaggio di `buildDataOnlyMessage` in una push «da decifrare».
+ *
+ * In `data` aggiunge `secure` (solo se ≤ SECURE_PUSH_MAX_CHARS), `secureColl`,
+ * `secureFamilyId`, `titleTpl`/`bodyTpl` già tradotti con segnaposto `{campo}`
+ * e `fallbackBody`. `title`/`body` del messaggio devono già essere la versione
+ * generica, senza testo dell'utente. iOS: `mutable-content: 1`, così parte la
+ * Notification Service Extension. Android: con `dataOnly` niente
+ * `notification` né `android.notification`, così gira `onMessageReceived` —
+ * stessa regola e stesso schema della chat (`chatDataOnlyConfig`).
+ * @param {object} msg messaggio costruito da `buildDataOnlyMessage`
+ * @param {object} p
+ * @param {string} p.secure blob del documento
+ * @param {string} p.coll nome della collezione (es. `todos`)
+ * @param {string} p.familyId
+ * @param {string} p.titleTpl titolo con segnaposto, nella lingua del destinatario
+ * @param {string} p.bodyTpl testo con segnaposto, nella lingua del destinatario
+ * @param {boolean} p.dataOnly push solo dati su Android per questo destinatario
+ * @return {object} lo stesso messaggio, modificato
+ */
+function applySecurePush(msg, {secure, coll, familyId, titleTpl, bodyTpl, dataOnly}) {
+  const title = msg.data.title;
+  const body = msg.data.body;
+  const extra = {
+    secureColl: coll,
+    secureFamilyId: familyId,
+    titleTpl,
+    bodyTpl,
+    fallbackBody: body,
+  };
+  if (secure.length <= SECURE_PUSH_MAX_CHARS) extra.secure = secure;
+  msg.data = {...msg.data, ...extra};
+  msg.apns.payload.aps["mutable-content"] = 1;
+  if (dataOnly) {
+    // Come la chat: senza `notification` il sistema non mostra niente da sé e
+    // la push passa da `onMessageReceived`, che decifra. Il web perde il
+    // `notification` di primo livello, quindi titolo e testo vanno nel suo.
+    delete msg.notification;
+    msg.android = {priority: "high"};
+    msg.webpush = {...msg.webpush, notification: {...msg.webpush.notification, title, body}};
+  }
+  return msg;
 }
 
 /**
@@ -2064,18 +2119,45 @@ exports.notifyTodoAssigned = onDocumentWritten(
 
       logger.info("notifyTodoAssigned triggered", {familyId, todoId, newAssignee});
 
-      const tokens = await getUserTokensIfEnabled(newAssignee, "notifyOnTodoAssigned");
+      // Con la lingua (serve ai testi della push cifrata) e i ref dei token
+      // (per la pulizia).
+      const entry = (await getTokensForUsers([newAssignee], "notifyOnTodoAssigned")).get(newAssignee);
+      const tokens = entry?.tokens || [];
       if (tokens.length === 0) return;
 
       const badge = await incrementCounterAndGetBadge({familyId, uid: newAssignee, field: "todos"});
 
-      const payload = buildDataOnlyMessage({
-        tokens,
-        title: "Nuovo To-Do",
-        body: after.title || "Hai un nuovo promemoria",
-        data: {type: notificationType, familyId, childId: after.childId || "", listId: after.listId || "", todoId},
-        badge,
-      });
+      const data = {type: notificationType, familyId, childId: after.childId || "", listId: after.listId || "", todoId};
+      const secure = secureBlobFor(after, "title");
+      let payload;
+      if (secure) {
+        // Titolo cifrato: testo generico nella lingua del destinatario, il
+        // telefono lo sostituisce col titolo decifrato.
+        const lang = entry.lang || DEFAULT_LANG;
+        const dataOnlyCfg = await chatDataOnlyConfig();
+        payload = applySecurePush(buildDataOnlyMessage({
+          tokens,
+          title: tn(lang, "todo.assignedTitle"),
+          body: tn(lang, "todo.assignedFallback"),
+          data,
+          badge,
+        }), {
+          secure,
+          coll: "todos",
+          familyId,
+          titleTpl: tn(lang, "todo.assignedTitle"),
+          bodyTpl: tn(lang, "todo.assignedBody"),
+          dataOnly: dataOnlyCfg.all || dataOnlyCfg.uids.has(newAssignee),
+        });
+      } else {
+        payload = buildDataOnlyMessage({
+          tokens,
+          title: "Nuovo To-Do",
+          body: after.title || "Hai un nuovo promemoria",
+          data,
+          badge,
+        });
+      }
 
       const result = await admin.messaging().sendEachForMulticast(payload);
       if (result.failureCount > 0) {
@@ -2089,10 +2171,9 @@ exports.notifyTodoAssigned = onDocumentWritten(
             .map((resp) => resp.error?.code || "sconosciuto");
         logger.warn("notifyTodoAssigned: invio fallito", {uid: newAssignee, codes});
         // E il token morto va tolto: senza la pulizia quel destinatario non
-        // riceve più nulla a ogni to-do assegnato, per sempre. Qui i ref non li
-        // abbiamo (`getUserTokensIfEnabled` restituisce solo i token), quindi
-        // costa una query in più — solo quando c'è davvero un fallimento.
-        await pruneInvalidFcmTokens(newAssignee, tokens, result.responses).catch(() => {});
+        // riceve più nulla a ogni to-do assegnato, per sempre. I ref arrivano
+        // già da `getTokensForUsers`: nessuna query in più.
+        await pruneInvalidFcmTokens(newAssignee, tokens, result.responses, entry.refsByToken).catch(() => {});
       }
 
       logger.info("notifyTodoAssigned send result", {successCount: result.successCount, failureCount: result.failureCount});
@@ -5147,23 +5228,44 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
           (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
       const badgeByUid = await incrementCountersAndGetBadges(
           {familyId, uids: recipients, field: "calendar"});
+      // Titolo cifrato (`secure`): la push porta il blob e il telefono lo
+      // decifra; il testo visibile resta quello generico di sempre.
+      const secure = secureBlobFor(eventData, "title");
+      const dataOnlyCfg = secure ? await chatDataOnlyConfig() : null;
 
       for (const uid of recipients) {
         const {tokens, lang, refsByToken} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
+        /**
+         * Testo della push con l'evento dato.
+         * @param {string} event titolo o segnaposto
+         * @return {string}
+         */
+        const bodyWith = (event) => startDate ?
+          tn(lang, "calendar.body", {
+            name: creatorName, event, date: formatLongDate(startDate, lang),
+          }) :
+          tn(lang, "calendar.bodyNoDate", {name: creatorName, event});
         const event = eventTitle || tn(lang, "calendar.fallback");
         notifyTargets.push({uid, tokens, refsByToken});
-        messagesToSend.push(buildDataOnlyMessage({
+        const msg = buildDataOnlyMessage({
           tokens,
           title: tn(lang, "calendar.title"),
-          body: startDate ?
-            tn(lang, "calendar.body", {
-              name: creatorName, event, date: formatLongDate(startDate, lang),
-            }) :
-            tn(lang, "calendar.bodyNoDate", {name: creatorName, event}),
+          body: bodyWith(event),
           data: {type: "new_calendar_event", familyId, eventId},
           badge,
-        }));
+        });
+        if (secure) {
+          applySecurePush(msg, {
+            secure,
+            coll: "calendarEvents",
+            familyId,
+            titleTpl: tn(lang, "calendar.title"),
+            bodyTpl: bodyWith("{title}"),
+            dataOnly: dataOnlyCfg.all || dataOnlyCfg.uids.has(uid),
+          });
+        }
+        messagesToSend.push(msg);
       }
 
       if (messagesToSend.length === 0) {
@@ -5235,21 +5337,42 @@ exports.notifyNewExpense = onDocumentCreated(
       }
       const badgeByUid = await incrementCountersAndGetBadges(
           {familyId, uids: recipients, field: "expenses"});
+      // Spesa cifrata (`secure`): come per il calendario, la push porta il blob
+      // e il telefono rimette il titolo al posto di «Spesa».
+      const secure = secureBlobFor(expenseData, "title");
+      const dataOnlyCfg = secure ? await chatDataOnlyConfig() : null;
 
       for (const uid of recipients) {
         const {tokens, lang, refsByToken} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
+        /**
+         * Testo della push con il titolo dato.
+         * @param {string} label titolo o segnaposto
+         * @return {string}
+         */
+        const bodyWith = (label) => amount === null ?
+          label :
+          tn(lang, "expense.body", {title: label, amount: formatCurrency(amount, lang)});
         const label = expenseTitle || tn(lang, "expense.fallback");
         notifyTargets.push({uid, tokens, refsByToken});
-        messagesToSend.push(buildDataOnlyMessage({
+        const msg = buildDataOnlyMessage({
           tokens,
           title: tn(lang, "expense.title"),
-          body: amount === null ?
-            label :
-            tn(lang, "expense.body", {title: label, amount: formatCurrency(amount, lang)}),
+          body: bodyWith(label),
           data: {type: "new_expense", familyId, expenseId},
           badge,
-        }));
+        });
+        if (secure) {
+          applySecurePush(msg, {
+            secure,
+            coll: "expenses",
+            familyId,
+            titleTpl: tn(lang, "expense.title"),
+            bodyTpl: bodyWith("{title}"),
+            dataOnly: dataOnlyCfg.all || dataOnlyCfg.uids.has(uid),
+          });
+        }
+        messagesToSend.push(msg);
       }
 
       if (messagesToSend.length === 0) {
@@ -7827,6 +7950,7 @@ exports.notifyDueTodoReminders = onSchedule(
         }
 
         const title = (data.title || "").toString().trim();
+        const secure = secureBlobFor(data, "title");
         const listName = await listNameOf(familyId, data.listId);
 
         const byUid = await getTokensForUsers(targetUids, "notifyOnTodoAssigned");
@@ -7836,12 +7960,15 @@ exports.notifyDueTodoReminders = onSchedule(
           const {tokens, refsByToken, lang} = entry;
           if (!tokens || tokens.length === 0) continue;
 
-          const body = listName ?
-            tn(lang, "todo.reminderBodyWithList", {
-              title: title || tn(lang, "todo.fallback"),
-              list: listName,
-            }) :
-            tn(lang, "todo.reminderBody", {title: title || tn(lang, "todo.fallback")});
+          /**
+           * Testo del promemoria con il titolo dato.
+           * @param {string} t titolo o segnaposto
+           * @return {string}
+           */
+          const bodyWith = (t) => listName ?
+            tn(lang, "todo.reminderBodyWithList", {title: t, list: listName}) :
+            tn(lang, "todo.reminderBody", {title: t});
+          const body = bodyWith(title || tn(lang, "todo.fallback"));
 
           // Nessun incremento dei contatori: come per i biglietti, un
           // promemoria non è un elemento nuovo in app, quindi il badge della
@@ -7862,6 +7989,20 @@ exports.notifyDueTodoReminders = onSchedule(
               childId: (data.childId || "").toString(),
             },
           });
+          // Titolo cifrato (`secure`): il telefono decifra e lo rimette al
+          // posto di «Promemoria». Il nome della lista, se cifrato anche lui,
+          // qui è vuoto e resta fuori da entrambe le versioni.
+          if (secure) {
+            const dataOnlyCfg = await chatDataOnlyConfig();
+            applySecurePush(msg, {
+              secure,
+              coll: "todos",
+              familyId,
+              titleTpl: tn(lang, "todo.reminderTitle"),
+              bodyTpl: bodyWith("{title}"),
+              dataOnly: dataOnlyCfg.all || dataOnlyCfg.uids.has(uid),
+            });
+          }
 
           try {
             const res = await admin.messaging().sendEachForMulticast(msg);
@@ -8802,6 +8943,9 @@ const familyRequests = require("./familyRequests").build({
   isActiveMember,
   notFamilyMemberReason: NOT_FAMILY_MEMBER,
   resolveFamilyPlanForQuotas,
+  secureBlobFor,
+  applySecurePush,
+  chatDataOnlyConfig,
 });
 exports.respondToRequest = familyRequests.respondToRequest;
 exports.requestPublic = familyRequests.requestPublic;

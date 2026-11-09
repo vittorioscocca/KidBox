@@ -81,6 +81,10 @@ const STRINGS = {
     "todo.reminderBody": "{title}",
     "todo.reminderBodyWithList": "{title} — {list}",
     "todo.fallback": "Promemoria",
+    // To-do assegnato: usati solo quando il titolo è cifrato (`secure`).
+    "todo.assignedTitle": "Nuovo To-Do",
+    "todo.assignedBody": "{title}",
+    "todo.assignedFallback": "Hai un nuovo promemoria",
 
     "request.title": "{name} chiede una mano",
     "request.bodyWhen": "{title} · {when}",
@@ -172,6 +176,10 @@ const STRINGS = {
     "todo.reminderBody": "{title}",
     "todo.reminderBodyWithList": "{title} — {list}",
     "todo.fallback": "Reminder",
+    // To-do assegnato: usati solo quando il titolo è cifrato (`secure`).
+    "todo.assignedTitle": "New to-do",
+    "todo.assignedBody": "{title}",
+    "todo.assignedFallback": "You have a new reminder",
 
     "request.title": "{name} is asking for a hand",
     "request.bodyWhen": "{title} · {when}",
@@ -263,6 +271,10 @@ const STRINGS = {
     "todo.reminderBody": "{title}",
     "todo.reminderBodyWithList": "{title} — {list}",
     "todo.fallback": "Rappel",
+    // To-do assegnato: usati solo quando il titolo è cifrato (`secure`).
+    "todo.assignedTitle": "Nouvelle tâche",
+    "todo.assignedBody": "{title}",
+    "todo.assignedFallback": "Tu as un nouveau rappel",
 
     "request.title": "{name} demande un coup de main",
     "request.bodyWhen": "{title} · {when}",
@@ -356,6 +368,10 @@ const STRINGS = {
     "todo.reminderBody": "{title}",
     "todo.reminderBodyWithList": "{title} — {list}",
     "todo.fallback": "Recordatorio",
+    // To-do assegnato: usati solo quando il titolo è cifrato (`secure`).
+    "todo.assignedTitle": "Nueva tarea",
+    "todo.assignedBody": "{title}",
+    "todo.assignedFallback": "Tienes un nuevo recordatorio",
 
     "request.title": "{name} pide una mano",
     "request.bodyWhen": "{title} · {when}",

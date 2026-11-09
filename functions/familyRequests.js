@@ -462,7 +462,7 @@ function build(deps) {
   const {
     getTokensForUsers, buildDataOnlyMessage, sendMulticastAndPrune,
     resolveMemberName, isActiveMember, notFamilyMemberReason,
-    resolveFamilyPlanForQuotas,
+    resolveFamilyPlanForQuotas, secureBlobFor, applySecurePush, chatDataOnlyConfig,
   } = deps;
 
   /**
@@ -471,10 +471,16 @@ function build(deps) {
    * @param {function(string): {title: string, body: string}} textFor
    * @param {Object<string, string>} data
    * @param {string} label
+   * @param {?{secure: string, coll: string, familyId: string,
+   *     tplFor: function(string): {titleTpl: string, bodyTpl: string}}} [enc]
+   *     documento cifrato citato dalla push (internal/cifratura-sezioni.md
+   *     §5): `textFor` deve allora dare la versione generica, e `tplFor` quella
+   *     con i segnaposto che il telefono riempie dopo aver decifrato.
    * @return {Promise<void>}
    */
-  async function pushTo(uids, textFor, data, label) {
+  async function pushTo(uids, textFor, data, label, enc = null) {
     const tokensByUid = await getTokensForUsers(uids, NOTIFY_PREFS);
+    const dataOnlyCfg = enc ? await chatDataOnlyConfig() : null;
     const messages = [];
     const owners = [];
     for (const uid of uids) {
@@ -482,6 +488,15 @@ function build(deps) {
       if (!entry || entry.tokens.length === 0) continue;
       const {title, body} = textFor(entry.lang);
       const msg = buildDataOnlyMessage({tokens: entry.tokens, title, body, data});
+      if (enc) {
+        applySecurePush(msg, {
+          secure: enc.secure,
+          coll: enc.coll,
+          familyId: enc.familyId,
+          ...enc.tplFor(entry.lang),
+          dataOnly: dataOnlyCfg.all || dataOnlyCfg.uids.has(uid),
+        });
+      }
       // Senza la categoria registrata (client vecchi) iOS mostra la notifica
       // normale, senza bottoni: innocuo.
       if (data.type === "family_request") msg.apns.payload.aps.category = IOS_CATEGORY;
@@ -868,6 +883,13 @@ function build(deps) {
             const fresh = await tx.get(doc.ref);
             const t = fresh.data();
             if (!t || !isDelegable(t)) return false;
+            // To-do cifrato (cifratura delle sezioni): il server non legge il
+            // titolo, e una richiesta col titolo vuoto (anche nel link /r per
+            // chi non ha l'app) non serve a nessuno. Si salta, segnato.
+            if (typeof t.secure === "string" && t.secure && !String(t.title || "").trim()) {
+              tx.update(doc.ref, {kidboxAsk: {at: FieldValue.serverTimestamp(), outcome: "sealed"}});
+              return false;
+            }
             if (recipients.length === 0 || !expiresAt) {
               tx.update(doc.ref, {kidboxAsk: {at: FieldValue.serverTimestamp(), outcome: "no_recipients"}});
               return false;
@@ -904,10 +926,29 @@ function build(deps) {
 
           // A chi ha delegato: KidBox ha agito al posto suo. Il tocco apre la
           // richiesta, come l'esito di una richiesta fatta a mano.
-          await pushTo([creator], (lang) => ({
-            title: tn(lang, "request.delegatedTitle"),
-            body: tn(lang, "request.delegatedBody", {title: todo.title}),
-          }), {type: "family_request_resolved", familyId, requestId: requestRef.id}, "delegateUnassignedTodos");
+          // Con il titolo del to-do cifrato (`secure`) il testo visibile dice
+          // «Promemoria» e il telefono rimette il titolo vero dopo averlo decifrato.
+          const secure = secureBlobFor(todo, "title");
+          const pushData = {type: "family_request_resolved", familyId, requestId: requestRef.id};
+          if (secure) {
+            await pushTo([creator], (lang) => ({
+              title: tn(lang, "request.delegatedTitle"),
+              body: tn(lang, "request.delegatedBody", {title: tn(lang, "todo.fallback")}),
+            }), pushData, "delegateUnassignedTodos", {
+              secure,
+              coll: "todos",
+              familyId,
+              tplFor: (lang) => ({
+                titleTpl: tn(lang, "request.delegatedTitle"),
+                bodyTpl: tn(lang, "request.delegatedBody", {title: "{title}"}),
+              }),
+            });
+          } else {
+            await pushTo([creator], (lang) => ({
+              title: tn(lang, "request.delegatedTitle"),
+              body: tn(lang, "request.delegatedBody", {title: todo.title}),
+            }), pushData, "delegateUnassignedTodos");
+          }
         }
         if (snap.size > 0) logger.info("delegateUnassignedTodos", {candidate: snap.size, asked});
       },
