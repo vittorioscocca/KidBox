@@ -135,6 +135,32 @@ def localize_assets(page, lang):
     return re.sub(r"/assets/video/spot-en\.(mp4|webp)", video, page)
 
 
+FAQ_LD = re.compile(r'(<script type="application/ld\+json">)(\{"@context": "https://schema.org", "@type": "FAQPage".*?)(</script>)', re.S)
+FAQ_ITEM = re.compile(r"<details><summary>(.*?)</summary><p>(.*?)</p></details>", re.S)
+
+
+def faq_jsonld(page):
+    """Il FAQPage per Google si rifà dalle FAQ visibili già tradotte.
+
+    Lo `<script>` non si traduce (SKIP): copiato dall'inglese, le pagine ES/FR
+    davano a Google domande e risposte in inglese (fino al 09/11/2026).
+    """
+    import html as _html
+    m = FAQ_LD.search(page)
+    if not m:
+        return page
+    plain = lambda x: re.sub(r"\s+", " ", _html.unescape(re.sub(r"<[^>]+>", "", x))).strip()
+    entities = [
+        {"@type": "Question", "name": plain(q), "acceptedAnswer": {"@type": "Answer", "text": plain(a)}}
+        for q, a in FAQ_ITEM.findall(page)
+    ]
+    if not entities:
+        return page
+    data = json.loads(m.group(2))
+    data["mainEntity"] = entities
+    return page[: m.start(2)] + json.dumps(data, ensure_ascii=False) + page[m.end(2):]
+
+
 def build_page(name, lang):
     src = (PUBLIC / name).read_text(encoding="utf-8")
     dic_file = I18N / (name.replace("-en.html", "") + ".json")
@@ -166,6 +192,7 @@ def build_page(name, lang):
         page = re.sub(pat, rep.format(l=lang), page)
     page = localize_assets(page, lang)
     page = re.sub(r'<html lang="en">', f'<html lang="{lang}">', page, count=1)
+    page = faq_jsonld(page)
     target = name.replace("-en.html", f"-{lang}.html")
     (PUBLIC / target).write_text(page, encoding="utf-8")
     return target
