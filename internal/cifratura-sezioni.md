@@ -254,3 +254,23 @@ FAQ della pagina Salute (`tools/tools_data.py`, `tools_data_es_fr.py`, poi
 **La landing è in anticipo sull'interruttore** `sections_encryption_enabled`:
 finché resta spento, quei dati sono scritti in chiaro. Va acceso appena le
 build che cifrano sono diffuse.
+
+## Come provarla (interruttore spento, una sola famiglia)
+
+L'interruttore remoto resta spento; la cifratura si accende **solo per l'id di
+una famiglia di test**, solo sul dispositivo che lo imposta:
+
+- **iOS (solo Debug):** argomento di avvio nello schema di Xcode
+  `-kb_debugSectionsEncryptionFamily <familyId>`.
+- **Android (solo debug):** file di preferenze `kb_debug_overrides`, stringa
+  `sections_encryption_family`, poi riavvio dell'app:
+  `adb shell "run-as it.vittorioscocca.kidbox sh -c 'mkdir -p shared_prefs && echo \"<?xml version=\\\"1.0\\\" encoding=\\\"utf-8\\\"?><map><string name=\\\"sections_encryption_family\\\"><familyId></string></map>\" > shared_prefs/kb_debug_overrides.xml'"`
+  Si spegne cancellando il file. Il log dice «cifratura sezioni di prova per…».
+- **Web:** in console `localStorage.setItem("kb_debugSectionsEncryptionFamily", "<familyId>")`
+  e ricarica; vale anche in produzione ma solo per quel browser e quella famiglia.
+
+Controllo su Firestore (solo lettura, non stampa i valori):
+`node scripts/section-encryption-check.js <familyId> [--since <ISO>]` →
+per collezione CIFRATO / CHIARO / MISTO / VUOTO, coi nomi dei campi in chiaro.
+
+Mai sulla famiglia vera: chi ci entra con l'app dello store vede i vuoti.

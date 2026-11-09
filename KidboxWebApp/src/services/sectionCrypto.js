@@ -116,7 +116,7 @@ export async function sectionKey(familyId) {
 
 /** Chiave per scrivere: null a interruttore spento, così non si carica nemmeno. */
 export async function sectionWriteKey(familyId) {
-  return sectionsEncryptionEnabled() ? sectionKey(familyId) : null;
+  return sectionsEncryptionEnabled(familyId) ? sectionKey(familyId) : null;
 }
 
 /* ── Calendario esportato ────────────────────────────────────────────────── */
@@ -231,7 +231,7 @@ async function sealedPatch(collection, values, familyKey, { merge = true } = {})
  */
 export async function sealForWrite(collection, data, familyKey, ref, { merge = true } = {}) {
   const fields = SECURE_FIELDS[collection];
-  if (!fields || !data || !familyKey || !sectionsEncryptionEnabled()) return data;
+  if (!fields || !data || !familyKey || !sectionsEncryptionEnabled(familyIdOf(ref))) return data;
   if (!fields.some((f) => f in data)) return data;
   if (collection === "calendarEvents" && (await isCalendarExported(familyIdOf(ref)))) return data;
 
@@ -267,7 +267,7 @@ export async function sealForWrite(collection, data, familyKey, ref, { merge = t
  * scrivono un solo documento e non hanno già la chiave in mano.
  */
 export async function sealDocWrite(collection, ref, data, { merge = true } = {}) {
-  if (!SECURE_FIELDS[collection] || !sectionsEncryptionEnabled()) return data;
+  if (!SECURE_FIELDS[collection] || !sectionsEncryptionEnabled(familyIdOf(ref))) return data;
   return sealForWrite(collection, data, await sectionWriteKey(familyIdOf(ref)), ref, { merge });
 }
 
@@ -284,7 +284,7 @@ const resealed = new Set();
  */
 export function resealIfPlain(collection, ref, data, familyKey) {
   const fields = SECURE_FIELDS[collection];
-  if (!fields || !ref || !data || !familyKey || !sectionsEncryptionEnabled()) return;
+  if (!fields || !ref || !data || !familyKey || !sectionsEncryptionEnabled(familyIdOf(ref))) return;
   if (!fields.some((f) => filled(data[f]))) return;
   if (resealed.has(ref.path)) return;
   resealed.add(ref.path);
@@ -342,7 +342,7 @@ export async function openDocs(collection, familyId, docs) {
   // Calendario esportato: niente ricifratura, e quello già sigillato si riapre.
   const exported =
     collection === "calendarEvents" && !!fields && docs.length > 0 && (await isCalendarExported(familyId));
-  const resealing = sectionsEncryptionEnabled() && !exported;
+  const resealing = sectionsEncryptionEnabled(familyId) && !exported;
   const needsKey =
     !!fields && (anySecure || (resealing && raws.some((r) => fields.some((f) => filled(r[f])))));
   const familyKey = needsKey ? await sectionKey(familyId) : null;

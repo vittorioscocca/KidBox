@@ -71,11 +71,20 @@ export function textEncryptionEnabled() {
   }
 }
 
+/**
+ * Prova su una sola famiglia, a interruttore spento: in questo browser
+ * `localStorage.setItem("kb_debugSectionsEncryptionFamily", "<familyId>")`
+ * accende la cifratura solo per quella famiglia (`internal/cifratura-sezioni.md`,
+ * «Come provarla»). Tocca solo il browser che la imposta.
+ */
+const SECTIONS_ENCRYPTION_DEBUG_FAMILY_KEY = "kb_debugSectionsEncryptionFamily";
+
 /** Le sezioni si scrivono cifrate (e i documenti vecchi si ricifrano). */
-export function sectionsEncryptionEnabled() {
+export function sectionsEncryptionEnabled(familyId) {
   try {
     const cached = localStorage.getItem(SECTIONS_ENCRYPTION_CACHE_KEY);
-    return cached === null ? SECTIONS_ENCRYPTION_FALLBACK : cached === "true";
+    if (cached === null ? SECTIONS_ENCRYPTION_FALLBACK : cached === "true") return true;
+    return !!familyId && localStorage.getItem(SECTIONS_ENCRYPTION_DEBUG_FAMILY_KEY) === familyId;
   } catch {
     return SECTIONS_ENCRYPTION_FALLBACK;
   }
