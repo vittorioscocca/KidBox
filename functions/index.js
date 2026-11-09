@@ -6105,6 +6105,11 @@ exports.deleteAccount = onCall(
       await deleteCollection(db.collection(`users/${uid}/savedNews`)).catch(() => {});
       // Scarpe da corsa del Piano Fitness (dal 14/10/2026): stessa ragione.
       await deleteCollection(db.collection(`users/${uid}/fitnessShoes`)).catch(() => {});
+      // Cassaforte della chiave di famiglia v2 (dal 09/11/2026): gli slot che
+      // chiudono la chiave personale. Senza la riga resterebbero sul server
+      // dopo l'account. Le copie v2 stanno in memberKeyBackups e se ne vanno
+      // con quelle v1 (stesso documento).
+      await deleteCollection(db.collection(`users/${uid}/keyVault`)).catch(() => {});
       // Collegamenti Alexa creati da questo account, in qualunque famiglia:
       // la skill ormai li scarta (vedi `resolveLink` in alexa.js), ma
       // resterebbero in archivio per sempre insieme allo userId Amazon.
