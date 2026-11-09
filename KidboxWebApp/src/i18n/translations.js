@@ -1,6 +1,8 @@
 export const translations = {
   it: {
     keyVault: {
+      secReceive: "Ricevi la chiave con un QR",
+      secReceiveHint: "Se in questo browser manca la chiave: mostra un QR da inquadrare con KidBox sul telefono (Impostazioni › Sicurezza › «Inquadra un QR»), tuo o di un familiare.",
       phoneCta: "Entra con il telefono",
       phoneTitle: "Inquadra con il telefono",
       phoneLead: "Sul telefono apri KidBox › Impostazioni › Sicurezza › «Inquadra un QR» e inquadra questo codice. Anche un familiare può farlo dal suo telefono. La chiave arriva chiusa: nemmeno KidBox può aprirla.",
@@ -1903,6 +1905,8 @@ export const translations = {
   },
   en: {
     keyVault: {
+      secReceive: "Receive the key with a QR code",
+      secReceiveHint: "If this browser is missing the key: shows a QR code to scan with KidBox on a phone (Settings › Security › “Scan a QR code”), yours or a family member's.",
       phoneCta: "Sign in with your phone",
       phoneTitle: "Scan with your phone",
       phoneLead: "On your phone open KidBox › Settings › Security › “Scan a QR code” and scan this code. A family member can do it from their phone too. The key arrives sealed: not even KidBox can open it.",
@@ -3803,6 +3807,8 @@ export const translations = {
   },
   fr: {
     keyVault: {
+      secReceive: "Recevoir la clé avec un QR",
+      secReceiveHint: "Si la clé manque dans ce navigateur : affiche un QR à scanner avec KidBox sur un téléphone (Réglages › Sécurité › « Scanner un QR »), le vôtre ou celui d'un membre de la famille.",
       phoneCta: "Se connecter avec le téléphone",
       phoneTitle: "Scannez avec le téléphone",
       phoneLead: "Sur le téléphone, ouvrez KidBox › Réglages › Sécurité › « Scanner un QR » et scannez ce code. Un membre de la famille peut aussi le faire depuis son téléphone. La clé arrive chiffrée : même KidBox ne peut pas l'ouvrir.",
@@ -5650,6 +5656,8 @@ export const translations = {
   },
   es: {
     keyVault: {
+      secReceive: "Recibir la clave con un QR",
+      secReceiveHint: "Si en este navegador falta la clave: muestra un QR para escanear con KidBox en un teléfono (Ajustes › Seguridad › «Escanear un QR»), tuyo o de un familiar.",
       phoneCta: "Entrar con el teléfono",
       phoneTitle: "Escanea con el teléfono",
       phoneLead: "En el teléfono abre KidBox › Ajustes › Seguridad › «Escanear un QR» y escanea este código. Un familiar también puede hacerlo desde su teléfono. La clave llega cifrada: ni siquiera KidBox puede abrirla.",

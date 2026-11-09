@@ -380,7 +380,7 @@ function SicurezzaPage() {
   const { t, locale } = useTranslation();
   const k = t.keyVault;
   const [state, setState] = useState(null); // null | { slots, hasRk, failed }
-  const [dialog, setDialog] = useState(null); // null | "default" | "regenerate" | "addPasskey"
+  const [dialog, setDialog] = useState(null); // null | "default" | "regenerate" | "addPasskey" | "receive"
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -434,6 +434,12 @@ function SicurezzaPage() {
           )}
           {slots.length > 0 && <Row icon="👆" tint="purple" title={k.secAddPasskey} onClick={() => setDialog("addPasskey")} chevron />}
           {recovery && <Row icon="♻️" tint="blue" title={k.secRegenerate} onClick={() => setDialog("regenerate")} chevron />}
+        </Group>
+      )}
+
+      {state && !state.failed && (
+        <Group hint={k.secReceiveHint}>
+          <Row icon="🔳" tint="purple" title={k.secReceive} onClick={() => setDialog("receive")} chevron />
         </Group>
       )}
 

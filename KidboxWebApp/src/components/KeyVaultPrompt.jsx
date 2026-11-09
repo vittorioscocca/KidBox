@@ -69,6 +69,10 @@ export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onD
         const s = await listVaultSlots(user.uid);
         if (cancelled) return;
         setSlots(s);
+        if (mode === "receive") {
+          startPhone();
+          return;
+        }
         setStep(s.length > 0 ? "open" : mode === "default" ? "intro" : "open");
       } catch {
         if (!cancelled) {
@@ -257,7 +261,7 @@ export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onD
     w.print();
   };
 
-  const laterButton = allowLater && step !== "done" && (
+  const laterButton = allowLater && step !== "done" && !(mode === "receive" && step === "phone") && (
     <button type="button" className="kv-link" onClick={later} disabled={busy}>
       {mode === "default" ? k.later : k.cancel}
     </button>
@@ -410,10 +414,11 @@ export default function KeyVaultPrompt({ user, familyIds, allowLater = true, onD
               onClick={() => {
                 closeRoom();
                 setError(null);
-                setStep("open");
+                if (mode === "receive") later();
+                else setStep("open");
               }}
             >
-              {k.back}
+              {mode === "receive" ? k.cancel : k.back}
             </button>
           </>
         )}
