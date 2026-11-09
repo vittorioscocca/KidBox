@@ -99,13 +99,31 @@ enum KBFeatureFlags {
     static func isSectionsEncryptionEnabled(familyId: String) -> Bool {
         if isSectionsEncryptionEnabled { return true }
         #if DEBUG
-        if let debugFamily = UserDefaults.standard.string(forKey: "kb_debugSectionsEncryptionFamily"),
-           !debugFamily.isEmpty, debugFamily == familyId {
+        if let debugFamily = debugSectionsEncryptionFamily, debugFamily == familyId {
             return true
         }
         #endif
         return false
     }
+
+    #if DEBUG
+    /// L'argomento di avvio vale solo quando l'app parte da Xcode: lo si copia
+    /// nelle preferenze, così la prova continua anche aprendo l'app dall'icona.
+    /// `-kb_debugSectionsEncryptionFamily off` la spegne.
+    private static let debugSectionsFamilyStoredKey = "kb_debugSectionsEncryptionFamilyStored"
+    private static let debugSectionsEncryptionFamily: String? = {
+        let defaults = UserDefaults.standard
+        if let arg = defaults.volatileDomain(forName: UserDefaults.argumentDomain)["kb_debugSectionsEncryptionFamily"] as? String {
+            if arg.isEmpty || arg == "off" {
+                defaults.removeObject(forKey: debugSectionsFamilyStoredKey)
+            } else {
+                defaults.set(arg, forKey: debugSectionsFamilyStoredKey)
+            }
+        }
+        guard let stored = defaults.string(forKey: debugSectionsFamilyStoredKey), !stored.isEmpty else { return nil }
+        return stored
+    }()
+    #endif
 
     // MARK: - Remote Config
 
