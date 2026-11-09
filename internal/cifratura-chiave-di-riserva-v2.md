@@ -176,7 +176,8 @@ scadenza breve, 10 minuti, cancellato dopo l'uso): il codice c'è già per gli i
   rilascia spento, si accende prima per gli account di test.
 
 ### Fase 2 — Ogni utente crea il suo segreto
-- **Dopo l'aggiornamento** (rimandabile 3 giorni, poi obbligatorio: sezione 8):
+- **Dopo l'aggiornamento** (promemoria chiudibile finché c'è la v1; l'obbligo
+  arriva dopo con `config/keyVault.enforce`: sezioni 4 ter e 8):
   «Proteggi la chiave della tua famiglia». Si genera sempre il codice di
   recupero; la passkey (Face ID / Touch ID / impronta) si propone in aggiunta. Il
   codice si mostra una volta, con «Stampa», «Salva come file» e «Copia» (per il
@@ -189,8 +190,10 @@ scadenza breve, 10 minuti, cancellato dopo l'uso): il codice c'è già per gli i
   la chiave: slot nuovo, slot vecchio eliminato, niente da ricifrare.
 - Fatto il passo: si scrive la copia v2 per ogni famiglia. **La v1 resta** fino
   alla Fase 3 (rete di sicurezza 2, sezione 4 ter).
-- **Web**: al primo accesso dopo il rilascio è obbligatorio. Si legge la v1, si
-  apre la cassaforte se esiste o la si crea (passkey o codice), si scrive la v2.
+- **Web**: al primo accesso dopo il rilascio si propone, chiudibile come sulle
+  app finché c'è la v1. Si legge la v1, si apre la cassaforte se esiste
+  (passkey, «Entra con il telefono» o codice) o la si crea, si scrive la v2. Il
+  segreto si chiede una volta per browser: poi la RK resta in IndexedDB.
 - **QR fra dispositivi** e **QR da un familiare** in Impostazioni › Famiglia, e nella
   schermata «chiave mancante» (`FamilyKeyMissingGate` / `MissingFamilyKeyException`).
   Sul web **«Entra con il telefono»** (sezione 3.2): QR mostrato dal browser,
@@ -235,9 +238,11 @@ fisse per la v2:
 1. **L'ingresso in famiglia non aspetta mai il segreto.** La chiave arriva
    dall'invito come oggi; la RK nasce in silenzio sul dispositivo se non c'è; la
    copia v2 si scrive subito; il codice si chiede dopo. Se la scrittura della v2
-   fallisce si ritenta più tardi, senza bloccare l'ingresso. **Eccezione: il web**,
-   che non ha dove tenere la chiave: lì il segreto si crea dentro il flusso di
-   ingresso, prima di finirlo.
+   fallisce si ritenta più tardi, senza bloccare l'ingresso. **Sul web** il
+   segreto si propone dentro il flusso di ingresso, prima di finirlo, perché è
+   il momento in cui l'utente c'è di sicuro; finché esiste la v1 c'è anche
+   «Più tardi» (la v1 si scrive comunque, come oggi). Diventa obbligatorio solo
+   con `config/keyVault.enforce`.
 2. **La revoca di un membro tocca solo la sua copia in quella famiglia**, mai la
    sua cassaforte (personale: le rules lo impediscono a chiunque altro).
 3. **Login su un altro dispositivo, in ordine fisso**: Portachiavi / Keystore →
@@ -283,8 +288,10 @@ qualche settimana in più con la v1. Dove può andare storto:
    facile perdere qualcuno: finché i primi utenti reali non sono passati senza
    problemi il promemoria è insistente ma chiudibile anche dopo i 3 giorni.
    L'obbligo è un secondo interruttore (`config/keyVault.enforce`), acceso
-   dopo, su decisione dell'utente. Sul web resta obbligatorio da subito: lì
-   senza segreto la chiave non ha dove stare.
+   dopo, su decisione dell'utente. **Anche sul web** (deciso il 09/11/2026):
+   finché c'è la v1 il browser rilegge la chiave da lì, quindi il segreto non
+   deve essere obbligatorio. L'obbligo sul web serve solo prima della Fase 3,
+   quando la v1 sparisce.
 5. **Tabella della 4 bis sui dispositivi veri** (iPhone, Xiaomi, web, Mac;
    build vecchie e nuove nella stessa famiglia) **prima di ogni allargamento**
    dell'interruttore, non solo prima di ogni fase.
@@ -343,7 +350,8 @@ qualche settimana in più con la v1. Dove può andare storto:
    device, salvato in locale. Sul web resta obbligatorio da subito.
    **Aggiornata il 09/11/2026**: all'inizio il promemoria resta chiudibile
    anche dopo i 3 giorni; l'obbligo si accende dopo con
-   `config/keyVault.enforce` (sezione 4 ter, punto 4).
+   `config/keyVault.enforce` (sezione 4 ter, punto 4). Vale anche per il
+   web: chiudibile finché c'è la v1.
 2. **Chiusura v1: 90% dei membri attivi passati alla v2, e comunque dopo 30
    giorni** dall'uscita delle versioni con la Fase 1. Chi resta fuori rientra
    da telefono attivo o QR.
