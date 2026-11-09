@@ -1,5 +1,12 @@
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import {
+  getLocalVault,
+  keyVaultFlags,
+  openFamilyKeyV2,
+  sealFamilyKeyV2,
+  writeAndVerifyFamilyKeyV2,
+} from "./familyKeyVault";
 
 /**
  * Recupero della master key di famiglia sul web.
@@ -12,6 +19,11 @@ import { db } from "../firebase";
  * Il web non ha un Keychain/Keystore in cui la chiave possa essere già presente,
  * quindi passa sempre dall'escrow — che è esattamente il percorso previsto dai
  * client nativi dopo una reinstallazione o un cambio device.
+ *
+ * Dal 09/11/2026 lo stesso documento porta anche la copia v2 (mappa `v2`,
+ * chiusa con la chiave personale: `familyKeyVault.js`). Ordine di lettura: v2
+ * se questo browser ha la chiave personale, poi v1 finché esiste. La v1 si
+ * scrive sempre, come prima: è la rete fino alla Fase 3 del piano.
  *
  * ⚠️ Costanti e stringhe di derivazione DEVONO restare identiche ai client: un
  * carattere diverso produce una chiave diversa e le note diventano illeggibili.
@@ -82,13 +94,24 @@ export async function backupFamilyKey({ familyId, userId, rawKey }) {
   const cipher = sealed.slice(0, sealed.length - 16);
   const tag = sealed.slice(sealed.length - 16);
 
-  await setDoc(doc(db, "families", familyId, "memberKeyBackups", userId), {
+  const data = {
     cipher: bytesToB64(cipher),
     nonce: bytesToB64(nonce),
     tag: bytesToB64(tag),
     updatedAt: serverTimestamp(),
     version: ESCROW_VERSION,
-  });
+  };
+  // La copia v2 nello stesso documento, se questo browser ha già la chiave
+  // personale. Senza, il documento resta solo v1 e la v2 si aggiunge quando
+  // l'utente crea o apre la cassaforte. Un errore qui non deve mai fermare
+  // l'ingresso in famiglia (sezione 4 bis, regola 1).
+  try {
+    const local = (await keyVaultFlags(userId)).active ? await getLocalVault(userId) : null;
+    if (local) data.v2 = await sealFamilyKeyV2({ uid: userId, familyId, rawFamilyKey: rawKey, local });
+  } catch (err) {
+    console.warn("[Vault] copia v2 rimandata", err?.name);
+  }
+  await setDoc(doc(db, "families", familyId, "memberKeyBackups", userId), data);
 
   const cacheKey = `${userId}.${familyId}`;
   rawKeyCache.set(cacheKey, new Uint8Array(rawKey));
@@ -123,8 +146,19 @@ export async function loadFamilyKey({ familyId, userId }) {
   );
   if (!snap.exists()) throw new MissingFamilyKeyError(familyId);
 
-  const { cipher, nonce, tag } = snap.data();
-  if (!cipher || !nonce || !tag) throw new MissingFamilyKeyError(familyId);
+  const backup = snap.data();
+  const local = backup.v2 ? await getLocalVault(userId) : null;
+  const fromV2 = await openFamilyKeyV2({ uid: userId, familyId, v2: backup.v2, local });
+  if (fromV2) return remember(cacheKey, fromV2);
+
+  const { cipher, nonce, tag } = backup;
+  if (!cipher || !nonce || !tag) {
+    // Solo v2 (dopo la Fase 3) e questo browser non ha la chiave personale:
+    // la cassaforte va aperta, non è un errore dei dati.
+    const err = new MissingFamilyKeyError(familyId);
+    err.vaultLocked = !!backup.v2;
+    throw err;
+  }
 
   const escrowKey = await deriveEscrowKey(userId, familyId);
 
@@ -147,16 +181,48 @@ export async function loadFamilyKey({ familyId, userId }) {
     throw new MissingFamilyKeyError(familyId);
   }
 
-  const familyKey = await crypto.subtle.importKey(
-    "raw",
-    rawKey,
-    "AES-GCM",
-    false,
-    ["encrypt", "decrypt"]
-  );
+  const raw = new Uint8Array(rawKey);
+  // Aperta dalla v1: se la cassaforte è attiva su questo browser e la copia v2
+  // manca, la si aggiunge adesso, in background e senza bloccare la lettura.
+  if (!backup.v2) addMissingV2(userId, familyId, raw);
+  return remember(cacheKey, raw);
+}
+
+async function remember(cacheKey, raw) {
+  const familyKey = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, [
+    "encrypt",
+    "decrypt",
+  ]);
   keyCache.set(cacheKey, familyKey);
-  rawKeyCache.set(cacheKey, new Uint8Array(rawKey));
+  rawKeyCache.set(cacheKey, new Uint8Array(raw));
   return familyKey;
+}
+
+function addMissingV2(userId, familyId, raw) {
+  (async () => {
+    if (!(await keyVaultFlags(userId)).active) return;
+    if (!(await getLocalVault(userId))) return;
+    await writeAndVerifyFamilyKeyV2({ uid: userId, familyId, rawFamilyKey: raw });
+  })().catch((err) => console.warn("[Vault] copia v2 non scritta", err?.code || err?.name));
+}
+
+/**
+ * Dopo aver creato o aperto la cassaforte: copia v2 (verificata) per ogni
+ * famiglia la cui chiave questo browser sa leggere. Le famiglie senza chiave
+ * si saltano: non è compito di questo passo.
+ */
+export async function syncFamilyKeysV2({ userId, familyIds }) {
+  const out = {};
+  for (const familyId of familyIds) {
+    try {
+      const raw = await loadFamilyKeyBytes({ familyId, userId });
+      out[familyId] = await writeAndVerifyFamilyKeyV2({ uid: userId, familyId, rawFamilyKey: raw });
+    } catch (err) {
+      out[familyId] = false;
+      console.warn(`[Vault] copia v2 saltata per ${familyId}`, err?.name || err?.code);
+    }
+  }
+  return out;
 }
 
 /**

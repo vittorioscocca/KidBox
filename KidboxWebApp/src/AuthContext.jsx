@@ -18,6 +18,7 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth } from "./firebase";
+import { forgetLocalVault } from "./services/familyKeyVault";
 
 const AuthContext = createContext(null);
 
@@ -41,13 +42,18 @@ export function AuthProvider({ children }) {
    * Al 13/09/2026 i 10 account email non verificati non erano mai tornati
    * dopo il giorno di registrazione, quindi qui non si espelle nessuno.
    */
-  useEffect(
-    () =>
-      onAuthStateChanged(auth, (u) => {
+  useEffect(() => {
+    // Uid dell'ultima sessione vista: quando la sessione finisce (logout, logout
+    // remoto da un altro dispositivo, token revocato) questo browser dimentica
+    // la chiave personale della cassaforte, come WhatsApp Web.
+    let lastUid = null;
+    return onAuthStateChanged(auth, (u) => {
         if (u && isPasswordUnverified(u)) {
           signOut(auth);
           return;
         }
+        if (!u && lastUid) forgetLocalVault(lastUid);
+        lastUid = u?.uid || null;
         setInternalTraffic(u);
         setUser(u);
 
@@ -60,9 +66,8 @@ export function AuthProvider({ children }) {
         } else {
           stopDeviceSession();
         }
-      }),
-    []
-  );
+      });
+  }, []);
 
   const signInWithGoogle = () => signInWithPopup(auth, new GoogleAuthProvider());
 
@@ -108,6 +113,7 @@ export function AuthProvider({ children }) {
    */
   const logout = async () => {
     await removeDeviceSession(auth.currentUser?.uid).catch(() => {});
+    await forgetLocalVault(auth.currentUser?.uid);
     return signOut(auth);
   };
 

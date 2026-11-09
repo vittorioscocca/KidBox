@@ -31,6 +31,8 @@ import {
   readInvitePreview,
 } from "../services/onboarding";
 import { loadProfile, saveNames } from "../services/profile";
+import KeyVaultPrompt from "../components/KeyVaultPrompt";
+import { getLocalVault, keyVaultFlags } from "../services/familyKeyVault";
 import "./Onboarding.css";
 
 const INFO_PAGES = [
@@ -111,9 +113,28 @@ export default function Onboarding({ pendingInvite, hasFamily, memberOf, onFinis
   const committed = !!createdFamilyId || !!joinedFamilyId;
   const canGoBack = page > 0 && !busy && !committed && !(pendingInvite && hasFamily);
 
-  const finish = (familyId) => {
+  // Il segreto della cassaforte si propone QUI, prima di finire l'ingresso o la
+  // creazione della famiglia: sul web è il momento in cui l'utente c'è di
+  // sicuro (piano v2, sezione 4 bis, regola 1). «Più tardi» finché esiste la
+  // v1, che è già stata scritta: l'ingresso non aspetta mai il segreto.
+  const [vaultFor, setVaultFor] = useState(null); // { familyId, enforce }
+
+  const reallyFinish = (familyId) => {
     analytics.onboardingCompleted(Math.round((Date.now() - startedAt.current) / 1000));
     onFinish(familyId);
+  };
+
+  const finish = async (familyId) => {
+    try {
+      const flags = await keyVaultFlags(user.uid);
+      if (flags.active && !(await getLocalVault(user.uid))) {
+        setVaultFor({ familyId, enforce: flags.enforce });
+        return;
+      }
+    } catch {
+      /* in dubbio si entra: il promemoria tornerà dentro l'app */
+    }
+    reallyFinish(familyId);
   };
 
   const advance = () => {
@@ -212,6 +233,22 @@ export default function Onboarding({ pendingInvite, hasFamily, memberOf, onFinis
 
   return (
     <div className="onb-screen">
+      {vaultFor && (
+        <KeyVaultPrompt
+          user={user}
+          familyIds={[vaultFor.familyId]}
+          allowLater={!vaultFor.enforce}
+          onDone={() => reallyFinish(vaultFor.familyId)}
+          onLater={() => {
+            try {
+              sessionStorage.setItem(`kb_vaultLater_${user.uid}`, "1");
+            } catch {
+              /* niente */
+            }
+            reallyFinish(vaultFor.familyId);
+          }}
+        />
+      )}
       <div className="onb-top">
         {canGoBack ? (
           <button className="onb-back" onClick={() => setPage((p) => p - 1)}>
