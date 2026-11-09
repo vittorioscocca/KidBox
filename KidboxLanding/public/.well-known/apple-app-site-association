@@ -2,7 +2,9 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["5WA8KG2G2W.it.vittorioscocca.KidBox"],
+        "appIDs": [
+          "5WA8KG2G2W.it.vittorioscocca.KidBox"
+        ],
         "components": [
           {
             "/": "/join",
@@ -14,6 +16,11 @@
           }
         ]
       }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "5WA8KG2G2W.it.vittorioscocca.KidBox"
     ]
   }
 }
