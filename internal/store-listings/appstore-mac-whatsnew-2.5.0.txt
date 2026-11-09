@@ -1,0 +1,38 @@
+# Novità macOS 2.5.0 — testi «Novità» per App Store Connect (Mac)
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 09/11/2026. La 2.4.9 per Mac non è stata approvata e non uscirà: la 2.5.0 porta le note della 2.4.9 (Handoff, reparti, riga veloce, to-do per lista) più la visibilità predefinita delle liste to-do. Cassaforte v2 spenta per chi non è interno, non citata.
+
+## it
+
+• Handoff fra iPhone, iPad e Mac: la sezione aperta, la persona in Salute e quello che stai scrivendo (un to-do, un prodotto della spesa, un evento, un messaggio, una visita, un esame, una cura, una nuova voce in Spese, una domanda all'assistente) continuano sull'altro dispositivo, già compilati.
+• Lista della spesa divisa per reparti: ogni prodotto va da solo al suo posto, e quelli meno comuni li riconosce Apple Intelligence sul dispositivo. I reparti si chiudono e si riaprono con un tocco.
+• To-do e spesa: il «+» apre una riga veloce, come in Promemoria. Invio salva e passa alla voce successiva.
+• To-do: in «Tutti» sono raggruppati per lista, e dalle Impostazioni scegli per quanto restano visibili quelli fatti.
+• Liste dei to-do: quando crei o modifichi una lista scegli chi vede i suoi to-do (tutta la famiglia, solo tu o i familiari che indichi). I to-do nuovi la seguono, e per ognuno puoi sempre cambiarla.
+
+## en-GB
+
+• Handoff between iPhone, iPad and Mac: the section you have open, the person in Health and whatever you're writing (a to-do, a shopping item, an event, a message, a visit, a test, a treatment, a new expense, a question for the assistant) carry on on the other device, already filled in.
+• Shopping list sorted by aisle: every item finds its place on its own, and Apple Intelligence on the device recognises the less common ones. Tap an aisle to collapse or expand it.
+• To-dos and shopping: the "+" opens a quick entry row, like in Reminders. Return saves and moves to the next item.
+• To-dos: "All" groups them by list, and in Settings you choose how long completed ones stay visible.
+• The shopping list is now called "Shopping" instead of "Expense".
+• To-do lists: when you create or edit a list, choose who sees its to-dos (the whole family, only you or the family members you pick). New to-dos follow it, and you can still change it for each one.
+
+## es-ES
+
+• Handoff entre iPhone, iPad y Mac: la sección abierta, la persona en Salud y lo que estás escribiendo (una tarea, un producto de la compra, un evento, un mensaje, una visita, una prueba, un tratamiento, un gasto nuevo, una pregunta al asistente) siguen en el otro dispositivo, ya rellenados.
+• Lista de la compra ordenada por pasillos: cada producto se coloca solo en su sitio, y los menos comunes los reconoce Apple Intelligence en el dispositivo. Los pasillos se cierran y se abren con un toque.
+• Tareas y compra: el «+» abre una fila rápida, como en Recordatorios. Intro guarda y pasa al siguiente elemento.
+• Tareas: en «Todos» se agrupan por lista, y en Ajustes eliges cuánto tiempo siguen visibles las hechas.
+• La lista de la compra ahora se llama «Compra» en lugar de «Gasto».
+• Listas de tareas: al crear o editar una lista eliges quién ve sus tareas (toda la familia, solo tú o los familiares que indiques). Las tareas nuevas la siguen, y puedes cambiarla en cada una.
+
+## fr-FR
+
+• Handoff entre iPhone, iPad et Mac : la section ouverte, la personne dans Santé et ce que vous êtes en train d'écrire (une tâche, un produit des courses, un événement, un message, une consultation, un examen, un traitement, une nouvelle dépense, une question à l'assistant) continuent sur l'autre appareil, déjà remplis.
+• Liste de courses rangée par rayon : chaque produit trouve sa place tout seul, et Apple Intelligence reconnaît sur l'appareil les moins courants. Un toucher replie ou déplie un rayon.
+• Tâches et courses : le « + » ouvre une ligne de saisie rapide, comme dans Rappels. Retour enregistre et passe à l'élément suivant.
+• Tâches : dans « Tous », elles sont regroupées par liste, et dans les Réglages vous choisissez combien de temps restent visibles celles terminées.
+• La liste de courses s'appelle désormais « Courses » au lieu de « Dépense ».
+• Listes de tâches : en créant ou en modifiant une liste, choisissez qui voit ses tâches (toute la famille, vous seul ou les membres que vous indiquez). Les nouvelles tâches la suivent, et vous pouvez toujours la changer pour chacune.

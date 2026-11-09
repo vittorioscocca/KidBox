@@ -1,0 +1,19 @@
+# Novità iOS 2.5.0 — testi «Novità» per App Store Connect
+
+Limite App Store: 4000 caratteri per lingua. Scritti il 09/11/2026 sulle modifiche dopo la 2.4.9 visibili a tutti: la visibilità predefinita delle liste to-do. La cassaforte v2 (Sicurezza, passkey, QR) è nella build ma spenta da config/keyVault per chi non è interno: si annuncia quando si accende (scelta dell'utente).
+
+## it
+
+• Liste dei to-do: quando crei o modifichi una lista scegli chi vede i suoi to-do (tutta la famiglia, solo tu o i familiari che indichi). I to-do nuovi la seguono, e per ognuno puoi sempre cambiarla.
+
+## en-GB
+
+• To-do lists: when you create or edit a list, choose who sees its to-dos (the whole family, only you or the family members you pick). New to-dos follow it, and you can still change it for each one.
+
+## es-ES
+
+• Listas de tareas: al crear o editar una lista eliges quién ve sus tareas (toda la familia, solo tú o los familiares que indiques). Las tareas nuevas la siguen, y puedes cambiarla en cada una.
+
+## fr-FR
+
+• Listes de tâches : en créant ou en modifiant une liste, choisissez qui voit ses tâches (toute la famille, vous seul ou les membres que vous indiquez). Les nouvelles tâches la suivent, et vous pouvez toujours la changer pour chacune.
