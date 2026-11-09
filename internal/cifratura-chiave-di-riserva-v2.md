@@ -312,7 +312,11 @@ Fase 2.
   verificata (stesso `rkId` della cassaforte, v1 intatta). Block Store ha
   risposto **senza E2E** su quel telefono, quindi la RK non è stata salvata lì:
   la regola regge, ma va capito quanti telefoni veri hanno l'E2E prima di
-  contarci per la Fase 3. iOS non ancora provato (simulatore senza sessione).
+  contarci per la Fase 3.
+- **Prova su iPhone vero (stesso account, 09/11/2026):** codice accettato; alle
+  10:54 l'app ha riscritto la v1 in merge (la v2 è rimasta) e 18 secondi dopo
+  la v2 della famiglia attiva, con lo stesso `rkId` di web e Android. Web,
+  Android e iOS aprono la stessa cassaforte.
 - **Misura**: quota di utenti attivi con `keyVault` e senza v1 (script di sola
   lettura sul conteggio dei documenti, non sui contenuti).
 
