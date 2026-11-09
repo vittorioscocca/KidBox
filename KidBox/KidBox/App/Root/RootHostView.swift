@@ -277,6 +277,8 @@ struct RootHostView: View {
             guard coordinator.isAuthenticated else { return }
             await CrashAnalyzer.analyzeIfNeeded()
         }
+        // Cassaforte v2: compare solo con config/keyVault acceso per l'utente.
+        .keyVaultGate(familyIds: coordinator.isAuthenticated ? families.map(\.id) : [])
         .task(id: resolvedActiveFamilyId) {
             guard let fid = resolvedActiveFamilyId else { return }
             KBInsightRunner.shared.requestRun(reason: "family")

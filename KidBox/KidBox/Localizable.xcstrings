@@ -1,6 +1,160 @@
 {
   "sourceLanguage" : "it",
   "strings" : {
+    "Apertura…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opening…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abriendo…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouverture…"
+          }
+        }
+      }
+    },
+    "Apri la cassaforte della famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open your family vault"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre la caja fuerte de la familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir le coffre de la famille"
+          }
+        }
+      }
+    },
+    "Codice non valido: controlla di averlo scritto tutto e senza errori." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid code: make sure you typed all of it correctly."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código no válido: comprueba que lo has escrito entero y sin errores."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code non valide : vérifiez que vous l'avez saisi en entier et sans erreur."
+          }
+        }
+      }
+    },
+    "Conferma il codice" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm the code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirma el código"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmez le code"
+          }
+        }
+      }
+    },
+    "Crea il codice di recupero" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create recovery code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear el código de recuperación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créer le code de récupération"
+          }
+        }
+      }
+    },
+    "Di solito non ti servirà: se hai ancora un dispositivo o un familiare con KidBox, rientri da lì." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You usually won't need it: if you still have a device or a family member with KidBox, you can get back in from there."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normalmente no lo necesitarás: si aún tienes un dispositivo o un familiar con KidBox, vuelves a entrar desde ahí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En général, vous n'en aurez pas besoin : si vous avez encore un appareil ou un membre de la famille avec KidBox, vous revenez par là."
+          }
+        }
+      }
+    },
+    "Documenti, password e foto di KidBox sono cifrati con una chiave che ha solo la tua famiglia. Per ritrovarla su un nuovo telefono o sul computer, salva un codice di recupero. Nemmeno KidBox può aprirla." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox documents, passwords and photos are encrypted with a key only your family has. To get it back on a new phone or computer, save a recovery code. Not even KidBox can open it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los documentos, contraseñas y fotos de KidBox están cifrados con una clave que solo tiene tu familia. Para recuperarla en un móvil nuevo o en el ordenador, guarda un código de recuperación. Ni siquiera KidBox puede abrirla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les documents, mots de passe et photos de KidBox sont chiffrés avec une clé que seule votre famille possède. Pour la retrouver sur un nouveau téléphone ou sur l'ordinateur, enregistrez un code de récupération. Même KidBox ne peut pas l'ouvrir."
+          }
+        }
+      }
+    },
     "grocery.title" : {
       "comment" : "Titolo della lista della spesa (non le spese).",
       "extractionState" : "manual",
@@ -81,6 +235,380 @@
     },
     " Meteo" : {
 
+    },
+    "Hai perso il codice? Se hai ancora un dispositivo o un familiare con KidBox, rientri da lì." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lost your code? If you still have a device or a family member with KidBox, you can get back in from there."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Has perdido el código? Si aún tienes un dispositivo o un familiar con KidBox, vuelves a entrar desde ahí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code perdu ? Si vous avez encore un appareil ou un membre de la famille avec KidBox, vous revenez par là."
+          }
+        }
+      }
+    },
+    "Ho salvato il codice" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I've saved the code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "He guardado el código"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai enregistré le code"
+          }
+        }
+      }
+    },
+    "Il tuo codice di recupero" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your recovery code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu código de recuperación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre code de récupération"
+          }
+        }
+      }
+    },
+    "KidBox — codice di recupero della chiave di famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox — family key recovery code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox — código de recuperación de la clave de familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox — code de récupération de la clé de famille"
+          }
+        }
+      }
+    },
+    "La chiave della tua famiglia è protetta. Nemmeno KidBox può aprirla." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your family's key is protected. Not even KidBox can open it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La clave de tu familia está protegida. Ni siquiera KidBox puede abrirla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La clé de votre famille est protégée. Même KidBox ne peut pas l'ouvrir."
+          }
+        }
+      }
+    },
+    "La tua cassaforte è stata appena creata da un altro dispositivo: aprila con quel codice." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your vault was just created on another device: open it with that code."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu caja fuerte se acaba de crear en otro dispositivo: ábrela con ese código."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre coffre vient d'être créé sur un autre appareil : ouvrez-le avec ce code."
+          }
+        }
+      }
+    },
+    "N. %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No. %lld"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "N.º %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "N° %lld"
+          }
+        }
+      }
+    },
+    "Non corrisponde: ricontrolla il codice che hai salvato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That doesn't match: check the code you saved."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No coincide: revisa el código que has guardado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cela ne correspond pas : vérifiez le code enregistré."
+          }
+        }
+      }
+    },
+    "Più tardi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Later"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más tarde"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus tard"
+          }
+        }
+      }
+    },
+    "Proteggi la chiave della tua famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protect your family's key"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protege la clave de tu familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protégez la clé de votre famille"
+          }
+        }
+      }
+    },
+    "Qualcosa non ha funzionato. Riprova." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong. Please try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algo no ha funcionado. Inténtalo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un problème est survenu. Réessayez."
+          }
+        }
+      }
+    },
+    "Salva o stampa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save or print"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar o imprimir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer ou imprimer"
+          }
+        }
+      }
+    },
+    "Salvalo adesso: lo vedi solo questa volta. Vale per tutte le tue famiglie e su tutti i dispositivi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save it now: you'll only see it this once. It works for all your families and on every device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guárdalo ahora: solo lo verás esta vez. Vale para todas tus familias y en todos tus dispositivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrez-le maintenant : vous ne le verrez qu'une fois. Il vaut pour toutes vos familles et sur tous vos appareils."
+          }
+        }
+      }
+    },
+    "Scrivi i caratteri del codice nelle posizioni indicate." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type the characters of the code at the positions shown."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe los caracteres del código en las posiciones indicadas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisissez les caractères du code aux positions indiquées."
+          }
+        }
+      }
+    },
+    "Se perdi questo codice e tutti i tuoi dispositivi, e nessun familiare ha l'app, i dati cifrati non si possono recuperare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If you lose this code and all your devices, and no family member has the app, encrypted data can't be recovered."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si pierdes este código y todos tus dispositivos, y ningún familiar tiene la app, los datos cifrados no se pueden recuperar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si vous perdez ce code et tous vos appareils, et qu'aucun membre de la famille n'a l'app, les données chiffrées ne peuvent pas être récupérées."
+          }
+        }
+      }
+    },
+    "Stampalo o salvalo nel gestore di password del telefono. Non salvarlo nelle Password di KidBox: si aprono con la stessa chiave che questo codice serve a ritrovare." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Print it or save it in your phone's password manager. Don't save it in KidBox Passwords: they open with the same key this code is meant to recover."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imprímelo o guárdalo en el gestor de contraseñas del móvil. No lo guardes en las Contraseñas de KidBox: se abren con la misma clave que este código sirve para recuperar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imprimez-le ou enregistrez-le dans le gestionnaire de mots de passe du téléphone. Ne l'enregistrez pas dans les Mots de passe de KidBox : ils s'ouvrent avec la clé même que ce code sert à retrouver."
+          }
+        }
+      }
+    },
+    "Su questo dispositivo serve una volta sola: scrivi il codice di recupero che hai salvato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You only need to do this once on this device: type the recovery code you saved."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En este dispositivo solo hace falta una vez: escribe el código de recuperación que guardaste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sur cet appareil, il suffit de le faire une fois : saisissez le code de récupération que vous avez enregistré."
+          }
+        }
+      }
     },
     "–" : {
       "localizations" : {

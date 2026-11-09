@@ -300,7 +300,22 @@ enum FamilyKeyVault {
         }
     }
 
-    // MARK: creare e aprire la cassaforte (le schermate sono la Fase 2)
+    /// Scrive (e verifica) la copia v2 per ogni famiglia di cui questo
+    /// dispositivo ha la chiave. Da chiamare appena la RK è arrivata.
+    static func syncFamilyKeysV2(uid: String, familyIds: [String]) async {
+        for fid in Set(familyIds) where !fid.isEmpty {
+            guard let key = FamilyKeychainStore.loadFamilyKey(familyId: fid, userId: uid) else { continue }
+            await writeAndVerifyV2(uid: uid, familyId: fid, familyKey: key)
+        }
+    }
+
+    /// Quanti slot ha la cassaforte dell'utente (0 = da creare).
+    static func slotCount(uid: String) async throws -> Int {
+        try await db.collection("users").document(uid).collection("keyVault")
+            .getDocuments(source: .server).count
+    }
+
+    // MARK: creare e aprire la cassaforte (schermata: KeyVaultPromptView)
 
     enum OpenError: Error { case exists, wrongSecret, missing }
 
@@ -312,7 +327,7 @@ enum FamilyKeyVault {
         let rk = Data(rkBytes)
         let (salt, s) = try FamilyKeyVaultCrypto.sealRecoverySlot(uid: uid, code: recoveryCode, rk: rk)
         let col = db.collection("users").document(uid).collection("keyVault")
-        if !(try await col.getDocuments().isEmpty) { throw OpenError.exists }
+        if !(try await col.getDocuments(source: .server).isEmpty) { throw OpenError.exists }
         let ref = col.document("recoveryCode")
         let rec: [String: Any] = [
             "type": "recoveryCode", "version": FamilyKeyVaultCrypto.version,
@@ -320,6 +335,7 @@ enum FamilyKeyVault {
             "nonce": s.nonce, "cipher": s.cipher, "tag": s.tag,
             "createdAt": FieldValue.serverTimestamp(),
         ]
+        do {
         _ = try await db.runTransaction { txn, errPtr in
             do {
                 if try txn.getDocument(ref).exists {
@@ -330,13 +346,16 @@ enum FamilyKeyVault {
             txn.setData(rec, forDocument: ref)
             return nil
         }
+        } catch let e as NSError where e.domain == "KidBox.Vault" && e.code == 409 {
+            throw OpenError.exists
+        }
         try saveRK(rk, uid: uid)
     }
 
     /// Apre la cassaforte col codice di recupero e salva la RK nel Portachiavi.
     static func openWithRecoveryCode(uid: String, recoveryCode: String) async throws {
         let snap = try await db.collection("users").document(uid).collection("keyVault")
-            .document("recoveryCode").getDocument()
+            .document("recoveryCode").getDocument(source: .server)
         guard let d = snap.data(), let salt = d["salt"] as? String,
               let c = d["cipher"] as? String, let n = d["nonce"] as? String, let t = d["tag"] as? String
         else { throw OpenError.missing }
