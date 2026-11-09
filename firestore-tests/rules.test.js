@@ -386,6 +386,88 @@ async function check(nome, promessa) {
   await check("escrow: assente, il get passa comunque e torna vuoto",
       assertSucceeds(dbEstraneo.doc(`families/${FAM}/memberKeyBackups/${ESTRANEO}`).get()));
 
+  // ── CHIAVE DI RISERVA v2 ───────────────────────────
+  //
+  // Piano in `internal/cifratura-chiave-di-riserva-v2.md`. La cassaforte
+  // `users/{uid}/keyVault/{slotId}` tiene la chiave personale dell'utente
+  // chiusa da uno slot per ogni modo di aprirla (codice di recupero, una
+  // passkey per sistema): è solo sua, nessun altro la legge o la tocca, e la
+  // forma è fissa perché una scrittura sbagliata chiude fuori l'utente.
+  // `memberKeyBackups` accetta la v1 di oggi, la v1 con accanto la copia v2
+  // (mappa `v2`, finché esiste la v1) e la v2 sola (dopo la Fase 3).
+  console.log("\n── CHIAVE DI RISERVA v2 ───────────────────────────");
+  const slotCodice = {
+    type: "recoveryCode", version: 2, rkId: "cmtJZA==", salt: "c2FsdA==",
+    nonce: "bm9uY2U=", cipher: "Y2lwaGVy", tag: "dGFn", createdAt: new Date(),
+  };
+  const slotPasskey = {...slotCodice, type: "passkey", credentialId: "Y3JlZC1pZC0x", label: "iCloud"};
+  const vaultDi = (d, uid, slot) => d.doc(`users/${uid}/keyVault/${slot}`);
+  await check("cassaforte: il proprietario crea lo slot del codice",
+      assertSucceeds(vaultDi(dbMembro, MEMBRO, "recoveryCode").set(slotCodice)));
+  await check("cassaforte: il proprietario aggiunge uno slot passkey",
+      assertSucceeds(vaultDi(dbMembro, MEMBRO, "passkey_abcdefgh1234").set(slotPasskey)));
+  await check("cassaforte: il proprietario la legge (get e list)",
+      assertSucceeds(dbMembro.collection(`users/${MEMBRO}/keyVault`).get()));
+  await check("cassaforte: rigenera il codice (stessa chiave personale)",
+      assertSucceeds(vaultDi(dbMembro, MEMBRO, "recoveryCode")
+          .set({...slotCodice, salt: "bnVvdm8=", updatedAt: new Date()})));
+  await check("cassaforte: NON cambia chiave personale con un update",
+      assertFails(vaultDi(dbMembro, MEMBRO, "recoveryCode").set({...slotCodice, rkId: "YWx0cmE="})));
+  await check("cassaforte: il proprietario toglie uno slot passkey",
+      assertSucceeds(vaultDi(dbMembro, MEMBRO, "passkey_abcdefgh1234").delete()));
+  await check("cassaforte: un altro membro NON la legge",
+      assertFails(vaultDi(db, MEMBRO, "recoveryCode").get()));
+  await check("cassaforte: un altro membro NON la lista",
+      assertFails(db.collection(`users/${MEMBRO}/keyVault`).get()));
+  await check("cassaforte: un altro membro NON la scrive",
+      assertFails(vaultDi(db, MEMBRO, "recoveryCode").set(slotCodice)));
+  await check("cassaforte: un altro membro NON la cancella",
+      assertFails(vaultDi(db, MEMBRO, "recoveryCode").delete()));
+  await check("cassaforte: NON passa uno slot con un campo in più",
+      assertFails(vaultDi(dbMembro, MEMBRO, "passkey_ijklmnop5678").set({...slotPasskey, rk: "in chiaro"})));
+  await check("cassaforte: NON passa uno slot senza tag",
+      assertFails(vaultDi(dbMembro, MEMBRO, "passkey_ijklmnop5678")
+          .set((({tag, ...resto}) => resto)(slotPasskey))));
+  await check("cassaforte: NON passa una passkey nello slot del codice",
+      assertFails(vaultDi(dbMembro, MEMBRO, "recoveryCode").set(slotPasskey)));
+  await check("cassaforte: NON passa una passkey senza credentialId",
+      assertFails(vaultDi(dbMembro, MEMBRO, "passkey_ijklmnop5678")
+          .set({...slotCodice, type: "passkey"})));
+  await check("cassaforte: NON passa un id di slot inventato",
+      assertFails(vaultDi(dbMembro, MEMBRO, "main").set(slotCodice)));
+  await check("cassaforte: NON passa una versione diversa da 2",
+      assertFails(vaultDi(dbMembro, MEMBRO, "passkey_ijklmnop5678").set({...slotPasskey, version: 1})));
+
+  const copiaV1 = {cipher: "QUJD", nonce: "bm9uY2U=", tag: "dGFn", updatedAt: new Date(), version: 1};
+  const copiaV2 = {cipher: "djI=", nonce: "bm9uY2U=", tag: "dGFn", rkId: "cmtJZA==", updatedAt: new Date()};
+  const escrowDi = (d, uid) => d.doc(`families/${FAM}/memberKeyBackups/${uid}`);
+  await check("escrow: la v1 com'è oggi (iOS, Android, web)",
+      assertSucceeds(escrowDi(dbMembro, MEMBRO).set(copiaV1)));
+  await check("escrow: la v1 con accanto la copia v2",
+      assertSucceeds(escrowDi(dbMembro, MEMBRO).set({...copiaV1, v2: copiaV2})));
+  await check("escrow: un'app vecchia riscrive la v1 sopra (la v2 sparisce, nessun errore)",
+      assertSucceeds(escrowDi(dbMembro, MEMBRO).set(copiaV1)));
+  await check("escrow: la v2 sola (dopo la Fase 3)",
+      assertSucceeds(escrowDi(dbMembro, MEMBRO).set({version: 2, v2: copiaV2, updatedAt: new Date()})));
+  await check("escrow: NON passa version 3",
+      assertFails(escrowDi(dbMembro, MEMBRO).set({...copiaV1, version: 3})));
+  await check("escrow: NON passa la version 2 con i campi della v1",
+      assertFails(escrowDi(dbMembro, MEMBRO).set({...copiaV1, version: 2, v2: copiaV2})));
+  await check("escrow: NON passa la version 2 senza la copia v2",
+      assertFails(escrowDi(dbMembro, MEMBRO).set({version: 2})));
+  await check("escrow: NON passa una v1 senza tag",
+      assertFails(escrowDi(dbMembro, MEMBRO).set({cipher: "QUJD", nonce: "bm9uY2U=", version: 1})));
+  await check("escrow: NON passa una copia v2 senza rkId",
+      assertFails(escrowDi(dbMembro, MEMBRO).set({...copiaV1, v2: (({rkId, ...resto}) => resto)(copiaV2)})));
+  await check("escrow: NON passa un campo in più",
+      assertFails(escrowDi(dbMembro, MEMBRO).set({...copiaV1, chiaroPerSbaglio: "x"})));
+  await check("escrow: un altro NON scrive la v2 al posto mio",
+      assertFails(escrowDi(db, MEMBRO).set({...copiaV1, v2: copiaV2})));
+  await check("escrow: il proprietario cancella la propria (uscita dalla famiglia)",
+      assertSucceeds(escrowDi(dbMembro, MEMBRO).delete()));
+  await check("escrow: e la riscrive (rientro)",
+      assertSucceeds(escrowDi(dbMembro, MEMBRO).set(copiaV1)));
+
   // ── QUERY DI COLLEZIONE (LIST) ─────────────────────
   //
   // Regressione vera, in produzione: escludendo `memberKeyBackups` dentro un

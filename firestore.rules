@@ -168,6 +168,55 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── CHIAVE DI RISERVA (v2) ─────────────────────────────
+    // Byte in base64 (o base64url), non vuoti e non oltre `maxLen` caratteri.
+    function isB64(v, maxLen) {
+      return v is string && v.size() > 0 && v.size() <= maxLen
+        && v.matches('^[A-Za-z0-9+/_=-]+$');
+    }
+
+    function keyVaultSlotIsValid(slotId) {
+      let d = request.resource.data;
+      return d.keys().hasAll(['type', 'version', 'rkId', 'salt', 'nonce', 'cipher', 'tag', 'createdAt'])
+        && d.keys().hasOnly(['type', 'version', 'rkId', 'salt', 'nonce', 'cipher', 'tag',
+                             'credentialId', 'label', 'createdAt', 'updatedAt'])
+        && d.version == 2
+        && isB64(d.rkId, 64) && isB64(d.salt, 64) && isB64(d.nonce, 32)
+        && isB64(d.cipher, 128) && isB64(d.tag, 32)
+        && d.createdAt is timestamp
+        && (!('updatedAt' in d) || d.updatedAt is timestamp)
+        && (!('label' in d) || (d.label is string && d.label.size() <= 80))
+        && ((slotId == 'recoveryCode' && d.type == 'recoveryCode' && !('credentialId' in d))
+            || (slotId.matches('^passkey_[A-Za-z0-9_-]{8,64}$') && d.type == 'passkey'
+                && isB64(d.get('credentialId', null), 1400)));
+    }
+
+    // Copia della chiave di famiglia avvolta con la chiave personale.
+    function memberKeyBackupV2IsValid(v) {
+      return v is map
+        && v.keys().hasAll(['cipher', 'nonce', 'tag', 'rkId'])
+        && v.keys().hasOnly(['cipher', 'nonce', 'tag', 'rkId', 'updatedAt'])
+        && isB64(v.cipher, 128) && isB64(v.nonce, 32) && isB64(v.tag, 32) && isB64(v.rkId, 64)
+        && (!('updatedAt' in v) || v.updatedAt is timestamp);
+    }
+
+    // `version: 1` = la v1 di oggi (campi in cima), con accanto la copia v2
+    // facoltativa in `v2` finché la v1 esiste; `version: 2` = la v2 sola, dopo
+    // la chiusura della v1. Le app vecchie riscrivono la v1 senza `v2`: passa,
+    // e la copia v2 si riscrive dopo. Il 09/11/2026 tutti i 378 documenti in
+    // produzione avevano esattamente cipher, nonce, tag, updatedAt, version: 1.
+    function memberKeyBackupIsValid() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['cipher', 'nonce', 'tag', 'updatedAt', 'version', 'v2'])
+        && (d.get('version', 0) == 1 || d.get('version', 0) == 2)
+        && (!('updatedAt' in d) || d.updatedAt is timestamp)
+        && (d.version == 1
+            ? (isB64(d.get('cipher', null), 128) && isB64(d.get('nonce', null), 32)
+               && isB64(d.get('tag', null), 32))
+            : (!d.keys().hasAny(['cipher', 'nonce', 'tag']) && 'v2' in d))
+        && (!('v2' in d) || memberKeyBackupV2IsValid(d.v2));
+    }
+
     // ── USERS ──────────────────────────────────────────────
     match /users/{uid} {
       allow read, delete: if isSignedIn() && request.auth.uid == uid;
@@ -228,6 +277,24 @@ service cloud.firestore {
       // Di chi le salva, non della famiglia. Le cancella deleteAccount.
       match /savedNews/{newsId} {
         allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
+      }
+
+      // ── CASSAFORTE DELLA CHIAVE (v2) ───────────────────────
+      // La chiave personale dell'utente chiusa da uno slot per ogni modo di
+      // aprirla: `recoveryCode` (il codice di recupero) e `passkey_<id>` (una
+      // per credenziale: iCloud e Google sono serrature diverse). Il server
+      // vede solo byte chiusi. Solo il proprietario la legge e la tocca: la
+      // revoca da una famiglia non deve mai arrivarci. Forma fissa, perché uno
+      // slot scritto male chiude fuori l'utente; un update non cambia la
+      // chiave personale (`rkId`): per rifarla si cancella e si ricrea.
+      // Piano: `internal/cifratura-chiave-di-riserva-v2.md`.
+      match /keyVault/{slotId} {
+        allow read, delete: if isSignedIn() && request.auth.uid == uid;
+        allow create: if isSignedIn() && request.auth.uid == uid
+          && keyVaultSlotIsValid(slotId);
+        allow update: if isSignedIn() && request.auth.uid == uid
+          && keyVaultSlotIsValid(slotId)
+          && request.resource.data.rkId == resource.data.rkId;
       }
     }
 
@@ -398,8 +465,13 @@ service cloud.firestore {
       // trasparente. Il ramo è anche escluso dal wildcard: le rules sono in OR,
       // e senza quell'esclusione questa regola più stretta non restringerebbe
       // nulla.
+      //
+      // Dal 09/11/2026 la forma è validata (`memberKeyBackupIsValid`): v1, v1
+      // con la copia v2 accanto, v2 sola. Vedi la cassaforte sotto `users`.
       match /memberKeyBackups/{memberUid} {
-        allow read, write: if isSignedIn() && request.auth.uid == memberUid;
+        allow read, delete: if isSignedIn() && request.auth.uid == memberUid;
+        allow create, update: if isSignedIn() && request.auth.uid == memberUid
+          && memberKeyBackupIsValid();
       }
 
       match /counters/{uid} {
