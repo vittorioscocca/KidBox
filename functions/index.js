@@ -16,6 +16,7 @@ const {
 const plansConfig = require("./plansConfig");
 const proTrial = require("./proTrial");
 const {stripExpiredInviteSecrets} = require("./invitesCleanup");
+const deletedContent = require("./deletedContent");
 // Testi delle notifiche push per lingua: il client scrive la lingua scelta su
 // `users/{uid}.notificationLanguage`, qui si traduce la cornice prima di inviare.
 const {
@@ -1997,6 +1998,14 @@ exports.cascadeDeleteTodosOfList = onDocumentWritten(
       const after = event.data?.after?.exists ? event.data.after.data() : null;
 
       if (!before) return;
+      if (after?.isDeleted === true) {
+        // Il nome di una lista cancellata non serve più (deletedContent.js).
+        try {
+          await deletedContent.blankDeletedContent("todoLists", event.data.after.ref, after);
+        } catch (e) {
+          logger.warn("blankDeletedContent failed", {familyId, listId, error: e.message});
+        }
+      }
       // Soft delete (isDeleted da false a true) oppure documento rimosso davvero:
       // in entrambi i casi la lista non esiste più e i suoi to-do vanno chiusi.
       const softDeleted = after && before.isDeleted !== true && after.isDeleted === true;
@@ -2088,7 +2097,15 @@ exports.notifyTodoAssigned = onDocumentWritten(
       } catch (e) {
         logger.warn("closeRequestsForSettledTodo failed", {familyId, todoId, error: e.message});
       }
-      if (after.isDeleted === true) return;
+      if (after.isDeleted === true) {
+        // Titolo e note di un to-do cancellato non servono più (deletedContent.js).
+        try {
+          await deletedContent.blankDeletedContent("todos", event.data.after.ref, after);
+        } catch (e) {
+          logger.warn("blankDeletedContent failed", {familyId, todoId, error: e.message});
+        }
+        return;
+      }
 
       const newAssignee = after.assignedTo || null;
       const oldAssignee = before?.assignedTo || null;
@@ -8882,6 +8899,7 @@ exports.sendBroadcast = onCall(
 // usa `admin`, inizializzato a inizio file.
 // ─────────────────────────────────────────────────────────────────────────────
 Object.assign(exports, require("./analytics").triggers);
+Object.assign(exports, deletedContent.triggers);
 
 // Rollup notturni → metrics/{YYYY-MM-DD}, più la callable admin per ricalcoli
 // manuali e backfill.

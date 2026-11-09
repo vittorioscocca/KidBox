@@ -291,6 +291,15 @@ Debug da Xcode, argomento nello schema, non committato). Esito:
 - Limite trovato: i to-do **cancellati** (`isDeleted`) restano in chiaro,
   perché nessun client li legge e quindi nessuno li ricifra (114 in questa
   famiglia). Per la Salute invece anche i cancellati risultano cifrati.
+  **Chiuso il 09/11/2026 svuotandoli invece di cifrarli**: to-do, liste,
+  animali ed eventi degli animali cancellati non li rilegge nessuno, quindi
+  il testo non serve. `functions/deletedContent.js` svuota i campi della
+  tabella appena un documento è cancellato (to-do e liste dentro
+  `notifyTodoAssigned` e `cascadeDeleteTodosOfList`, animali con
+  `blankDeletedPets`/`blankDeletedPetEvents`); `secure`, `updatedAt` e
+  `updatedBy` restano. Lo storico: `scripts/blank-deleted-content.js` (prova
+  senza `--yes`: 273 documenti in poche famiglie al 09/11). Le altre sezioni
+  i cancellati li leggono e li ricifrano da sole.
 
 Da qui la famiglia resta cifrata: un membro con l'app dello store vedrebbe i
 vuoti. Spegnere l'override non la riporta in chiaro.
