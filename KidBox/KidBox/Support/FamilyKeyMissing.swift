@@ -29,6 +29,11 @@ enum FamilyKeyMissing {
         String(localized: "Chiave di famiglia mancante")
     }
 
+    /// Come `message`, quando la cassaforte v2 è accesa e l'avviso offre il QR.
+    static var messageWithQR: String {
+        String(localized: "Su questo dispositivo manca la chiave che protegge i contenuti condivisi, quindi documenti, wallet, foto e allegati della chat non possono essere aperti.\n\nPer recuperarla tocca «Ricevi la chiave con un QR» e inquadra il codice con un altro tuo dispositivo o con il telefono di un familiare (Impostazioni › Sicurezza › «Inquadra un QR»).")
+    }
+
     /// Corpo del messaggio: causa, conseguenza, azione.
     static var message: String {
         String(localized: "Su questo dispositivo manca la chiave che protegge i contenuti condivisi, quindi documenti, wallet, foto e allegati della chat non possono essere aperti.\n\nPer recuperarla, fatti invitare di nuovo da chi ha creato la famiglia e inquadra il codice QR che genera.")

@@ -1490,6 +1490,28 @@
         }
       }
     },
+    "Su questo dispositivo manca la chiave che protegge i contenuti condivisi, quindi documenti, wallet, foto e allegati della chat non possono essere aperti.\n\nPer recuperarla tocca «Ricevi la chiave con un QR» e inquadra il codice con un altro tuo dispositivo o con il telefono di un familiare (Impostazioni › Sicurezza › «Inquadra un QR»)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This device is missing the key that protects shared content, so documents, wallet, photos and chat attachments can't be opened.\n\nTo get it back, tap “Receive the key with a QR code” and scan the code with another of your devices or a family member's phone (Settings › Security › “Scan a QR code”)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En este dispositivo falta la clave que protege los contenidos compartidos, así que no se pueden abrir documentos, cartera, fotos ni adjuntos del chat.\n\nPara recuperarla, toca «Recibir la clave con un QR» y escanea el código con otro dispositivo tuyo o con el teléfono de un familiar (Ajustes › Seguridad › «Escanear un QR»)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il manque sur cet appareil la clé qui protège les contenus partagés : documents, portefeuille, photos et pièces jointes du chat ne peuvent pas être ouverts.\n\nPour la récupérer, touchez « Recevoir la clé avec un QR » et scannez le code avec un autre de vos appareils ou le téléphone d'un membre de la famille (Réglages › Sécurité › « Scanner un QR »)."
+          }
+        }
+      }
+    },
     "Su questo dispositivo serve una volta sola: scrivi il codice di recupero che hai salvato." : {
       "localizations" : {
         "en" : {

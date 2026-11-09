@@ -26,6 +26,10 @@ private struct FamilyKeyMissingGateModifier: ViewModifier {
     /// Una volta sola per apparizione della schermata: `ensureFamilyKeyAvailable`
     /// fa una lettura di rete e l'avviso non deve ricomparire a ogni ridisegno.
     @State private var didCheck = false
+    /// Cassaforte v2 accesa per questo utente: allora l'avviso offre anche il
+    /// QR per farsi mandare la chiave (piano v2, sezione 3.2).
+    @State private var canReceive = false
+    @State private var showReceive = false
 
     func body(content: Content) -> some View {
         content
@@ -40,13 +44,28 @@ private struct FamilyKeyMissingGateModifier: ViewModifier {
                 )
                 if !available {
                     KBLog.security.kbError("FamilyKeyMissingGate: no vault key familyId=\(familyId)")
+                    canReceive = await FamilyKeyVault.flags(uid: uid).active
                     showAlert = true
                 }
             }
             .alert(FamilyKeyMissing.title, isPresented: $showAlert) {
+                if canReceive {
+                    Button("Ricevi la chiave con un QR") { showReceive = true }
+                }
                 Button("OK", role: .cancel) { }
             } message: {
-                Text(FamilyKeyMissing.message)
+                Text(canReceive ? FamilyKeyMissing.messageWithQR : FamilyKeyMissing.message)
+            }
+            .sheet(isPresented: $showReceive) {
+                KeyVaultPromptView(
+                    uid: Auth.auth().currentUser?.uid ?? "",
+                    email: Auth.auth().currentUser?.email,
+                    familyIds: [familyId],
+                    allowLater: true,
+                    onDone: { showReceive = false },
+                    onLater: { showReceive = false },
+                    receive: true
+                )
             }
     }
 }
