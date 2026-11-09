@@ -48,12 +48,16 @@ su un campo cifrato non è backfillabile dal server, va fatto dai client.
 |---|---|
 | iOS | Keychain (`FamilyKeychainStore`) + **mirror** in access group condiviso con l'estensione AutoFill (`SharedFamilyKey`, account `family.key`) |
 | Android | Keystore / `EncryptedPrefs` (`FamilyKeyStore`) |
+| Cassaforte v2 (dal 09/11/2026, dietro `config/keyVault`) | chiave personale RK: Portachiavi sincronizzato su iOS (`FamilyKeyVault.swift`), EncryptedPrefs `kidbox_vault` su Android (`FamilyKeyVault.kt`), IndexedDB sul web. Apre la mappa `v2` dell'escrow. La RK nasce solo creando o aprendo la cassaforte |
 | Web | **da nessuna parte**: non c'è Keychain, la chiave passa sempre dall'escrow. Dal 09/11/2026 (con l'interruttore `config/keyVault`) c'è la chiave personale v2 in IndexedDB, che apre la copia `v2` dell'escrow: formato e costanti nella sezione 3.3 del piano |
 
 L'**escrow** è `families/{familyId}/memberKeyBackups/{uid}`: la chiave AES-256
 della famiglia, wrappata con una chiave derivata in modo **deterministico** da
 `(userId, familyId)`. È il percorso previsto dai client nativi dopo una
 reinstallazione o un cambio di device, ed è l'**unico** percorso del web.
+
+⚠️ **Il backup v1 si scrive in merge su tutti i client**: un `setData`/`set`
+intero cancella la mappa `v2` scritta da un altro dispositivo.
 
 ⚠️ **Sul web, se `backupFamilyKey` fallisce, la famiglia è cieca per sempre.**
 Non c'è una seconda copia da cui ripartire.

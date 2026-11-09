@@ -3,8 +3,9 @@
 Piano scritto l'08/11/2026. Stato al 09/11/2026: **Fase 1 fatta per regole,
 `deleteAccount` e web app** (deployate; web provata sugli emulatori e accesa
 solo per gli account interni: `config/keyVault.internal`). Dominio delle
-passkey pronto per iOS e Android. iOS e Android da fare. Formato e costanti
-nella sezione 3.3.
+passkey pronto per iOS e Android. iOS e Android scritti e committati (non
+pushati, nessuna UI: arriva con la Fase 2), provati sul vettore del web.
+Formato e costanti nella sezione 3.3.
 Contesto e regole generali sulla chiave: skill `/cifratura`.
 
 ## 1. Il problema, in una frase
@@ -243,6 +244,25 @@ tutti; `internal` = solo gli uid in `config/internalUsers.uids`; `enforce` = nie
   e deployato il 09/11/2026).
 - **Interruttore `config/keyVault`** letto dai tre client (sezione 4 ter): si
   rilascia spento, si accende prima per gli account di test.
+
+**Fatto sui nativi (09/11/2026).** iOS: `Support/FamilyKeyVault.swift`, RK nel
+Portachiavi sincronizzato (service `KidBox`, account `kidbox.vault.rk.{uid}`).
+Android: `data/crypto/FamilyKeyVaultCrypto.kt` (JVM puro) e `FamilyKeyVault.kt`,
+RK in EncryptedPrefs (`kidbox_vault`, `rk_{uid}`; mai nel fallback in chiaro).
+Su entrambi `FamilyKeyEscrow…`: recupero v2 (con la RK locale) → v1; il backup
+scrive la v1 in **merge** (prima `setData`/`set` interi cancellavano la v2) e
+aggiunge la v2 se l'interruttore è acceso e c'è la RK; dopo un recupero dalla
+v1 la v2 mancante si scrive e si verifica in background. Test sul vettore
+scritto dal web: `KidBoxTests/CryptoTests/FamilyKeyVaultTests.swift`,
+`FamilyKeyVaultCryptoTest.kt`. Block Store: non fatto, resta da valutare.
+
+**Regola comune ai tre client:** la RK nasce **solo con la cassaforte**
+(codice creato o aperto), mai in silenzio all'avvio, come `createVault` sul web. Due
+dispositivi che generassero ognuno la sua RK prima che esista la cassaforte
+darebbero due chiavi personali per lo stesso utente, e una delle due copie v2
+diventerebbe inapribile (regola 1 della sezione 4 bis). Le funzioni
+`createVault` e `openWithRecoveryCode` esistono già, le schermate sono la
+Fase 2.
 
 ### Fase 2 — Ogni utente crea il suo segreto
 - **Dopo l'aggiornamento** (promemoria chiudibile finché c'è la v1; l'obbligo
