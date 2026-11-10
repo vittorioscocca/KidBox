@@ -43,6 +43,13 @@ enum TreatmentTimeFilter: String, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - TreatmentViewMode
+
+enum TreatmentViewMode: Hashable {
+    case list
+    case calendar
+}
+
 // MARK: - TreatmentLifecycle
 
 enum TreatmentLifecycle {
@@ -174,6 +181,7 @@ struct PediatricTreatmentsView: View {
     let familyId: String
     let childId:  String
     
+    @State private var viewMode          = TreatmentViewMode.list
     @State private var isSelecting       = false
     @State private var selectedIds       = Set<String>()
     @State private var showDeleteConfirm = false
@@ -248,56 +256,84 @@ struct PediatricTreatmentsView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            if timeFilter != .all {
-                filterPill
-                    .padding(.horizontal)
-                    .padding(.top, 8)
+            if !treatments.isEmpty {
+                Picker("", selection: $viewMode) {
+                    Text("Lista").tag(TreatmentViewMode.list)
+                    Text("Calendario").tag(TreatmentViewMode.calendar)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
             }
             
-            List {
-                if !active.isEmpty {
-                    Section {
-                        ForEach(active) { t in rowView(t) }
-                    } header: {
-                        sectionHeader("Cure Attive", icon: "pills.fill", count: active.count, color: tint)
-                    }
-                }
-                if !longTerm.isEmpty {
-                    Section {
-                        ForEach(longTerm) { t in rowView(t) }
-                    } header: {
-                        sectionHeader("A lungo termine", icon: "infinity", count: longTerm.count, color: .secondary)
-                    }
-                }
-                if !completed.isEmpty {
-                    Section {
-                        ForEach(completed) { t in rowView(t) }
-                    } header: {
-                        sectionHeader("Terminate", icon: "checkmark.seal.fill", count: completed.count, color: .green)
-                    }
-                }
-                if !inactive.isEmpty {
-                    Section {
-                        ForEach(inactive) { t in rowView(t) }
-                    } header: {
-                        sectionHeader("Interrotte", icon: "stop.circle.fill", count: inactive.count, color: .orange)
-                    }
-                }
-            }
-            .kbRefreshable {
-                await SyncCenter.shared.forceRefreshHealth(
-                    .treatments,
+            if viewMode == .calendar && !treatments.isEmpty {
+                TreatmentsCalendarView(
                     familyId: familyId,
                     childId: childId,
-                    modelContext: modelContext
+                    childName: childName,
+                    treatments: treatments.filter { passesSearch($0) }
                 )
-            }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-            .background(KBTheme.background(colorScheme))
-            .overlay {
-                if treatments.isEmpty { emptyState }
-                else if filtered.isEmpty { emptyFilterState }
+                .kbRefreshable {
+                    await SyncCenter.shared.forceRefreshHealth(
+                        .treatments,
+                        familyId: familyId,
+                        childId: childId,
+                        modelContext: modelContext
+                    )
+                }
+            } else {
+                if timeFilter != .all {
+                    filterPill
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                }
+            
+                List {
+                    if !active.isEmpty {
+                        Section {
+                            ForEach(active) { t in rowView(t) }
+                        } header: {
+                            sectionHeader("Cure Attive", icon: "pills.fill", count: active.count, color: tint)
+                        }
+                    }
+                    if !longTerm.isEmpty {
+                        Section {
+                            ForEach(longTerm) { t in rowView(t) }
+                        } header: {
+                            sectionHeader("A lungo termine", icon: "infinity", count: longTerm.count, color: .secondary)
+                        }
+                    }
+                    if !completed.isEmpty {
+                        Section {
+                            ForEach(completed) { t in rowView(t) }
+                        } header: {
+                            sectionHeader("Terminate", icon: "checkmark.seal.fill", count: completed.count, color: .green)
+                        }
+                    }
+                    if !inactive.isEmpty {
+                        Section {
+                            ForEach(inactive) { t in rowView(t) }
+                        } header: {
+                            sectionHeader("Interrotte", icon: "stop.circle.fill", count: inactive.count, color: .orange)
+                        }
+                    }
+                }
+                .kbRefreshable {
+                    await SyncCenter.shared.forceRefreshHealth(
+                        .treatments,
+                        familyId: familyId,
+                        childId: childId,
+                        modelContext: modelContext
+                    )
+                }
+                .listStyle(.insetGrouped)
+                .scrollContentBackground(.hidden)
+                .background(KBTheme.background(colorScheme))
+                .overlay {
+                    if treatments.isEmpty { emptyState }
+                    else if filtered.isEmpty { emptyFilterState }
+                }
             }
             
             if isSelecting { selectionBottomBar } else { addButton }
@@ -310,6 +346,9 @@ struct PediatricTreatmentsView: View {
             prompt: "Cerca cura"
         )
         .toolbar { toolbarItems }
+        .onChange(of: viewMode) { _, mode in
+            if mode == .calendar { isSelecting = false; selectedIds.removeAll() }
+        }
         .onHandoffDraft(.treatment) { d in
             guard d.fields["childId"] == childId else { return }
             editingTreatmentId = nil
@@ -364,19 +403,21 @@ struct PediatricTreatmentsView: View {
     private var toolbarItems: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             HStack(spacing: 4) {
-                Button { showFilterSheet = true } label: {
-                    Image(systemName: timeFilter == .all
-                          ? "line.3.horizontal.decrease.circle"
-                          : "line.3.horizontal.decrease.circle.fill")
-                    .foregroundStyle(timeFilter == .all ? .primary : tint)
-                }
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isSelecting.toggle()
-                        if !isSelecting { selectedIds.removeAll() }
+                if viewMode == .list {
+                    Button { showFilterSheet = true } label: {
+                        Image(systemName: timeFilter == .all
+                              ? "line.3.horizontal.decrease.circle"
+                              : "line.3.horizontal.decrease.circle.fill")
+                        .foregroundStyle(timeFilter == .all ? .primary : tint)
                     }
-                } label: {
-                    Text(isSelecting ? String(localized: "button.done", defaultValue: "Fine") : String(localized: "Seleziona")).font(.subheadline)
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isSelecting.toggle()
+                            if !isSelecting { selectedIds.removeAll() }
+                        }
+                    } label: {
+                        Text(isSelecting ? String(localized: "button.done", defaultValue: "Fine") : String(localized: "Seleziona")).font(.subheadline)
+                    }
                 }
                 if !isSelecting {
                     Button { editingTreatmentId = nil; showAddSheet = true } label: {

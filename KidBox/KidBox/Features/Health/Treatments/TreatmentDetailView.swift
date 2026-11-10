@@ -747,95 +747,24 @@ struct TreatmentDetailView: View {
     }
     
     private func markDose(context ctx: ConfirmDoseContext, takenAt: Date) {
-        guard !isFutureDayOffset(ctx.dayNumber - 1) else { return }
-        let uid = Auth.auth().currentUser?.uid ?? "local"
-        let now = Date()
-        let stable = KBDoseLog.stableDocumentId(treatmentId: treatment.id, dayNumber: ctx.dayNumber, slotIndex: ctx.slotIndex)
-        let sameSlot = doseLogs.filter {
-            $0.treatmentId == treatment.id && $0.dayNumber == ctx.dayNumber && $0.slotIndex == ctx.slotIndex
-        }
-        let stableRow = sameSlot.first { $0.id == stable }
-        for log in sameSlot where log.id != stable {
-            SyncCenter.shared.enqueueDoseLogDelete(logId: log.id, familyId: treatment.familyId, modelContext: modelContext)
-            modelContext.delete(log)
-        }
-        if let row = stableRow {
-            row.taken = true
-            row.takenAt = takenAt
-            row.updatedAt = now
-            row.updatedBy = uid
-            try? modelContext.save()
-            SyncCenter.shared.enqueueDoseLogUpsert(logId: stable, familyId: treatment.familyId, modelContext: modelContext)
-        } else {
-            let newLog = KBDoseLog(
-                id: stable,
-                familyId: treatment.familyId, childId: treatment.childId,
-                treatmentId: treatment.id,
-                dayNumber: ctx.dayNumber, slotIndex: ctx.slotIndex,
-                scheduledTime: ctx.scheduledTime,
-                takenAt: takenAt, taken: true, updatedBy: uid
-            )
-            modelContext.insert(newLog)
-            try? modelContext.save()
-            SyncCenter.shared.enqueueDoseLogUpsert(logId: stable, familyId: treatment.familyId, modelContext: modelContext)
-        }
-        SyncCenter.shared.flushGlobal(modelContext: modelContext)
-        
-        // Cancella la notifica pendente (e quella già consegnata) per questo slot.
-        // Gestisce il caso in cui la dose viene registrata prima dell'orario programmato.
-        let dayOffset = ctx.dayNumber - 1
-        TreatmentNotificationManager.cancelSlot(
-            treatmentId: treatment.id,
-            dayOffset:   dayOffset,
-            slotIndex:   ctx.slotIndex
+        TreatmentDoseActions.markTaken(
+            treatment: treatment, dayNumber: ctx.dayNumber, slotIndex: ctx.slotIndex,
+            scheduledTime: ctx.scheduledTime, takenAt: takenAt, modelContext: modelContext
         )
     }
     
     private func skipDose(slot: SlotViewModel) {
-        guard !isFutureDayOffset(slot.dayNumber - 1) else { return }
-        let uid = Auth.auth().currentUser?.uid ?? "local"
-        let now = Date()
-        let stable = KBDoseLog.stableDocumentId(treatmentId: treatment.id, dayNumber: slot.dayNumber, slotIndex: slot.slotIndex)
-        let sameSlot = doseLogs.filter {
-            $0.treatmentId == treatment.id && $0.dayNumber == slot.dayNumber && $0.slotIndex == slot.slotIndex
-        }
-        let stableRow = sameSlot.first { $0.id == stable }
-        for log in sameSlot where log.id != stable {
-            SyncCenter.shared.enqueueDoseLogDelete(logId: log.id, familyId: treatment.familyId, modelContext: modelContext)
-            modelContext.delete(log)
-        }
-        if let row = stableRow {
-            row.taken = false
-            row.takenAt = nil
-            row.updatedAt = now
-            row.updatedBy = uid
-        } else {
-            let newLog = KBDoseLog(
-                id: stable,
-                familyId: treatment.familyId, childId: treatment.childId,
-                treatmentId: treatment.id,
-                dayNumber: slot.dayNumber, slotIndex: slot.slotIndex,
-                scheduledTime: slot.scheduledTime,
-                takenAt: nil, taken: false, updatedBy: uid
-            )
-            modelContext.insert(newLog)
-        }
-        try? modelContext.save()
-        SyncCenter.shared.enqueueDoseLogUpsert(logId: stable, familyId: treatment.familyId, modelContext: modelContext)
-        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        TreatmentDoseActions.markSkipped(
+            treatment: treatment, dayNumber: slot.dayNumber, slotIndex: slot.slotIndex,
+            scheduledTime: slot.scheduledTime, modelContext: modelContext
+        )
     }
     
     private func undoDose(slot: SlotViewModel) {
-        let sameSlot = doseLogs.filter {
-            $0.treatmentId == treatment.id && $0.dayNumber == slot.dayNumber && $0.slotIndex == slot.slotIndex
-        }
-        guard !sameSlot.isEmpty else { return }
-        for log in sameSlot {
-            SyncCenter.shared.enqueueDoseLogDelete(logId: log.id, familyId: treatment.familyId, modelContext: modelContext)
-            modelContext.delete(log)
-        }
-        try? modelContext.save()
-        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        TreatmentDoseActions.undo(
+            treatment: treatment, dayNumber: slot.dayNumber, slotIndex: slot.slotIndex,
+            modelContext: modelContext
+        )
     }
     
     private func stopTreatment() {
