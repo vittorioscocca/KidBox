@@ -666,12 +666,11 @@ struct FitnessPlanView: View {
         let isSelected = cal.isDate(day, inSameDayAs: selectedDay)
         let isToday = cal.isDateInToday(day)
         let inPlan = plan.weekIndex(for: day) != nil
-        // Un giorno con sole attività fuori programma ha comunque un segno:
-        // sono cose fatte davvero, e il calendario deve dirlo.
         let marker = dayMarker(sessions)
-            ?? (plan.loggedWorkouts(on: day).isEmpty
-                ? nil
-                : (symbol: "figure.mixed.cardio", tint: tint))
+        // Attività fuori programma: cose fatte davvero. Nella cella compare
+        // l'icona della disciplina, accanto allo stato delle sedute se ce ne sono.
+        let loggedSymbol = plan.loggedWorkouts(on: day).first
+            .map { FitnessActivityIcon.symbol(workoutTitle: $0.title) }
 
         return Button {
             withAnimation { selectedDay = cal.startOfDay(for: day) }
@@ -686,12 +685,18 @@ struct FitnessPlanView: View {
                                ? KBTheme.primaryText(colorScheme)
                                : KBTheme.secondaryText(colorScheme).opacity(0.45))
                     )
-                Group {
+                HStack(spacing: 3) {
                     if let marker {
                         Image(systemName: marker.symbol)
                             .font(.footnote)
                             .foregroundStyle(isSelected ? Color.white : marker.tint)
-                    } else {
+                    }
+                    if let loggedSymbol {
+                        Image(systemName: loggedSymbol)
+                            .font(.footnote)
+                            .foregroundStyle(isSelected ? Color.white : tint)
+                    }
+                    if marker == nil && loggedSymbol == nil {
                         Color.clear
                     }
                 }
@@ -704,7 +709,7 @@ struct FitnessPlanView: View {
                     .fill(
                         isSelected
                             ? tint
-                            : (sessions.isEmpty
+                            : (sessions.isEmpty && loggedSymbol == nil
                                ? Color.clear
                                : KBTheme.secondaryText(colorScheme).opacity(0.08))
                     )
