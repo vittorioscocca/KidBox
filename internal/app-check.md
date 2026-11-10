@@ -242,3 +242,60 @@ iOS → Gestisci token di debug).
 
 Resta aperto, ed è un'altra cosa: un fondo di 3–5 mila INVALID al giorno anche
 nei giorni senza sviluppo iOS, che da solo tiene il cancello sotto il 90%.
+
+## 10/11/2026 — il fondo non è il mio Simulatore, e non si sta chiudendo
+
+Misura a 7 giorni: Firestore **71%** (432.840 richieste, 124.451 INVALID),
+Storage 58%, Auth 74%, `oauth2` 0% (13 richieste, la riga esclusa per
+costruzione). **Giorni sopra soglia: 0 su 8.** Tra le VALID compaiono tutte e
+tre le piattaforme — android 212.890, ios 86.918, web 9.676 — quindi la
+**seconda** condizione del cancello è soddisfatta e lo è da settembre: manca
+solo la prima.
+
+**Smentita la spiegazione comoda.** Il 22/10 il calo era stato attribuito ai
+debug token dei simulatori iOS, e restava aperta la voce «un fondo di 3–5 mila
+INVALID al giorno anche nei giorni senza sviluppo iOS». Bucketando le INVALID di
+Firestore per **ora del giorno** su 7 giorni, quel fondo si vede ed è grande:
+
+| | INVALID | per ora |
+|---|---|---|
+| 09–23 (ore di lavoro) | 95.156 | ~906 |
+| 00–08 (notte) | 29.287 | ~465 |
+
+Le ore di lavoro fanno il **doppio** delle INVALID della notte — i simulatori
+esistono e si vedono (10:00 al 56%, 13:00 al 60%) — ma la **percentuale** resta
+piatta tutto il giorno: **70–77% anche alle 3 di notte**. Se le INVALID fossero
+solo le mie, di notte la quota sarebbe vicina al 100%. Non lo è: circa **4.200
+INVALID per notte** arrivano da device di utenti veri. È quello il muro.
+
+**L'attesa non sta funzionando.** Firestore era all'82% nel giorno del 23/09 e
+al 70% il 20/10; oggi la mediana giornaliera è ~73%. In sette settimane il fondo
+**non si è mosso**, e non si muoverà da sé: non è una coda da smaltire, è una
+condizione in corso. Il cancello si apre solo trovando *che cosa* viene
+rifiutato — non aspettando ancora.
+
+**Prossimo passo, nell'ordine:** registrare i debug token dei simulatori iOS
+(Firebase → App Check → app iOS → Gestisci token di debug). Serve comunque prima
+dell'enforcement, altrimenti il Simulatore smette di funzionare; e togliendo il
+rumore diurno rende il fondo misurabile pulito. Poi rimisurare: se la notte e il
+giorno convergono sullo stesso valore, quel valore è il fondo vero da
+diagnosticare.
+
+**La riga «AI Logic» non ci riguarda.** La console annuncia che dal
+**21/01/2027** App Check applicherà da sé le richieste di Firebase AI Logic.
+KidBox non usa AI Logic: zero occorrenze di `FirebaseVertexAI`, `FirebaseAI`,
+`vertexai` e `getAI(` in tutti e quattro i client — l'AI passa dai client alle
+Cloud Functions e da lì a `api.anthropic.com`. Quella scadenza non tocca
+l'applicazione.
+
+**I due presidi, riverificati oggi.** `SyncCenter.verifyRevocation`
+(`SyncCenter.swift:330`, nato il 10/09 in `8200ecb6`, quindi in store da un
+pezzo: il repo è a 2.5.1/170) non ha più il pre-controllo sul token App Check —
+è stato **tolto di proposito**, perché su Android mascherava le espulsioni vere;
+se l'enforcement negasse tutto, è la lettura `source: .server` a fallire e a
+tornare `.undetermined`, che non fa wipe. Gli altri due punti che emettono
+`currentUserRevoked` (righe ~682 e ~823) partono da uno snapshot che *mostra* il
+membro rimosso, e un rifiuto di App Check non produce snapshot ma
+`PERMISSION_DENIED`: non sono raggiungibili da un'attestazione fallita.
+`KidBox/KidBoxShareExtension/ShareViewController.swift:26` installa App Check
+prima di `FirebaseApp.configure()`. Entrambi a posto.
