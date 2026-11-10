@@ -60,7 +60,7 @@ enum FitnessPlanStore {
     static func pendingHistory(
         from old: FitnessPlanDocument?,
         childId: String
-    ) -> (sessions: [FitnessSession], workouts: [FitnessLoggedWorkout]) {
+    ) -> (sessions: [FitnessSession], workouts: [FitnessLoggedWorkout], missed: [FitnessSession]) {
         var sessions = old?.sessionsToArchive ?? []
         var workouts = old?.logged ?? []
         if let data = UserDefaults.standard.data(forKey: archivePrefix + childId),
@@ -72,7 +72,18 @@ enum FitnessPlanStore {
         sessions = sessions.filter { seen.insert($0.id).inserted }
         var seenWorkouts = Set<String>()
         workouts = workouts.filter { seenWorkouts.insert($0.id).inserted }
-        return (sessions, workouts)
+        // Le sedute del piano che sta per sparire e non sono state fatte (saltate
+        // o passate senza registrazione): senza queste l'AI non vedrebbe i regressi.
+        let today = Calendar.current.startOfDay(for: Date())
+        let missed = (old?.allSessions ?? []).filter { session in
+            guard !session.isRest else { return false }
+            switch session.status {
+            case .skipped: return true
+            case .planned, .moved: return session.date < today
+            case .done: return false
+            }
+        }
+        return (sessions, workouts, missed)
     }
 
     /// Porta lo storico (del piano corrente o messo da parte) dentro un piano nuovo.

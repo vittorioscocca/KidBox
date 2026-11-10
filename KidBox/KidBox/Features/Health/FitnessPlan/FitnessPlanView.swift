@@ -666,7 +666,12 @@ struct FitnessPlanView: View {
         let isSelected = cal.isDate(day, inSameDayAs: selectedDay)
         let isToday = cal.isDateInToday(day)
         let inPlan = plan.weekIndex(for: day) != nil
+        // Un giorno con sole attività fuori programma ha comunque un segno:
+        // sono cose fatte davvero, e il calendario deve dirlo.
         let marker = dayMarker(sessions)
+            ?? (plan.loggedWorkouts(on: day).isEmpty
+                ? nil
+                : (symbol: "figure.mixed.cardio", tint: tint))
 
         return Button {
             withAnimation { selectedDay = cal.startOfDay(for: day) }

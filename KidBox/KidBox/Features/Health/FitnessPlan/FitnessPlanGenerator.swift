@@ -68,7 +68,7 @@ enum FitnessPlanGenerator {
         visits: [KBMedicalVisit],
         exams: [KBMedicalExam],
         previousPlan: FitnessPlanDocument? = nil,
-        history: (sessions: [FitnessSession], workouts: [FitnessLoggedWorkout]) = ([], []),
+        history: (sessions: [FitnessSession], workouts: [FitnessLoggedWorkout], missed: [FitnessSession]) = ([], [], []),
         startDate: Date = planStartDate()
     ) -> Payload {
         let snapshot = KBHealthLinkStore.load(childId: childId)
@@ -116,7 +116,8 @@ enum FitnessPlanGenerator {
                 healthContext: healthContext,
                 previousPlan: previousPlan,
                 historySessions: history.sessions,
-                historyWorkouts: history.workouts
+                historyWorkouts: history.workouts,
+                historyMissed: history.missed
             ),
             profileSummary: profileSummary,
             healthContext: healthContext,

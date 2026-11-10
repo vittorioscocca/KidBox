@@ -113,7 +113,8 @@ enum FitnessPlanPromptBuilder {
         healthContext: String,
         previousPlan: FitnessPlanDocument? = nil,
         historySessions: [FitnessSession] = [],
-        historyWorkouts: [FitnessLoggedWorkout] = []
+        historyWorkouts: [FitnessLoggedWorkout] = [],
+        historyMissed: [FitnessSession] = []
     ) -> String {
         var lines: [String] = []
         if let previousPlan {
@@ -189,7 +190,7 @@ enum FitnessPlanPromptBuilder {
             lines.append(contentsOf: previousPlanLines(previousPlan))
         }
 
-        let history = historyLines(sessions: historySessions, workouts: historyWorkouts)
+        let history = historyLines(sessions: historySessions, workouts: historyWorkouts, missed: historyMissed)
         if !history.isEmpty {
             lines.append("")
             lines.append(contentsOf: history)
@@ -233,7 +234,8 @@ enum FitnessPlanPromptBuilder {
     /// ordinate per data: ciò che la persona ha fatto davvero e vede in UI.
     static func historyLines(
         sessions: [FitnessSession],
-        workouts: [FitnessLoggedWorkout]
+        workouts: [FitnessLoggedWorkout],
+        missed: [FitnessSession] = []
     ) -> [String] {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
@@ -303,6 +305,7 @@ enum FitnessPlanPromptBuilder {
             "Sono sedute e attività che la persona ha già svolto e rivede sul calendario: "
             + "tienine conto per carico, recupero e varietà, senza ripeterle uguali."
         )
+        lines.append(contentsOf: trendLines(entries: entries.map { ($0.date, $0.minutes, $0.meters) }, missed: missed.map(\.date)))
         if omitted { lines.append("[… storico più vecchio omesso per brevità]") }
         if !weeklyLines.isEmpty {
             lines.append("Settimane meno recenti (riassunto):")
@@ -312,6 +315,52 @@ enum FitnessPlanPromptBuilder {
             lines.append("Ultime \(historyDetailedWeeks) settimane, una per una:")
             lines.append(contentsOf: detailedLines)
         }
+        return lines
+    }
+
+    /// Tendenza delle ultime 4 settimane: le ultime due contro le due prima, più
+    /// le sedute non fatte e i giorni di pausa. È ciò che permette all'AI di
+    /// decidere se progredire, consolidare o ridurre. Poche righe, fuori dal budget.
+    private static func trendLines(
+        entries: [(date: Date, minutes: Int, meters: Double)],
+        missed: [Date]
+    ) -> [String] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        func daysAgo(_ date: Date) -> Int {
+            cal.dateComponents([.day], from: cal.startOfDay(for: date), to: today).day ?? 0
+        }
+        func summary(_ range: Range<Int>) -> (count: Int, minutes: Int, km: Double, missed: Int) {
+            let hit = entries.filter { range.contains(daysAgo($0.date)) }
+            return (
+                hit.count,
+                hit.reduce(0) { $0 + $1.minutes },
+                hit.reduce(0.0) { $0 + $1.meters } / 1000,
+                missed.filter { range.contains(daysAgo($0)) }.count
+            )
+        }
+        let recent = summary(0..<14)
+        let before = summary(14..<28)
+        var lines = ["TENDENZA (ultime 4 settimane):"]
+        func describe(_ label: String, _ s: (count: Int, minutes: Int, km: Double, missed: Int)) -> String {
+            var line = "- \(label): \(s.count) attività, \(s.minutes) min"
+            if s.km >= 0.01 { line += String(format: ", %.1f km", s.km) }
+            return line + ", \(s.missed) sedute non fatte"
+        }
+        lines.append(describe("2 settimane precedenti", before))
+        lines.append(describe("ultime 2 settimane", recent))
+        if before.minutes > 0 {
+            let delta = Int((Double(recent.minutes - before.minutes) / Double(before.minutes) * 100).rounded())
+            lines.append("- variazione del volume (minuti): \(delta >= 0 ? "+" : "")\(delta)%")
+        }
+        if let last = entries.map(\.date).max() {
+            lines.append("- giorni dall'ultima attività svolta: \(max(0, daysAgo(last)))")
+        }
+        lines.append("REGOLE PER PROGRESSI E REGRESSI:")
+        lines.append("- Volume stabile o in crescita e poche sedute non fatte: progressione moderata (circa +10% di volume o una seduta più impegnativa).")
+        lines.append("- Volume in calo, molte sedute non fatte o pausa di oltre 14 giorni: non progredire, riparti dal livello recente (ripresa graduale, sedute più brevi o facili).")
+        lines.append("- Parti dal livello realmente raggiunto (durate e distanze svolte), non da zero e non dal piano teorico.")
+        lines.append("- Il campo \"summary\" si apre con 1-2 frasi sui progressi o regressi rispetto a prima, con i numeri, e spiega come il nuovo piano ne tiene conto.")
         return lines
     }
 
