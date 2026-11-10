@@ -137,10 +137,13 @@ personale, codice di recupero, passkey, QR) è progettata in
 (sezione 8) e le regole per non rompere ingresso, revoca e login (sezione
 4 bis). **Leggerlo per intero prima di toccare l'escrow.**
 
-**Stato al 09/11/2026:**
-- `config/keyVault` acceso solo per `config/internalUsers` (Vittorio e
-  Antonella). Accensione per tutti quando le build sono diffuse; `enforce`
-  dopo.
+**Stato al 10/11/2026:**
+- `config/keyVault.enabled` acceso **per tutti** il 10/11/2026 alle 21:10
+  (decisione dell'utente, senza il giro della tabella 4 bis su una famiglia di
+  prova; la v1 resta come rete). `enforce` spento: il promemoria si chiude.
+  Prima: zero cassaforti esterne su 372 copie v1. Adozione: riquadro
+  cassaforte della console (`getKeyVaultStats`), o per una famiglia
+  `node scripts/key-vault-check.js <familyId>`.
 - **Fase 3 per una famiglia:** `families/{fid}.keyV1Closed: true` (lo scrive
   solo l'Admin SDK, `keepsKeyV1Closed` nelle rules) → `memberKeyBackupIsValid`
   accetta solo `version: 2`; i client scrivono solo la v2 o niente. Prima di

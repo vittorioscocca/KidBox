@@ -2,6 +2,13 @@
 
 Piano scritto l'08/11/2026.
 
+**10/11/2026, 21:10:** `config/keyVault.enabled` acceso per tutti
+(`enforce` spento, v1 conservata). Al momento dell'accensione: 2 cassaforti,
+entrambe interne; 372 copie esterne tutte solo v1; 46 membri esterni attivi a
+7 giorni, nessuno con cassaforte. Il giro della tabella 4 bis su una famiglia di
+prova è stato saltato su decisione dell'utente. Lo stato per famiglia si legge
+con `scripts/key-vault-check.js`.
+
 **Stato al 09/11/2026 sera:** Fasi 1 e 2 scritte su iOS, Android e web,
 pushate (Android 2.6.0 in produzione, iOS in revisione). Cassaforte accesa solo
 per `config/internalUsers` (Vittorio e Antonella): codice, passkey (iPhone,
@@ -203,7 +210,7 @@ CryptoKit); `credentialId` e `rkId` in base64url.
 
 **Interruttore** `config/keyVault`: `{enabled, internal, enforce}`. `enabled` =
 tutti; `internal` = solo gli uid in `config/internalUsers.uids`; `enforce` = niente
-«Più tardi». Documento assente = spento per tutti (stato al 09/11/2026).
+«Più tardi». Documento assente = spento per tutti. Acceso per tutti dal 10/11/2026.
 
 **Web** (fatto il 09/11/2026):
 - la RK sta in IndexedDB (`kidbox-vault`, store `rk`, chiave = uid) come
