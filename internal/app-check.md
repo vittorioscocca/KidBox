@@ -299,3 +299,35 @@ membro rimosso, e un rifiuto di App Check non produce snapshot ma
 `PERMISSION_DENIED`: non sono raggiungibili da un'attestazione fallita.
 `KidBox/KidBoxShareExtension/ShareViewController.swift:26` installa App Check
 prima di `FirebaseApp.configure()`. Entrambi a posto.
+
+### 10/11/2026 — i 5 token dei simulatori iOS sono registrati
+
+Registrati dall'utente in console e verificati via API (`debugTokens` sull'app
+iOS `1:52613538008:ios:932807334c01080b3df7ad`, prima **zero**, ora **cinque**):
+`iPhone 17`, `iPhone 18 Pro`, `KB Demo 17 Pro 27.0`, `KB Demo iPad 13`,
+`KB Demo Duo`. Estratti da `GACAppCheckDebugToken` nei plist dei container
+(`~/Library/Developer/CoreSimulator/Devices/*/…/Preferences/it.vittorioscocca.KidBox.plist`).
+
+⚠️ **Cambiano a ogni reinstallazione dell'app sul simulatore**: non è un lavoro
+una volta per sempre. Se un calo diurno ricompare, la prima cosa da rifare è
+questa estrazione e confrontarla con la lista registrata.
+
+**Stato degli altri client:** Android ha 2 token (`Xiaomi Debug 2`,
+`Xiaomi Debug Vittorio`), registrati a settembre e **mai verificati dopo**: se
+il Xiaomi ha reinstallato la debug, sono scaduti e il device genera INVALID.
+Da controllare col telefono collegato (`adb shell run-as` sulle SharedPreferences,
+oppure il token stampato in logcat all'avvio). Web: 0 token, corretto — lì il
+debug token sarebbe un bypass di progetto, vedi la nota sulla console admin.
+
+**Letture API, per non ricercarle:** servono il token utente *e* l'header
+`x-goog-user-project: kidbox-42cd7`, altrimenti la chiamata torna 403
+`SERVICE_DISABLED` parlando di quota project — non è un permesso mancante.
+
+    curl -sS -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+         -H "x-goog-user-project: kidbox-42cd7" \
+      "https://firebaseappcheck.googleapis.com/v1/projects/kidbox-42cd7/apps/<APP_ID>/debugTokens"
+
+**Prossima misura: dal 14/11**, per avere 3-4 giorni interi senza il rumore dei
+simulatori. Se le ore di lavoro convergono sulla percentuale della notte
+(~70-77%), quello è il fondo vero da diagnosticare e i simulatori erano solo
+volume. Se invece sale tutto, il fondo era più piccolo di quanto stimato oggi.
