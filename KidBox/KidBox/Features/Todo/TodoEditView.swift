@@ -240,9 +240,18 @@ struct TodoEditView: View {
 
                 if !isNewTodo, movableLists.count > 1 {
                     Section {
-                        Picker("Lista", selection: $selectedListId) {
+                        Picker(selection: $selectedListId) {
                             ForEach(movableLists, id: \.id) { l in
                                 Text(l.name).tag(l.id)
+                            }
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "list.bullet")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 30, height: 30)
+                                    .background(Circle().fill(Color.accentColor))
+                                Text("Lista")
                             }
                         }
                     }
@@ -258,7 +267,7 @@ struct TodoEditView: View {
                 }
                 
                 Section("Scadenza") {
-                    Toggle("Imposta scadenza", isOn: $hasDate)
+                    Toggle(isOn: $hasDate) { Label("Imposta scadenza", systemImage: "calendar") }
                         .onChange(of: hasDate) { _, isOn in
                             if isOn {
                                 if dueDate == nil { dueDate = Date() }
@@ -281,10 +290,10 @@ struct TodoEditView: View {
                         .datePickerStyle(.compact)
                         .environment(\.locale, appLocale())
 
-                        Toggle("Ora", isOn: $hasTime)
+                        Toggle(isOn: $hasTime) { Label("Ora", systemImage: "clock") }
                     }
                     
-                    Toggle("Promemoria", isOn: Binding(
+                    Toggle(isOn: Binding(
                         get: { wantsReminder },
                         set: { newValue in
                             // se non c’è scadenza, non si può attivare
@@ -303,7 +312,9 @@ struct TodoEditView: View {
                                 wantsReminder = false
                             }
                         }
-                    ))
+                    )) {
+                        Label("Promemoria", systemImage: "bell")
+                    }
                     .disabled(!hasDate || dueDate == nil || askDraft != nil)
                 }
                 .alert("Creare un promemoria?", isPresented: $showReminderAlert) {
@@ -320,7 +331,7 @@ struct TodoEditView: View {
                 }
                 
                 Section {
-                    Toggle("Urgente", isOn: $isUrgent)
+                    Toggle(isOn: $isUrgent) { Label("Urgente", systemImage: "alarm.waves.left.and.right") }
                 } footer: {
                     Text(kbUrgentFooterText).font(.caption)
                 }
@@ -355,7 +366,11 @@ struct TodoEditView: View {
                                 showAssigneePicker = true
                             } label: {
                                 HStack {
-                                    Text(assigneeLabel)
+                                    Label {
+                                        Text(assigneeLabel)
+                                    } icon: {
+                                        Image(systemName: "person")
+                                    }
                                         .foregroundStyle(assignedTo == nil ? .secondary : .primary)
                                     Spacer()
                                     Image(systemName: "chevron.right")
