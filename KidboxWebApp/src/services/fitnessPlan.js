@@ -205,6 +205,38 @@ export const weekdayNames = (weekdays) =>
 
 /* ── Payload Codable ─────────────────────────────────────────────────────── */
 
+/** Una seduta com'è scritta nel documento condiviso con i telefoni. */
+function encodeSession(s) {
+  return {
+    id: s.id,
+    date: iso(s.date),
+    originalDate: iso(s.originalDate),
+    weekIndex: s.weekIndex,
+    title: s.title,
+    activityType: s.activityType,
+    durationMinutes: s.durationMinutes,
+    intensity: s.intensity || "",
+    exercises: (s.exercises || []).map((e) => ({
+      id: e.id,
+      name: e.name,
+      detail: e.detail || "",
+      notes: e.notes ?? null,
+    })),
+    targets: s.targets || [],
+    targetKcal: s.targetKcal ?? null,
+    notes: s.notes ?? null,
+    status: s.status || "planned",
+    completedAt: iso(s.completedAt),
+    completionSource: s.completionSource ?? null,
+    actualActivityTitle: s.actualActivityTitle ?? null,
+    matchedWorkoutId: s.matchedWorkoutId ?? null,
+    actualMinutes: s.actualMinutes ?? null,
+    actualKcal: s.actualKcal ?? null,
+    actualHeartRateBpm: s.actualHeartRateBpm ?? null,
+    actualDistanceMeters: s.actualDistanceMeters ?? null,
+  };
+}
+
 /** JS → JSON che `FitnessPlanDocument` sa decodificare. */
 function encodeDocument(plan) {
   return {
@@ -232,33 +264,7 @@ function encodeDocument(plan) {
     weeks: (plan.weeks || []).map((w) => ({
       index: w.index,
       focus: w.focus || "",
-      sessions: (w.sessions || []).map((s) => ({
-        id: s.id,
-        date: iso(s.date),
-        originalDate: iso(s.originalDate),
-        weekIndex: s.weekIndex,
-        title: s.title,
-        activityType: s.activityType,
-        durationMinutes: s.durationMinutes,
-        intensity: s.intensity || "",
-        exercises: (s.exercises || []).map((e) => ({
-          id: e.id,
-          name: e.name,
-          detail: e.detail || "",
-          notes: e.notes ?? null,
-        })),
-        targets: s.targets || [],
-        targetKcal: s.targetKcal ?? null,
-        notes: s.notes ?? null,
-        status: s.status || "planned",
-        completedAt: iso(s.completedAt),
-        completionSource: s.completionSource ?? null,
-        actualActivityTitle: s.actualActivityTitle ?? null,
-        matchedWorkoutId: s.matchedWorkoutId ?? null,
-        actualMinutes: s.actualMinutes ?? null,
-        actualKcal: s.actualKcal ?? null,
-        actualHeartRateBpm: s.actualHeartRateBpm ?? null,
-      })),
+      sessions: (w.sessions || []).map(encodeSession),
     })),
     generatedAt: iso(plan.generatedAt),
     messageUnitsConsumed: plan.messageUnitsConsumed || 0,
@@ -267,6 +273,9 @@ function encodeDocument(plan) {
     // mese successivo: la pagina non li usa ma deve riscriverli com'erano,
     // altrimenti una spunta da qui cancellerebbe la storia del percorso.
     previousCycles: plan.previousCycles ?? null,
+    // Sedute fatte dei piani precedenti, riscritte com'erano (JSON grezzo): la
+    // pagina le mostra ma una spunta da qui non deve cancellarle.
+    archivedSessions: plan.archivedSessionsRaw ?? null,
   };
 }
 
@@ -302,6 +311,18 @@ function decodeDocument(raw) {
     messageUnitsConsumed: Number(raw.messageUnitsConsumed) || 0,
     loggedWorkouts: raw.loggedWorkouts ?? null,
     previousCycles: Array.isArray(raw.previousCycles) ? raw.previousCycles : null,
+    archivedSessionsRaw: Array.isArray(raw.archivedSessions) ? raw.archivedSessions : null,
+    archivedSessions: (Array.isArray(raw.archivedSessions) ? raw.archivedSessions : []).map((s) => ({
+      ...s,
+      date: fromIso(s.date),
+      originalDate: fromIso(s.originalDate),
+      completedAt: fromIso(s.completedAt),
+      exercises: Array.isArray(s.exercises) ? s.exercises : [],
+      targets: Array.isArray(s.targets) ? s.targets : [],
+      status: s.status || "planned",
+      // Sola lettura: non sta nelle settimane del piano.
+      archived: true,
+    })),
   };
 }
 
@@ -321,7 +342,13 @@ export const startOfDayMillis = (millis) => {
 /** Le sedute di un giorno. */
 export const sessionsOn = (plan, dayMillis) => {
   const day = startOfDayMillis(dayMillis);
-  return allSessions(plan).filter((s) => s.date && startOfDayMillis(s.date) === day);
+  const current = allSessions(plan).filter((s) => s.date && startOfDayMillis(s.date) === day);
+  const ids = new Set(current.map((s) => s.id));
+  // Le sedute fatte dei piani precedenti restano sul calendario.
+  const archived = (plan?.archivedSessions || []).filter(
+    (s) => s.date && startOfDayMillis(s.date) === day && !ids.has(s.id)
+  );
+  return [...archived, ...current].sort((a, b) => a.date - b.date);
 };
 
 /**
@@ -356,8 +383,9 @@ export const weekIndexFor = (plan, dayMillis) => {
 export const planRange = (plan) => {
   const sessions = allSessions(plan);
   if (sessions.length === 0) return null;
+  const archivedDates = (plan.archivedSessions || []).map((s) => s.date).filter(Boolean);
   return {
-    first: startOfDayMillis(sessions[0].date),
+    first: startOfDayMillis(Math.min(sessions[0].date, ...archivedDates)),
     last: startOfDayMillis(sessions[sessions.length - 1].date),
   };
 };
@@ -558,8 +586,132 @@ const fmtDate = (millisValue) =>
     year: "numeric",
   });
 
+/* ── Storico per l'AI ────────────────────────────────────────────────────── */
+
+const HISTORY_WEEKS = 26;
+const HISTORY_DETAILED_WEEKS = 4;
+const HISTORY_MAX_DETAILED_LINES = 24;
+const HISTORY_MAX_CHARS = 2500;
+const DAY_MS = 24 * 3600 * 1000;
+
+/** Una seduta svolta come la legge l'AI: prevista e svolta. */
+function sessionOutcomeLine(s) {
+  let line = `${s.title} (${s.activityType}, ${s.durationMinutes} min, intensità ${s.intensity}): `;
+  if (s.status === "done") {
+    const out = ["completata"];
+    if (s.actualMinutes) out.push(`${s.actualMinutes} min`);
+    if (s.actualDistanceMeters >= 10) out.push(`${(s.actualDistanceMeters / 1000).toFixed(1)} km`);
+    if (s.actualActivityTitle && s.actualActivityTitle !== s.title) {
+      out.push(`svolta come ${s.actualActivityTitle}`);
+    }
+    return line + out.join(", ");
+  }
+  return line + (s.status === "skipped" ? "saltata" : "non registrata");
+}
+
+/** Lunedì (mezzanotte locale) della settimana di un timestamp. */
+function weekStartMillis(millisValue) {
+  const d = new Date(startOfDayMillis(millisValue));
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.getTime();
+}
+
+/** Sedute fatte del piano e dei precedenti: è ciò che il calendario mostra. */
+export const doneHistory = (plan) => [
+  ...(plan?.archivedSessions || []),
+  ...allSessions(plan).filter((s) => s.status === "done"),
+];
+
+/**
+ * Sedute svolte e attività registrate fuori programma, compattate come su
+ * iOS/Android: ultime 4 settimane una per una, le precedenti una riga a
+ * settimana, tetto di caratteri che scarta prima il più vecchio.
+ */
+export function historyLines({ sessions = [], workouts = [] }) {
+  const today = startOfDayMillis(Date.now());
+  const since = today - HISTORY_WEEKS * 7 * DAY_MS;
+  const detailedSince = today - HISTORY_DETAILED_WEEKS * 7 * DAY_MS;
+  const entries = [];
+  for (const s of sessions) {
+    if (s.status !== "done" || !s.date || s.date < since) continue;
+    entries.push({
+      date: s.date,
+      title: s.actualActivityTitle || s.title,
+      minutes: s.actualMinutes || s.durationMinutes || 0,
+      meters: s.actualDistanceMeters || 0,
+      line: `${fmtDate(s.date)}: ${sessionOutcomeLine(s)}`,
+    });
+  }
+  for (const w of workouts) {
+    const date = typeof w.date === "string" ? fromIso(w.date) : w.date;
+    if (!date || date < since) continue;
+    let line = `${fmtDate(date)}: ${w.title} (fuori programma`;
+    if (w.durationMinutes) line += `, ${w.durationMinutes} min`;
+    if (w.distanceMeters >= 10) line += `, ${(w.distanceMeters / 1000).toFixed(1)} km`;
+    entries.push({
+      date,
+      title: w.title,
+      minutes: w.durationMinutes || 0,
+      meters: w.distanceMeters || 0,
+      line: line + ")",
+    });
+  }
+  if (entries.length === 0) return [];
+  entries.sort((a, b) => a.date - b.date);
+
+  let detailed = entries.filter((e) => e.date >= detailedSince);
+  let older = entries.filter((e) => e.date < detailedSince);
+  if (detailed.length > HISTORY_MAX_DETAILED_LINES) {
+    const overflow = detailed.length - HISTORY_MAX_DETAILED_LINES;
+    older = older.concat(detailed.slice(0, overflow));
+    detailed = detailed.slice(overflow);
+  }
+
+  const groups = new Map();
+  for (const e of older) {
+    const key = weekStartMillis(e.date);
+    groups.set(key, [...(groups.get(key) || []), e]);
+  }
+  const weeklyLines = [...groups.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([start, items]) => {
+      const km = items.reduce((n, e) => n + e.meters, 0) / 1000;
+      const counts = new Map();
+      for (const e of items) counts.set(e.title, (counts.get(e.title) || 0) + 1);
+      const top = [...counts.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .slice(0, 3)
+        .map(([title, n]) => `${title} ×${n}`)
+        .join(", ");
+      let line = `- settimana dal ${fmtDate(start)}: ${items.length} attività, ${items.reduce((n, e) => n + e.minutes, 0)} min`;
+      if (km >= 0.01) line += `, ${km.toFixed(1)} km`;
+      return `${line} (${top})`;
+    });
+  const detailedLines = detailed.map((e) => `- ${e.line}`);
+
+  let omitted = false;
+  const size = () => [...weeklyLines, ...detailedLines].reduce((n, l) => n + l.length + 1, 0);
+  while (size() > HISTORY_MAX_CHARS && (weeklyLines.length || detailedLines.length)) {
+    if (weeklyLines.length) weeklyLines.shift();
+    else detailedLines.shift();
+    omitted = true;
+  }
+
+  const lines = [
+    `--- STORICO ALLENAMENTI (piani precedenti e attività registrate, ultime ${HISTORY_WEEKS} settimane) ---`,
+    "Sono sedute e attività che la persona ha già svolto e rivede sul calendario: " +
+      "tienine conto per carico, recupero e varietà, senza ripeterle uguali.",
+  ];
+  if (omitted) lines.push("[… storico più vecchio omesso per brevità]");
+  if (weeklyLines.length) lines.push("Settimane meno recenti (riassunto):", ...weeklyLines);
+  if (detailedLines.length) {
+    lines.push(`Ultime ${HISTORY_DETAILED_WEEKS} settimane, una per una:`, ...detailedLines);
+  }
+  return lines;
+}
+
 /** Contenuto utente, identico a `FitnessPlanPromptBuilder.userContent`. */
-export function userContent({ subjectName, input, startDate, offsets, summary, healthContext }) {
+export function userContent({ subjectName, input, startDate, offsets, summary, healthContext, history = null }) {
   const lines = [];
   lines.push(`Crea il piano di allenamento mensile per ${subjectName}.`);
   lines.push("");
@@ -608,6 +760,12 @@ export function userContent({ subjectName, input, startDate, offsets, summary, h
 
   const notes = (input.notes || "").trim();
   if (notes) lines.push(`Note dell'utente (infortuni, limiti, preferenze): ${notes}`);
+
+  const historyBlock = history ? historyLines(history) : [];
+  if (historyBlock.length) {
+    lines.push("");
+    lines.push(...historyBlock);
+  }
 
   lines.push("");
   lines.push("--- DATI ANTROPOMETRICI E ALLENAMENTI (app Salute) ---");
@@ -814,6 +972,15 @@ export async function generateFitnessPlan({
     locale,
   });
 
+  // Il piano che sta per essere sostituito: le sedute fatte e le attività
+  // registrate passano al nuovo (e all'AI), la rigenerazione non le cancella.
+  const old = await fetchFitnessPlan({ uid, childId }).catch(() => null);
+  const oldPlan = old && !old.deleted ? old : null;
+  const history = {
+    sessions: oldPlan ? doneHistory(oldPlan) : [],
+    workouts: oldPlan?.loggedWorkouts || [],
+  };
+
   const callable = httpsCallable(functions, "askAI", { timeout: 300_000 });
   const { data } = await callable({
     messages: [
@@ -826,6 +993,7 @@ export async function generateFitnessPlan({
           offsets,
           summary,
           healthContext,
+          history,
         }),
       },
     ],
@@ -843,6 +1011,17 @@ export async function generateFitnessPlan({
     startDate,
     messageUnitsConsumed: Number(data.messageUnitsConsumed) || 0,
   });
+  if (oldPlan) {
+    const seen = new Set();
+    const raw = [
+      ...(oldPlan.archivedSessionsRaw || []),
+      ...allSessions(oldPlan).filter((s) => s.status === "done").map(encodeSession),
+    ].filter((s) => !seen.has(s.id) && seen.add(s.id));
+    plan.archivedSessionsRaw = raw.length ? raw : null;
+    plan.archivedSessions = doneHistory(oldPlan).map((s) => ({ ...s, archived: true }));
+    plan.loggedWorkouts = oldPlan.loggedWorkouts ?? null;
+    plan.previousCycles = oldPlan.previousCycles ?? null;
+  }
   await saveFitnessPlan({ uid, childId, document: plan });
 
   return {

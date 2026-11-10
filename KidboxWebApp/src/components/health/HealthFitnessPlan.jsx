@@ -265,7 +265,7 @@ export default function HealthFitnessPlan({
               .filter(Boolean)
               .join(" · ")}
           </span>
-          <span className="sa-session-actions">
+          {!s.archived && (<span className="sa-session-actions">
             <button
               className="sa-chip"
               onClick={() =>
@@ -296,7 +296,7 @@ export default function HealthFitnessPlan({
             >
               {f.move}
             </button>
-          </span>
+          </span>)}
         </div>
 
         {moving?.id === s.id && (
