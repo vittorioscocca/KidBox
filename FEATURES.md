@@ -91,6 +91,7 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 | Funzione | Cosa fa | Piano |
 |---|---|---|
 | Visite, esami, vaccini, cure | Storico clinico per ogni membro, con referti allegati | F |
+| Cure: Calendario per giorno | Accanto al titolo di Cure un selettore Lista \| Calendario: il Calendario mostra un giorno alla volta con le ore a sinistra e le dosi di **tutte** le cure come card piccole sull'ora giusta (colore per cura, più dosi nella stessa ora si impilano), linea rossa dell'ora attuale, preso con orario / saltato / annulla come nella scheda cura; si cambia giorno scorrendo in orizzontale (o con le frecce). Nessun pulsante sui giorni futuri. In Lista, la barra di ricerca parte nascosta sotto il titolo e si rivela tirando giù (solo iOS: `KBSearchBarHiddenUntilPulled`); su iOS e Android il pulsante grande «nuova voce» in fondo alle liste Salute non c'è più (resta il +). iOS `TreatmentsCalendarView` + `TreatmentDoseActions`, Android `TreatmentsDayCalendar`, web `TreatmentsDayView.jsx` (dal 10/11/2026) | F |
 | Cartella clinica | Documento riepilogativo da mostrare al medico | F |
 | Apple Health / Health Connect | Passi, battito, pressione, SpO₂, calorie attive, allenamenti, distanza | F |
 | Piano Alimentare | Menù settimanale AI da età, peso, obiettivi, referti, allergie | € |
