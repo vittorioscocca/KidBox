@@ -2,10 +2,11 @@
 //  TreatmentsCalendarView.swift
 //  KidBox
 //
-//  Vista per giorno di tutte le cure di un figlio: in alto il giorno, sotto le
-//  dosi di tutte le cure in ordine di orario, con gli stessi pulsanti della
-//  scheda cura (preso con orario, saltato, annulla). Si passa da un giorno
-//  all'altro scorrendo in orizzontale (o con le frecce).
+//  Vista per giorno di tutte le cure di un figlio: in alto il giorno, sotto una
+//  linea del tempo con le ore (come il Calendario) e le dosi di tutte le cure
+//  come card piccole sull'ora giusta, con gli stessi pulsanti della scheda cura
+//  (preso con orario, saltato, annulla). Si passa da un giorno all'altro
+//  scorrendo in orizzontale (o con le frecce).
 //
 //  Le dosi si calcolano dalla cura (data di inizio, durata, orari, intervallo)
 //  e dai `KBDoseLog`; la scrittura passa da `TreatmentDoseActions`.
@@ -308,27 +309,105 @@ struct TreatmentsCalendarView: View {
         .scrollPosition(id: $position)
     }
 
+    // Misure della linea del tempo
+    private static let cardHeight: CGFloat = 50
+    private static let cardGap: CGFloat = 4
+    private static let minHourHeight: CGFloat = 44
+    private static let gutterWidth: CGFloat = 46
+
+    /// Ora (0-23) a cui sta una dose nella griglia.
+    private func hour(of dose: CalendarDose) -> Int {
+        guard dose.sortMinutes != Int.max else { return 8 }
+        return min(max(dose.sortMinutes / 60, 0), 23)
+    }
+
+    /// Una pagina = un giorno: le ore a sinistra, le dosi come card piccole sull'ora giusta.
+    /// Se in un'ora ci sono più dosi le card si impilano e la riga dell'ora si allunga
+    /// (affiancate sarebbero troppo strette per i pulsanti).
     private func dayPage(_ id: Int, index: [String: KBDoseLog]) -> some View {
         let day = date(forId: id)
         let list = doses(on: day, index: index)
-        return ScrollView {
-            VStack(spacing: 10) {
-                if list.isEmpty {
-                    Text("Nessuna dose programmata per questo giorno.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                        .padding(14)
-                        .background(RoundedRectangle(cornerRadius: 14).fill(KBTheme.cardBackground(colorScheme)))
-                } else {
-                    ForEach(list) { dose in doseRow(dose) }
+        let byHour = Dictionary(grouping: list, by: { hour(of: $0) })
+        let heights: [CGFloat] = (0..<24).map { h in
+            let n = byHour[h]?.count ?? 0
+            return max(Self.minHourHeight, CGFloat(n) * (Self.cardHeight + Self.cardGap) + Self.cardGap)
+        }
+        var tops: [CGFloat] = []
+        var run: CGFloat = 0
+        for h in heights { tops.append(run); run += h }
+        let isToday = id == todayId
+        // Dove far partire la scroll: un'ora prima dell'ora attuale (oggi) o della prima dose.
+        let startHour: Int = {
+            if isToday { return max(0, cal.component(.hour, from: Date()) - 1) }
+            if let first = list.map({ hour(of: $0) }).min() { return max(0, first - 1) }
+            return 7
+        }()
+        return ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 0) {
+                    if list.isEmpty {
+                        Text("Nessuna dose programmata per questo giorno.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .padding(12)
+                    }
+                    ZStack(alignment: .topLeading) {
+                        VStack(spacing: 0) {
+                            ForEach(0..<24, id: \.self) { h in
+                                hourRow(h, doses: byHour[h] ?? [], height: heights[h])
+                                    .id(h)
+                            }
+                        }
+                        if isToday {
+                            TimelineView(.everyMinute) { ctx in
+                                nowLine(at: ctx.date, tops: tops, heights: heights)
+                            }
+                        }
+                    }
+                    .padding(.bottom, 24)
                 }
             }
-            .padding(.horizontal)
-            .padding(.top, 12)
-            .padding(.bottom, 24)
+            .onAppear {
+                DispatchQueue.main.async { proxy.scrollTo(startHour, anchor: .top) }
+            }
         }
+    }
+
+    private func hourRow(_ h: Int, doses: [CalendarDose], height: CGFloat) -> some View {
+        HStack(alignment: .top, spacing: 0) {
+            Text(verbatim: String(format: "%02d:00", h))
+                .font(.system(size: 10).monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: Self.gutterWidth, alignment: .trailing)
+                .padding(.trailing, 6)
+                .offset(y: -6)
+            VStack(spacing: Self.cardGap) {
+                ForEach(doses) { dose in doseCard(dose) }
+            }
+            .padding(.top, Self.cardGap)
+            .padding(.trailing, 12)
+            .frame(maxWidth: .infinity, alignment: .top)
+            .overlay(alignment: .top) {
+                Rectangle().fill(Color.secondary.opacity(0.2)).frame(height: 0.5)
+            }
+        }
+        .frame(height: height, alignment: .top)
+    }
+
+    /// La linea rossa dell'ora attuale, come nel calendario.
+    private func nowLine(at date: Date, tops: [CGFloat], heights: [CGFloat]) -> some View {
+        let h = min(max(cal.component(.hour, from: date), 0), 23)
+        let m = cal.component(.minute, from: date)
+        let y = tops[h] + heights[h] * CGFloat(m) / 60
+        return HStack(spacing: 0) {
+            Circle().fill(Color.red).frame(width: 7, height: 7)
+                .padding(.leading, Self.gutterWidth + 6 - 3.5)
+            Rectangle().fill(Color.red).frame(height: 1.5)
+        }
+        .offset(y: y - 3.5)
+        .allowsHitTesting(false)
     }
 
     // MARK: - Riga di una dose
@@ -352,51 +431,60 @@ struct TreatmentsCalendarView: View {
         return dose.sortMinutes < minutesNow
     }
 
-    private func doseRow(_ dose: CalendarDose) -> some View {
+    /// Un colore stabile per cura, per riconoscerla a colpo d'occhio come i calendari del Calendario.
+    private func color(for t: KBTreatment) -> Color {
+        let palette: [Color] = [
+            tint, Color(red: 0.20, green: 0.52, blue: 0.95), Color(red: 0.10, green: 0.68, blue: 0.62),
+            Color(red: 0.92, green: 0.34, blue: 0.55), Color(red: 0.95, green: 0.55, blue: 0.15),
+            Color(red: 0.38, green: 0.36, blue: 0.85)
+        ]
+        // Per posizione fra le cure (ordinate per id, quindi stabile): cure diverse, colori diversi.
+        let index = treatments.map(\.id).sorted().firstIndex(of: t.id) ?? 0
+        return palette[index % palette.count]
+    }
+
+    private func doseCard(_ dose: CalendarDose) -> some View {
         let t = dose.treatment
         let taken: Bool = { if case .taken = dose.state { return true } else { return false } }()
         let skipped = dose.state == .skipped
-        let period = TreatmentSchedulePeriod.from(scheduleTime: dose.scheduledTime)
-        return HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(taken ? tint.opacity(0.1) : skipped ? Color.orange.opacity(0.1) : KBTheme.inputBackground(colorScheme))
-                    .frame(width: 40, height: 40)
-                Image(systemName: skipped ? "xmark" : (taken ? "checkmark" : "clock.fill"))
-                    .foregroundStyle(taken ? tint : skipped ? .orange : .secondary)
-                    .font(.subheadline)
-            }
-
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text(verbatim: dose.scheduledTime).font(.subheadline.bold())
-                    if let period { TreatmentPeriodBadge(period: period) }
+        let accent = color(for: t)
+        return HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 5) {
+                    if taken {
+                        Image(systemName: "checkmark.circle.fill").font(.caption).foregroundStyle(.green)
+                    } else if skipped {
+                        Image(systemName: "xmark.circle.fill").font(.caption).foregroundStyle(.orange)
+                    }
+                    Text(verbatim: dose.scheduledTime)
+                        .font(.caption.monospacedDigit().weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(verbatim: t.drugName)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
                 }
-                Text(verbatim: t.drugName)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                Text(verbatim: doseAmount(t)).font(.caption).foregroundStyle(tint)
-                if case .taken(let at) = dose.state, let at {
-                    Text("Presa: \(Self.hourMinute(at))").font(.caption).foregroundStyle(.green)
-                } else if skipped {
-                    Label("Saltata", systemImage: "xmark.circle.fill")
-                        .font(.caption).foregroundStyle(.orange)
-                } else if isOverdue(dose) {
-                    Text("Non registrata").font(.caption).foregroundStyle(.red)
-                } else {
-                    Text("Da assumere").font(.caption).foregroundStyle(.secondary)
+                HStack(spacing: 5) {
+                    Text(verbatim: doseAmount(t)).font(.caption).foregroundStyle(accent)
+                    if case .taken(let at) = dose.state, let at {
+                        Text("Presa: \(Self.hourMinute(at))").font(.caption).foregroundStyle(.green)
+                    } else if skipped {
+                        Text("Saltata").font(.caption).foregroundStyle(.orange)
+                    } else if isOverdue(dose) {
+                        Text("Non registrata").font(.caption).foregroundStyle(.red)
+                    }
                 }
+                .lineLimit(1)
             }
-
             Spacer(minLength: 4)
             doseButtons(dose, taken: taken, skipped: skipped)
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(KBTheme.cardBackground(colorScheme))
-                .shadow(color: KBTheme.shadow(colorScheme), radius: 4, x: 0, y: 1)
-        )
+        .padding(.leading, 10)
+        .padding(.trailing, 8)
+        .frame(height: Self.cardHeight)
+        .background(accent.opacity(taken ? 0.10 : 0.18))
+        .overlay(alignment: .leading) { Rectangle().fill(accent).frame(width: 3.5) }
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .opacity(taken || skipped ? 0.8 : 1)
         .contentShape(Rectangle())
         .onTapGesture {
             coordinator.navigate(to: .pediatricTreatmentDetail(
@@ -412,8 +500,8 @@ struct TreatmentsCalendarView: View {
             Button {
                 TreatmentDoseActions.undo(treatment: t, dayNumber: dose.dayNumber, slotIndex: dose.slotIndex, modelContext: modelContext)
             } label: {
-                Text("Annulla").font(.caption).foregroundStyle(tint)
-                    .padding(.horizontal, 10).padding(.vertical, 6)
+                Text("Annulla").font(.caption2).foregroundStyle(tint)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Capsule().stroke(tint.opacity(0.4)))
             }
             .buttonStyle(.plain)
@@ -421,15 +509,15 @@ struct TreatmentsCalendarView: View {
             Button {
                 TreatmentDoseActions.undo(treatment: t, dayNumber: dose.dayNumber, slotIndex: dose.slotIndex, modelContext: modelContext)
             } label: {
-                Text("Riprendi").font(.caption).foregroundStyle(.orange)
-                    .padding(.horizontal, 10).padding(.vertical, 6)
+                Text("Riprendi").font(.caption2).foregroundStyle(.orange)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Capsule().stroke(Color.orange.opacity(0.4)))
             }
             .buttonStyle(.plain)
         } else if dose.isFutureDay || !t.isActive {
             EmptyView()
         } else {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 Button {
                     TreatmentDoseActions.markSkipped(
                         treatment: t, dayNumber: dose.dayNumber, slotIndex: dose.slotIndex,
@@ -437,7 +525,8 @@ struct TreatmentsCalendarView: View {
                     )
                 } label: {
                     Image(systemName: "xmark")
-                        .frame(width: 32, height: 32)
+                        .font(.caption.weight(.semibold))
+                        .frame(width: 28, height: 28)
                         .background(Circle().fill(KBTheme.inputBackground(colorScheme)))
                         .foregroundStyle(.secondary)
                 }
@@ -458,10 +547,10 @@ struct TreatmentsCalendarView: View {
                     )
                 } label: {
                     Image(systemName: "checkmark")
-                        .frame(width: 32, height: 32)
+                        .font(.caption.weight(.bold))
+                        .frame(width: 28, height: 28)
                         .background(Circle().fill(Color.green))
                         .foregroundStyle(.white)
-                        .font(.subheadline.bold())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text("Segna come presa"))
