@@ -608,6 +608,7 @@ export async function setDoseTaken({
   slotIndex,
   scheduledTime,
   taken,
+  takenAt = null,
 }) {
   const id = doseLogId(treatmentId, dayNumber, slotIndex);
   await setDoc(
@@ -620,12 +621,25 @@ export async function setDoseTaken({
       slotIndex,
       scheduledTime: scheduledTime || "",
       taken,
-      takenAt: taken ? Timestamp.now() : null,
+      takenAt: taken ? (takenAt ? Timestamp.fromMillis(takenAt) : Timestamp.now()) : null,
       isDeleted: false,
       updatedBy: userId,
       updatedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
     },
+    { merge: true }
+  );
+}
+
+/**
+ * Annulla la registrazione di una dose (la dose torna «da prendere»): come su
+ * iOS il documento resta e si marca `isDeleted`, così gli altri dispositivi lo
+ * vedono sparire; una nuova registrazione lo riporta in vita (`isDeleted: false`).
+ */
+export async function clearDose({ familyId, userId, treatmentId, dayNumber, slotIndex }) {
+  await setDoc(
+    doc(doseLogsCol(familyId), doseLogId(treatmentId, dayNumber, slotIndex)),
+    { isDeleted: true, updatedBy: userId, updatedAt: serverTimestamp() },
     { merge: true }
   );
 }

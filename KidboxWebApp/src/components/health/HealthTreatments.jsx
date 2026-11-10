@@ -15,12 +15,14 @@ import {
   deleteTreatment,
   doseLogId,
   isScheduledDoseDay,
+  clearDose,
   saveTreatment,
   setDoseTaken,
   totalDoses,
   treatmentTag,
 } from "../../services/health";
 import HealthAttachments from "./HealthAttachments";
+import TreatmentsDayView from "./TreatmentsDayView";
 import PeriodFilter, { emptyPeriod, inPeriod } from "./PeriodFilter";
 import { frequencyLabel } from "../../services/healthContext";
 import {
@@ -28,6 +30,7 @@ import {
   ModuleHeader,
   fmtDate,
   fromDateInput,
+  localeTag,
   toDateInput,
 } from "./shared";
 
@@ -76,6 +79,8 @@ export default function HealthTreatments({
   const [showEnded, setShowEnded] = useState(false);
   const [period, setPeriod] = useState(emptyPeriod);
   const [search, setSearch] = useState("");
+  // Lista | Calendario (vista a giorno con linea del tempo), come su iOS e Android.
+  const [view, setView] = useState("list");
 
   const activeIds = useMemo(
     () => new Set(activeTreatments.map((t) => t.id)),
@@ -122,14 +127,100 @@ export default function HealthTreatments({
     }
   };
 
+  const takeDose = async (treatment, dayNumber, slotIndex, scheduledTime, takenAt) => {
+    try {
+      await setDoseTaken({
+        familyId,
+        userId,
+        childId: subject.id,
+        treatmentId: treatment.id,
+        dayNumber,
+        slotIndex,
+        scheduledTime,
+        taken: true,
+        takenAt,
+      });
+    } catch (err) {
+      onError(err);
+    }
+  };
+
+  // «Saltata» = log con taken: false (come iOS).
+  const skipDose = async (treatment, dayNumber, slotIndex, scheduledTime) => {
+    try {
+      await setDoseTaken({
+        familyId,
+        userId,
+        childId: subject.id,
+        treatmentId: treatment.id,
+        dayNumber,
+        slotIndex,
+        scheduledTime,
+        taken: false,
+      });
+    } catch (err) {
+      onError(err);
+    }
+  };
+
+  const undoDose = async (treatment, dayNumber, slotIndex) => {
+    try {
+      await clearDose({ familyId, userId, treatmentId: treatment.id, dayNumber, slotIndex });
+    } catch (err) {
+      onError(err);
+    }
+  };
+
+  const calendarTreatments = treatments.filter((t) => !t.isDeleted);
+  const showCalendar = view === "calendar" && calendarTreatments.length > 0;
+
   return (
     <div className="sa-page">
       <ModuleHeader title={c.title} onBack={onBack} backLabel={h.back}>
+        {treatments.length > 0 && (
+          <span className="td-toggle" role="group">
+            <button
+              className={view === "list" ? "on" : ""}
+              title={c.day.viewList}
+              aria-label={c.day.viewList}
+              aria-pressed={view === "list"}
+              onClick={() => setView("list")}
+            >
+              ☰
+            </button>
+            <button
+              className={view === "calendar" ? "on" : ""}
+              title={c.day.viewCalendar}
+              aria-label={c.day.viewCalendar}
+              aria-pressed={view === "calendar"}
+              onClick={() => setView("calendar")}
+            >
+              ▦
+            </button>
+          </span>
+        )}
         <button className="pw-btn-primary" onClick={() => setEditing(emptyTreatment())}>
           + {c.add}
         </button>
       </ModuleHeader>
 
+      {showCalendar ? (
+        <TreatmentsDayView
+          treatments={calendarTreatments}
+          doseLogs={doseLogs}
+          c={c}
+          locale={localeTag(locale)}
+          onTake={takeDose}
+          onSkip={skipDose}
+          onUndo={undoDose}
+          onOpen={(id) => {
+            setView("list");
+            setShowEnded(true);
+            setOpenId(id);
+          }}
+        />
+      ) : (
+      <>
       <div className="sa-filters">
         <input
           className="sa-search"
@@ -222,6 +313,8 @@ export default function HealthTreatments({
             );
           })}
         </ul>
+      )}
+      </>
       )}
 
       {editing && (

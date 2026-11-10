@@ -1042,3 +1042,306 @@
 .fit-cal-day-detail h4::first-letter {
   text-transform: uppercase;
 }
+
+/* ── Cure: vista a giorno con linea del tempo ───────────────────────────── */
+
+.td-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 82%, var(--text) 18%);
+}
+
+.td-toggle button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.td-toggle button.on {
+  background: #9973d9;
+  color: #fff;
+}
+
+.td-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  touch-action: pan-y;
+}
+
+.td-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+.td-nav {
+  width: 40px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: #9973d9;
+  font-size: 1.7rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.td-nav:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.td-title {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  border: 0;
+  background: transparent;
+  color: #9973d9;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.td-title:disabled {
+  cursor: default;
+}
+
+.td-title strong {
+  font-size: 1.05rem;
+}
+
+.td-rel {
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.td-count {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.td-count.ok {
+  color: #27ae60;
+}
+
+.td-empty {
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.td-scroll {
+  max-height: calc(100vh - 260px);
+  min-height: 360px;
+  overflow-y: auto;
+}
+
+.td-grid {
+  position: relative;
+}
+
+.td-row {
+  display: flex;
+  box-sizing: border-box;
+}
+
+.td-hour {
+  width: 46px;
+  flex-shrink: 0;
+  padding-right: 6px;
+  text-align: right;
+  font-size: 0.65rem;
+  font-family: ui-monospace, monospace;
+  color: var(--muted);
+  transform: translateY(-6px);
+}
+
+.td-slot {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 12px 0 0;
+  border-top: 0.5px solid var(--border);
+  box-sizing: border-box;
+}
+
+.td-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  padding: 0 8px 0 8px;
+  border-left: 3.5px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.td-card.taken,
+.td-card.skipped {
+  opacity: 0.8;
+}
+
+.td-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.td-card-line,
+.td-card-sub {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.td-card-line strong {
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.td-card-sub {
+  font-size: 0.74rem;
+}
+
+.td-time {
+  font-size: 0.74rem;
+  font-weight: 600;
+  font-family: ui-monospace, monospace;
+  color: var(--muted);
+}
+
+.td-ic.ok {
+  color: #27ae60;
+}
+
+.td-ic.skip,
+.td-skip {
+  color: #e65100;
+}
+
+.td-ok {
+  color: #27ae60;
+}
+
+.td-late {
+  color: #d32f2f;
+}
+
+.td-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.td-circle {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bg) 82%, var(--text) 18%);
+  color: var(--muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.td-circle.go {
+  background: #27ae60;
+  color: #fff;
+  font-weight: 700;
+}
+
+.td-pill {
+  border: 1px solid;
+  border-radius: 999px;
+  background: transparent;
+  padding: 4px 10px;
+  font-family: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.td-pill.taken {
+  color: #9973d9;
+  border-color: color-mix(in srgb, #9973d9 45%, transparent);
+}
+
+.td-pill.skipped {
+  color: #e65100;
+  border-color: color-mix(in srgb, #e65100 45%, transparent);
+}
+
+.td-now {
+  position: absolute;
+  left: 43px;
+  right: 0;
+  height: 1.5px;
+  background: #d32f2f;
+  pointer-events: none;
+}
+
+.td-now span {
+  position: absolute;
+  left: -3px;
+  top: -2.75px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d32f2f;
+}
+
+.td-quick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.td-quick-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.td-dt {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.td-dt input {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+}

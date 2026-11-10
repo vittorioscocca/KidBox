@@ -17,7 +17,8 @@ export function ModuleHeader({ title, onBack, backLabel, children }) {
   );
 }
 
-export const localeTag = (locale) => (locale === "en" ? "en-US" : "it-IT");
+export const localeTag = (locale) =>
+  ({ en: "en-US", fr: "fr-FR", es: "es-ES" })[locale] || "it-IT";
 
 export const label = (info, locale) =>
   info ? (locale === "en" ? info.en : info.it) : "";
