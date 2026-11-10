@@ -331,3 +331,42 @@ debug token sarebbe un bypass di progetto, vedi la nota sulla console admin.
 simulatori. Se le ore di lavoro convergono sulla percentuale della notte
 (~70-77%), quello è il fondo vero da diagnosticare e i simulatori erano solo
 volume. Se invece sale tutto, il fondo era più piccolo di quanto stimato oggi.
+
+### ⚠️ 10/11/2026 — i valori dei token di debug NON si leggono. Errore mio, da non ripetere
+
+`debugTokens.list` restituisce `name`, `displayName`, `updateTime`, `etag` — **mai
+il valore del token**: è write-only, si scrive alla creazione e non torna più
+indietro.
+
+**La trappola:** l'ultimo segmento di `name` è base64, e decodificandolo esce un
+UUID perfettamente plausibile. **Non è il token.** È un identificatore casuale
+della risorsa. Prova decisiva: ho creato un token con valore
+`5440b28d-a117-4cb9-98e4-9807ed51f8ea` e la risorsa tornata decodifica in
+`fbf4ffe2-c277-423a-b1f0-833ee432be10`.
+
+Ci ho costruito sopra due verdetti sbagliati («il token registrato non
+corrisponde al telefono», detto due volte) e un terzo non dimostrato («il
+dialogo della console rigenera l'UUID quando lo apri»): tutti poggiavano su
+quella decodifica, quindi **nessuno dei tre è sostenuto da prove**. Sono anche
+stati cancellati due token di aprile/maggio sulla base dello stesso ragionamento
+— plausibilmente scaduti davvero (l'app è stata reinstallata il 24/10), ma non
+per il motivo che avevo dato.
+
+**Come si verifica davvero**, in ordine di costo:
+
+1. **Registrare il valore via API invece che dalla console**, così è noto per
+   costruzione (`POST …/debugTokens` con `{"displayName":…, "token":…}`). È
+   l'unico modo di *sapere* cosa c'è registrato.
+2. **Leggere il segreto dal device** e confrontarlo con quello che si è scritto:
+   su Android esce in logcat a ogni avvio
+   (`DebugAppCheckProvider: Enter this debug secret …`), su iOS sta in
+   `GACAppCheckDebugToken` nei plist del container del simulatore.
+3. **La metrica**, ~25 minuti dopo una richiesta vera dal device: è l'unica
+   prova end-to-end che il token sia accettato.
+
+**Mai** dedurre lo stato di un token da un confronto di identificatori.
+
+**Nota su Xiaomi/HyperOS:** `run-as <pkg>` legge ma **non scrive** — la cartella
+dati risulta `Read-only file system` anche per l'uid dell'app. Allineare il
+device al token della console scrivendo in `shared_prefs` non è praticabile lì;
+va fatto il contrario, registrando via API il valore che il device ha già.
