@@ -24,6 +24,19 @@ enum FitnessPlanStore {
         return try? JSONDecoder().decode(FitnessPlanDocument.self, from: data)
     }
 
+    /// Gli id dei profili che hanno un piano salvato su questo dispositivo.
+    /// Le chiavi degli altri dati (settimane riviste, ultima sincronizzazione,
+    /// storico) hanno lo stesso prefisso e vanno scartate.
+    static func storedChildIds() -> [String] {
+        let skipped = ["reviewedWeeks.", "lastHealthSync.", "archive."]
+        return UserDefaults.standard.dictionaryRepresentation().keys.compactMap { key -> String? in
+            guard key.hasPrefix(planPrefix) else { return nil }
+            let rest = String(key.dropFirst(planPrefix.count))
+            guard !rest.isEmpty, !skipped.contains(where: { rest.hasPrefix($0) }) else { return nil }
+            return rest
+        }
+    }
+
     static func save(_ document: FitnessPlanDocument, childId: String) {
         guard let data = try? JSONEncoder().encode(document) else { return }
         UserDefaults.standard.set(data, forKey: planPrefix + childId)

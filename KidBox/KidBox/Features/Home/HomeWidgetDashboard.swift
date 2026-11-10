@@ -9,8 +9,10 @@
 //  fino a quattro righe di anteprima. L'intestazione sceglie la sezione nella
 //  barra laterale, così resta evidenziata come se la si fosse toccata lì.
 //
-//  Il piano fitness della web qui non c'è: vive su Firestore sotto
-//  `users/{uid}` e non in SwiftData, e la Home non fa letture di rete.
+//  Il riquadro Fitness (prossima seduta e andamento della settimana, come la
+//  web) legge il piano dal dispositivo: vive in `FitnessPlanStore`, non in
+//  SwiftData. Solo se qui non ce n'è nessuno fa una sola lettura del piano
+//  personale su Firestore (`users/{uid}/fitnessPlans`), come la web.
 //
 
 import SwiftUI
@@ -18,7 +20,12 @@ import SwiftData
 
 struct HomeWidgetDashboard: View {
     let familyId: String
+    /// Apre il piano fitness del profilo mostrato (direttamente nel modulo, come la web).
+    let onOpenFitness: ((String) -> Void)?
     let onOpen: (SidebarSection) -> Void
+
+    @State private var fitness: FitnessPlanDocument?
+    @State private var fitnessChildId: String?
 
     @Query private var events: [KBCalendarEvent]
     @Query private var todos: [KBTodoItem]
@@ -34,8 +41,13 @@ struct HomeWidgetDashboard: View {
     /// Duo o sull'iPad stretto.
     private let columns = [GridItem(.adaptive(minimum: 300), spacing: 14, alignment: .top)]
 
-    init(familyId: String, onOpen: @escaping (SidebarSection) -> Void) {
+    init(
+        familyId: String,
+        onOpenFitness: ((String) -> Void)? = nil,
+        onOpen: @escaping (SidebarSection) -> Void
+    ) {
         self.familyId = familyId
+        self.onOpenFitness = onOpenFitness
         self.onOpen = onOpen
 
         let fid = familyId
@@ -86,9 +98,11 @@ struct HomeWidgetDashboard: View {
             notesWidget
             expensesWidget
             photosWidget
+            fitnessWidget
             locationWidget
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .task { await loadFitness() }
     }
 
     // MARK: - Riquadri
@@ -192,6 +206,74 @@ struct HomeWidgetDashboard: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
             }
+        }
+    }
+
+    // MARK: - Fitness
+
+    /// Prossima seduta e sedute di oggi, con l'andamento della settimana in cui cade
+    /// la prossima: stessa regola della web (`fitnessSummary` in Home.jsx).
+    private var fitnessSummary: (today: [FitnessSession], next: FitnessSession?, report: FitnessWeeklyReport?)? {
+        guard let plan = fitness else { return nil }
+        let sessions = plan.allSessions.filter { !$0.isRest }
+        guard !sessions.isEmpty else { return nil }
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        let next = sessions.first { $0.status == .planned && cal.startOfDay(for: $0.date) >= today }
+            ?? sessions.first { $0.status == .planned }
+        let todays = sessions.filter { cal.startOfDay(for: $0.date) == today }
+        let report = next.flatMap { FitnessWeeklyReportBuilder.report(for: $0.weekIndex, plan: plan) }
+        return (todays, next, report)
+    }
+
+    private var fitnessWidget: some View {
+        let summary = fitnessSummary
+        return HomeWidget(
+            id: .care, title: "Piano Fitness", symbol: "figure.run",
+            badge: summary?.report.map { "\($0.completedSessions)/\($0.plannedSessions)" },
+            isEmpty: summary == nil
+        ) {
+            if let childId = fitnessChildId { onOpenFitness?(childId) } else { open(.care) }
+        } content: {
+            if let summary {
+                ForEach(summary.today) { session in
+                    HomeWidgetRow(title: session.title, meta: String(localized: "oggi")) {
+                        Circle().fill(Self.fitnessColor(session.status)).frame(width: 8, height: 8)
+                    }
+                }
+                if let next = summary.next, !summary.today.contains(where: { $0.id == next.id }) {
+                    HomeWidgetRow(title: next.title, meta: Self.dayLabel(next.date, allDay: true)) {
+                        Circle().fill(Self.fitnessColor(next.status)).frame(width: 8, height: 8)
+                    }
+                }
+            }
+        }
+    }
+
+    private static func fitnessColor(_ status: FitnessSessionStatus) -> Color {
+        switch status {
+        case .planned: return .blue
+        case .done:    return .green
+        case .skipped: return .orange
+        case .moved:   return .gray
+        }
+    }
+
+    /// Il piano si cerca prima sul dispositivo (il tuo, poi gli altri profili che hanno
+    /// un piano qui); se non c'è nulla, una sola lettura del tuo su Firestore, come la web.
+    private func loadFitness() async {
+        guard fitness == nil, let uid = currentUid else { return }
+        let ids = [uid] + FitnessPlanStore.storedChildIds().filter { $0 != uid }.sorted()
+        for id in ids {
+            if let plan = FitnessPlanStore.load(childId: id), !plan.allSessions.isEmpty {
+                fitness = plan
+                fitnessChildId = id
+                return
+            }
+        }
+        if case .plan(let plan) = await FitnessPlanRemoteStore.fetch(childId: uid) {
+            fitness = plan
+            fitnessChildId = uid
         }
     }
 
@@ -319,6 +401,8 @@ struct HomeWidgetDashboard: View {
 private struct HomeWidget<Content: View>: View {
     let id: HomeCardID
     let title: LocalizedStringKey
+    /// Se presente sostituisce l'icona della scheda (il riquadro Fitness usa la corsa, non il cuore di Salute).
+    var symbol: String? = nil
     let badge: String?
     let isEmpty: Bool
     let onOpen: () -> Void
@@ -329,7 +413,7 @@ private struct HomeWidget<Content: View>: View {
         VStack(alignment: .leading, spacing: 10) {
             Button(action: onOpen) {
                 HStack(spacing: 8) {
-                    Image(systemName: meta.symbol)
+                    Image(systemName: symbol ?? meta.symbol)
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(meta.tint)
                     Text(title)

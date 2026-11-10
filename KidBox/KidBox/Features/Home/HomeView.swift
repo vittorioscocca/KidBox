@@ -496,7 +496,12 @@ struct HomeView: View {
                         // Barra laterale: le sezioni sono già lì, qui si vede
                         // cosa c'è dentro (come la Home della web app).
                         if hasFamily {
-                            HomeWidgetDashboard(familyId: activeFamilyId) { section in
+                            HomeWidgetDashboard(
+                                familyId: activeFamilyId,
+                                onOpenFitness: { childId in
+                                    coordinator.navigate(to: .pediatricFitnessPlan(familyId: activeFamilyId, childId: childId))
+                                }
+                            ) { section in
                                 coordinator.sidebarSection = section
                             }
                         }

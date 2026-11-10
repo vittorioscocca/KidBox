@@ -52,6 +52,7 @@ enum SidebarSection: String, CaseIterable, Identifiable {
     case pets
     case homeItems
     case vehicles
+    case work
     case travel
     case assistant
     case news
@@ -66,7 +67,7 @@ enum SidebarSection: String, CaseIterable, Identifiable {
     static let main: [SidebarSection] = [
         .dashboard, .calendar, .todo, .notes, .shopping, .photos, .health,
         .chat, .documents, .expenses, .wallet, .passwords, .location, .pets,
-        .homeItems, .vehicles, .travel, .assistant, .news
+        .homeItems, .vehicles, .work, .travel, .assistant, .news
     ]
 
     /// Account / family management sections (bottom group in the sidebar).
@@ -92,6 +93,7 @@ enum SidebarSection: String, CaseIterable, Identifiable {
         case .pets:      return "Animali domestici"
         case .homeItems: return "Casa"
         case .vehicles:  return "Garage"
+        case .work:      return "Lavoro"
         case .travel:    return "Viaggi"
         case .assistant: return "Assistente"
         case .news:      return "Notizie"
@@ -119,6 +121,7 @@ enum SidebarSection: String, CaseIterable, Identifiable {
         case .pets:      return "pawprint.fill"
         case .homeItems: return "house.fill"
         case .vehicles:  return "car.fill"
+        case .work:      return "briefcase.fill"
         case .travel:    return "suitcase.fill"
         case .assistant: return "brain.head.profile"
         case .news:      return "newspaper.fill"
@@ -147,6 +150,7 @@ enum SidebarSection: String, CaseIterable, Identifiable {
         case .pets:      return .orange
         case .homeItems: return .brown
         case .vehicles:  return .gray
+        case .work:      return Color(hex: "#3F73BF") ?? .blue
         case .travel:    return .teal
         case .assistant: return .purple
         case .news:      return .orange
@@ -162,7 +166,7 @@ enum SidebarSection: String, CaseIterable, Identifiable {
         case .dashboard, .todo, .chat, .documents, .family, .profile, .assistant, .settings:
             return false
         case .calendar, .notes, .shopping, .photos, .health, .expenses, .wallet,
-             .passwords, .location, .pets, .homeItems, .vehicles, .travel, .news:
+             .passwords, .location, .pets, .homeItems, .vehicles, .work, .travel, .news:
             return true
         }
     }
@@ -187,6 +191,7 @@ enum SidebarSection: String, CaseIterable, Identifiable {
         case .pets:      return .petsHome(familyId: familyId)
         case .homeItems: return .homeItemsHome(familyId: familyId)
         case .vehicles:  return .vehiclesHome(familyId: familyId)
+        case .work:      return .workHome(familyId: familyId)
         case .travel:    return .travelList(familyId: familyId)
         case .assistant: return .askExpert
         case .news:      return .news(familyId: familyId)
@@ -473,7 +478,12 @@ private struct MacDashboardView: View {
                 // Le sezioni sono nella barra laterale: qui si vede cosa c'è
                 // dentro, come nella Home della web app.
                 if let fid = activeFamily?.id, !fid.isEmpty {
-                    HomeWidgetDashboard(familyId: fid) { section in
+                    HomeWidgetDashboard(
+                        familyId: fid,
+                        onOpenFitness: { childId in
+                            coordinator.navigate(to: .pediatricFitnessPlan(familyId: fid, childId: childId))
+                        }
+                    ) { section in
                         coordinator.sidebarSection = section
                     }
                 } else {
