@@ -259,6 +259,9 @@ struct PediatricTreatmentsView: View {
     var body: some View {
         VStack(spacing: 0) {
             if viewMode == .calendar && !treatments.isEmpty {
+                screenHeader
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
                 TreatmentsCalendarView(
                     familyId: familyId,
                     childId: childId,
@@ -275,6 +278,18 @@ struct PediatricTreatmentsView: View {
                 }
             } else {
                 List {
+                    Section {
+                        screenHeader
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 4, trailing: 0))
+                        if timeFilter != .all {
+                            filterPill
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 4, trailing: 0))
+                        }
+                    }
                     if !active.isEmpty {
                         Section {
                             ForEach(active) { t in rowView(t) }
@@ -324,8 +339,9 @@ struct PediatricTreatmentsView: View {
             if isSelecting { selectionBottomBar }
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
-        .safeAreaInset(edge: .top, spacing: 0) { topAccessories }
-        .navigationTitle("Cure")
+        // Il titolo è nell'intestazione (riga della lista) col selettore a fianco, come in Home.
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .kbSearchable(text: $searchText, prompt: "Cerca cura", enabled: viewMode == .list, hiddenAtStart: !didSwitchMode)
         .toolbar { toolbarItems }
         .onChange(of: viewMode) { _, mode in
@@ -358,26 +374,44 @@ struct PediatricTreatmentsView: View {
         }
     }
     
-    // MARK: - Sopra la lista
+    // MARK: - Intestazione: titolo e selettore Lista | Calendario
     
-    /// Selettore Lista | Calendario e pillola del filtro: stanno in un inset così la lista
-    /// resta il primo elemento sotto la barra e la ricerca si nasconde con la scroll.
-    @ViewBuilder
-    private var topAccessories: some View {
-        VStack(spacing: 8) {
-            if !treatments.isEmpty {
-                Picker("", selection: $viewMode) {
-                    Text("Lista").tag(TreatmentViewMode.list)
-                    Text("Calendario").tag(TreatmentViewMode.calendar)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-            }
-            if viewMode == .list && timeFilter != .all {
-                filterPill.padding(.horizontal)
-            }
+    /// Titolo grande con il selettore piccolo a icone a fianco, come in Home. Sta dentro la lista
+    /// (che resta il primo elemento sotto la barra) così scorre con il contenuto e la ricerca,
+    /// che si rivela tirando giù, non finisce mai sotto il selettore.
+    private var screenHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Text("Cure")
+                .font(.largeTitle.bold())
+                .foregroundStyle(KBTheme.primaryText(colorScheme))
+                .accessibilityAddTraits(.isHeader)
+            Spacer(minLength: 8)
+            if !treatments.isEmpty { viewModeToggle }
         }
-        .padding(.vertical, 8)
+    }
+    
+    private var viewModeToggle: some View {
+        HStack(spacing: 2) {
+            viewModeButton(.list, systemImage: "list.bullet", label: "Lista")
+            viewModeButton(.calendar, systemImage: "calendar", label: "Calendario")
+        }
+        .padding(3)
+        .background(Capsule().fill(Color(.secondarySystemFill)))
+    }
+    
+    private func viewModeButton(_ mode: TreatmentViewMode, systemImage: String, label: LocalizedStringKey) -> some View {
+        let selected = viewMode == mode
+        return Button {
+            withAnimation(.snappy(duration: 0.2)) { viewMode = mode }
+        } label: {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(selected ? Color.white : Color.secondary)
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(selected ? tint : Color.clear))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(label))
     }
     
     // MARK: - Row
