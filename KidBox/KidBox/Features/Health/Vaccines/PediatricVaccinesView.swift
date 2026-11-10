@@ -216,7 +216,7 @@ struct PediatricVaccinesView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
-                if isSelecting { selectionBottomBar } else { addButton }
+                if isSelecting { selectionBottomBar }
             }
         }
         .navigationTitle("Vaccini")
@@ -452,23 +452,6 @@ struct PediatricVaccinesView: View {
             }
             .background(backgroundColor)
         }
-    }
-    
-    // MARK: - Add button
-    
-    private var addButton: some View {
-        Button {
-            editingVaccineId = nil
-            showEditSheet = true
-        } label: {
-            Label("Aggiungi vaccino", systemImage: "plus.circle.fill")
-                .frame(maxWidth: .infinity).padding()
-                .background(RoundedRectangle(cornerRadius: 14).fill(tint))
-                .foregroundStyle(.white).font(.headline)
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal).padding(.vertical, 12)
-        .background(backgroundColor)
     }
     
     // MARK: - Delete

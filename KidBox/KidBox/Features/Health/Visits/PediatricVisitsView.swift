@@ -174,7 +174,7 @@ struct PediatricVisitsView: View {
             .background(KBTheme.background(colorScheme))
             
             // ── Bottom bar ──
-            if isSelecting { selectionBottomBar } else { addButton }
+            if isSelecting { selectionBottomBar }
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Visita Medica")
@@ -422,20 +422,6 @@ struct PediatricVisitsView: View {
             }
             .background(KBTheme.background(colorScheme))
         }
-    }
-    
-    // MARK: - Add button
-    
-    private var addButton: some View {
-        Button { showAddSheet = true } label: {
-            Label("Aggiungi nuova visita", systemImage: "plus.circle.fill")
-                .frame(maxWidth: .infinity).padding()
-                .background(RoundedRectangle(cornerRadius: 14).fill(tint))
-                .foregroundStyle(.white).font(.headline)
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal).padding(.vertical, 12)
-        .background(KBTheme.background(colorScheme))
     }
     
     // MARK: - Empty state

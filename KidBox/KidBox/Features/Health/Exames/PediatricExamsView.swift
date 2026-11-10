@@ -190,7 +190,7 @@ struct PediatricExamsView: View {
                 else if filtered.isEmpty { emptyFilterState }
             }
             
-            if isSelecting { selectionBottomBar } else { addButton }
+            if isSelecting { selectionBottomBar }
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Analisi & Esami")
@@ -467,20 +467,6 @@ struct PediatricExamsView: View {
             }
             .background(KBTheme.background(colorScheme))
         }
-    }
-    
-    // MARK: - Add button
-    
-    private var addButton: some View {
-        Button { editingExamId = nil; showAddSheet = true } label: {
-            Label("Nuovo Esame", systemImage: "plus.circle.fill")
-                .frame(maxWidth: .infinity).padding()
-                .background(RoundedRectangle(cornerRadius: 14).fill(tint))
-                .foregroundStyle(.white).font(.headline)
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal).padding(.vertical, 12)
-        .background(KBTheme.background(colorScheme))
     }
     
     // MARK: - Section header

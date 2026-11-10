@@ -336,7 +336,7 @@ struct PediatricTreatmentsView: View {
                 }
             }
             
-            if isSelecting { selectionBottomBar } else { addButton }
+            if isSelecting { selectionBottomBar }
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Cure")
@@ -545,20 +545,6 @@ struct PediatricTreatmentsView: View {
             }
             .background(KBTheme.background(colorScheme))
         }
-    }
-    
-    // MARK: - Add button
-    
-    private var addButton: some View {
-        Button { editingTreatmentId = nil; showAddSheet = true } label: {
-            Label("Nuova Cura", systemImage: "plus.circle.fill")
-                .frame(maxWidth: .infinity).padding()
-                .background(RoundedRectangle(cornerRadius: 14).fill(tint))
-                .foregroundStyle(.white).font(.headline)
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal).padding(.vertical, 12)
-        .background(KBTheme.background(colorScheme))
     }
     
     // MARK: - Section header
