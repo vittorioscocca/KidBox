@@ -8,6 +8,27 @@ service cloud.firestore {
         && request.auth.uid == "efw85HN41nb1rmslevC3wkFpVUo1";
     }
 
+    // Una scrittura su `users/{uid}/aiConversations` non porta testo in chiaro.
+    // Si guardano solo i campi che la scrittura tocca: segnare `isDeleted` su un
+    // documento ancora in chiaro dev'essere possibile. Basta il primo messaggio:
+    // i client vecchi scrivono `content` in tutti, quelli nuovi in nessuno.
+    function aiConversationWriteIsEncrypted() {
+      let d = request.resource.data;
+      let changed = resource == null ? d.keys() : d.diff(resource.data).affectedKeys();
+      return (!changed.hasAny(['summary']) || !(d.get('summary', null) is string))
+          && (!changed.hasAny(['messages'])
+              || d.get('messages', []).size() == 0
+              || !('content' in d.messages[0]));
+    }
+
+    // Un fatto della memoria di famiglia non porta il testo in chiaro (`content`
+    // nei campi che la scrittura tocca). Cancellare resta libero ai membri.
+    function memoryFactWriteIsEncrypted() {
+      let d = request.resource.data;
+      let changed = resource == null ? d.keys() : d.diff(resource.data).affectedKeys();
+      return !changed.hasAny(['content']) || !(d.get('content', null) is string);
+    }
+
     // ── APP HELPERS ────────────────────────────────────────
     function isSignedIn() {
       return request.auth != null;
@@ -262,8 +283,15 @@ service cloud.firestore {
       }
 
       // ── CHAT AI (private per-utente, sync cross-device) ────
+      // Testo dei messaggi e riassunto solo cifrati (`contentEnc`,
+      // `summaryEnc`), dal 10/11/2026. Le build iOS che non cifrano
+      // riscriverebbero in chiaro l'intero array e cancellerebbero i messaggi
+      // che non sanno leggere: qui la loro scrittura viene negata (smettono di
+      // sincronizzare le chat AI, non perdono niente).
       match /aiConversations/{conversationId} {
-        allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
+        allow read, delete: if isSignedIn() && request.auth.uid == uid;
+        allow create, update: if isSignedIn() && request.auth.uid == uid
+                              && aiConversationWriteIsEncrypted();
       }
 
       // ── PIANO ALIMENTARE (privato per-utente, sync cross-device) ──
@@ -623,6 +651,14 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // I fatti della memoria AI solo cifrati (`contentEnc`), dal 10/11/2026.
+      // Esclusi dalle scritture del wildcard qui sotto, che altrimenti la
+      // scavalcherebbe (le rules sono in OR); la lettura resta al wildcard.
+      match /memoryFacts/{factId} {
+        allow delete: if isMemberOrOwner(familyId);
+        allow create, update: if isMemberOrOwner(familyId) && memoryFactWriteIsEncrypted();
+      }
+
       // ── Lavoro (buste paga e contratti) ───────────────────
       // La scheda è di chi l'ha creata: `workProfiles/{uid}` ha per id l'uid del
       // proprietario, e `visibilityMemberIds` è l'elenco autorevole degli adulti
@@ -700,6 +736,7 @@ service cloud.firestore {
           && coll != 'requests'
           && coll != 'workProfiles'
           && coll != 'workRecords'
+          && coll != 'memoryFacts'
           && (coll != 'locations' || docId == request.auth.uid);
       }
     }

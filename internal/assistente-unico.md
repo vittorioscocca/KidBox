@@ -177,7 +177,7 @@ collezione e basta.
 Stesso schema, stesso interruttore, per i **fatti della memoria di famiglia**
 (`families/{id}/memoryFacts`, `contentEnc`): li scrivono iOS, Android e web.
 Qui non c'è il rischio di cancellazione (ogni fatto è un documento suo): un
-client vecchio semplicemente non vede i fatti cifrati. Nel `.next` i fatti
+client vecchio semplicemente non vede i fatti cifrati. Nelle rules i fatti
 escono dalle scritture del wildcard di famiglia e hanno una regola loro.
 
 E per il **testo letto dei documenti** (`families/{id}/documents`,
@@ -193,7 +193,7 @@ documento (senza toccare `updatedAt`); finita la transizione resta cifrato.
 |---|---|---|
 | 1 | iOS, Android e web **leggono** entrambi i formati; scrivono in chiaro finché l'interruttore Remote Config `text_encryption_enabled` è spento | web live, iOS e Android nelle prossime build |
 | 2 | Build iOS e Android diffuse (criterio di `/rules-change`: GA4 `platform × appVersion` a 7 giorni) | fatto 09/11/2026: su ~150 utenti a 7 giorni restano fuori Android 2.3.3 (1) e forse iOS 2.3.9 (1) |
-| 3 | Accendere `text_encryption_enabled` **e** promuovere `firestore.rules.next` (rifiuta le scritture in chiaro) | interruttore acceso il 09/11/2026 alle 15:08 (Remote Config v5, via API); rules da promuovere non prima del 10/11 sera, quando ogni client ha riletto l'interruttore |
+| 3 | Accendere `text_encryption_enabled` **e** promuovere `firestore.rules.next` (rifiuta le scritture in chiaro) | interruttore acceso il 09/11/2026 alle 15:08 (Remote Config v5, via API); rules promosse il 10/11/2026 alle 19:58 (ruleset `db9af5c1`): dall'interruttore 5 scritture di chat su 6 erano cifrate, la sesta di un account interno; sui 104 documenti di chat, 98 vecchi restano in chiaro finché un client li ricifra |
 
 Perché non subito: le build iOS installate riscrivono l'array dei messaggi
 intero a ogni avvio (`reconcileAIChat`) e scartano quelli che non sanno

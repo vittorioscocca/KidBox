@@ -20,19 +20,24 @@ un avviso in testa, e `rules.test.js` gira su entrambi (secondo ambiente con un
 modifica va scritta in tutti e due.** Un allargamento invece è retrocompatibile
 e si deploya subito: le rules vanno live **prima** del client che ne dipende.
 
-**`.next` in attesa dal 02/10/2026:** `users/{uid}/aiConversations` e
-`families/{id}/memoryFacts` accettano solo scritture cifrate
-(`aiConversationWriteIsEncrypted`, `memoryFactWriteIsEncrypted`; i fatti escono
-dalle scritture del wildcard). Ogni differenza col file in produzione sta fra
-`// BEGIN next:<nome>` e `// END next:<nome>`, anche dentro un'espressione. Si
-promuove insieme all'interruttore Remote Config `text_encryption_enabled`,
-quando le build iOS e Android che cifrano sono diffuse
-(`internal/assistente-unico.md`). La suite ha un test che fallisce se i due file
-divergono fuori dai blocchi marcati: promuovendo, togli i marcatori e il test.
+**Oggi non c'è nessun `.next`.** Se ne serve uno: ogni differenza col file
+in produzione sta fra `// BEGIN next:<nome>` e `// END next:<nome>`, anche
+dentro un'espressione, e la suite ha un test che fallisce se i due file
+divergono fuori dai blocchi marcati (promuovendo, togli i marcatori e il test).
 
-L'ultimo `.next` (auto-iscrizione a `members/{uid}` solo con l'invito
-consumato, `joinedWithValidInvite`) è stato promosso il **01/10/2026** e il
-file tolto. Il criterio usato per promuoverlo, da riusare: (1) in produzione
+Gli ultimi due `.next`, promossi e tolti:
+- **10/11/2026**: `users/{uid}/aiConversations` e `families/{id}/memoryFacts`
+  accettano solo scritture cifrate (`aiConversationWriteIsEncrypted`,
+  `memoryFactWriteIsEncrypted`; i fatti escono dalle scritture del wildcard).
+  Promosso il giorno dopo l'interruttore `text_encryption_enabled`
+  (`internal/assistente-unico.md`). Dati al momento: GA4 7 giorni con iOS solo
+  ≥ 2.4.5 e Android ≥ 2.4.6 tranne un 2.3.3; dall'interruttore 5 scritture su 6
+  cifrate (la sesta interna). Controprova: 5 test falliscono sulle regole
+  vecchie, tutti scritture in chiaro.
+- **01/10/2026**: auto-iscrizione a `members/{uid}` solo con l'invito
+  consumato (`joinedWithValidInvite`).
+
+Il criterio usato, da riusare: (1) in produzione
 ogni join reale recente porta il campo (contati i documenti membro non owner
 per data e piattaforma: 9 su 9 dal 22/09); (2) GA4 `platform × appVersion` a
 7 giorni senza versioni che non lo scrivono; (3) suite verde sul nuovo e

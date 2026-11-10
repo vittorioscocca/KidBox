@@ -35,9 +35,7 @@ nei nomi dei campi e il limite è 1 MB (la funzione scarta oltre 900 000
 caratteri). Una fonte che fallisce scrive comunque il documento con `ok:false`.
 
 Rules: `reportSnapshots/{docId}` lettura solo `isAdmin()`, scrittura `false`
-(le funzioni scrivono con IAM, non con le rules). La regola sta **in entrambi**
-`firestore.rules` e `firestore.rules.next`, che devono restare identici fuori
-dai blocchi marcati (la suite lo controlla). Test in `firestore-tests/rules.test.js`.
+(le funzioni scrivono con IAM, non con le rules). Test in `firestore-tests/rules.test.js`.
 
 ## Come li leggono gli script
 
