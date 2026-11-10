@@ -127,8 +127,6 @@ struct PediatricVisitsView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            if selectedPeriod != .all { filterPill.padding(.horizontal).padding(.top, 8) }
-            
             List {
                 if filteredVisits.isEmpty {
                     Section {
@@ -177,12 +175,16 @@ struct PediatricVisitsView: View {
             if isSelecting { selectionBottomBar }
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if selectedPeriod != .all { filterPill.padding(.horizontal).padding(.vertical, 8) }
+        }
         .navigationTitle("Visita Medica")
         .searchable(
             text: $searchText,
             placement: .navigationBarDrawer(displayMode: .automatic),
             prompt: "Cerca visita"
         )
+        .kbSearchBarHiddenUntilPulled()
         .toolbar { toolbarItems }
         .onHandoffDraft(.visit) { d in
             guard d.fields["childId"] == childId else { return }

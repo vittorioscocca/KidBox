@@ -149,8 +149,6 @@ struct PediatricExamsView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            if timeFilter != .all { filterPill.padding(.horizontal).padding(.top, 8) }
-            
             List {
                 if !pending.isEmpty {
                     Section {
@@ -193,12 +191,16 @@ struct PediatricExamsView: View {
             if isSelecting { selectionBottomBar }
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if timeFilter != .all { filterPill.padding(.horizontal).padding(.vertical, 8) }
+        }
         .navigationTitle("Analisi & Esami")
         .searchable(
             text: $searchText,
             placement: .navigationBarDrawer(displayMode: .automatic),
             prompt: "Cerca esame"
         )
+        .kbSearchBarHiddenUntilPulled()
         .toolbar { toolbarItems }
         // Sull'iPhone l'assistente si apre dalla barra in basso, già
         // centrato sugli esami (AgentFocus.forRoute); il pulsante

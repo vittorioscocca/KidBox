@@ -164,9 +164,6 @@ struct PediatricVaccinesView: View {
             backgroundColor.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                if timeFilter != .all {
-                    filterPill.padding(.horizontal).padding(.top, 8)
-                }
                 Group {
                     if vaccines.isEmpty {
                         emptyState
@@ -219,6 +216,9 @@ struct PediatricVaccinesView: View {
                 if isSelecting { selectionBottomBar }
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if timeFilter != .all { filterPill.padding(.horizontal).padding(.vertical, 8) }
+        }
         .navigationTitle("Vaccini")
         .navigationBarTitleDisplayMode(.large)
         .searchable(
@@ -226,6 +226,7 @@ struct PediatricVaccinesView: View {
             placement: .navigationBarDrawer(displayMode: .automatic),
             prompt: "Cerca vaccino"
         )
+        .kbSearchBarHiddenUntilPulled()
         .toolbar { toolbarItems }
         .sheet(isPresented: $showEditSheet) {
             PediatricVaccineEditView(

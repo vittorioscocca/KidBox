@@ -182,6 +182,8 @@ struct PediatricTreatmentsView: View {
     let childId:  String
     
     @State private var viewMode          = TreatmentViewMode.list
+    /// Dopo il primo cambio Lista/Calendario la ricerca non viene più nascosta da sola.
+    @State private var didSwitchMode     = false
     @State private var isSelecting       = false
     @State private var selectedIds       = Set<String>()
     @State private var showDeleteConfirm = false
@@ -256,23 +258,12 @@ struct PediatricTreatmentsView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            if !treatments.isEmpty {
-                Picker("", selection: $viewMode) {
-                    Text("Lista").tag(TreatmentViewMode.list)
-                    Text("Calendario").tag(TreatmentViewMode.calendar)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.top, 8)
-                .padding(.bottom, 4)
-            }
-            
             if viewMode == .calendar && !treatments.isEmpty {
                 TreatmentsCalendarView(
                     familyId: familyId,
                     childId: childId,
                     childName: childName,
-                    treatments: treatments.filter { passesSearch($0) }
+                    treatments: treatments
                 )
                 .kbRefreshable {
                     await SyncCenter.shared.forceRefreshHealth(
@@ -283,12 +274,6 @@ struct PediatricTreatmentsView: View {
                     )
                 }
             } else {
-                if timeFilter != .all {
-                    filterPill
-                        .padding(.horizontal)
-                        .padding(.top, 8)
-                }
-            
                 List {
                     if !active.isEmpty {
                         Section {
@@ -339,14 +324,12 @@ struct PediatricTreatmentsView: View {
             if isSelecting { selectionBottomBar }
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
+        .safeAreaInset(edge: .top, spacing: 0) { topAccessories }
         .navigationTitle("Cure")
-        .searchable(
-            text: $searchText,
-            placement: .navigationBarDrawer(displayMode: .automatic),
-            prompt: "Cerca cura"
-        )
+        .kbSearchable(text: $searchText, prompt: "Cerca cura", enabled: viewMode == .list, hiddenAtStart: !didSwitchMode)
         .toolbar { toolbarItems }
         .onChange(of: viewMode) { _, mode in
+            didSwitchMode = true
             if mode == .calendar { isSelecting = false; selectedIds.removeAll() }
         }
         .onHandoffDraft(.treatment) { d in
@@ -373,6 +356,28 @@ struct PediatricTreatmentsView: View {
         } message: {
             Text("Le cure verranno rimosse da tutti i dispositivi.")
         }
+    }
+    
+    // MARK: - Sopra la lista
+    
+    /// Selettore Lista | Calendario e pillola del filtro: stanno in un inset così la lista
+    /// resta il primo elemento sotto la barra e la ricerca si nasconde con la scroll.
+    @ViewBuilder
+    private var topAccessories: some View {
+        VStack(spacing: 8) {
+            if !treatments.isEmpty {
+                Picker("", selection: $viewMode) {
+                    Text("Lista").tag(TreatmentViewMode.list)
+                    Text("Calendario").tag(TreatmentViewMode.calendar)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+            }
+            if viewMode == .list && timeFilter != .all {
+                filterPill.padding(.horizontal)
+            }
+        }
+        .padding(.vertical, 8)
     }
     
     // MARK: - Row
