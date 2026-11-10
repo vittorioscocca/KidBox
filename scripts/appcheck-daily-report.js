@@ -125,13 +125,24 @@ function verdetto({ perServizio, perApp, perGiorno }) {
       .map(([k]) => k.split("…")[0])
   );
   const mancanti = PIATTAFORME_ATTESE.filter((p) => !piattaformeValide.has(p));
+  // Giorni CONSECUTIVI sopra soglia: il cancello ne vuole 7 di fila, non 7 sparsi.
+  let serie = 0;
+  for (const [, c] of Object.entries(perGiorno).sort()) {
+    serie = (quota(c) ?? 0) >= SOGLIA ? serie + 1 : 0;
+  }
   return {
     valideFirestore: valide,
     soglia: SOGLIA,
     giorniSopraSoglia: giorniSopra,
+    giorniConsecutivi: serie,
     giorniTotali: Object.keys(perGiorno).length,
     piattaformeSenzaAttestazioniValide: mancanti,
-    cancelloSuperato: valide !== null && valide >= SOGLIA && mancanti.length === 0,
+    // ⚠️ Una finestra in ORE non può superare il cancello per costruzione: serve
+    // la serie di 7 giorni. Senza questa guardia una prova mirata di un'ora
+    // stampava "Cancello superato" e invitava ad accendere l'enforcement su
+    // 2.616 richieste (successo il 10/11/2026).
+    cancelloSuperato:
+      !HOURS && valide !== null && valide >= SOGLIA && mancanti.length === 0 && serie >= 7,
   };
 }
 
@@ -167,13 +178,17 @@ function stampa(a, v) {
   L.push("## Verdetto");
   if (v.valideFirestore === null) {
     L.push("  Nessun dato: impossibile dire se l'enforcement si può accendere.");
+  } else if (HOURS) {
+    L.push(`  Finestra di ${HOURS} ore: Firestore al ${v.valideFirestore}% di valide.`);
+    L.push("  ⚠️ Una finestra in ore NON decide il cancello — serve la serie di 7 giorni.");
+    L.push("     Serve a una prova mirata su un device, non a scegliere se accendere.");
   } else if (v.cancelloSuperato) {
     L.push(`  ✅ Cancello superato: Firestore al ${v.valideFirestore}% di valide, tutte le piattaforme attestano.`);
     L.push(`     Prossimo passo: accendere l'enforcement dai prodotti Firebase in console, poi`);
     L.push(`     \`enforceAppCheck: true\` sulle functions. Procedura: internal/app-check.md`);
   } else {
     L.push(`  ⛔️ NON accendere l'enforcement: Firestore è al ${v.valideFirestore}% di valide, serve ≥ ${SOGLIA}%.`);
-    L.push(`     Giorni sopra soglia nella finestra: ${v.giorniSopraSoglia} su ${v.giorniTotali}.`);
+    L.push(`     Giorni sopra soglia: ${v.giorniSopraSoglia} su ${v.giorniTotali}, consecutivi ${v.giorniConsecutivi} (ne servono 7).`);
     if (v.piattaformeSenzaAttestazioniValide.length) {
       L.push(`     Nessuna attestazione valida da: ${v.piattaformeSenzaAttestazioniValide.join(", ")}.`);
       L.push(`     Una piattaforma assente tra le VALID non sta superando l'attestazione: è la prima cosa da risolvere.`);
