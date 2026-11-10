@@ -54,6 +54,27 @@ enum FitnessPlanStore {
         UserDefaults.standard.set(data, forKey: archivePrefix + childId)
     }
 
+    /// Storico che un piano nuovo si porterà dietro, letto senza consumarlo:
+    /// serve a raccontarlo all'AI prima della generazione (`carryHistory` lo
+    /// consuma dopo). Stessa unione e stessa deduplica.
+    static func pendingHistory(
+        from old: FitnessPlanDocument?,
+        childId: String
+    ) -> (sessions: [FitnessSession], workouts: [FitnessLoggedWorkout]) {
+        var sessions = old?.sessionsToArchive ?? []
+        var workouts = old?.logged ?? []
+        if let data = UserDefaults.standard.data(forKey: archivePrefix + childId),
+           let stored = try? JSONDecoder().decode(Archive.self, from: data) {
+            sessions += stored.sessions
+            workouts += stored.workouts
+        }
+        var seen = Set<String>()
+        sessions = sessions.filter { seen.insert($0.id).inserted }
+        var seenWorkouts = Set<String>()
+        workouts = workouts.filter { seenWorkouts.insert($0.id).inserted }
+        return (sessions, workouts)
+    }
+
     /// Porta lo storico (del piano corrente o messo da parte) dentro un piano nuovo.
     static func carryHistory(
         into document: FitnessPlanDocument,

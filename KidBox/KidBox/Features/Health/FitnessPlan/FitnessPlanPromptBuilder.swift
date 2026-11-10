@@ -111,7 +111,9 @@ enum FitnessPlanPromptBuilder {
         allowedDayOffsets: [Int],
         profileSummary: [String],
         healthContext: String,
-        previousPlan: FitnessPlanDocument? = nil
+        previousPlan: FitnessPlanDocument? = nil,
+        historySessions: [FitnessSession] = [],
+        historyWorkouts: [FitnessLoggedWorkout] = []
     ) -> String {
         var lines: [String] = []
         if let previousPlan {
@@ -187,6 +189,12 @@ enum FitnessPlanPromptBuilder {
             lines.append(contentsOf: previousPlanLines(previousPlan))
         }
 
+        let history = historyLines(sessions: historySessions, workouts: historyWorkouts)
+        if !history.isEmpty {
+            lines.append("")
+            lines.append(contentsOf: history)
+        }
+
         lines.append("")
         lines.append("--- DATI ANTROPOMETRICI E ALLENAMENTI (app Salute) ---")
         if profileSummary.isEmpty {
@@ -200,6 +208,111 @@ enum FitnessPlanPromptBuilder {
         lines.append(healthContext)
 
         return lines.joined(separator: "\n")
+    }
+
+    // MARK: - Storico degli allenamenti
+
+    /// Budget dello storico nel prompt: le ultime `historyDetailedWeeks` settimane
+    /// restano seduta per seduta, le precedenti (fino a `historyWeeks`) diventano una
+    /// riga a settimana, e se si supera `historyMaxChars` si scarta prima il più
+    /// vecchio. Come per i referti della salute: contesto limitato, con nota del taglio.
+    private static let historyWeeks = 26
+    private static let historyDetailedWeeks = 4
+    private static let historyMaxDetailedLines = 24
+    private static let historyMaxChars = 2_500
+
+    private struct HistoryEntry {
+        let date: Date
+        let title: String
+        let minutes: Int
+        let meters: Double
+        let line: String
+    }
+
+    /// Sedute svolte nei piani precedenti e attività registrate fuori programma,
+    /// ordinate per data: ciò che la persona ha fatto davvero e vede in UI.
+    static func historyLines(
+        sessions: [FitnessSession],
+        workouts: [FitnessLoggedWorkout]
+    ) -> [String] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        let since = cal.date(byAdding: .day, value: -historyWeeks * 7, to: today) ?? .distantPast
+        let detailedSince = cal.date(byAdding: .day, value: -historyDetailedWeeks * 7, to: today) ?? .distantPast
+
+        var entries: [HistoryEntry] = []
+        for session in sessions where session.status == .done && session.date >= since {
+            entries.append(HistoryEntry(
+                date: session.date,
+                title: session.actualActivityTitle ?? session.title,
+                minutes: session.actualMinutes ?? session.durationMinutes,
+                meters: session.actualDistanceMeters ?? 0,
+                line: "\(formatDate(session.date)): " + sessionOutcomeLine(session)
+            ))
+        }
+        for workout in workouts where workout.date >= since {
+            var line = "\(formatDate(workout.date)): \(workout.title) (fuori programma"
+            if let minutes = workout.durationMinutes { line += ", \(minutes) min" }
+            if let meters = workout.distanceMeters, meters >= 10 {
+                line += String(format: ", %.1f km", meters / 1000)
+            }
+            entries.append(HistoryEntry(
+                date: workout.date, title: workout.title,
+                minutes: workout.durationMinutes ?? 0, meters: workout.distanceMeters ?? 0,
+                line: line + ")"
+            ))
+        }
+        guard !entries.isEmpty else { return [] }
+        entries.sort { $0.date < $1.date }
+
+        var detailed = entries.filter { $0.date >= detailedSince }
+        var older = entries.filter { $0.date < detailedSince }
+        if detailed.count > historyMaxDetailedLines {
+            older += detailed.prefix(detailed.count - historyMaxDetailedLines)
+            detailed = Array(detailed.suffix(historyMaxDetailedLines))
+        }
+
+        // Le più vecchie, una riga per settimana (lunedì come inizio).
+        var weekly: [(Date, String)] = []
+        let grouped = Dictionary(grouping: older) {
+            cal.dateInterval(of: .weekOfYear, for: $0.date)?.start ?? cal.startOfDay(for: $0.date)
+        }
+        for (weekStart, items) in grouped.sorted(by: { $0.key < $1.key }) {
+            let minutes = items.reduce(0) { $0 + $1.minutes }
+            let km = items.reduce(0.0) { $0 + $1.meters } / 1000
+            var counts: [String: Int] = [:]
+            for item in items { counts[item.title, default: 0] += 1 }
+            let top = counts.sorted { $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value }
+                .prefix(3).map { "\($0.key) ×\($0.value)" }.joined(separator: ", ")
+            var line = "settimana dal \(formatDate(weekStart)): \(items.count) attività, \(minutes) min"
+            if km >= 0.01 { line += String(format: ", %.1f km", km) }
+            weekly.append((weekStart, line + " (\(top))"))
+        }
+
+        var weeklyLines = weekly.map { "- " + $0.1 }
+        var detailedLines = detailed.map { "- " + $0.line }
+        var omitted = false
+        func size() -> Int { (weeklyLines + detailedLines).reduce(0) { $0 + $1.count + 1 } }
+        while size() > historyMaxChars, !(weeklyLines.isEmpty && detailedLines.isEmpty) {
+            if !weeklyLines.isEmpty { weeklyLines.removeFirst() } else { detailedLines.removeFirst() }
+            omitted = true
+        }
+
+        var lines = ["--- STORICO ALLENAMENTI (piani precedenti e attività registrate, ultime \(historyWeeks) settimane) ---"]
+        lines.append(
+            "Sono sedute e attività che la persona ha già svolto e rivede sul calendario: "
+            + "tienine conto per carico, recupero e varietà, senza ripeterle uguali."
+        )
+        if omitted { lines.append("[… storico più vecchio omesso per brevità]") }
+        if !weeklyLines.isEmpty {
+            lines.append("Settimane meno recenti (riassunto):")
+            lines.append(contentsOf: weeklyLines)
+        }
+        if !detailedLines.isEmpty {
+            lines.append("Ultime \(historyDetailedWeeks) settimane, una per una:")
+            lines.append(contentsOf: detailedLines)
+        }
+        return lines
     }
 
     // MARK: - Mese precedente

@@ -560,7 +560,7 @@ struct FitnessPlanView: View {
     /// Intestazione con il mese e le frecce, limitate ai mesi coperti dal piano.
     private func monthHeader(_ plan: FitnessPlanDocument) -> some View {
         let cal = Calendar.current
-        let first = startOfMonth(plan.startDate)
+        let first = startOfMonth(plan.earliestHistoryDate)
         let last = startOfMonth(plan.allSessions.last?.date ?? plan.startDate)
 
         return HStack {
@@ -719,7 +719,7 @@ struct FitnessPlanView: View {
     /// perché è la domanda che viene dopo "cosa devo fare oggi": cosa ho fatto
     /// finora.
     private func sessionsButton(_ plan: FitnessPlanDocument) -> some View {
-        let done = plan.allSessions.filter { $0.status == .done }.count
+        let done = plan.doneHistory.count
 
         return NavigationLink {
             FitnessSessionsView(plan: plan, childId: childId)
@@ -1585,7 +1585,8 @@ struct FitnessPlanView: View {
             vaccines: allVaccines,
             visits: allVisits,
             exams: allExams,
-            previousPlan: finishedPlan
+            previousPlan: finishedPlan,
+            history: FitnessPlanStore.pendingHistory(from: plan, childId: childId)
         )
         estimatedUnits = FitnessPlanGenerator.estimate(payload: payload).messageUnits
     }
@@ -1643,7 +1644,10 @@ struct FitnessPlanView: View {
             exams: allExams,
             // Qualunque strada porti a rigenerare un piano finito (il pulsante
             // del consuntivo o le impostazioni), il mese concluso diventa storia.
-            previousPlan: finishedPlan
+            previousPlan: finishedPlan,
+            // Sedute e attività già visibili in calendario: l'AI le conosce
+            // anche se il piano non è concluso o è stato eliminato.
+            history: FitnessPlanStore.pendingHistory(from: plan, childId: childId)
         )
         estimatedUnits = FitnessPlanGenerator.estimate(payload: payload).messageUnits
 

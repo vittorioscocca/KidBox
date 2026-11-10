@@ -724,9 +724,23 @@ struct FitnessPlanDocument: Codable, Equatable {
     }
 
     /// Sessioni di una giornata specifica.
+    /// Comprende le sedute fatte dei piani precedenti (`archivedSessions`): dopo
+    /// una rigenerazione restano visibili sul calendario e nel dettaglio giorno.
     func sessions(on day: Date) -> [FitnessSession] {
         let cal = Calendar.current
-        return allSessions.filter { cal.isDate($0.date, inSameDayAs: day) }
+        let current = allSessions.filter { cal.isDate($0.date, inSameDayAs: day) }
+        let currentIds = Set(current.map(\.id))
+        let archived = (archivedSessions ?? []).filter {
+            cal.isDate($0.date, inSameDayAs: day) && !currentIds.contains($0.id)
+        }
+        return (archived + current).sorted { $0.date < $1.date }
+    }
+
+    /// Primo giorno con qualcosa da mostrare sul calendario: l'inizio del piano
+    /// o, se prima, la seduta o l'attività più vecchia che il piano si porta dietro.
+    var earliestHistoryDate: Date {
+        let dates = (archivedSessions ?? []).map(\.date) + logged.map(\.date) + [startDate]
+        return dates.min() ?? startDate
     }
 
     /// Settimana che contiene la data indicata (1-based), `nil` se fuori piano.
