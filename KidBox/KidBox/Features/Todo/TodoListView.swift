@@ -48,6 +48,11 @@ struct TodoListView: View {
     @State private var quickDraft: TodoQuickDraft? = nil
     @FocusState private var quickFocus: TodoQuickField?
 
+    /// Modifica in riga di un to-do esistente (il tocco): stessa riga del «+»,
+    /// riempita coi suoi dati. La «i» apre la scheda completa.
+    @State private var inlineEditId: String? = nil
+    @State private var inlineDraft = TodoQuickDraft()
+
     // Query per recuperare il nome della lista
     @Query private var allLists: [KBTodoList]
     
@@ -138,9 +143,21 @@ struct TodoListView: View {
                         .listRowBackground(cardBackground)
                 } else {
                     ForEach(visibleTodos) { todo in
-                        row(todo)
+                        if todo.id == inlineEditId {
+                            TodoQuickAddRow(
+                                draft: $inlineDraft,
+                                focus: $quickFocus,
+                                members: quickMembers,
+                                onSubmit: closeInline,
+                                onInfo: openInlineInfo
+                            )
                             .id(todo.id)
                             .listRowBackground(cardBackground)
+                        } else {
+                            row(todo)
+                                .id(todo.id)
+                                .listRowBackground(cardBackground)
+                        }
                     }
                     .onDelete(perform: deleteTodos)
                 }
@@ -166,7 +183,7 @@ struct TodoListView: View {
             .searchable(text: $searchText, prompt: "Cerca nei to-do")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    if quickDraft != nil {
+                    if quickDraft != nil || inlineEditId != nil {
                         // Come la spunta blu di Promemoria: salva quello scritto e chiude.
                         Button {
                             closeQuick()
@@ -269,6 +286,7 @@ struct TodoListView: View {
                 }
             }
             .onDisappear {
+                commitInline()
                 // Uscendo con un titolo scritto e non confermato: lo si tiene.
                 if let draft = quickDraft {
                     TodoQuickAdd.create(draft, familyId: familyId, childId: childId,
@@ -307,12 +325,112 @@ struct TodoListView: View {
     }
 
     private func closeQuick() {
+        if inlineEditId != nil { closeInline(); return }
         if let draft = quickDraft {
             TodoQuickAdd.create(draft, familyId: familyId, childId: childId,
                                 listId: listId, modelContext: modelContext)
         }
         quickFocus = nil
         withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { quickDraft = nil }
+    }
+
+    // MARK: - Modifica in riga
+
+    private func startInline(_ todo: KBTodoItem) {
+        // Una riga aperta si chiude (salvando) prima di aprirne un'altra.
+        commitInline()
+        if let draft = quickDraft, !draft.isEmpty {
+            TodoQuickAdd.create(draft, familyId: familyId, childId: childId,
+                                listId: listId, modelContext: modelContext)
+        }
+        var d = TodoQuickDraft()
+        d.id = todo.id
+        d.title = todo.title
+        d.notes = todo.notes ?? ""
+        d.due = todo.dueAt
+        d.assignedTo = todo.assignedTo
+        d.isUrgent = (todo.priorityRaw ?? 0) == 1
+        inlineDraft = d
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+            quickDraft = nil
+            inlineEditId = todo.id
+        }
+    }
+
+    private func closeInline() {
+        commitInline()
+        quickFocus = nil
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { inlineEditId = nil }
+    }
+
+    private func openInlineInfo() {
+        guard let id = inlineEditId else { return }
+        commitInline()
+        quickFocus = nil
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { inlineEditId = nil }
+        editingTarget = TodoEditTarget(id: UUID().uuidString, todoId: id)
+    }
+
+    /// Scrive sul to-do quello che è cambiato nella riga. Titolo vuoto: non si tocca.
+    private func commitInline() {
+        guard let id = inlineEditId, !inlineDraft.isEmpty,
+              let todo = todos.first(where: { $0.id == id }) else { return }
+        let d = inlineDraft
+        let uid = KBUid.current ?? "local"
+        let cal = Calendar.current
+        let newNotes: String? = {
+            let n = d.notes.trimmingCharacters(in: .whitespacesAndNewlines)
+            return n.isEmpty ? nil : n
+        }()
+        let sameDue: Bool = {
+            switch (todo.dueAt, d.due) {
+            case (nil, nil): return true
+            case let (a?, b?): return cal.isDate(a, inSameDayAs: b)
+            default: return false
+            }
+        }()
+        let urgent = d.isUrgent
+        let wasUrgent = (todo.priorityRaw ?? 0) == 1
+        let titleChanged = todo.title != d.trimmedTitle
+        let assigneeChanged = todo.assignedTo != d.assignedTo
+        guard titleChanged || (todo.notes ?? "") != (newNotes ?? "") || !sameDue
+                || urgent != wasUrgent || assigneeChanged else { return }
+
+        todo.title = d.trimmedTitle
+        todo.notes = newNotes
+        if !sameDue {
+            todo.dueAt = d.due.map(kbStartOfDayReminderTime)
+            todo.dueHasTime = false
+        }
+        todo.priorityRaw = urgent ? 1 : 0
+        todo.assignedTo = KBVisibilityScope.normalized(todo.visibilityScope) == KBVisibilityScope.onlyCreator
+            ? uid : d.assignedTo
+        todo.updatedBy = uid
+        todo.updatedAt = Date()
+        todo.syncState = .pendingUpsert
+        todo.lastSyncError = nil
+
+        // Il promemoria segue titolo, data e urgenza: si riarma.
+        if todo.reminderEnabled {
+            TodoReminderService.cancel(todoId: todo.id)
+            todo.reminderEnabled = false
+            todo.reminderId = nil
+            if let due = todo.dueAt, due > Date() {
+                let tid = todo.id, lid = todo.listId ?? listId, t = todo.title, u = todo.isUrgent
+                Task { @MainActor in
+                    if let rid = try? await TodoReminderService.schedule(
+                        todoId: tid, listId: lid, familyId: familyId, childId: childId,
+                        title: t, dueAt: due, isUrgent: u) {
+                        todo.reminderEnabled = true
+                        todo.reminderId = rid
+                        try? modelContext.save()
+                    }
+                }
+            }
+        }
+        try? modelContext.save()
+        SyncCenter.shared.enqueueTodoUpsert(todoId: todo.id, familyId: familyId, modelContext: modelContext)
+        Task { await SyncCenter.shared.flush(modelContext: modelContext, remote: remote) }
     }
 
     /// La «i»: salva quello che c'è e apre la scheda completa su quel to-do.
@@ -474,8 +592,8 @@ struct TodoListView: View {
         )
         .contentShape(Rectangle())
         .onTapGesture {
-            KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] tap edit todoId=\(todo.id) listId=\(listId)")
-            editingTarget = TodoEditTarget(id: todo.id, todoId: todo.id)
+            KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] tap inline edit todoId=\(todo.id) listId=\(listId)")
+            startInline(todo)
         }
     }
     

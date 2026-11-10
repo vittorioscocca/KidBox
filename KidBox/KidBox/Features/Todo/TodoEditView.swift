@@ -27,6 +27,10 @@ struct TodoEditView: View {
     
     // Load todo if editing
     @Query private var editTodos: [KBTodoItem]
+
+    // Liste tra cui spostare il to-do (solo in modifica)
+    @Query private var familyLists: [KBTodoList]
+    @State private var selectedListId: String = ""
     
     private var currentUID: String? { KBUid.current }
     
@@ -89,6 +93,12 @@ struct TodoEditView: View {
             sort: \.displayName
         )
         
+        _familyLists = Query(
+            filter: #Predicate<KBTodoList> { $0.familyId == fid && !$0.isDeleted },
+            sort: \.name
+        )
+        _selectedListId = State(initialValue: listId)
+
         // ✅ Query solo del todo che sto editando (se nil -> empty)
         if let todoIdToEdit {
             _editTodos = Query(filter: #Predicate<KBTodoItem> { $0.id == todoIdToEdit })
@@ -111,6 +121,18 @@ struct TodoEditView: View {
         return true
     }
     
+    /// Le liste dove si può mettere il to-do: quelle create da me (o senza autore,
+    /// precedenti al campo) e comunque quella dove si trova adesso.
+    private var movableLists: [KBTodoList] {
+        let uid = currentUID
+        let current = editingTodo?.listId ?? listId
+        return familyLists.filter { l in
+            if l.id == current || l.id == selectedListId { return true }
+            guard let owner = l.createdBy, !owner.isEmpty else { return true }
+            return owner == uid
+        }
+    }
+
     private var familyMembers: [KBFamilyMember] {
         members.filter { $0.familyId == familyId && !$0.isDeleted }
     }
@@ -214,6 +236,16 @@ struct TodoEditView: View {
                 
                 Section {
                     TextField("Titolo", text: $title)
+                }
+
+                if !isNewTodo, movableLists.count > 1 {
+                    Section {
+                        Picker("Lista", selection: $selectedListId) {
+                            ForEach(movableLists, id: \.id) { l in
+                                Text(l.name).tag(l.id)
+                            }
+                        }
+                    }
                 }
 
                 Section {
@@ -495,6 +527,7 @@ struct TodoEditView: View {
     /// Popola il form state da un `KBTodoItem` già risolto.
     @MainActor
     private func populate(from t: KBTodoItem) {
+        selectedListId = t.listId ?? listId
         title         = t.title
         notes         = t.notes ?? ""
         dueDate       = t.dueAt
@@ -564,6 +597,7 @@ struct TodoEditView: View {
         if let existing = editingTodo {
             // ✅ Update local fields
             existing.title = trimmedTitle
+            if !selectedListId.isEmpty, selectedListId != existing.listId { existing.listId = selectedListId }
             existing.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
             existing.dueAt = resolvedDue
             existing.dueHasTime = hasTime

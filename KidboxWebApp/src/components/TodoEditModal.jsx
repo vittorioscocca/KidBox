@@ -9,6 +9,7 @@ import { VISIBILITY_FAMILY, VISIBILITY_MEMBERS, normalizedVisibilityScope } from
 import { useFamily } from "../FamilyContext";
 import { createRequest, requestAvailability } from "../services/requests";
 import { useTodos } from "../hooks/useTodos";
+import { useTodoLists } from "../hooks/useTodoLists";
 import { useFamilyCollection } from "../hooks/useFamilyCollection";
 import Modal from "./Modal";
 import VisibilityPickerModal, { visibilityChipLabel } from "./VisibilityPickerModal";
@@ -25,6 +26,7 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
   const { t } = useTranslation();
   const members = useFamilyMembers(familyId);
   const { currentFamily } = useFamily();
+  const allLists = useTodoLists(familyId);
 
   // Come `canEditVisibility` in TodoEditView: la cambia solo chi ha creato il
   // to-do (o chiunque, se il documento è legacy senza createdBy).
@@ -37,6 +39,7 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
   const [dueDate, setDueDate] = useState(
     toLocalInputValue(todo?.dueAt?.toDate?.() ?? new Date())
   );
+  const [selectedListId, setSelectedListId] = useState(todo?.listId ?? "");
   const [isUrgent, setIsUrgent] = useState((todo?.priority ?? 0) === 1);
   const [assignedTo, setAssignedTo] = useState(todo?.assignedTo ?? null);
   const [visibilityScope, setVisibilityScope] = useState(
@@ -60,6 +63,11 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
   // «Chi è libero»: to-do ed eventi servono solo quando si può chiedere.
   const { todos: familyTodos } = useTodos(canAsk ? familyId : null, user.uid);
   const { items: calendarEvents } = useFamilyCollection(familyId, "calendarEvents", { enabled: canAsk });
+
+  // Le liste dove si può spostare: quelle create da me (o senza autore) e quella attuale.
+  const movableLists = allLists.filter(
+    (l) => l.id === todo?.listId || !(l.createdBy || "").trim() || l.createdBy === user.uid
+  );
 
   const assigneeLabel = () => {
     // Vuoto (non nullo) = preso da fuori dall'app con una richiesta.
@@ -110,7 +118,7 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
       const payload = {
         childId: isEdit ? todo.childId : childId,
         title: trimmed,
-        listId: isEdit ? todo.listId ?? "" : listId || "",
+        listId: isEdit ? selectedListId || (todo.listId ?? "") : listId || "",
         isDone: isEdit ? todo.isDone ?? false : false,
         isDeleted: false,
         notes: notes.trim() || null,
@@ -271,6 +279,29 @@ export default function TodoEditModal({ familyId, childId, listId, listName, tod
         autoFocus
         onChange={(e) => setTitle(e.target.value)}
       />
+
+      {isEdit && movableLists.length > 1 && (
+        <>
+          <div className="modal-label">{t.todo.list}</div>
+          <div className="modal-section">
+            <div className="modal-row">
+              <select
+                value={selectedListId}
+                onChange={(e) => setSelectedListId(e.target.value)}
+              >
+                {!movableLists.some((l) => l.id === selectedListId) && (
+                  <option value={selectedListId}>—</option>
+                )}
+                {movableLists.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="modal-label">{t.todo.notes}</div>
       <textarea

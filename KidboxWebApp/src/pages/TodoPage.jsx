@@ -5,6 +5,7 @@ import { db } from "../firebase";
 import { useFamily } from "../FamilyContext";
 import { useAuth } from "../AuthContext";
 import { useTranslation } from "../i18n/LocaleContext";
+import { sealDocWrite } from "../services/sectionCrypto";
 import { useTodos, todosCol } from "../hooks/useTodos";
 import { useTodoLists, todoListsCol } from "../hooks/useTodoLists";
 import { useChildren } from "../hooks/useChildren";
@@ -46,6 +47,8 @@ export default function TodoPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState(null);
   const [localError, setLocalError] = useState(null);
+  // Il clic su un to-do apre la modifica in riga; la «i» il modale completo.
+  const [inline, setInline] = useState(null); // { id, title, notes, urgent }
   const [search, setSearch] = useState("");
 
   const activeFilter =
@@ -97,6 +100,66 @@ export default function TodoPage() {
       );
     } catch (err) {
       setLocalError(err.message);
+    }
+  };
+
+  const startInline = async (todo) => {
+    await commitInline();
+    setInline({
+      id: todo.id,
+      title: todo.title ?? "",
+      notes: todo.notes ?? "",
+      urgent: (todo.priority ?? 0) === 1,
+    });
+  };
+
+  /** Scrive titolo, note e urgenza se sono cambiati; il resto non si tocca. */
+  const commitInline = async () => {
+    const cur = inline;
+    if (!cur) return;
+    setInline(null);
+    const todo = todos.find((x) => x.id === cur.id);
+    const title = cur.title.trim();
+    const notes = cur.notes.trim();
+    if (!todo || !title) return;
+    const priority = cur.urgent ? 1 : 0;
+    if (
+      title === todo.title &&
+      notes === (todo.notes ?? "").trim() &&
+      priority === (todo.priority ?? 0)
+    ) {
+      return;
+    }
+    try {
+      const ref = doc(todosCol(currentFamilyId), todo.id);
+      await setDoc(
+        ref,
+        await sealDocWrite("todos", ref, {
+          title,
+          notes: notes || null,
+          priority,
+          updatedBy: user.uid,
+          updatedAt: serverTimestamp(),
+        }),
+        { merge: true }
+      );
+    } catch (err) {
+      setLocalError(err.message);
+    }
+  };
+
+  const openInlineInfo = () => {
+    const cur = inline;
+    if (!cur) return;
+    const todo = todos.find((x) => x.id === cur.id);
+    commitInline();
+    if (todo) {
+      setEditing({
+        ...todo,
+        title: cur.title.trim() || todo.title,
+        notes: cur.notes.trim() || null,
+        priority: cur.urgent ? 1 : 0,
+      });
     }
   };
 
@@ -284,6 +347,45 @@ export default function TodoPage() {
               assigneeName(todo.assignedTo) || (external ? t.requests.externalAssignee(external) : null);
             const isUrgent = (todo.priority ?? 0) === 1;
             const notes = (todo.notes || "").trim();
+            if (inline?.id === todo.id) {
+              return (
+                <li key={todo.id} className="item-inline">
+                  <div className="item-body">
+                    <input
+                      className="modal-field"
+                      autoFocus
+                      value={inline.title}
+                      placeholder={t.todo.titlePlaceholder}
+                      onChange={(e) => setInline({ ...inline, title: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commitInline();
+                        if (e.key === "Escape") setInline(null);
+                      }}
+                    />
+                    <textarea
+                      className="modal-field"
+                      value={inline.notes}
+                      placeholder={t.todo.notesPlaceholder}
+                      onChange={(e) => setInline({ ...inline, notes: e.target.value })}
+                    />
+                    <label className="item-inline-urgent">
+                      <input
+                        type="checkbox"
+                        checked={inline.urgent}
+                        onChange={(e) => setInline({ ...inline, urgent: e.target.checked })}
+                      />{" "}
+                      {t.todo.urgent}
+                    </label>
+                  </div>
+                  <button className="item-check" onClick={commitInline} title="✓">
+                    ✓
+                  </button>
+                  <button className="item-check" onClick={openInlineInfo} title="ⓘ">
+                    ⓘ
+                  </button>
+                </li>
+              );
+            }
             return (
               <li key={todo.id}>
                 <button
@@ -293,7 +395,7 @@ export default function TodoPage() {
                 >
                   {todo.isDone ? "◉" : "○"}
                 </button>
-                <div className="item-body" onClick={() => setEditing(todo)}>
+                <div className="item-body" onClick={() => startInline(todo)}>
                   <div className="item-title-row">
                     <span className={todo.isDone ? "done" : ""}>{todo.title}</span>
                     {isUrgent && <span className="urgent-badge">{t.todo.urgent}</span>}
