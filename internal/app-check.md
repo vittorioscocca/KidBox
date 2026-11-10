@@ -370,3 +370,44 @@ per il motivo che avevo dato.
 dati risulta `Read-only file system` anche per l'uid dell'app. Allineare il
 device al token della console scrivendo in `shared_prefs` non è praticabile lì;
 va fatto il contrario, registrando via API il valore che il device ha già.
+
+### ✅ 10/11/2026, 11:26 — il fondo era il Xiaomi. 98% in un'ora
+
+Finestra di 1 ora dopo la registrazione del token del Xiaomi:
+
+| | valore |
+|---|---|
+| Firestore | 2.616 richieste, **98% VALID** |
+| INVALID | **42** |
+| per app | android 1.106 · ios 1.090 · web 380, tutte VALID |
+
+**Baseline della stessa fascia oraria** (media 7 giorni, bucket 11:00): **66%**,
+con ~1.000 INVALID l'ora. Le INVALID sono scese del **~96%** togliendo di mezzo
+**un solo telefono**.
+
+**Conclusione: l'ipotesi del 10/11 mattina era sbagliata.** Avevo scritto che il
+fondo notturno (~4.200 INVALID a notte, 70-77% anche alle 3) veniva da device di
+utenti veri, perché i simulatori iOS di notte sono spenti. Il ragionamento
+reggeva ma la premessa era incompleta: il Xiaomi è un telefono vero, acceso, con
+listener, FCM e sync che girano **anche di notte** — ha la forma piatta sulle 24
+ore che avevo attribuito agli utenti. Generava INVALID da ogni reinstallazione
+della build debug successiva a maggio (i token registrati erano di aprile e
+maggio).
+
+**L'adozione reale tra gli utenti era già alta**: non erano loro a tenere chiuso
+il cancello, ero io.
+
+**Il cancello però NON è ancora superato**, e la finestra a 7 giorni dice ancora
+**73%** perché contiene la settimana sporca. Servono **7 giorni consecutivi**
+≥90%: il 10/11 è parziale (quasi tutto pre-fix), quindi il primo giorno pulito è
+l'**11/11** e la serie si completa il **17/11**. Rimisurare il **18/11**.
+
+Residuo da capire, ma non bloccante: **42 INVALID l'ora** (~1.000 al giorno,
+~2%) di origine ignota. A quel livello non impedisce il 90%.
+
+⚠️ **Lo script invitava ad accendere l'enforcement su un'ora di dati.** Con
+`--hours` stampava «Cancello superato» perché `cancelloSuperato` guardava solo
+la media della finestra e **non contava affatto i giorni consecutivi**.
+Corretto (`fd94201c`): la modalità a ore è esclusa dal verdetto e la serie
+consecutiva è calcolata e mostrata. Era esattamente il modo di accendere
+l'enforcement su 2.616 richieste credendo di seguire la procedura.
