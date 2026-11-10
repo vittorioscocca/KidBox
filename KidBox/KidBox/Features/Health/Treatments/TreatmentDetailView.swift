@@ -854,7 +854,8 @@ struct ConfirmDoseSheet: View {
     private let tint  = KBTheme.tint
     private let green = KBTheme.green
     
-    private let quickOptions: [(String, TimeInterval)] = [
+    // LocalizedStringKey, non String: un letterale italiano in una tupla di String non passa dal catalogo.
+    private let quickOptions: [(LocalizedStringKey, TimeInterval)] = [
         ("Adesso",    0),
         ("30 min fa", -30 * 60),
         ("1 ora fa",  -60 * 60),
@@ -885,7 +886,7 @@ struct ConfirmDoseSheet: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("SELEZIONE RAPIDA").font(.caption.bold()).foregroundStyle(.secondary)
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                            ForEach(quickOptions, id: \.0) { label, offset in
+                            ForEach(quickOptions, id: \.1) { label, offset in
                                 let isSelected = selectedOffset == offset
                                 Button {
                                     selectedOffset = offset
