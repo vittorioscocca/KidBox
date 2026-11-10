@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  loggedWorkoutsOn,
   planRange,
   sessionsOn,
   sessionStatusInfo,
@@ -72,6 +73,7 @@ export default function FitnessCalendar({ plan, locale, f, renderSession }) {
 
   const weekIndex = weekIndexFor(plan, selectedDay);
   const daySessions = sessionsOn(plan, selectedDay);
+  const dayLogged = loggedWorkoutsOn(plan, selectedDay);
 
   const longDate = new Intl.DateTimeFormat(locale === "en" ? "en-US" : "it-IT", {
     weekday: "long",
@@ -106,7 +108,13 @@ export default function FitnessCalendar({ plan, locale, f, renderSession }) {
         {cells.map((day, i) => {
           if (day === null) return <span key={`empty-${i}`} className="fit-cal-empty" />;
           const sessions = sessionsOn(plan, day);
-          const status = sessions[0] ? sessionStatusInfo(sessions[0].status) : null;
+          const logged = loggedWorkoutsOn(plan, day).length > 0;
+          // Solo attività fuori programma: il giorno ha comunque un segno.
+          const status = sessions[0]
+            ? sessionStatusInfo(sessions[0].status)
+            : logged
+              ? sessionStatusInfo("done")
+              : null;
           const isSelected = day === selectedDay;
           const isToday = day === today;
           const inPlan = weekIndexFor(plan, day) != null;
@@ -119,7 +127,7 @@ export default function FitnessCalendar({ plan, locale, f, renderSession }) {
                 (isSelected ? " selected" : "") +
                 (isToday ? " today" : "") +
                 (!inPlan ? " outside" : "") +
-                (sessions.length > 0 && !isSelected ? " has-session" : "")
+                ((sessions.length > 0 || logged) && !isSelected ? " has-session" : "")
               }
               onClick={() => setSelectedDay(day)}
             >
@@ -151,6 +159,30 @@ export default function FitnessCalendar({ plan, locale, f, renderSession }) {
           <p className="pw-hint">{f.noSessionsToday}</p>
         ) : (
           daySessions.map((s) => renderSession(s))
+        )}
+        {dayLogged.length > 0 && (
+          <div className="fit-logged">
+            <h4>{f.loggedTitle}</h4>
+            <p className="pw-hint">{f.loggedHint}</p>
+            {dayLogged.map((w) => (
+              <div key={w.id} className="sa-session">
+                <div className="sa-session-head">
+                  <span className="sa-item-dot" style={{ background: sessionStatusInfo("done").color, marginTop: 0 }} />
+                  <strong>{w.title}</strong>
+                  <span className="sa-session-date">
+                    {[
+                      w.durationMinutes ? `${w.durationMinutes} min` : null,
+                      w.distanceMeters >= 10 ? `${(w.distanceMeters / 1000).toFixed(1)} km` : null,
+                      w.kcal ? `${w.kcal} kcal` : null,
+                      w.heartRateBpm ? `${w.heartRateBpm} bpm` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </section>

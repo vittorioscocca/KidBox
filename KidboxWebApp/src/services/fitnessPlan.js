@@ -351,6 +351,15 @@ export const sessionsOn = (plan, dayMillis) => {
   return [...archived, ...current].sort((a, b) => a.date - b.date);
 };
 
+/** Attività svolte fuori programma in un giorno (dal telefono), dalla più recente. */
+export const loggedWorkoutsOn = (plan, dayMillis) => {
+  const day = startOfDayMillis(dayMillis);
+  return (plan?.loggedWorkouts || [])
+    .map((w) => ({ ...w, date: typeof w.date === "string" ? fromIso(w.date) : w.date }))
+    .filter((w) => w.date && startOfDayMillis(w.date) === day)
+    .sort((a, b) => b.date - a.date);
+};
+
 /**
  * La settimana del piano in cui cade un giorno, o `null` se è fuori.
  * Serve al calendario per spegnere i giorni che il piano non copre.
@@ -383,7 +392,10 @@ export const weekIndexFor = (plan, dayMillis) => {
 export const planRange = (plan) => {
   const sessions = allSessions(plan);
   if (sessions.length === 0) return null;
-  const archivedDates = (plan.archivedSessions || []).map((s) => s.date).filter(Boolean);
+  const archivedDates = [
+    ...(plan.archivedSessions || []).map((s) => s.date),
+    ...(plan.loggedWorkouts || []).map((w) => (typeof w.date === "string" ? fromIso(w.date) : w.date)),
+  ].filter(Boolean);
   return {
     first: startOfDayMillis(Math.min(sessions[0].date, ...archivedDates)),
     last: startOfDayMillis(sessions[sessions.length - 1].date),
@@ -616,6 +628,47 @@ function weekStartMillis(millisValue) {
   return d.getTime();
 }
 
+/** Tendenza delle ultime 4 settimane e regole di progressione/regressione. Parity con iOS. */
+function trendLines(entries, missed) {
+  const today = startOfDayMillis(Date.now());
+  const daysAgo = (d) => Math.round((today - startOfDayMillis(d)) / DAY_MS);
+  const summary = (from, to) => {
+    const hit = entries.filter((e) => daysAgo(e.date) >= from && daysAgo(e.date) <= to);
+    return {
+      count: hit.length,
+      minutes: hit.reduce((n, e) => n + e.minutes, 0),
+      km: hit.reduce((n, e) => n + e.meters, 0) / 1000,
+      missed: missed.filter((m) => daysAgo(m.date) >= from && daysAgo(m.date) <= to).length,
+    };
+  };
+  const describe = (label, s) =>
+    `- ${label}: ${s.count} attività, ${s.minutes} min` +
+    (s.km >= 0.01 ? `, ${s.km.toFixed(1)} km` : "") +
+    `, ${s.missed} sedute non fatte`;
+  const recent = summary(0, 13);
+  const before = summary(14, 27);
+  const lines = [
+    "TENDENZA (ultime 4 settimane):",
+    describe("2 settimane precedenti", before),
+    describe("ultime 2 settimane", recent),
+  ];
+  if (before.minutes > 0) {
+    const delta = Math.round(((recent.minutes - before.minutes) / before.minutes) * 100);
+    lines.push(`- variazione del volume (minuti): ${delta >= 0 ? "+" : ""}${delta}%`);
+  }
+  if (entries.length) {
+    lines.push(`- giorni dall'ultima attività svolta: ${Math.max(0, daysAgo(Math.max(...entries.map((e) => e.date))))}`);
+  }
+  lines.push(
+    "REGOLE PER PROGRESSI E REGRESSI:",
+    "- Volume stabile o in crescita e poche sedute non fatte: progressione moderata (circa +10% di volume o una seduta più impegnativa).",
+    "- Volume in calo, molte sedute non fatte o pausa di oltre 14 giorni: non progredire, riparti dal livello recente (ripresa graduale, sedute più brevi o facili).",
+    "- Parti dal livello realmente raggiunto (durate e distanze svolte), non da zero e non dal piano teorico.",
+    '- Il campo "summary" si apre con 1-2 frasi sui progressi o regressi rispetto a prima, con i numeri, e spiega come il nuovo piano ne tiene conto.'
+  );
+  return lines;
+}
+
 /** Sedute fatte del piano e dei precedenti: è ciò che il calendario mostra. */
 export const doneHistory = (plan) => [
   ...(plan?.archivedSessions || []),
@@ -627,7 +680,7 @@ export const doneHistory = (plan) => [
  * iOS/Android: ultime 4 settimane una per una, le precedenti una riga a
  * settimana, tetto di caratteri che scarta prima il più vecchio.
  */
-export function historyLines({ sessions = [], workouts = [] }) {
+export function historyLines({ sessions = [], workouts = [], missed = [] }) {
   const today = startOfDayMillis(Date.now());
   const since = today - HISTORY_WEEKS * 7 * DAY_MS;
   const detailedSince = today - HISTORY_DETAILED_WEEKS * 7 * DAY_MS;
@@ -702,6 +755,7 @@ export function historyLines({ sessions = [], workouts = [] }) {
     "Sono sedute e attività che la persona ha già svolto e rivede sul calendario: " +
       "tienine conto per carico, recupero e varietà, senza ripeterle uguali.",
   ];
+  lines.push(...trendLines(entries, missed));
   if (omitted) lines.push("[… storico più vecchio omesso per brevità]");
   if (weeklyLines.length) lines.push("Settimane meno recenti (riassunto):", ...weeklyLines);
   if (detailedLines.length) {
@@ -979,6 +1033,15 @@ export async function generateFitnessPlan({
   const history = {
     sessions: oldPlan ? doneHistory(oldPlan) : [],
     workouts: oldPlan?.loggedWorkouts || [],
+    // Non fatte: saltate o passate senza registrazione. Senza, l'AI non vede i regressi.
+    missed: oldPlan
+      ? allSessions(oldPlan).filter(
+          (s) =>
+            !/ripos|rest|recupero/i.test(s.activityType || "") &&
+            (s.status === "skipped" ||
+              ((s.status === "planned" || s.status === "moved") && s.date < planStartDate()))
+        )
+      : [],
   };
 
   const callable = httpsCallable(functions, "askAI", { timeout: 300_000 });
