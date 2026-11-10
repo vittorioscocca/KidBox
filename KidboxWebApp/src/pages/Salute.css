@@ -994,6 +994,23 @@
   border-radius: 999px;
 }
 
+.fit-cal-dots {
+  display: flex;
+  gap: 3px;
+  height: 7px;
+}
+
+/* Attività fuori programma: anello pieno di accento, accanto allo stato. */
+.fit-cal-dot.logged {
+  background: transparent;
+  border: 2px solid var(--accent, #4a90d9);
+  box-sizing: border-box;
+}
+
+.fit-cal-day.selected .fit-cal-dot.logged {
+  border-color: #fff;
+}
+
 .fit-cal-legend {
   display: flex;
   gap: 14px;

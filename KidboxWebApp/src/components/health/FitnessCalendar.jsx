@@ -109,12 +109,7 @@ export default function FitnessCalendar({ plan, locale, f, renderSession }) {
           if (day === null) return <span key={`empty-${i}`} className="fit-cal-empty" />;
           const sessions = sessionsOn(plan, day);
           const logged = loggedWorkoutsOn(plan, day).length > 0;
-          // Solo attività fuori programma: il giorno ha comunque un segno.
-          const status = sessions[0]
-            ? sessionStatusInfo(sessions[0].status)
-            : logged
-              ? sessionStatusInfo("done")
-              : null;
+
           const isSelected = day === selectedDay;
           const isToday = day === today;
           const inPlan = weekIndexFor(plan, day) != null;
@@ -132,10 +127,20 @@ export default function FitnessCalendar({ plan, locale, f, renderSession }) {
               onClick={() => setSelectedDay(day)}
             >
               <span className="fit-cal-num">{new Date(day).getDate()}</span>
-              <span
-                className="fit-cal-dot"
-                style={{ background: status && !isSelected ? status.color : "transparent" }}
-              />
+              <span className="fit-cal-dots">
+                {sessions[0] && (
+                  <span
+                    className="fit-cal-dot"
+                    style={{ background: !isSelected ? sessionStatusInfo(sessions[0].status).color : "transparent" }}
+                  />
+                )}
+                {logged && (
+                  <span
+                    className="fit-cal-dot logged"
+                    title={loggedWorkoutsOn(plan, day).map((w) => w.title).join(", ")}
+                  />
+                )}
+              </span>
             </button>
           );
         })}
