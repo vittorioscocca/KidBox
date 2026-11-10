@@ -54,7 +54,7 @@ Le due conseguenze pratiche:
 | KidBox — scheduler in errore | esecuzioni non-ok degli 8 scheduler | 0 (qualsiasi errore) |
 | KidBox — scheduler muto | scheduler che smette di essere invocato | assenza di esecuzioni |
 | KidBox — errore applicativo | log severity>=ERROR da qualsiasi function | 0, finestra 10 min |
-| KidBox — letture Firestore verso il free tier | letture ultime 24h | 35.000 (70% del free tier) |
+| KidBox — letture Firestore verso il free tier | letture ultime 24h, sopra soglia da 1h | 50.000 (il free tier) — una mail sola, niente mail di chiusura |
 | KidBox — scritture Firestore verso il free tier | scritture/ora per 2h | 600 |
 | KidBox — invocazioni functions verso il free tier | invocazioni/ora per 1h | 1.500 |
 
@@ -168,3 +168,14 @@ del giorno: 39.006 letture il 7/09 con due-tre famiglie attive, cioè il 78% del
 free tier. Il consumo scala con gli utenti attivi, non col tempo — se questo
 allarme diventa frequente la risposta non è alzare la soglia, è capire perché
 una sessione d'app costa migliaia di query.
+
+**Il 10/11/2026 la soglia è passata da 35.000 a 50.000** (scelta dell'utente).
+A 35.000 l'allarme suonava cinque-sei volte al giorno, a coppie
+scattato/rientrato: la finestra mobile di 24 ore oscillava intorno alla soglia,
+con totali giornalieri di 31-46 mila a inizio novembre (60.446 il 07/11). La
+crescita veniva da più utenti attivi e dalla console (circa 1.300 letture per
+apertura), non da un guasto; oltre il free tier il costo è di circa 0,03 $ ogni
+50.000 letture. Ora la condizione deve restare sopra soglia per un'ora
+(`duration` 3600s), la mail parte solo all'apertura
+(`alertStrategy.notificationPrompts: [OPENED]`) e l'episodio si chiude da solo
+dopo 24 ore. `notificationRateLimit` non serve qui: vale per le policy sui log.
