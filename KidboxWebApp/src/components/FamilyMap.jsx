@@ -42,6 +42,16 @@ export default function FamilyMap({ people, zones, onMapClick, focus, selfPositi
       const L = (await import("leaflet")).default;
       if (cancelled || !containerRef.current || mapRef.current) return;
 
+      // Avatar che non carica: via l'immagine, resta l'iniziale. `error` non
+      // risale il DOM, quindi si ascolta in cattura sul contenitore.
+      containerRef.current.addEventListener(
+        "error",
+        (ev) => {
+          if (ev.target instanceof HTMLImageElement && ev.target.closest(".person-pin")) ev.target.remove();
+        },
+        true
+      );
+
       const map = L.map(containerRef.current, { zoomControl: true }).setView(
         [41.9028, 12.4964], // Roma: centro neutro finché non arrivano posizioni
         5
@@ -139,7 +149,8 @@ export default function FamilyMap({ people, zones, onMapClick, focus, selfPositi
         fillColor: "#E8833A",
         fillOpacity: 0.12,
       })
-        .bindTooltip(`${z.emoji ?? "📍"} ${z.name ?? ""}`, { permanent: false })
+        // Leaflet tratta una stringa come HTML: nome e emoji li scrive un membro.
+        .bindTooltip(escapeHtml(`${z.emoji ?? "📍"} ${z.name ?? ""}`), { permanent: false })
         .addTo(zonesLayer);
     });
 
@@ -148,13 +159,14 @@ export default function FamilyMap({ people, zones, onMapClick, focus, selfPositi
       if (p.latitude == null || p.longitude == null) return;
       const initial = (p.name || "?").trim().charAt(0).toUpperCase();
       // L'iniziale sta sempre sotto, l'avatar la copre quando carica: se l'URL
-      // è scaduto o irraggiungibile `onerror` toglie l'immagine e resta il pin
-      // leggibile, senza costruire elementi da codice inline.
+      // è scaduto o irraggiungibile l'immagine viene tolta e resta il pin
+      // leggibile. La toglie l'ascolto di `error` sul contenitore della mappa
+      // (vedi sopra): un `onerror="…"` scritto qui lo blocca la CSP.
       const avatar =
         `<span class="person-pin">` +
         `<span class="pin-initial">${escapeHtml(initial)}</span>` +
         (p.avatarURL
-          ? `<img src="${escapeAttr(p.avatarURL)}" alt="" onerror="this.remove()" />`
+          ? `<img src="${escapeAttr(p.avatarURL)}" alt="" />`
           : "") +
         `</span>`;
       // Sotto il cerchietto nome e batteria, come AvatarMarker + BatteryBadge
@@ -173,7 +185,7 @@ export default function FamilyMap({ people, zones, onMapClick, focus, selfPositi
         iconAnchor: [60, 20],
       });
       L.marker([p.latitude, p.longitude], { icon })
-        .bindTooltip(p.name || "", { direction: "top", offset: [0, -22] })
+        .bindTooltip(escapeHtml(p.name || ""), { direction: "top", offset: [0, -22] })
         .addTo(peopleLayer);
       bounds.push([p.latitude, p.longitude]);
     });
