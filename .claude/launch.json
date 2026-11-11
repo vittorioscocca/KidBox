@@ -26,6 +26,15 @@
       "port": 5174
     },
     {
+      "name": "webapp-hosting",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd KidboxWebApp && npx firebase-tools serve --only hosting:webapp --project kidbox-42cd7 -p 5198"
+      ],
+      "port": 5198
+    },
+    {
       "name": "landing",
       "runtimeExecutable": "sh",
       "runtimeArgs": [

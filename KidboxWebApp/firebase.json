@@ -28,6 +28,14 @@
           {
             "key": "X-Content-Type-Options",
             "value": "nosniff"
+          },
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
+          },
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://apis.google.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.gstatic.com/firebasejs/; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: data: https://firebasestorage.googleapis.com; font-src 'self' data:; connect-src 'self' blob: data: https://*.googleapis.com https://*.cloudfunctions.net https://www.google.com https://*.wikipedia.org https://api.pwnedpasswords.com; frame-src 'self' blob: https://kidbox-42cd7.firebaseapp.com https://www.google.com https://recaptcha.google.com https://www.openstreetmap.org; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
           }
         ]
       },
