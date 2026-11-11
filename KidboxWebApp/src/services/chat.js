@@ -117,14 +117,27 @@ async function mapMessage(snap, familyKey) {
  */
 export function listenMessages({ familyId, familyKey, limit = PAGE_SIZE, onChange, onError }) {
   const q = query(messagesCol(familyId), orderBy("createdAt", "asc"), limitToLast(limit));
-  return onSnapshot(
+  // La decifratura è asincrona: uno snapshot può finire dopo che l'ascolto è
+  // stato chiuso (cambio di famiglia) o dopo uno snapshot più recente. In
+  // entrambi i casi non deve arrivare a `onChange`.
+  let closed = false;
+  let latest = 0;
+  const unsubscribe = onSnapshot(
     q,
     async (snap) => {
+      const turn = ++latest;
       const messages = await Promise.all(snap.docs.map((d) => mapMessage(d, familyKey)));
+      if (closed || turn !== latest) return;
       onChange({ messages, oldestDoc: snap.docs[0] || null });
     },
-    (err) => onError?.(err)
+    (err) => {
+      if (!closed) onError?.(err);
+    }
   );
+  return () => {
+    closed = true;
+    unsubscribe();
+  };
 }
 
 /**

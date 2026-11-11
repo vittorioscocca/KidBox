@@ -180,7 +180,18 @@ const EMOJI_PALETTE = [
 const sameDay = (a, b) =>
   a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
+/**
+ * Una stanza per famiglia: la `key` rimonta tutto al cambio di famiglia.
+ * Senza, i messaggi restavano nello stato e si fondevano con quelli della
+ * famiglia nuova (o restavano a schermo se la chat nuova era vuota), insieme a
+ * risposta in corso, selezione e cursore dell'impaginazione.
+ */
 export default function Chat() {
+  const { currentFamilyId } = useFamily();
+  return <ChatRoom key={currentFamilyId || "none"} />;
+}
+
+function ChatRoom() {
   const { user } = useAuth();
   const { currentFamilyId } = useFamily();
   const { t, locale } = useTranslation();
