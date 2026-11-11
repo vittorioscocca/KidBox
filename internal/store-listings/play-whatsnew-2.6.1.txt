@@ -1,0 +1,28 @@
+<it-IT>
+• Foto e Video: ogni foto ha la sua data vera di scatto, così Anni, Mesi e Giorni mostrano tutto al posto giusto.
+• Cure: nuova vista Calendario per giorno, con le dosi sulla linea del tempo.
+• To-do: tocca per modificare subito nella riga; la «i» apre la scheda completa, dove scegli anche la lista.
+• Piano fitness: lo storico dei piani precedenti resta in calendario e l'AI ne tiene conto; un segno per le attività fuori programma.
+• Se cambi famiglia, la chat mostra solo quella giusta.
+</it-IT>
+<en-US>
+• Photos and videos: every photo keeps its real shooting date, so Years, Months and Days show everything in the right place.
+• Treatments: new day Calendar view, with doses on a timeline.
+• To-dos: tap to edit right in the row; the "i" opens the full card, where you also pick the list.
+• Fitness plan: the history of past plans stays in the calendar and the AI takes it into account; a mark for off-plan activities.
+• If you switch family, the chat shows only the right one.
+</en-US>
+<fr-FR>
+• Photos et vidéos : chaque photo garde sa vraie date : Années, Mois et Jours montrent tout au bon endroit.
+• Traitements : nouvelle vue Calendrier par jour, doses sur la frise.
+• Tâches : touchez pour modifier dans la ligne ; le « i » ouvre la fiche complète, avec le choix de la liste.
+• Plan fitness : l'historique des plans passés reste au calendrier et l'IA en tient compte ; un repère pour les activités hors plan.
+• Si vous changez de famille, la discussion n'affiche que la bonne.
+</fr-FR>
+<es-ES>
+• Fotos y vídeos: cada foto conserva su fecha real, así Años, Meses y Días lo muestran todo en su sitio.
+• Tratamientos: nueva vista Calendario por día, con las dosis en la línea de tiempo.
+• Tareas: toca para editar en la fila; la «i» abre la ficha completa, donde también eliges la lista.
+• Plan fitness: el historial de planes pasados sigue en el calendario y la IA lo tiene en cuenta; una marca para actividades fuera del plan.
+• Si cambias de familia, el chat muestra solo la correcta.
+</es-ES>
