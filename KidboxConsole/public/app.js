@@ -36,8 +36,15 @@ function saveCfg(c) { localStorage.setItem(CFG_KEY, JSON.stringify(c)); }
 
 let app, auth, db, functions, provider;
 
+// App Check scambia il token su `apps/{appId}`: senza appId la richiesta va a
+// `apps/undefined` e torna 400 a ogni tentativo (era così fino all'11/11/2026,
+// perché la configurazione salvata nel browser ha solo apiKey, projectId e
+// authDomain). È l'appId della web app, la stessa a cui è legata la chiave
+// reCAPTCHA qui sotto; come la chiave, è pubblico per costruzione.
+const APP_CHECK_APP_ID = '1:52613538008:web:c5417674e80de0303df7ad';
+
 function initFirebase(cfg) {
-  app      = initializeApp(cfg, 'kidbox-admin');
+  app      = initializeApp({ appId: APP_CHECK_APP_ID, ...cfg }, 'kidbox-admin');
 
   // Subito dopo initializeApp e PRIMA di getAuth/getFirestore/getFunctions:
   // i token App Check si allegano alle richieste dei servizi creati dopo,
