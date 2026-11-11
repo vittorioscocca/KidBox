@@ -1,10 +1,8 @@
 // Regole di Firebase Storage per il bucket `kidbox-42cd7-eu` (l'unico usato dai
 // client). Scaricate dalla produzione l'11/11/2026: fino ad allora vivevano solo
 // nella console Firebase (ultima pubblicazione 20/04/2026). Il contenuto sotto è
-// identico a quello pubblicato; questo commento è l'unica aggiunta.
+// quello pubblicato allora, più le modifiche fatte da qui (vedi git).
 // Deploy: `npx firebase-tools deploy --only storage --project kidbox-42cd7`.
-// Nota: qui «membro» = il documento membro ESISTE; in firestore.rules è più
-// stretto (non cancellato e con `role`). Da riallineare con una modifica a parte.
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
@@ -13,11 +11,20 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    // Stessa definizione di `isMember` in firestore.rules (dall'11/11/2026):
+    // il documento membro esiste, ha `role` e non è cancellato. Prima bastava
+    // che esistesse: un membro revocato il cui documento veniva ricreato da un
+    // aggiornamento del nome (solo nome e data, senza `role`) o lasciato con
+    // `isDeleted: true` continuava a leggere e scrivere i file della famiglia,
+    // con la chiave ancora sul dispositivo. `get('isDeleted', false)`: il campo
+    // manca sui membri creati da iOS e dal web, e assente = non cancellato.
+    // Un solo documento Firestore per richiesta (il limite di Storage è 2).
     function isFamilyMember(familyId) {
+      let member = /databases/(default)/documents/families/$(familyId)/members/$(request.auth.uid);
       return isSignedIn()
-        && firestore.exists(
-          /databases/(default)/documents/families/$(familyId)/members/$(request.auth.uid)
-        );
+        && firestore.exists(member)
+        && ('role' in firestore.get(member).data)
+        && firestore.get(member).data.get('isDeleted', false) != true;
     }
 
     // HERO photo
