@@ -16,5 +16,11 @@
         "*.local"
       ]
     }
+  ],
+  "storage": [
+    {
+      "bucket": "kidbox-42cd7-eu",
+      "rules": "storage.rules"
+    }
   ]
 }
