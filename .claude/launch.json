@@ -66,6 +66,15 @@
         "dashboard"
       ],
       "port": 5090
+    },
+    {
+      "name": "console-hosting",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd KidboxConsole && npx firebase-tools serve --only hosting --project kidbox-42cd7 -p 5071"
+      ],
+      "port": 5071
     }
   ]
 }
