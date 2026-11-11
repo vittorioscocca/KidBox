@@ -75,6 +75,22 @@ Per misurare davvero: il debug dell'SDK è già attivo, `adb logcat` mostra
    mostrata così sembra un errore (`readableName`). Il quadro completo del
    calendario è in `/calendario`.
 
+4d. **Le date su Firestore sono Timestamp, non numeri.** iOS e web scrivono
+   `createdAt`, `updatedAt` e (foto) `takenAt` come Timestamp. Un RemoteStore
+   Android che legge solo `...EpochMillis` non trova niente e ripiega su «adesso»:
+   i dati arrivano tutti ma con l'ora della sincronizzazione (11/11/2026: le 43
+   foto di «Scocca Limato» erano tutte di oggi, Anni/Mesi/Giorni in un solo
+   gruppo, ordine arbitrario; sembrava che ne mancassero). Si legge il
+   Timestamp e si ripiega sul numero (`epochMillisOf` in
+   `PhotoVideoRemoteStore`), e in scrittura si mette il Timestamp **accanto** al
+   numero, che le vecchie build leggono ancora. Righe Room già salvate con la
+   data sbagliata non si correggono da sole: la regola «vince l'`updatedAt` più
+   recente» le scarta perché l'ora di sincronizzazione è più recente di quella
+   vera; serve una riparazione esplicita (`datesNeedRepair` in
+   `PhotoVideoRepository`). Come accorgersene: `PRAGMA`/`select` sulle date in
+   Room (`adb exec-out run-as … cat databases/kidbox.db`) e confrontare con i
+   campi del documento Firestore.
+
 ## Le trappole della UI
 
 5. **Dark mode: `contentColor`.** Material3 deriva il contentColor solo dai
