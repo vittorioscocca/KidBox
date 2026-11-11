@@ -411,3 +411,21 @@ la media della finestra e **non contava affatto i giorni consecutivi**.
 Corretto (`fd94201c`): la modalità a ore è esclusa dal verdetto e la serie
 consecutiva è calcolata e mostrata. Era esattamente il modo di accendere
 l'enforcement su 2.616 richieste credendo di seguire la procedura.
+
+## 11/11/2026 — la console admin non otteneva il token: mancava l'appId
+
+Dalla console (`kidbox-42cd7.web.app`) lo scambio del token rispondeva **400 a
+ogni tentativo**. Non era il dominio (la chiave «KidBox Web App Check» lo
+autorizza già, insieme a `app.kidboxapp.com` e `kidbox-webapp.web.app`: si
+legge con `gcloud recaptcha keys list --project kidbox-42cd7`). La
+configurazione che la console salva nel browser ha solo `apiKey`, `projectId`
+e `authDomain`: senza `appId` la richiesta andava a `apps/undefined`.
+Corretto in `KidboxConsole/public/app.js` (`APP_CHECK_APP_ID`, l'appId della
+web app): ora lo scambio risponde 200 e le richieste della console contano
+come valide sotto l'app web. **Senza questo, l'enforcement avrebbe chiuso fuori
+la console.** Da ricontrollare prima di accenderlo: Rete → `exchangeRecaptchaEnterpriseToken` = 200.
+
+Stesso giorno, CSP sugli hosting di web app e console: App Check ha bisogno di
+`www.google.com/recaptcha/`, `www.gstatic.com/recaptcha/` (script), di
+`www.google.com` e `*.googleapis.com` (rete) e dell'iframe di `www.google.com`.
+Se la quota di VALID del web scende dopo una modifica agli header, guardare lì.

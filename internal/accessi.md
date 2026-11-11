@@ -36,9 +36,10 @@ Mai `firebase deploy` senza `--only`.
 |---|---|---|
 | Cloud Functions | `functions/` | `npx firebase-tools deploy --only functions:<nome> --project kidbox-42cd7` (anche più nomi, separati da virgola). Prima: `node --check`, `eslint`, `require('./index.js')`: procedura in `/deploy-functions` |
 | Regole Firestore e indici | `firestore.rules`, `firestore.indexes.json` | `npx firebase-tools deploy --only firestore:rules` (o `firestore:indexes`). Procedura in `/rules-change` |
+| Regole Storage | `storage.rules` (bucket `kidbox-42cd7-eu`) | `npx firebase-tools deploy --only storage --project kidbox-42cd7`. Suite e trappole in `/rules-change` |
 | Landing | `KidboxLanding/` | da quella cartella: `npx firebase-tools deploy --only hosting:landing --project kidbox-42cd7`. Target `landing` → sito `kidbox-landing`. Dominio: kidboxapp.com |
 | Web app | `KidboxWebApp/` | da quella cartella: `npm run build`, poi `npx firebase-tools deploy --only hosting:webapp --project kidbox-42cd7`. Target `webapp` → sito `kidbox-webapp`. Dominio: app.kidboxapp.com |
-| Console admin | `KidboxConsole/` | da quella cartella: deploy hosting (cartella `public`, nessun target nominato; `.firebaserc` con progetto di default) |
+| Console admin | `KidboxConsole/` | da quella cartella: `npx firebase-tools deploy --only hosting --project kidbox-42cd7` (cartella `public`, nessun target nominato). Sito `kidbox-42cd7.web.app`. Dall'11/11/2026 gli script stanno in `public/app.js` e l'hosting manda una CSP: ogni testo scritto dagli utenti passa da `escH`, e dentro un `onclick` da `jsArg` |
 | iOS, macOS | `KidBox/` | **Xcode Cloud**: un push su `main` fa partire la build. Il push lo dice l'utente. La pubblicazione sugli store è dell'utente. Team di sviluppo `5WA8KG2G2W`, bundle `it.vittorioscocca.KidBox` (+ 4 estensioni: AutoFill, ControlsExtension, NotificationService, ShareExtension) |
 | Android | `KidBoxAndroid/` | **repo git separato** (`vittorioscocca/KidBoxAndroid`). Claude compila (`/porting-android`, JBR di Android Studio via `JAVA_HOME`) e committa; versione e pubblicazione sono dell'utente. Package `it.vittorioscocca.kidbox` |
 

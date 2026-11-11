@@ -165,6 +165,28 @@ quell'elenco**: una `match` sua con `allow write: if false` non basta, le rules
 sono in OR e il wildcard la scavalca. Test prima, e che fallisca sulle regole
 di oggi (vedi `calendarFeeds` nella suite).
 
+## Le regole Storage (dall'11/11/2026 nel repo)
+
+`storage.rules`, dichiarato in `firebase.json` per il bucket `kidbox-42cd7-eu`
+(l'unico che i client usano; quello di default non esiste). Fino all'11/11/2026
+vivevano solo nella console Firebase.
+
+- **«Membro» è lo stesso di `isMember` qui sopra**: documento esistente, con
+  `role`, non cancellato. Se cambi la definizione in un file, cambiala
+  nell'altro. Storage legge al massimo 2 documenti Firestore per richiesta:
+  oggi ne legge uno (il documento membro), niente via del proprietario.
+- **Un percorso nuovo va aggiunto a mano**: non c'è un wildcard, e una cartella
+  non prevista è negata anche ai membri (il client vede `storage/unauthorized`).
+- **Suite**: `firestore-tests/storage.test.js` (56 casi), dalla radice:
+  `npx firebase-tools emulators:exec --config firebase.storage-test.json --only firestore,storage --project kidbox-rules-test "node firestore-tests/storage.test.js"`.
+  Serve **Java 21** (`JAVA_HOME` sul JBR di Android Studio, come per Android).
+  La configurazione a parte esiste perché l'emulatore rifiuta la forma con
+  `bucket` di `firebase.json`. Gli emulatori riscrivono `firestore-debug.log`
+  nella radice: ripristinarlo prima del commit.
+- **Deploy**: `npx firebase-tools deploy --only storage --project kidbox-42cd7`.
+  Verifica: `releases` di `firebaserules.googleapis.com` mostra la data nuova
+  su `firebase.storage/kidbox-42cd7-eu`.
+
 ## Resta aperto (non è una svista, è una scelta)
 
 I membri già dentro possono scrivere gli inviti tramite il wildcard
