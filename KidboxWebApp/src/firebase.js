@@ -37,14 +37,32 @@ export const app = initializeApp(firebaseConfig);
 // Sta in .env.local come la VAPID per la stessa ragione: cambia da progetto a progetto.
 const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || "";
 
-if (recaptchaSiteKey) {
-  // In sviluppo il provider reale fallirebbe su localhost. Questo flag fa
-  // stampare in console un token di debug da registrare una volta in
-  // Firebase Console → App Check → Gestisci token di debug.
-  if (import.meta.env.DEV) {
-    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-  }
+// In locale App Check NON si inizializza affatto.
+//
+// Prima qui si impostava `FIREBASE_APPCHECK_DEBUG_TOKEN = true`, che fa
+// generare al volo un token di debug: non essendo registrato (l'app web ha
+// zero token di debug, e registrarne uno sarebbe un bypass valido per
+// l'intero progetto, askAI compreso) ogni scambio tornava 403. Peggio: a
+// scambio fallito l'SDK non parte senza token, ne allega uno segnaposto che
+// viene respinto, quindi ogni richiesta della sessione risultava INVALID e
+// sporcava la soglia da cui dipende l'accensione dell'enforcement.
+//
+// Il dominio `localhost` non è fra quelli autorizzati sulla chiave reCAPTCHA
+// e non va aggiunto: chiunque può servire una pagina su localhost, quindi
+// quel permesso varrebbe come chiave per farsi rilasciare token App Check
+// validi per tutto il progetto.
+//
+// Conseguenza da sapere: quando l'enforcement sarà acceso, questa app in
+// locale non potrà più parlare con il Firebase di produzione. Si sviluppa
+// contro gli emulatori (VITE_USE_EMULATORS=1) o si prova sul deployato.
+const appCheckDisabledInDev = import.meta.env.DEV;
 
+if (appCheckDisabledInDev) {
+  console.info(
+    "[AppCheck] sviluppo locale: App Check non inizializzato di proposito. " +
+    "Con l'enforcement acceso usa gli emulatori (VITE_USE_EMULATORS=1).",
+  );
+} else if (recaptchaSiteKey) {
   // try/catch obbligatorio: App Check è infrastruttura OPZIONALE finché
   // l'enforcement è spento, quindi non deve mai poter spegnere l'app.
   // Senza, un'eccezione qui salterebbe gli export getAuth/getFirestore/… qui

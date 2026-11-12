@@ -49,7 +49,21 @@ function initFirebase(cfg) {
   // Subito dopo initializeApp e PRIMA di getAuth/getFirestore/getFunctions:
   // i token App Check si allegano alle richieste dei servizi creati dopo,
   // quindi invertire l'ordine lascerebbe scoperte le prime chiamate.
-  if (RECAPTCHA_SITE_KEY) {
+  // In locale App Check non si inizializza: `localhost` non è fra i domini
+  // autorizzati sulla chiave reCAPTCHA (e non va aggiunto — chiunque può
+  // servire una pagina su localhost, quindi varrebbe come bypass per l'intero
+  // progetto). Senza questo guard ogni ricarica in sviluppo tenta uno scambio
+  // che torna 400 e sporca le metriche di App Check.
+  //
+  // Con l'enforcement acceso la console in locale non parlerà più con il
+  // Firebase di produzione: si usa quella deployata.
+  const isLocalDev = ['localhost', '127.0.0.1', '::1', ''].includes(location.hostname)
+                  || location.hostname.endsWith('.localhost')
+                  || location.protocol === 'file:';
+
+  if (isLocalDev) {
+    console.info('[AppCheck] sviluppo locale: App Check non inizializzato di proposito.');
+  } else if (RECAPTCHA_SITE_KEY) {
     // try/catch obbligatorio: App Check è infrastruttura OPZIONALE finché
     // l'enforcement è spento, quindi non deve mai poter spegnere la console.
     // Senza, un'eccezione qui salterebbe getAuth/getFirestore/getFunctions
