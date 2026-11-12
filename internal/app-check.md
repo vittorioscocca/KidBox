@@ -524,3 +524,55 @@ metrica non le distingue (le INVALID hanno `app_id = UNKNOWN`):
 installata), poi aprire Play Console. Non cercare altro da Cloud Monitoring:
 le etichette disponibili sono solo `app_id`, `result` e `security`, quindi di
 qui la domanda «chi» non ha risposta.
+
+## ⭐️ 12/11/2026 — la metrica che dice CHI fallisce (e gli utenti non c'entrano)
+
+`verification_count` non distingue le piattaforme fra le rifiutate (`app_id =
+UNKNOWN`). Ma esiste un'altra metrica che lo fa: **`serviceruntime.googleapis.com/api/request_count`
+filtrata su `resource.labels.service="firebaseappcheck.googleapis.com"`**, che
+conta gli **scambi di token** per metodo e codice di risposta — e il metodo dice
+la piattaforma.
+
+⚠️ `method` è un'etichetta della **risorsa**, non della metrica (le etichette
+metrica sono solo `response_code`, `response_code_class`, `protocol`,
+`grpc_status_code`). Raggruppare su `metric.labels.method` restituisce `?` per
+tutto.
+
+**7 giorni (5-12/11):**
+
+| Metodo | 200 | rifiutate |
+|---|---|---|
+| `ExchangePlayIntegrityToken` (Android reale) | 2.636 | **16** (0,6%) |
+| `ExchangeAppAttestAssertion` (iOS reale) | 172 | **0** |
+| `ExchangeDebugToken` (sviluppo) | 33 | **1.348** (98%) |
+| `ExchangeRecaptchaEnterpriseToken` (web) | 146 | **180 × 400** (55%) |
+
+**Gli utenti veri non sono il problema: attestano al 99,4% su Android e al 100%
+su iOS.** Il fondo che tiene chiuso il cancello è **traffico di sviluppo** più
+il **web rotto**. Tre giorni di sospetti sugli utenti erano mal riposti, e
+questa metrica lo avrebbe detto il primo giorno.
+
+**Risolta anche la contraddizione vecchia di due mesi** fra la nota dell'08/09
+(«scambio fallito → nessun token → MISSING») e quella del 22/10 («token di
+debug non registrato → INVALID»). Vince la seconda, e il motivo si legge nel
+logcat Android: `LocalRequestInterceptor: Error getting App Check token; using
+placeholder token instead`. **Quando lo scambio fallisce il client non parte
+senza token: ne allega uno segnaposto, che viene respinto.** Per questo poche
+decine di scambi falliti bastano a produrre migliaia di richieste `INVALID`: un
+solo client che fallisce lo scambio marchia come non valide *tutte* le sue
+richieste finché non riesce a rinnovare.
+
+**Due cose restano aperte:**
+
+1. **Un client di sviluppo ancora scoperto:** 8 rifiuti `ExchangeDebugToken`
+   nelle ultime 3 ore, con tutti i device noti ormai sul token fisso. Candidati
+   non ancora esclusi: un secondo iPhone fisico con una build debug (in
+   `iOS DeviceSupport` ci sono `iPhone17,3` e `iPhone14,8`), la build
+   Mac Catalyst, e **la web app in locale** — che in `import.meta.env.DEV`
+   imposta `FIREBASE_APPCHECK_DEBUG_TOKEN = true` e quindi passa anch'essa da
+   `ExchangeDebugToken`, mentre l'app web ha **zero** token registrati.
+2. **Il web fallisce più della metà degli scambi** (180 su 326, codice 400).
+   Va capito **prima** dell'enforcement: con l'enforcement acceso quella quota
+   di sessioni web smetterebbe di funzionare. Il 400 non è «attestazione
+   rifiutata» ma richiesta malformata, quindi è un problema di
+   configurazione/uso, non di punteggio reCAPTCHA.
