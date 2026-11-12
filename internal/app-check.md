@@ -477,10 +477,17 @@ lo ignora.
 comportamento per device e la build passa lo stesso. Su Android viene loggato
 un avviso che dice dove recuperarlo.
 
-**Verificato end-to-end su Android** (12/11, Xiaomi): logcat
-`Token di debug App Check fisso applicato` → `Enter this debug secret …:
-09697FDF-…` (il token fisso, non più quello del device) →
-`Successfully fetched AppCheck token`. SharedPreferences allineate.
+**Verificato end-to-end su entrambe** (12/11).
+
+Android, Xiaomi: logcat `Token di debug App Check fisso applicato` →
+`Enter this debug secret …: 09697FDF-…` (il token fisso, non più quello del
+device) → `Successfully fetched AppCheck token`. SharedPreferences allineate.
+
+iOS, simulatore iPhone 17: build riuscita, la chiave `KBAppCheckDebugToken`
+risolta nell'Info.plist **dell'app e della ShareExtension** (prova che la
+variabile a livello di progetto arriva anche all'estensione), e dopo un avvio
+`GACAppCheckDebugToken` nelle preferenze del container è passata da
+`1DE80649-…` (il token che quel simulatore si era generato) al token fisso.
 
 **Da fare quando i device saranno passati al token fisso:** cancellare dalla
 console i token per-device ormai inutili (i 5 `Sim … [API]` e
