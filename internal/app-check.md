@@ -429,3 +429,60 @@ Stesso giorno, CSP sugli hosting di web app e console: App Check ha bisogno di
 `www.google.com/recaptcha/`, `www.gstatic.com/recaptcha/` (script), di
 `www.google.com` e `*.googleapis.com` (rete) e dell'iframe di `www.google.com`.
 Se la quota di VALID del web scende dopo una modifica agli header, guardare lì.
+
+## 12/11/2026 — token di debug fisso, per smettere di rincorrere i device
+
+**Il problema.** Il provider di debug genera un UUID **per installazione** e lo
+conserva. Ogni simulatore nuovo, ogni iPhone su cui si lancia da Xcode, ogni
+emulatore e ogni cancellazione dati apre un buco che non si vede subito: si
+scopre giorni dopo, come picco di `INVALID` in una metrica. Fra il 10 e il
+12/11 è successo tre volte (il Xiaomi, poi i cinque simulatori, poi un iPhone
+fisico con una build `Debug-iphoneos`).
+
+**La soluzione.** Un solo token, registrato una volta su **entrambe** le app
+(iOS e Android) come `DEV fisso [API]`, imposto dal codice a ogni avvio in
+debug. Da lì in poi un device nuovo nasce già coperto.
+
+Il valore **non sta nel repo**. Vive nel Portachiavi:
+
+    security find-generic-password -a kidbox -s kidbox-appcheck-debug-token -w
+
+**iOS.** `KidBox/KidBox/AppCheck.local.xcconfig` (in `.gitignore`) definisce
+`APP_CHECK_DEBUG_TOKEN_LOCAL`. `Facebook.xcconfig` — che è la base
+configuration del **progetto**, quindi vale per tutti i target, ShareExtension
+compresa — lo include con `#include?` (opzionale: senza il file la build passa
+lo stesso) e lo espone come `APP_CHECK_DEBUG_TOKEN`, **vuoto in Release**
+perché un token di debug nel binario pubblicato sarebbe un bypass di App Check
+per l'intero progetto. Arriva al runtime dalla chiave `KBAppCheckDebugToken` in
+`Info.plist` (app ed estensione), e `AppCheckInstaller.applyFixedDebugTokenIfPresent()`
+lo scrive in `UserDefaults` sotto **`GACAppCheckDebugToken`**, la chiave che
+AppCheckCore legge davvero (`GACAppCheckDebugProvider.m`, `kDebugTokenUserDefaultsKey`).
+
+Perché `UserDefaults` e non la variabile d'ambiente `AppCheckDebugToken` dello
+schema, che pure avrebbe la priorità: la variabile vale **solo lanciando da
+Xcode**. Un'app installata su un telefono e poi aperta dalla home — il caso che
+ci è costato i picchi del 10/11 sera — non la vedrebbe.
+
+**Android.** `APP_CHECK_DEBUG_TOKEN` in `local.properties` (già ignorato) →
+`buildConfigField` **solo nel build type `debug`** → `AppCheckInstaller`
+(variante debug) lo scrive nelle SharedPreferences
+`com.google.firebase.appcheck.debug.store.<persistenceKey>`, chiave
+`com.google.firebase.appcheck.debug.DEBUG_SECRET` (sorgente:
+`StorageHelper.java` dell'SDK), **prima** di installare la factory e con
+`commit()`, perché il provider legge alla prima richiesta di token.
+`install()` ora prende un `Context`; la variante release ha la stessa firma e
+lo ignora.
+
+**Degrada in sicurezza** su entrambe: se il valore manca, si torna al
+comportamento per device e la build passa lo stesso. Su Android viene loggato
+un avviso che dice dove recuperarlo.
+
+**Verificato end-to-end su Android** (12/11, Xiaomi): logcat
+`Token di debug App Check fisso applicato` → `Enter this debug secret …:
+09697FDF-…` (il token fisso, non più quello del device) →
+`Successfully fetched AppCheck token`. SharedPreferences allineate.
+
+**Da fare quando i device saranno passati al token fisso:** cancellare dalla
+console i token per-device ormai inutili (i 5 `Sim … [API]` e
+`Sim Xiaomi 2510DRA23E [API]`), lasciando solo `DEV fisso [API]`. Ogni token
+registrato è un bypass in più: meno ce ne sono, meglio è.

@@ -10,3 +10,16 @@
 
 FACEBOOK_APP_ID = $(FACEBOOK_APP_ID_LOCAL)
 FACEBOOK_CLIENT_TOKEN = $(FACEBOOK_CLIENT_TOKEN_LOCAL)
+
+// --- App Check -------------------------------------------------------------
+// Token di debug fisso per lo sviluppo. Questo file è la base configuration
+// del PROGETTO, quindi la variabile arriva a tutti i target, ShareExtension
+// compresa. `#include?` è opzionale: senza il file locale la build passa lo
+// stesso e si torna al token generato per device.
+//
+// Vuoto in Release di proposito: il token è un bypass di App Check e NON deve
+// finire nel binario pubblicato sullo store.
+#include? "AppCheck.local.xcconfig"
+
+APP_CHECK_DEBUG_TOKEN = $(APP_CHECK_DEBUG_TOKEN_LOCAL)
+APP_CHECK_DEBUG_TOKEN[config=Release] =

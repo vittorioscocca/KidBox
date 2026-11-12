@@ -47,6 +47,8 @@
 	<string>$(FACEBOOK_CLIENT_TOKEN)</string>
 	<key>FacebookDisplayName</key>
 	<string>KidBox</string>
+	<key>KBAppCheckDebugToken</key>
+	<string>$(APP_CHECK_DEBUG_TOKEN)</string>
 	<key>KEYCHAIN_ACCESS_GROUP</key>
 	<string>$(AppIdentifierPrefix)it.vittorioscocca.KidBox</string>
 	<key>KidBoxSharedKeychainAccessGroup</key>
