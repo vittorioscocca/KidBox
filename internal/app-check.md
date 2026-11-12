@@ -493,3 +493,34 @@ variabile a livello di progetto arriva anche all'estensione), e dopo un avvio
 console i token per-device ormai inutili (i 5 `Sim … [API]` e
 `Sim Xiaomi 2510DRA23E [API]`), lasciando solo `DEV fisso [API]`. Ogni token
 registrato è un bypass in più: meno ce ne sono, meglio è.
+
+### 12/11/2026 sera — l'iPhone di Antonella attesta, ma il fondo resta
+
+Reinstallata la versione dell'App Store sul suo iPhone. Le VALID `ios` salgono
+di ora in ora — 118 → 290 → **440** — ed è anche la **prima conferma che la
+build di produzione supera davvero l'attestazione su un device reale**: finora
+era solo un'assunzione, e il `403 App attestation failed` di agosto era su una
+debug.
+
+**Ma Firestore resta al 76%, con ~500 INVALID l'ora (~12.000 al giorno).** Non
+era lei.
+
+A questo punto **tutti i device di sviluppo noti sono puliti e verificati uno a
+uno**: 5 simulatori iOS e il Xiaomi usano il token fisso, l'emulatore Android è
+fermo da agosto, il Mac Catalyst non ha token. Restano due possibilità, e la
+metrica non le distingue (le INVALID hanno `app_id = UNKNOWN`):
+
+1. **Device di utenti veri** che non superano Play Integrity — il traffico è in
+   larga parte Android, quindi è l'ipotesi col peso maggiore. Si verifica **da
+   Play Console**, non da qui: le statistiche di Play Integrity dicono quante
+   richieste falliscono il verdetto e perché (bootloader sbloccato, ROM non
+   certificata, Play Services assenti o vecchi, APK non installato da Play).
+2. **Un secondo iPhone fisico con una build debug.** In `iOS DeviceSupport`
+   compaiono due device: `iPhone17,3` (ultimo 9/11) e `iPhone14,8` (27/10).
+   Quello del 10/11 sera era di Antonella; l'altro va verificato.
+
+**Da fare prima di dare la colpa agli utenti:** escludere il punto 2
+(collegare l'altro iPhone, o controllare se ha una build di sviluppo
+installata), poi aprire Play Console. Non cercare altro da Cloud Monitoring:
+le etichette disponibili sono solo `app_id`, `result` e `security`, quindi di
+qui la domanda «chi» non ha risposta.
