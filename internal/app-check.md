@@ -576,3 +576,32 @@ richieste finché non riesce a rinnovare.
    di sessioni web smetterebbe di funzionare. Il 400 non è «attestazione
    rifiutata» ma richiesta malformata, quindi è un problema di
    configurazione/uso, non di punteggio reCAPTCHA.
+
+### 13/11/2026 — primo giorno sopra soglia, e i rifiuti quasi azzerati
+
+Firestore giorno per giorno: 76% (11/11) → 82% (12/11) → **90% (13/11) ✅**.
+Primo giorno sopra il cancello da quando lo misuriamo. Serie: **1 su 7**, quindi
+si completa il **19/11** e si verifica il **20/11**, come già programmato.
+
+Rifiuti di scambio token, dopo il token fisso e i guard sui due client web:
+
+| finestra | `ExchangeDebugToken` 403 | ritmo |
+|---|---|---|
+| prima dei fix | — | ~5,5/ora |
+| ultime 36 ore | 56 | ~1,5/ora |
+| ultime 12 ore | 4 | ~0,3/ora |
+| ultime 4 ore | 1 | — |
+
+Il web è rientrato: 1 solo 403 e 1 solo 400 in 36 ore (erano decine).
+
+**Resta un residuo di circa un rifiuto ogni 3-4 ore**, da un client di sviluppo
+non identificato — il ritmo lento suggerisce un'app in background che riprova
+con backoff. Candidato principale non ancora escluso: il **secondo iPhone
+fisico** con una build debug (`iPhone14,8` / `iPhone17,3` in
+`iOS DeviceSupport`). Da verificare collegandolo.
+
+⚠️ **Storage al 62% non va letto.** Sono **860 richieste in 7 giorni** (~120 al
+giorno): una manciata di richieste muove la percentuale di dieci punti, ed è
+per di più una media su una finestra che contiene ancora i giorni sporchi.
+Il cancello si legge su Firestore, che ne fa ~50.000 al giorno. Vale il
+corollario sui volumi già scritto sopra.
