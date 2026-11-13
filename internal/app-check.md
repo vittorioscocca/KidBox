@@ -577,11 +577,20 @@ richieste finché non riesce a rinnovare.
    rifiutata» ma richiesta malformata, quindi è un problema di
    configurazione/uso, non di punteggio reCAPTCHA.
 
-### 13/11/2026 — primo giorno sopra soglia, e i rifiuti quasi azzerati
+### 13/11/2026 — i rifiuti quasi azzerati (ma NON c'era nessun giorno sopra soglia)
 
-Firestore giorno per giorno: 76% (11/11) → 82% (12/11) → **90% (13/11) ✅**.
-Primo giorno sopra il cancello da quando lo misuriamo. Serie: **1 su 7**, quindi
-si completa il **19/11** e si verifica il **20/11**, come già programmato.
+⚠️ **Correzione.** Avevo annunciato «90% il 13/11, primo giorno sopra soglia».
+Falso: era la riga del **giorno in corso**, con 9.708 richieste contro le
+~50.000 di una giornata intera — un quinto di giornata, per di più tutte ore
+notturne. Due ore dopo era già **88%**, e i giorni sopra soglia erano **zero**.
+
+**Lo script contribuiva all'errore**, contando il giorno in corso nella serie.
+Corretto: il giorno corrente è escluso dal conteggio e marcato
+`⏳ giorno in corso, non conta`. **Un giorno parziale non è un giorno.**
+
+Andamento reale dei giorni **completi**: 76% (11/11) → 83% (12/11). In
+miglioramento netto, ma il cancello non è ancora stato toccato nemmeno una
+volta.
 
 Rifiuti di scambio token, dopo il token fisso e i guard sui due client web:
 

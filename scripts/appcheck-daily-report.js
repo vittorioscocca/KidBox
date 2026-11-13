@@ -79,6 +79,9 @@ async function timeSeries(tok) {
   return j.timeSeries || [];
 }
 
+// Il giorno in corso secondo il fuso del progetto: va escluso dal cancello.
+const oggi = () => new Date().toLocaleDateString("sv-SE", { timeZone: TZ });
+
 const giorno = (iso) =>
   HOURS
     ? new Date(iso).toLocaleString("sv-SE", { timeZone: TZ, hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })
@@ -118,7 +121,7 @@ function verdetto({ perServizio, perApp, perGiorno }) {
   const valide = quota(firestore);
   const giorniSopra = Object.entries(perGiorno)
     .sort()
-    .filter(([, c]) => (quota(c) ?? 0) >= SOGLIA).length;
+    .filter(([g, c]) => g !== oggi() && (quota(c) ?? 0) >= SOGLIA).length;
   const piattaformeValide = new Set(
     Object.entries(perApp)
       .filter(([, c]) => (c.VALID || 0) > 0)
@@ -126,8 +129,17 @@ function verdetto({ perServizio, perApp, perGiorno }) {
   );
   const mancanti = PIATTAFORME_ATTESE.filter((p) => !piattaformeValide.has(p));
   // Giorni CONSECUTIVI sopra soglia: il cancello ne vuole 7 di fila, non 7 sparsi.
+  //
+  // ⚠️ Il giorno IN CORSO è escluso. Un giorno parziale non è un giorno: alle
+  // 10 del mattino sono ~10.000 richieste contro le ~50.000 di una giornata
+  // intera, per di più tutte di ore notturne, che hanno una composizione
+  // diversa. Il 13/11/2026 segnava 90% a metà mattina ed era già 88% due ore
+  // dopo — contarlo aveva prodotto un «primo giorno sopra soglia» che non
+  // esisteva.
+  const giorni = Object.entries(perGiorno).sort();
+  const completi = giorni.filter(([g]) => g !== oggi());
   let serie = 0;
-  for (const [, c] of Object.entries(perGiorno).sort()) {
+  for (const [, c] of completi) {
     serie = (quota(c) ?? 0) >= SOGLIA ? serie + 1 : 0;
   }
   return {
@@ -172,7 +184,9 @@ function stampa(a, v) {
   L.push(HOURS ? "## Firestore per ora" : "## Firestore giorno per giorno (è il cancello)");
   for (const [g, c] of Object.entries(a.perGiorno).sort()) {
     const q = quota(c);
-    L.push(`  ${g}  ${String(tot(c)).padStart(7)} richieste   VALIDE ${String(q).padStart(3)}%  ${q >= SOGLIA ? "✅" : ""}`);
+    const parziale = !HOURS && g === oggi();
+    const nota = parziale ? "  ⏳ giorno in corso, non conta" : q >= SOGLIA ? "✅" : "";
+    L.push(`  ${g}  ${String(tot(c)).padStart(7)} richieste   VALIDE ${String(q).padStart(3)}%  ${nota}`);
   }
   L.push("");
   L.push("## Verdetto");
